@@ -28,6 +28,7 @@ services:
   - path: src/generativeUI/training-webcomponents-ngx
     name: Data Cleaning Copilot
     package_manager: python
+    bom_stem: training-webcomponents-ngx
 
   - path: langchain-integration-for-sap-hana-cloud-main
     name: LangChain Integration for SAP HANA Cloud
@@ -43,18 +44,6 @@ services:
     version: "0.9.0"   # upstream tag at time of fork snapshot
     upstream: https://github.com/vllm-project/vllm
 
-  # ── Go ──────────────────────────────────────────────────────────────────────
-  - path: mangle-main
-    name: Mangle (Datalog engine)
-    package_manager: go
-    version: "0.1.0"   # no official release tag; HEAD snapshot
-    upstream: https://github.com/google/mangle
-
-  - path: mangle-query-service
-    name: Mangle Query Service
-    package_manager: go
-    version: "0.1.0"   # initial SAP OSS release
-
   # ── Java ────────────────────────────────────────────────────────────────────
   - path: elasticsearch-main
     name: Elasticsearch (SAP fork)
@@ -68,18 +57,16 @@ services:
       SAP-specific sap_openai_server/ additions. Run build_full_python_sbom.sh
       to generate a Python SBOM for sap_openai_server only.
 
-  # ── Zig / Mojo ──────────────────────────────────────────────────────────────
-  - path: ai-core-pal
-    name: AI Core PAL (Zig/Mojo)
-    package_manager: zig
-    stub: true          # Zig has no standard registry; deps are vendored.
-    note: >
-      Zig has no standard package registry. Dependencies are vendored under
-      the project. BOM is a stub; update manually when zig.zon is introduced.
+  # ── Python (PAL MCP) ───────────────────────────────────────────────────────
+  - path: src/intelligence/ai-core-pal
+    name: AI Core PAL (MCP / HANA PAL)
+    package_manager: python
+    bom_stem: ai-core-pal
 
   - path: ai-core-streaming
-    name: AI Core Streaming (Zig/Mojo)
-    package_manager: zig
-    stub: true          # See ai-core-pal note.
+    name: AI Core Streaming (mesh coordinator)
+    package_manager: python
+    stub: true
     note: >
-      See ai-core-pal note above.
+      Stub BOM retained for lineage; implementation is coordinated with the
+      streaming stack in-repo.

@@ -14,6 +14,40 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 BOMS_DIR = REPO_ROOT / "scripts" / "sbom-lineage" / "boms"
 LINEAGE_PATH = REPO_ROOT / "scripts" / "sbom-lineage" / "lineage.json"
 OUTPUT_TEX = REPO_ROOT / "docs" / "sbom-lineage.tex"
+MANIFEST_PATH = REPO_ROOT / "docs" / "sbom" / "sbom-lineage-manifest.yaml"
+
+
+def load_manifest_bom_index(
+    manifest_path: Path,
+) -> tuple[dict[str, str], dict[str, str], dict[str, str]]:
+    """
+    From sbom-lineage-manifest.yaml build:
+      path_to_stem: manifest path -> CycloneDX filename stem
+      stem_to_name: stem -> human-readable service name
+      stem_to_path: stem -> manifest path (for lineage title fallback)
+    """
+    path_to_stem: dict[str, str] = {}
+    stem_to_name: dict[str, str] = {}
+    stem_to_path: dict[str, str] = {}
+    try:
+        import yaml
+    except ImportError:
+        return path_to_stem, stem_to_name, stem_to_path
+    if not manifest_path.exists():
+        return path_to_stem, stem_to_name, stem_to_path
+    try:
+        data = yaml.safe_load(manifest_path.read_text(encoding="utf-8")) or {}
+        for svc in data.get("services", []):
+            p = (svc.get("path") or "").strip()
+            if not p:
+                continue
+            st = (svc.get("bom_stem") or p.replace("/", "-")).strip()
+            path_to_stem[p] = st
+            stem_to_name[st] = (svc.get("name") or p).strip()
+            stem_to_path[st] = p
+    except Exception:
+        pass
+    return path_to_stem, stem_to_name, stem_to_path
 
 
 def slug(p: str) -> str:
@@ -46,6 +80,7 @@ def escape_table(s: str) -> str:
     s = s.replace("&", "\\&")
     s = s.replace("%", "\\%")
     s = s.replace("#", "\\#")
+    s = s.replace("$", "\\$")
     s = s.replace("_", "\\_")
     s = s.replace("{", "\\{")
     s = s.replace("}", "\\}")
@@ -196,8 +231,25 @@ def main() -> None:
     p.add_argument("--output", type=Path, default=OUTPUT_TEX)
     p.add_argument("--title", default="Software Bill of Materials (CycloneDX) and Change Lineage")
     p.add_argument("--max-commits", type=int, default=50)
-    p.add_argument("--service", help="Service path (as in manifest) to generate a single-service report for")
+    p.add_argument(
+        "--service",
+        help="Manifest path (e.g. src/intelligence/ai-core-pal) for a single-service report",
+    )
+    p.add_argument(
+        "--bom-stem",
+        metavar="STEM",
+        help="CycloneDX filename stem (e.g. ai-core-pal). Overrides stem derived from --service.",
+    )
     args = p.parse_args()
+
+    path_to_stem, stem_to_name, stem_to_path = load_manifest_bom_index(MANIFEST_PATH)
+
+    expected_stem: str | None = None
+    if args.bom_stem:
+        expected_stem = args.bom_stem.strip()
+    elif args.service:
+        expected_stem = path_to_stem.get(args.service) or slug(args.service)
+
     # Map BOM file stem (e.g. training-webcomponents-ngx) to display name from lineage
     lineage_data = {}
     if args.lineage.exists():
@@ -221,7 +273,7 @@ def main() -> None:
         "\\usepackage{longtable}",
         "\\usepackage{booktabs}",            # \\toprule, \\midrule, \\bottomrule
         "\\usepackage{array}",               # extended column specs
-        "\\usepackage{xcolor}",              # \\rowcolor
+        "\\usepackage[table]{xcolor}",      # \\rowcolor in longtable (booktabs)
         "\\usepackage{listings}",            # code/dep-graph blocks
         "\\usepackage{hyperref}",
         "\\usepackage{geometry}",
@@ -269,9 +321,15 @@ def main() -> None:
     ]
     for bom_file in sorted(args.boms_dir.glob("*.cyclonedx.json")):
         stem = bom_file.stem.replace(".cyclonedx", "")
-        if args.service and stem != slug(args.service):
+        if expected_stem is not None and stem != expected_stem:
             continue
-        project_name = name_by_path.get(stem) or stem.replace("-", " ").title()
+        mp = stem_to_path.get(stem, "")
+        project_name = (
+            stem_to_name.get(stem)
+            or name_by_path.get(mp)
+            or name_by_path.get(stem)
+            or stem.replace("-", " ").title()
+        )
         doc.append(sbom_section_from_cyclonedx(bom_file, project_name))
     doc.append("\\newpage")
     doc.append(lineage_section(lineage_data, args.max_commits))

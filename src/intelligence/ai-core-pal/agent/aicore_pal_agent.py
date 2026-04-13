@@ -115,8 +115,8 @@ class VocabularyClient:
             return {"error": str(e), "status": "failed"}
 
 
-class MangleEngine:
-    """Mangle query interface for governance rules."""
+class GovernanceEngine:
+    """In-process governance rules for routing and tool policy."""
     
     def __init__(self, rules_paths: Optional[List[str]] = None):
         self.rules_paths = rules_paths or []
@@ -133,7 +133,7 @@ class MangleEngine:
         
         self.facts["agent_can_use"] = {
             "pal_classification", "pal_regression", "pal_clustering",
-            "pal_forecast", "pal_anomaly", "mangle_query"
+            "pal_forecast", "pal_anomaly",
         }
         
         self.facts["agent_requires_approval"] = {
@@ -198,10 +198,7 @@ class AICorePALAgent:
     """
     
     def __init__(self):
-        self.mangle = MangleEngine([
-            "mangle/domain/agents.mg",
-            "../regulations/mangle/rules.mg"
-        ])
+        self.governance = GovernanceEngine()
         self.mcp_endpoint = "http://localhost:8084/mcp"
         self.vllm_endpoint = "http://localhost:9180/mcp"
         self.vocab_client = VocabularyClient("http://localhost:9150")
@@ -218,7 +215,7 @@ class AICorePALAgent:
         routing_reason = "HANA PAL data is enterprise confidential - vLLM only"
         
         # Check if human review required
-        if self.mangle.query("requires_human_review", tool):
+        if self.governance.query("requires_human_review", tool):
             self._log_audit("pending_approval", tool, backend, prompt)
             return {
                 "status": "pending_approval",
@@ -229,7 +226,7 @@ class AICorePALAgent:
             }
         
         # Safety check
-        if not self.mangle.query("safety_check_passed", tool):
+        if not self.governance.query("safety_check_passed", tool):
             self._log_audit("blocked", tool, backend, prompt)
             return {
                 "status": "blocked",
@@ -239,7 +236,7 @@ class AICorePALAgent:
             }
         
         # Get prompting policy
-        prompting = self.mangle.query("get_prompting_policy", "aicore-pal-service-v1")
+        prompting = self.governance.query("get_prompting_policy", "aicore-pal-service-v1")
         prompting_policy = prompting[0] if prompting else {}
         
         # Execute via vLLM
@@ -406,8 +403,8 @@ class AICorePALAgent:
         return any(p in col_lower for p in dim_patterns)
     
     def check_governance(self, prompt: str) -> Dict[str, Any]:
-        prompting = self.mangle.query("get_prompting_policy", "aicore-pal-service-v1")
-        autonomy = self.mangle.query("autonomy_level")
+        prompting = self.governance.query("get_prompting_policy", "aicore-pal-service-v1")
+        autonomy = self.governance.query("autonomy_level")
         
         return {
             "routing": {

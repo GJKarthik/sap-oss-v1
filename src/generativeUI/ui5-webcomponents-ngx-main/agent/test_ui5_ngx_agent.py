@@ -33,7 +33,7 @@ class TestUrlValidation(unittest.TestCase):
             "https://172.20.1.5/api",
         ):
             with self.assertRaises(ValueError):
-                ui5_agent._validate_remote_url(value, "MANGLE_ENDPOINT")
+                ui5_agent._validate_remote_url(value, "HANA_BASE_URL")
 
     def test_rejects_link_local_and_unique_local_ipv6(self):
         for value in (
@@ -41,10 +41,10 @@ class TestUrlValidation(unittest.TestCase):
             "https://[fd00::1]/api",
         ):
             with self.assertRaises(ValueError):
-                ui5_agent._validate_remote_url(value, "MANGLE_ENDPOINT")
+                ui5_agent._validate_remote_url(value, "HANA_BASE_URL")
 
     def test_allows_public_https_hostname(self):
-        value = ui5_agent._validate_remote_url("https://api.sap.com/v1", "MANGLE_ENDPOINT")
+        value = ui5_agent._validate_remote_url("https://api.sap.com/v1", "HANA_BASE_URL")
         self.assertEqual(value, "https://api.sap.com/v1")
 
 

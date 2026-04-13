@@ -37,7 +37,7 @@
         <Annotation Term="Core.Description" String="Reference to a HANA calculation view that backs this entity"/>
         <Annotation Term="Core.LongDescription">
           <String>Associates an OData EntitySet or EntityType with a HANA calculation view.
-This enables the mangle-query-service to route analytical queries directly to HANA
+This enables analytical query routing directly to HANA
 for optimal performance on aggregations, groupings, and hierarchies.</String>
         </Annotation>
       </Term>
@@ -204,7 +204,7 @@ Used with Analytics.RecursiveHierarchy for full hierarchy support.</String>
         <Annotation Term="Core.Description" String="Change data capture configuration for HANA sync"/>
         <Annotation Term="Core.LongDescription">
           <String>Configures how changes are tracked for delta loads within HANA Cloud.
-Used by the BatchETL sync pipeline in mangle-query-service.</String>
+Used by the BatchETL sync pipeline.</String>
         </Annotation>
       </Term>
       

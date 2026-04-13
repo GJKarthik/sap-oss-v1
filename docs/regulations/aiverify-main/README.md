@@ -11,15 +11,10 @@ We are thrilled to announce the upcoming release of AI Verify 2.0, a groundbreak
 - **Veritas Integration**: Including Veritas into AI Verify allows financial institutions to meet common safety baseline and financial testing requirements.
 - **Improved support for Computer Vision**: More evaluations to be included to support different types of use cases.
 
-### Zig/Mojo Migration (Bridge Mode)
+### Implementation note (this repository)
 
-`aiverify-main` now includes initial migration scaffolding for Zig + Mojo with
-parity tracking:
-
-- `zig/` compatibility runtime that forwards to Python modules during migration.
-- `mojo/` deterministic primitives and smoke tests for future FFI wiring.
-- `mangle/` migration facts/rules and bridge ownership declarations.
-- `docs/ZIG_MOJO_MIGRATION.md` for status, commands, and next porting order.
+The `aiverify-main` tree vendored here is consumed as a **Python-first** reference
+layout. Legacy Zig/Mojo/Mangle bridge scaffolding is not used in this monorepo.
 
 <p align="center">
 <img src="https://github.com/user-attachments/assets/967b4122-ae88-4cf3-ba76-56562ea7cdc9" width="80%">

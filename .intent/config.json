@@ -211,24 +211,6 @@
       "category": "other"
     },
     {
-      "name": "sbom-mangle-build",
-      "command": "make sbom-mangle-build",
-      "mode": "command",
-      "category": "build"
-    },
-    {
-      "name": "sbom-mangle-audit",
-      "command": "make sbom-mangle-audit",
-      "mode": "command",
-      "category": "other"
-    },
-    {
-      "name": "sbom-mangle-audit-strict",
-      "command": "make sbom-mangle-audit-strict",
-      "mode": "command",
-      "category": "other"
-    },
-    {
       "name": "sbom-full-audit",
       "command": "make sbom-full-audit",
       "mode": "command",

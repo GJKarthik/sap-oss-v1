@@ -9,7 +9,7 @@ The mcppal-be-po-mesh-gateway provides a **Model Context Protocol (MCP) Tool Mes
 ├──────────────────────────────────────────────────────────────────┤
 │  ┌────────────────┐    ┌────────────────┐    ┌────────────────┐ │
 │  │ Tool Registry  │───▶│ Mesh Router    │───▶│ Tool Executor  │ │
-│  │ (Discovery)    │    │ (Mangle Rules) │    │ (GPU/CPU)      │ │
+│  │ (Discovery)    │    │ (Policy Router)│    │ (GPU/CPU)      │ │
 │  └────────────────┘    └────────────────┘    └────────────────┘ │
 ├──────────────────────────────────────────────────────────────────┤
 │                    MCP Server Types                              │

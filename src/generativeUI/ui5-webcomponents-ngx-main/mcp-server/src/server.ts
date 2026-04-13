@@ -2,9 +2,8 @@
 // SPDX-FileCopyrightText: 2023 SAP SE
 /**
  * UI5 Web Components Angular MCP Server
- * 
- * Model Context Protocol server with Mangle reasoning integration.
- * Provides tools for UI5 Web Components operations.
+ *
+ * Model Context Protocol server for UI5 Web Components tooling.
  */
 
 import express, { Request, Response } from 'express';
@@ -16,10 +15,6 @@ import * as http from 'http';
 const MAX_JSON_BODY_BYTES = 1024 * 1024;
 const MAX_COMPONENTS_PER_REQUEST = 64;
 const MAX_SEARCH_QUERY_LENGTH = 200;
-
-// =============================================================================
-// Finding 1: Mangle query service endpoint
-// =============================================================================
 
 const BLOCKED_HOST_PREFIXES = [
   '169.254.', '100.100.', 'fd00:', '::1', 
@@ -64,37 +59,6 @@ function safeEnvUrl(envVar: string, fallback: string): string {
     console.error(`ERROR: ${String(e)} — falling back to ${fallback}`);
     return fallback;
   }
-}
-
-const MANGLE_ENDPOINT = safeEnvUrl('MANGLE_ENDPOINT', 'http://localhost:50051');
-
-async function callMangleService(predicate: string, args: unknown[]): Promise<{ results: unknown[]; wired: boolean }> {
-  return new Promise((resolve) => {
-    const payload = JSON.stringify({ predicate, args });
-    const url = new URL(`${MANGLE_ENDPOINT}/query`);
-    const lib = url.protocol === 'https:' ? https : http;
-    const req = lib.request(
-      { hostname: url.hostname, port: url.port || (url.protocol === 'https:' ? 443 : 80),
-        path: url.pathname, method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(payload) } },
-      (res) => {
-        let data = '';
-        res.on('data', (chunk: Buffer) => { data += chunk; });
-        res.on('end', () => {
-          try {
-            const body = JSON.parse(data) as { results?: unknown[] };
-            resolve({ results: body.results ?? [], wired: true });
-          } catch {
-            resolve({ results: [], wired: false });
-          }
-        });
-      },
-    );
-    req.on('error', () => resolve({ results: [], wired: false }));
-    req.setTimeout(5000, () => { req.destroy(); resolve({ results: [], wired: false }); });
-    req.write(payload);
-    req.end();
-  });
 }
 
 // =============================================================================
@@ -346,19 +310,6 @@ class MCPServer {
       },
     });
 
-    this.tools.set("mangle_query", {
-      name: "mangle_query",
-      description: "Query the Mangle reasoning engine",
-      inputSchema: {
-        type: "object",
-        properties: {
-          predicate: { type: "string", description: "Predicate to query" },
-          args: { type: "string", description: "Arguments as JSON array" },
-        },
-        required: ["predicate"],
-      },
-    });
-
   }
 
   private registerResources(): void {
@@ -374,10 +325,10 @@ class MCPServer {
       description: "UI5 Angular modules",
       mimeType: "application/json",
     });
-    this.resources.set("mangle://facts", {
-      uri: "mangle://facts",
-      name: "Mangle Facts",
-      description: "Mangle fact store",
+    this.resources.set("ui5://governance-facts", {
+      uri: "ui5://governance-facts",
+      name: "Governance Facts",
+      description: "Local MCP registry and invocation metadata",
       mimeType: "application/json",
     });
   }
@@ -486,24 +437,6 @@ class MCPServer {
     return { valid: errors.length === 0, usedComponents, errors };
   }
 
-  private async handleMangleQuery(args: Record<string, unknown>): Promise<Record<string, unknown>> {
-    const predicate = args.predicate as string;
-    let rawArgs: unknown[] = [];
-    if (args.args !== undefined) {
-      try { rawArgs = Array.isArray(args.args) ? args.args : (JSON.parse(String(args.args)) as unknown[]); }
-      catch { rawArgs = []; }
-    }
-    const remote = await callMangleService(predicate, rawArgs);
-    if (remote.wired) {
-      return { predicate, results: remote.results, wired: true };
-    }
-    // Fallback: local facts store
-    const facts = this.facts[predicate];
-    return facts
-      ? { predicate, results: facts, wired: false }
-      : { predicate, results: [], wired: false, message: 'Unknown predicate' };
-  }
-
   async handleRequest(request: MCPRequest): Promise<MCPResponse> {
     if (!isValidJsonRpcRequest(request)) {
       return { jsonrpc: "2.0", id: null, error: { code: -32600, message: "Invalid Request" } };
@@ -548,13 +481,6 @@ class MCPServer {
           search_components: (a) => this.handleSearchComponents(a),
           validate_template: (a) => this.handleValidateTemplate(a),
         };
-        // Async tools: mangle_query
-        if (toolName === 'mangle_query') {
-          return this.handleMangleQuery(args).then((result) => {
-            void metrics.record(`tool.${toolName}`, 1, { tool: toolName, ts: Date.now() });
-            return { jsonrpc: "2.0", id, result: { content: [{ type: "text", text: JSON.stringify(result, null, 2) }] } };
-          }).catch((e: unknown) => ({ jsonrpc: "2.0", id, error: { code: -32603, message: String(e) } }));
-        }
         const handler = syncHandlers[toolName];
         if (!handler) {
           return { jsonrpc: "2.0", id, error: { code: -32602, message: `Unknown tool: ${toolName}` } };
@@ -579,7 +505,7 @@ class MCPServer {
           );
           return { jsonrpc: "2.0", id, result: { contents: [{ uri, mimeType: "application/json", text: JSON.stringify(modules, null, 2) }] } };
         }
-        if (uri === "mangle://facts") {
+        if (uri === "ui5://governance-facts") {
           return { jsonrpc: "2.0", id, result: { contents: [{ uri, mimeType: "application/json", text: JSON.stringify(this.facts, null, 2) }] } };
         }
         return { jsonrpc: "2.0", id, error: { code: -32602, message: `Unknown resource: ${uri}` } };
@@ -705,9 +631,8 @@ createServer(app).listen(port, () => {
 Server: http://localhost:${port}
 
 Tools: list_components, get_component, generate_angular_template,
-       generate_module_imports, search_components, validate_template,
-       mangle_query
+       generate_module_imports, search_components, validate_template
 
-Resources: ui5://components, ui5://modules, mangle://facts
+Resources: ui5://components, ui5://modules, ui5://governance-facts
 `);
 });

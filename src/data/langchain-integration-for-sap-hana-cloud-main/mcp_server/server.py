@@ -3,7 +3,7 @@
 """
 LangChain HANA Integration MCP Server
 
-Model Context Protocol server with Mangle reasoning integration.
+Model Context Protocol server for LangChain + HANA vector workflows.
 Provides tools for LangChain + HANA Cloud operations.
 """
 
@@ -506,20 +506,6 @@ class MCPServer:
             },
         }
 
-        # Mangle Query
-        self.tools["mangle_query"] = {
-            "name": "mangle_query",
-            "description": "Query the Mangle reasoning engine",
-            "inputSchema": {
-                "type": "object",
-                "properties": {
-                    "predicate": {"type": "string", "description": "Predicate to query"},
-                    "args": {"type": "string", "description": "Arguments as JSON array"},
-                },
-                "required": ["predicate"],
-            },
-        }
-
     def _register_resources(self):
         self.resources["langchain://vectorstores"] = {
             "uri": "langchain://vectorstores",
@@ -533,10 +519,10 @@ class MCPServer:
             "description": "Available LangChain chains",
             "mimeType": "application/json",
         }
-        self.resources["mangle://facts"] = {
-            "uri": "mangle://facts",
-            "name": "Mangle Facts",
-            "description": "Mangle fact store",
+        self.resources["langchain://governance-facts"] = {
+            "uri": "langchain://governance-facts",
+            "name": "Governance Facts",
+            "description": "Local MCP service registry and vector-store metadata",
             "mimeType": "application/json",
         }
 
@@ -633,22 +619,7 @@ class MCPServer:
         else:
             self.facts["vector_stores"].append({"table_name": table_name, "embedding_model": embedding_model, "documents_added": 0})
 
-        # L1 — try federation
-        probe = self._federated_mcp_call(
-            "mangle_query",
-            {"predicate": "service_available", "args": "[]"},
-            preferred=[self.hana_mcp_endpoint],
-        )
-        if probe:
-            return {
-                "table_name": table_name,
-                "embedding_model": embedding_model,
-                "status": "created/retrieved",
-                "backend": "federated",
-                "source": probe["source"],
-            }
-
-        # L2 — try direct HANA connection
+        # L1 — try direct HANA connection
         conn = _get_hana_connection()
         if conn is not None:
             try:
@@ -672,7 +643,7 @@ class MCPServer:
             except Exception:
                 pass  # fall through to local stub
 
-        # L3 — local stub
+        # L2 — local stub
         return {"table_name": table_name, "embedding_model": embedding_model, "status": "created/retrieved", "backend": "local"}
 
     def _handle_langchain_add_documents(self, args: dict) -> dict:
@@ -959,27 +930,6 @@ class MCPServer:
             "texts": chunks,
         }
 
-    def _handle_mangle_query(self, args: dict) -> dict:
-        predicate = args.get("predicate", "")
-        query_args = parse_json_arg(args.get("args", "[]"), [])
-        facts = self.facts.get(predicate)
-        if facts:
-            return {"predicate": predicate, "results": facts}
-        if predicate == "service_available":
-            return {"predicate": predicate, "results": self.facts.get("service_registry", [])}
-
-        delegation = self._federated_mcp_call(
-            "mangle_query",
-            {"predicate": predicate, "args": json.dumps(query_args)},
-            preferred=[self.hana_mcp_endpoint, self.odata_mcp_endpoint],
-        )
-        if delegation and isinstance(delegation.get("result"), dict):
-            remote_result = delegation["result"]
-            results = remote_result.get("results") if isinstance(remote_result, dict) else None
-            if isinstance(results, list) and len(results) > 0:
-                return {"predicate": predicate, "results": results, "source": delegation["source"]}
-        return {"predicate": predicate, "results": [], "message": "Unknown predicate"}
-
     def _handle_rerank_results(self, args: dict) -> dict:
         query = str(args.get("query", "") or "").strip()
         if not query:
@@ -1058,7 +1008,6 @@ class MCPServer:
                     "langchain_load_documents": self._handle_langchain_load_documents,
                     "langchain_split_text": self._handle_langchain_split_text,
                     "rerank_results": self._handle_rerank_results,
-                    "mangle_query": self._handle_mangle_query,
                 }
                 handler = handlers.get(tool_name)
                 if not handler:
@@ -1071,7 +1020,7 @@ class MCPServer:
 
             elif method == "resources/read":
                 uri = params.get("uri", "")
-                if uri == "mangle://facts":
+                if uri == "langchain://governance-facts":
                     return MCPResponse(id, {"contents": [{"uri": uri, "mimeType": "application/json", "text": json.dumps(self.facts, indent=2)}]})
                 if uri == "langchain://vectorstores":
                     return MCPResponse(id, {"contents": [{"uri": uri, "mimeType": "application/json", "text": json.dumps(self.facts.get("vector_stores", []), indent=2)}]})
@@ -1193,10 +1142,9 @@ Server: http://localhost:{port}
 
 Tools: langchain_chat, langchain_vector_store, langchain_add_documents,
        langchain_similarity_search, langchain_rag_chain, langchain_embeddings,
-       langchain_load_documents, langchain_split_text, rerank_results,
-       mangle_query
+       langchain_load_documents, langchain_split_text, rerank_results
 
-Resources: langchain://vectorstores, langchain://chains, mangle://facts
+Resources: langchain://vectorstores, langchain://chains, langchain://governance-facts
 """)
     server.serve_forever()
 

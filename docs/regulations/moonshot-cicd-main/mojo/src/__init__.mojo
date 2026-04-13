@@ -1,1 +1,0 @@
-# Moonshot Mojo package marker.

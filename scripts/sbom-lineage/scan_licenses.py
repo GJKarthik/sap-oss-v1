@@ -41,7 +41,7 @@ except ImportError:
     _YAML_AVAILABLE = False
 
 REPO_ROOT         = Path(__file__).resolve().parents[2]
-MANIFEST_PATH     = REPO_ROOT / "docs" / "sbom-lineage-manifest.yaml"
+MANIFEST_PATH     = REPO_ROOT / "docs" / "sbom" / "sbom-lineage-manifest.yaml"
 BOMS_DIR_DEFAULT  = Path(__file__).parent / "boms"
 
 # Source file extensions to scan
@@ -67,8 +67,8 @@ _COPYRIGHT_RE = re.compile(
     r"(Copyright\s.*?(?=\n|$))", re.IGNORECASE
 )
 
-# Long-form boilerplate → SPDX ID mapping (for projects like mangle-main that use
-# the full Apache 2.0 header block rather than the compact SPDX short-form).
+# Long-form boilerplate → SPDX ID mapping (for upstream trees that ship the full
+# Apache 2.0 header block rather than the compact SPDX short-form).
 _LONG_FORM_HEADERS: list[tuple[str, str]] = [
     ("Licensed under the Apache License, Version 2.0",        "Apache-2.0"),
     ("GNU Affero General Public License",                      "AGPL-3.0-only"),
@@ -303,13 +303,15 @@ def main() -> None:
 
     for svc in services:
         path_str = svc.get("path", "")
+        bom_stem = svc.get("bom_stem", path_str)
+        report_key = bom_stem.replace("/", "-")
         svc_dir  = args.repo_root / path_str
-        bom_path = args.boms_dir / f"{path_str}.cyclonedx.json"
+        bom_path = args.boms_dir / f"{bom_stem}.cyclonedx.json"
 
         if not svc_dir.is_dir():
             continue
 
-        print(f"  Scanning {path_str} ...", file=sys.stderr, flush=True)
+        print(f"  Scanning {path_str} ({report_key}) ...", file=sys.stderr, flush=True)
         scan = scan_service(svc_dir)
 
         # Load declared licenses from BOM
@@ -324,7 +326,7 @@ def main() -> None:
         comparison = compare_licenses(set(scan["discovered_spdx"]), declared)
 
         summary = {
-            "service":            path_str,
+            "service":            report_key,
             "total_files":        scan["total_files"],
             "files_with_spdx":    scan["files_with_spdx"],
             "spdx_coverage_pct":  scan["spdx_coverage_pct"],
@@ -343,7 +345,7 @@ def main() -> None:
         if not args.no_file_detail:
             scan_out["files"] = scan["files"]
         scan_out["discovered_copyrights"] = scan.get("discovered_copyrights", [])
-        out_path = out_dir / f"{path_str}.scan.json"
+        out_path = out_dir / f"{report_key}.scan.json"
         out_path.write_text(json.dumps(scan_out, indent=2, ensure_ascii=False), encoding="utf-8")
 
     # Write cross-service summary

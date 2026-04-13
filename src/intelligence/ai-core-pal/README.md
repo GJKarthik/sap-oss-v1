@@ -19,7 +19,6 @@ MCP Server for SAP HANA PAL (Predictive Analysis Library) algorithms with SAP BT
 | `pal_classification` | Classification | Random Forest |
 | `pal_regression` | Linear regression | Linear Regression |
 | `hana_tables` | Discover PAL-suitable tables | - |
-| `mangle_query` | Datalog inference | - |
 
 ## Quick Start
 
@@ -102,7 +101,7 @@ curl -X POST http://localhost:8084/mcp \
 ### Build Image
 
 ```bash
-docker build -f Dockerfile.python -t ai-core-pal:latest .
+docker build -t ai-core-pal:latest .
 ```
 
 ### Run Container
@@ -191,7 +190,7 @@ src/intelligence/ai-core-pal/
 ├── deploy/
 │   └── kyma/
 │       └── ai-core-pal-deployment.yaml  # Complete Kyma deployment (NEW)
-├── Dockerfile.python            # Python Dockerfile (NEW)
+├── Dockerfile                   # Python MCP server image
 ├── requirements.txt             # Dependencies (NEW)
 ├── .env.example                 # Environment template (NEW)
 └── README.md                    # This file

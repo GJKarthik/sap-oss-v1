@@ -7,6 +7,6 @@ for SAP HANA Predictive Analysis Library (PAL).
 Note: HANA data is confidential - always routes to vLLM only.
 """
 
-from .aicore_pal_agent import AICorePALAgent, MangleEngine
+from .aicore_pal_agent import AICorePALAgent, GovernanceEngine
 
-__all__ = ["AICorePALAgent", "MangleEngine"]
+__all__ = ["AICorePALAgent", "GovernanceEngine"]

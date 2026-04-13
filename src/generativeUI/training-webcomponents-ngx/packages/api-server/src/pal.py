@@ -30,7 +30,6 @@ class PALCatalog:
         self._load_mock_data()
 
     def _load_mock_data(self):
-        # Migrated from Zig domain/pal.zig
         self.categories = [
             PALCategory(id="classification", name="Classification", description="Algorithms for categorical target prediction", count=5),
             PALCategory(id="regression", name="Regression", description="Algorithms for continuous target prediction", count=3),
@@ -105,7 +104,6 @@ class HanaPALClient:
         return {"status": "success", "procedure": procedure_name, "message": "Simulated execution on SAP HANA"}
 
     async def discover_schema(self, table_name: str) -> Dict[str, Any]:
-        # Ported from Zig hana/hana_client.zig
         logger.info(f"Discovering schema for table: {table_name}")
         return {
             "table": table_name,

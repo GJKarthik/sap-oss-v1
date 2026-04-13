@@ -1,7 +1,0 @@
-.env
-.env.local
-node_modules/
-coverage/
-test-results/
-*.js.map
-dist/

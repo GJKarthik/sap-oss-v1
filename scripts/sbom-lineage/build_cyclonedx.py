@@ -26,7 +26,7 @@ except ImportError:
     yaml = None
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
-MANIFEST_PATH = REPO_ROOT / "docs" / "sbom-lineage-manifest.yaml"
+MANIFEST_PATH = REPO_ROOT / "docs" / "sbom" / "sbom-lineage-manifest.yaml"
 BOMS_DIR = REPO_ROOT / "scripts" / "sbom-lineage" / "boms"
 
 

@@ -6,7 +6,7 @@
       "digest": {
         "sha256": "75fc837a227fa3c46e6960df4a794c66d31b643cf63c7e032cce25660f668371"
       },
-      "uri": "https://github.com/sap-oss/sap-oss/blob/refs/heads/main/scripts/sbom-lineage/boms/ai-core-pal.cyclonedx.json"
+      "uri": "https://github.com/sap-oss/sap-oss-v1/blob/refs/heads/main/scripts/sbom-lineage/boms/ai-core-pal.cyclonedx.json"
     }
   ],
   "predicateType": "https://slsa.dev/provenance/v1",
@@ -14,7 +14,7 @@
     "buildDefinition": {
       "buildType": "https://github.com/sap-oss/sbom-pipeline/build-type/cyclonedx@v1",
       "externalParameters": {
-        "source": "https://github.com/sap-oss/sap-oss",
+        "source": "https://github.com/sap-oss/sap-oss-v1",
         "ref": "refs/heads/main",
         "bom_file": "scripts/sbom-lineage/boms/ai-core-pal.cyclonedx.json"
       },
@@ -26,35 +26,35 @@
       },
       "resolvedDependencies": [
         {
-          "uri": "https://github.com/sap-oss/sap-oss/blob/refs/heads/main/scripts/sbom-lineage/build_cyclonedx.py",
+          "uri": "https://github.com/sap-oss/sap-oss-v1/blob/refs/heads/main/scripts/sbom-lineage/build_cyclonedx.py",
           "name": "build_cyclonedx.py",
           "digest": {
             "sha256": "b75fe02be2a54071330945dddb208d15e4f319444e843c02cfedc69088a47227"
           }
         },
         {
-          "uri": "https://github.com/sap-oss/sap-oss/blob/refs/heads/main/scripts/sbom-lineage/audit_sbom.py",
+          "uri": "https://github.com/sap-oss/sap-oss-v1/blob/refs/heads/main/scripts/sbom-lineage/audit_sbom.py",
           "name": "audit_sbom.py",
           "digest": {
             "sha256": "7377b75590f0cae0e75beae745e81c1aa492fce64fdf3de1f24d0269d96a46f9"
           }
         },
         {
-          "uri": "https://github.com/sap-oss/sap-oss/blob/refs/heads/main/scripts/sbom-lineage/vuln_overlay.py",
+          "uri": "https://github.com/sap-oss/sap-oss-v1/blob/refs/heads/main/scripts/sbom-lineage/vuln_overlay.py",
           "name": "vuln_overlay.py",
           "digest": {
             "sha256": "2e9a35c206a2ef6cd9afb22ffef77da5eff0e3cc137eab0fe08747e9f10afe18"
           }
         },
         {
-          "uri": "https://github.com/sap-oss/sap-oss/blob/refs/heads/main/scripts/sbom-lineage/slsa_provenance.py",
+          "uri": "https://github.com/sap-oss/sap-oss-v1/blob/refs/heads/main/scripts/sbom-lineage/slsa_provenance.py",
           "name": "slsa_provenance.py",
           "digest": {
             "sha256": "130e91de286275cac69c3fc740f1ee9ecc9265eb83cb0c086645e3524aaddc21"
           }
         },
         {
-          "uri": "https://github.com/sap-oss/sap-oss",
+          "uri": "https://github.com/sap-oss/sap-oss-v1",
           "digest": {
             "gitCommit": "f5e4fda56c4e63388e9bdf44b476f2433a48f6c0"
           },
@@ -70,7 +70,7 @@
         }
       },
       "metadata": {
-        "invocationId": "https://github.com/sap-oss/sap-oss/actions/runs/local",
+        "invocationId": "https://github.com/sap-oss/sap-oss-v1/actions/runs/local",
         "startedOn": "2026-02-28T11:33:49Z",
         "finishedOn": "2026-02-28T11:33:49Z"
       },

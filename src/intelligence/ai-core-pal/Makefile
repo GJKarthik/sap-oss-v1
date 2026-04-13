@@ -32,7 +32,7 @@ all: build
 ## Build Docker image
 build:
 	@echo "Building $(IMAGE)..."
-	docker build -f Dockerfile.python -t $(IMAGE_NAME):$(IMAGE_TAG) .
+	docker build -t $(IMAGE_NAME):$(IMAGE_TAG) .
 	docker tag $(IMAGE_NAME):$(IMAGE_TAG) $(IMAGE)
 	@echo "Build complete: $(IMAGE)"
 

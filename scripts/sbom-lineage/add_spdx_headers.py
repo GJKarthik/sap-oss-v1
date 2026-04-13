@@ -8,9 +8,8 @@ Rules:
   - Shebang-aware: #!/usr/bin/env ... line stays as line 1.
   - Skips generated files (DO NOT EDIT, Code generated, AUTO-GENERATED).
   - Skips vendor / node_modules / dist / build / target / .venv directories.
-  - Does NOT touch: mangle-main (Google LLC copyright already present →
-    covered by REUSE.toml), vllm-main, elasticsearch-main (upstream OSS),
-    ai-core-pal / ai-core-streaming (empty stubs).
+  - Does NOT touch: vllm-main, elasticsearch-main (upstream OSS),
+    ai-core-pal / ai-core-streaming (stub BOMs / vendored trees as configured).
 
 Exit codes:
   0 — success
@@ -85,12 +84,6 @@ SERVICE_METADATA: dict[str, dict] = {
         "copyright": "Elie Habib",
         "year":      "2024",
         "exts":      {".rs"},
-    },
-    "mangle-query-service": {
-        "license":   "Apache-2.0",
-        "copyright": "SAP SE",
-        "year":      "2024",
-        "exts":      {".go"},
     },
 }
 

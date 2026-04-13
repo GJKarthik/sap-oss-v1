@@ -78,9 +78,6 @@ def _safe_url(raw: str, var_name: str, fallback: str = "") -> str:
         return fallback
 
 
-# Finding 1: real Mangle engine endpoint
-_MANGLE_ENDPOINT = _safe_url(os.environ.get("MANGLE_ENDPOINT", ""), "MANGLE_ENDPOINT")
-
 # Finding 2: HANA Cloud REST SQL for durable audit persistence
 _HANA_BASE_URL   = _safe_url(os.environ.get("HANA_BASE_URL",      ""), "HANA_BASE_URL")
 _HANA_CLIENT_ID  = os.environ.get("HANA_CLIENT_ID",    "")
@@ -179,11 +176,10 @@ def _hana_ensure_audit_table() -> None:
     _hana_audit_table_ready = True
 
 
-class MangleEngine:
-    """Mangle query interface for governance rules."""
-    
-    def __init__(self, rules_paths: Optional[List[str]] = None):
-        self.rules_paths = rules_paths or []
+class GovernanceEngine:
+    """In-process governance rules for routing, tool policy, and prompting."""
+
+    def __init__(self) -> None:
         self.facts: Dict[str, Any] = {}
         self._load_rules()
     
@@ -197,7 +193,7 @@ class MangleEngine:
         
         self.facts["agent_can_use"] = {
             "generate_component", "complete_code", "lookup_documentation",
-            "list_components", "generate_template", "mangle_query"
+            "list_components", "generate_template",
         }
         
         # No approval required for public code tools
@@ -221,27 +217,7 @@ class MangleEngine:
             }
         }
     
-    def _query_remote(self, predicate: str, args: tuple) -> Optional[List[Dict]]:
-        """Call the real Mangle query service. Returns None on any error."""
-        payload = json.dumps({"predicate": predicate, "args": list(args)}).encode()
-        req = urllib.request.Request(
-            f"{_MANGLE_ENDPOINT}/query",
-            data=payload,
-            headers={"Content-Type": "application/json"},
-            method="POST",
-        )
-        try:
-            with urllib.request.urlopen(req, timeout=5) as resp:
-                body = json.loads(resp.read().decode())
-                return body.get("results", [])
-        except Exception:
-            return None
-
     def query(self, predicate: str, *args) -> List[Dict]:
-        if _MANGLE_ENDPOINT:
-            remote = self._query_remote(predicate, args)
-            if remote is not None:
-                return remote
         if predicate == "route_to_vllm":
             request = args[0] if args else ""
             request_lower = request.lower()
@@ -337,16 +313,13 @@ class UI5NgxAgent:
 
     Higher autonomy (L3) for public code generation.
     Routes to vLLM when context.data_classification is set to a sensitive
-    value (e.g. 'personal', 'confidential', 'customer') or when the Mangle
-    governance engine returns a positive route_to_vllm result.
+    value (e.g. 'personal', 'confidential', 'customer') or when the policy
+    engine returns a positive route_to_vllm result.
     Keyword scanning of prompt text is no longer used for routing.
     """
 
     def __init__(self):
-        self.mangle = MangleEngine([
-            "mangle/domain/agents.mg",
-            "../regulations/mangle/rules.mg"
-        ])
+        self.governance = GovernanceEngine()
         self.mcp_endpoint = "http://localhost:9160/mcp"
         self.vllm_endpoint = "http://localhost:9180/mcp"
         self.audit_log: List[Dict] = []
@@ -356,7 +329,7 @@ class UI5NgxAgent:
     
     def _resolve_routing(self, prompt: str, context: Dict) -> tuple:
         """Determine backend from structured context.data_classification first,
-        then fall back to Mangle governance query. Never scans prompt text.
+        then fall back to policy-engine routing. Never scans prompt text.
 
         Returns (backend, endpoint, reason).
         """
@@ -370,13 +343,13 @@ class UI5NgxAgent:
                 f"Structured data_classification='{classification}' requires private inference",
             )
 
-        # Mangle governance engine as secondary check
-        routing_result = self.mangle.query("route_to_vllm", prompt)
+        # Policy engine as secondary check
+        routing_result = self.governance.query("route_to_vllm", prompt)
         if routing_result:
             return (
                 "vllm",
                 self.vllm_endpoint,
-                routing_result[0].get("reason", "Mangle governance: route to vLLM"),
+                routing_result[0].get("reason", "Policy: route to vLLM"),
             )
 
         return (
@@ -393,7 +366,7 @@ class UI5NgxAgent:
         backend, endpoint, routing_reason = self._resolve_routing(prompt, context)
         
         # Safety check
-        if not self.mangle.query("safety_check_passed", tool):
+        if not self.governance.query("safety_check_passed", tool):
             self._log_audit("blocked", tool, backend, prompt)
             return {
                 "status": "blocked",
@@ -403,7 +376,7 @@ class UI5NgxAgent:
             }
         
         # Get prompting policy
-        prompting = self.mangle.query("get_prompting_policy", "ui5-angular-service-v1")
+        prompting = self.governance.query("get_prompting_policy", "ui5-angular-service-v1")
         prompting_policy = prompting[0] if prompting else {}
         
         # Execute via MCP
@@ -505,8 +478,8 @@ class UI5NgxAgent:
     
     def check_governance(self, prompt: str, context: Optional[Dict] = None) -> Dict[str, Any]:
         backend, _, reason = self._resolve_routing(prompt, context or {})
-        prompting = self.mangle.query("get_prompting_policy", "ui5-angular-service-v1")
-        autonomy = self.mangle.query("autonomy_level")
+        prompting = self.governance.query("get_prompting_policy", "ui5-angular-service-v1")
+        autonomy = self.governance.query("autonomy_level")
 
         return {
             "routing": {"backend": backend, "reason": reason},

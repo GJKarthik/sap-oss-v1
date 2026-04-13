@@ -38,13 +38,13 @@ graph TD
 
 | Document | Description | Audience |
 |----------|-------------|----------|
-| **[00-glossary.md](00-glossary.md)** | Definitions of key terms: Mangle, MCP, PAL, RAG, etc. | 🏢 👩‍💻 🏛 All |
+| **[00-glossary.md](00-glossary.md)** | Definitions of key terms: data prep, MCP, PAL, RAG, etc. | 🏢 👩‍💻 🏛 All |
 | **[01-enterprise-ai-problem.md](01-enterprise-ai-problem.md)** | The business problems this architecture solves | 🏢 Executives, 🏛 Architects |
 | **[02-component-mapping.md](02-component-mapping.md)** | What each component does and why | 🏛 Architects, 👩‍💻 Developers |
 | **[03-ensemble-strategy.md](03-ensemble-strategy.md)** | How components integrate and handle failures | 🏛 Architects, 🔐 Security |
 | **[04-ensemble-of-services.md](04-ensemble-of-services.md)** | Deep dive into all 13 services | 👩‍💻 Developers, 🏛 Architects |
 | **[05-oss-adaptation-strategy.md](05-oss-adaptation-strategy.md)** | How SAP OSS was hardened for enterprise | 👩‍💻 Developers, 🔐 Security |
-| **[06-architectural-patterns.md](06-architectural-patterns.md)** | The four patterns: OpenAI, Mangle, MCP, Agentic | 🏛 Architects, 👩‍💻 Developers |
+| **[06-architectural-patterns.md](06-architectural-patterns.md)** | The four patterns: OpenAI, data prep, MCP, Agentic | 🏛 Architects, 👩‍💻 Developers |
 | **[07-sap-open-source-ai-strategy.md](07-sap-open-source-ai-strategy.md)** | SAP's open-source AI strategy: MCP, A2A, AAIF | 🏢 Executives, 🏛 Architects, 👩‍💻 Developers |
 | **[08-executive-summary.md](08-executive-summary.md)** | **Concise summary** of the complete architecture | 🏢 Executives, 🏛 Architects |
 
@@ -68,7 +68,7 @@ flowchart LR
     subgraph Solution["✅ The Solution"]
         S1["🔌 SAP AI SDK<br/>Unified interface"]
         S2["📦 CAP LLM Plugin<br/>HANA RAG"]
-        S3["🧹 Mangle Layer<br/>PII anonymization"]
+        S3["🧹 Data prep layer<br/>PII anonymization"]
         S4["⚡ Streaming Core<br/>Real-time delivery"]
     end
     
@@ -118,7 +118,7 @@ Start with **[00-glossary.md](00-glossary.md)** to learn the terminology, then d
 | **Interaction** | UI5 Web Components, OData Vocabularies | User interface, semantic standards |
 | **Orchestration** | AI SDK, CAP LLM Plugin, LangChain | Model routing, RAG, privacy |
 | **Intelligence** | MCP PAL, Data Copilot, GenAI Toolkit | Forecasting, data quality, ML |
-| **Foundation** | Streaming Core, vLLM, Mangle, HANA Vector Store | Performance, search, transformation |
+| **Foundation** | Streaming Core, vLLM, data prep, HANA Vector Store | Performance, search, transformation |
 | **Governance** | World Monitor | Observability, tracing, audit |
 
 ### The Four Architectural Patterns
@@ -126,7 +126,7 @@ Start with **[00-glossary.md](00-glossary.md)** to learn the terminology, then d
 | Pattern | Purpose | See |
 |---------|---------|-----|
 | **OpenAI Compliance** | Universal API interface | [06-architectural-patterns.md](06-architectural-patterns.md#1-openai-compliance) |
-| **Mangle** | Data sanitization | [06-architectural-patterns.md](06-architectural-patterns.md#2-the-mangle-pattern) |
+| **Data prep** | Data sanitization | [06-architectural-patterns.md](06-architectural-patterns.md#2-data-preparation-data-sanitization) |
 | **MCP** | Tool discovery | [06-architectural-patterns.md](06-architectural-patterns.md#3-mcp-model-context-protocol) |
 | **Agentic Reasoning** | Autonomous decisions | [06-architectural-patterns.md](06-architectural-patterns.md#4-agentic-reasoning) |
 

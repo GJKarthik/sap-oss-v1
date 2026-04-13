@@ -18,9 +18,9 @@ origin behind a Kyma APIRule:
 ## Prerequisites
 
 1. Push the application images to your registry:
-   - `ghcr.io/your-org/sap-oss-angular-shell:latest`
-   - `ghcr.io/your-org/sap-oss-api-server:latest`
-2. Create an image pull secret named `sap-oss-registry` in `sap-ai-services`.
+   - `ghcr.io/your-org/sap-oss-v1-angular-shell:latest`
+   - `ghcr.io/your-org/sap-oss-v1-api-server:latest`
+2. Create an image pull secret named `sap-oss-v1-registry` in `sap-ai-services`.
 3. Ensure these internal dependency services exist in the same namespace, or update the URLs in `training-stack.yaml`:
    - `vllm` on port `8080`
    - `model-optimizer` on port `8001`
@@ -30,7 +30,7 @@ Example image pull secret:
 
 ```bash
 kubectl create namespace sap-ai-services
-kubectl create secret docker-registry sap-oss-registry \
+kubectl create secret docker-registry sap-oss-v1-registry \
   --namespace sap-ai-services \
   --docker-server=ghcr.io \
   --docker-username="$GITHUB_USERNAME" \

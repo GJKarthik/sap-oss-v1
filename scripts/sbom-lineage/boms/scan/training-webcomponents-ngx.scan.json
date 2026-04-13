@@ -1,0 +1,28 @@
+{
+  "service": "training-webcomponents-ngx",
+  "total_files": 1129,
+  "files_with_spdx": 1,
+  "spdx_coverage_pct": 0,
+  "files_with_copyright": 77,
+  "discovered_spdx": [
+    "Apache-2.0"
+  ],
+  "declared_spdx": [
+    "Apache-2.0",
+    "BSD-3-Clause",
+    "LicenseRef-SAP-DeveloperAgreement",
+    "MIT"
+  ],
+  "comparison": {
+    "extra_in_source": [],
+    "missing_in_source": [
+      "BSD-3-Clause",
+      "MIT"
+    ],
+    "verdict": "OK"
+  },
+  "discovered_copyrights": [
+    "Copyright 2009-2024 SAP SE or an SAP affiliate company.",
+    "copyright and permission notice in the Unicode-Data-Files-LICENSE.txt available at the same location as this file or visit http://www.unicode.org/copyright.html\";"
+  ]
+}

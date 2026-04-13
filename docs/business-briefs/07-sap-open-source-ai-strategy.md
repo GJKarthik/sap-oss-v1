@@ -146,7 +146,7 @@ pie title SAP Open Source Investment (2025)
 | **Open source fund** | Central fund launched | Sustainable open-source ecosystem |
 | **OpenChain certification** | "Whole entity" certification | Enterprise-grade compliance |
 
-> **💡 Connection to Your Architecture:** Your Ensemble's Streaming Core (Zig-based), Mangle transformation layer, and Kubernetes operators (referenced in the GitHub repositories) are exactly the types of infrastructure projects SAP is supporting through NeoNephos and other foundations. The Fork Metadata Standard ensures that every open-source component in your stack is auditable and secure.
+> **💡 Connection to Your Architecture:** Your Ensemble's Streaming Core (native), data prep transformation layer, and Kubernetes operators (referenced in the GitHub repositories) are exactly the types of infrastructure projects SAP is supporting through NeoNephos and other foundations. The Fork Metadata Standard ensures that every open-source component in your stack is auditable and secure.
 
 ---
 
@@ -262,7 +262,7 @@ Your Ensemble architecture directly implements and extends each pillar of SAP's 
 
 | Benefit | Mechanism | SAP Strategy Alignment |
 |---------|-----------|------------------------|
-| **Proven patterns** | Four architectural patterns (OpenAI, Mangle, MCP, Agentic) | Industry best practices |
+| **Proven patterns** | Four architectural patterns (OpenAI, data prep, MCP, Agentic) | Industry best practices |
 | **Extensible foundation** | Add new services via MCP/OpenAI compliance | Open ecosystem design |
 | **Enterprise governance** | World Monitor observability, XSUAA integration | Compliance & security |
 | **Cloud-native operations** | Kubernetes operators, NeoNephos alignment | Infrastructure investment |

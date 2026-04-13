@@ -138,7 +138,7 @@ flowchart TB
     
     subgraph Context["📦 CONTEXT LAYER"]
         CAP["CAP LLM Plugin<br/>SAP/cap-llm-plugin"]
-        MNG["Mangle Layer<br/>PII Anonymization"]
+        DP["Data prep layer<br/>PII Anonymization"]
     end
     
     subgraph Foundation["⚡ FOUNDATION LAYER"]
@@ -171,8 +171,8 @@ flowchart TB
 |------------|----------|---------------|
 | **Fragmentation** | Single SDK abstracts all providers | `SAP/ai-sdk-js` + SAP AI Core |
 | **Data Gap** | Automatic HANA context injection | `SAP/cap-llm-plugin` |
-| **Privacy** | PII stripped before reasoning | Mangle layer |
-| **Performance** | Token streaming at scale | Streaming Core (Zig) |
+| **Privacy** | PII stripped before reasoning | data prep layer |
+| **Performance** | Token streaming at scale | Streaming Core (native) |
 
 ---
 
@@ -221,11 +221,11 @@ The following documents in this series detail how each component fulfills its ro
 2. **[03-ensemble-strategy.md](03-ensemble-strategy.md)** — The "How": A request's journey through the ensemble
 3. **[04-ensemble-of-services.md](04-ensemble-of-services.md)** — The Detail: 13 services and their orchestration
 4. **[05-oss-adaptation-strategy.md](05-oss-adaptation-strategy.md)** — The Hardening: From OSS to enterprise-grade
-5. **[06-architectural-patterns.md](06-architectural-patterns.md)** — The "Why": OpenAI, Mangle, MCP, and Agentic patterns
+5. **[06-architectural-patterns.md](06-architectural-patterns.md)** — The "Why": OpenAI, data prep, MCP, and Agentic patterns
 
 ---
 
-*For definitions of technical terms (Mangle, MCP, PAL, RAG, etc.), see the [Glossary](00-glossary.md).*
+*For definitions of technical terms (data prep, MCP, PAL, RAG, etc.), see the [Glossary](00-glossary.md).*
 
 ---
 

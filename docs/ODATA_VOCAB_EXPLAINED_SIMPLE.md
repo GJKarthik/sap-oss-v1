@@ -129,7 +129,7 @@ User Question → Get Schema + Annotations → LLM → Better SQL Query
 | `list_vocabularies` | Shows all SAP annotation categories | Know what metadata types exist |
 | `search_terms` | Find annotation instructions by keyword | "How do I mark a field as currency?" |
 | `get_term` | Understand an annotation's structure | Know what `@Measures.ISOCurrency` expects |
-| `get_mangle_facts` | Export as knowledge graph | Build relationships for reasoning |
+| `get_vocabulary_facts` | Export vocabulary as Datalog-style facts | Build relationships for reasoning |
 
 ### The Service Does NOT:
 - ❌ Store your actual table schemas (GL_ACCOUNT columns)

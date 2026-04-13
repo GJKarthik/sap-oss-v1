@@ -1,6 +1,0 @@
-# MCP server Python dependencies
-# stdlib-only except for the optional graph-RAG backend
-
-# Graph-RAG: embedded KùzuDB property graph database
-# Remove or comment out if graph features are not needed.
-kuzu>=0.7.0

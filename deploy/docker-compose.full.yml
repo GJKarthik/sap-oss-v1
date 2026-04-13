@@ -200,7 +200,6 @@ services:
       - HANA_PASSWORD=${HANA_PASSWORD}
       - HANA_URL=${HANA_URL}
       - VLLM_URL=http://vllm:8080
-      - MANGLE_ROUTER_URL=http://agent-router:8010
       - AICORE_CLIENT_ID=${AICORE_CLIENT_ID}
       - AICORE_CLIENT_SECRET=${AICORE_CLIENT_SECRET}
       - AICORE_AUTH_URL=${AICORE_AUTH_URL}
@@ -234,7 +233,6 @@ services:
       - PORT=8050
       - HANA_URL=${HANA_URL}
       - VLLM_URL=http://vllm:8080
-      - MANGLE_ROUTER_URL=http://agent-router:8010
       - AICORE_CLIENT_ID=${AICORE_CLIENT_ID}
       - AICORE_CLIENT_SECRET=${AICORE_CLIENT_SECRET}
       - AICORE_AUTH_URL=${AICORE_AUTH_URL}

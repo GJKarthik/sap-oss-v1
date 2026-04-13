@@ -7,6 +7,6 @@ for UI5 Angular component generation and development.
 Note: AI Core default - public code/documentation. Routes to vLLM only for user data.
 """
 
-from .ui5_ngx_agent import UI5NgxAgent, MangleEngine
+from .ui5_ngx_agent import UI5NgxAgent, GovernanceEngine
 
-__all__ = ["UI5NgxAgent", "MangleEngine"]
+__all__ = ["UI5NgxAgent", "GovernanceEngine"]

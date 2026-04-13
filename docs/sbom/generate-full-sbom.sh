@@ -105,15 +105,6 @@ if [ -f "$REPO_ROOT/vllm-main/pyproject.toml" ]; then
     done
 fi
 
-echo "📦 Extracting mangle-query-service (go.mod)..."
-if [ -f "$REPO_ROOT/mangle-query-service/go.mod" ]; then
-    grep -E "^\t[a-z]" "$REPO_ROOT/mangle-query-service/go.mod" 2>/dev/null | \
-    awk '{print $1 "|" $2}' | while IFS='|' read -r pkg version; do
-        name=$(echo "$pkg" | sed 's|.*/||')
-        add_component "library" "$name" "$version" "pkg:golang/$pkg@$version" "Apache-2.0"
-    done
-fi
-
 echo "📦 Adding Python service dependencies..."
 # data-cleaning-copilot
 for dep in pandas numpy scikit-learn fastapi openai pydantic; do

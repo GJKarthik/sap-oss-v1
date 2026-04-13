@@ -80,8 +80,6 @@ services:
       # Private LLM endpoint
       - PRIVATE_LLM_URL=${PRIVATE_LLM_URL:-http://vllm:8080}
       - VLLM_URL=http://vllm:8080
-      # Mangle router
-      - MANGLE_ROUTER_URL=http://agent-router:8010
       # AI Core credentials
       - AICORE_CLIENT_ID=${AICORE_CLIENT_ID}
       - AICORE_CLIENT_SECRET=${AICORE_CLIENT_SECRET}
@@ -131,7 +129,6 @@ services:
       - HANA_URL=${HANA_URL}
       # vLLM endpoint
       - VLLM_URL=http://vllm:8080
-      - MANGLE_ROUTER_URL=http://agent-router:8010
       # Gen AI Hub (optional)
       - GENAI_HUB_API_KEY=${GENAI_HUB_API_KEY:-}
       - GENAI_HUB_BASE_URL=${GENAI_HUB_BASE_URL:-}
@@ -174,7 +171,6 @@ services:
       - PORT=8020
       - HANA_URL=${HANA_URL}
       - VLLM_URL=http://vllm:8080
-      - MANGLE_ROUTER_URL=http://agent-router:8010
       - LOG_LEVEL=${LOG_LEVEL:-INFO}
     labels:
       sap.ai.tier: "tier2-intelligence"
@@ -207,7 +203,6 @@ services:
       - PORT=8050
       - HANA_URL=${HANA_URL}
       - VLLM_URL=http://vllm:8080
-      - MANGLE_ROUTER_URL=http://agent-router:8010
       # AI Core credentials
       - AICORE_CLIENT_ID=${AICORE_CLIENT_ID}
       - AICORE_CLIENT_SECRET=${AICORE_CLIENT_SECRET}
@@ -257,8 +252,6 @@ services:
       # vLLM endpoint for on-premise LLM (PII data)
       - VLLM_URL=http://vllm:8080
       - PRIVATE_LLM_URL=http://vllm:8080
-      # Mangle router for governance rules
-      - MANGLE_ROUTER_URL=http://agent-router:8010
       # AI Core credentials (for cloud LLM fallback)
       - AICORE_CLIENT_ID=${AICORE_CLIENT_ID}
       - AICORE_CLIENT_SECRET=${AICORE_CLIENT_SECRET}

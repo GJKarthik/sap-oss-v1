@@ -1,5 +1,26 @@
 # SAP OSS System - Software Bill of Materials
 
+## CycloneDX + git lineage (generated)
+
+These files are produced from `scripts/sbom-lineage/boms/*.cyclonedx.json` and `scripts/sbom-lineage/lineage.json`:
+
+| Output | Description |
+|--------|-------------|
+| `docs/sbom-lineage.tex` | Combined report (all services) |
+| `docs/sbom/sbom-lineage.tex` | Copy of the combined report |
+| `docs/sbom/sbom-<cyclonedx-stem>.tex` | One LaTeX file per entry in `sbom-lineage-manifest.yaml` |
+
+Regenerate:
+
+```bash
+python3 scripts/sbom-lineage/collect_lineage.py
+python3 scripts/sbom-lineage/generate_latex.py --output docs/sbom-lineage.tex
+cp docs/sbom-lineage.tex docs/sbom/sbom-lineage.tex
+python3 scripts/sbom-lineage/gen_per_service.py
+```
+
+---
+
 ## Main artifact
 
 | File | Format | Description |

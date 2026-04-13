@@ -118,7 +118,7 @@ The MCP service is a **development/AI tool**, not a runtime component:
 │   ┌────────────────────────────────────────────────────────────────┐   │
 │   │  AI System                                                      │   │
 │   │                                                                 │   │
-│   │  1. Calls: get_mangle_facts()                                  │   │
+│   │  1. Calls: get_vocabulary_facts()                                │   │
 │   │                   ↓                                             │   │
 │   │  2. Gets 1479 Prolog facts:                                    │   │
 │   │     term_applies_to("UI", "LineItem", "EntityType").           │   │

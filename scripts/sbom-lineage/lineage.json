@@ -2,284 +2,570 @@
   "lineage": {
     "services": [
       {
-        "path": "ai-sdk-js-main",
-        "name": "SAP AI SDK (JavaScript)",
-        "upstream": "",
-        "plans_path": "",
-        "commits": [
-          {
-            "hash": "f5e4fda56c4e",
-            "date": "2026-02-26 10:34:16 +0800",
-            "author": "plturrell",
-            "subject": "ai-sdk-js: OData Vocabularies integration for TypeScript type generation"
-          },
-          {
-            "hash": "9b8071156c1a",
-            "date": "2026-02-26 09:31:42 +0800",
-            "author": "plturrell",
-            "subject": "Phase 1 & 2: OData Vocabularies Universal Dictionary enhancements"
-          },
-          {
-            "hash": "2903724fb841",
-            "date": "2026-02-26 02:55:18 +0800",
-            "author": "plturrell",
-            "subject": "feat: add Angular UI5 frontend and FastAPI backend for data-cleaning-copilot"
-          },
-          {
-            "hash": "2adac6cec957",
-            "date": "2026-02-26 02:07:06 +0800",
-            "author": "plturrell",
-            "subject": "Update"
-          },
-          {
-            "hash": "0b20d62146fa",
-            "date": "2026-02-26 02:02:05 +0800",
-            "author": "plturrell",
-            "subject": "Initial commit for fresh sap-oss repo"
-          }
-        ]
-      },
-      {
-        "path": "cap-llm-plugin-main",
-        "name": "CAP LLM Plugin",
-        "upstream": "",
-        "plans_path": "",
-        "commits": [
-          {
-            "hash": "9b8071156c1a",
-            "date": "2026-02-26 09:31:42 +0800",
-            "author": "plturrell",
-            "subject": "Phase 1 & 2: OData Vocabularies Universal Dictionary enhancements"
-          },
-          {
-            "hash": "2903724fb841",
-            "date": "2026-02-26 02:55:18 +0800",
-            "author": "plturrell",
-            "subject": "feat: add Angular UI5 frontend and FastAPI backend for data-cleaning-copilot"
-          },
-          {
-            "hash": "0b20d62146fa",
-            "date": "2026-02-26 02:02:05 +0800",
-            "author": "plturrell",
-            "subject": "Initial commit for fresh sap-oss repo"
-          }
-        ]
-      },
-      {
-        "path": "world-monitor-main",
-        "name": "World Monitor",
-        "upstream": "",
-        "plans_path": "",
-        "commits": [
-          {
-            "hash": "9b8071156c1a",
-            "date": "2026-02-26 09:31:42 +0800",
-            "author": "plturrell",
-            "subject": "Phase 1 & 2: OData Vocabularies Universal Dictionary enhancements"
-          },
-          {
-            "hash": "0b20d62146fa",
-            "date": "2026-02-26 02:02:05 +0800",
-            "author": "plturrell",
-            "subject": "Initial commit for fresh sap-oss repo"
-          }
-        ]
-      },
-      {
-        "path": "ui5-webcomponents-ngx-main",
-        "name": "UI5 Web Components (Angular)",
-        "upstream": "",
-        "plans_path": "",
-        "commits": [
-          {
-            "hash": "9b8071156c1a",
-            "date": "2026-02-26 09:31:42 +0800",
-            "author": "plturrell",
-            "subject": "Phase 1 & 2: OData Vocabularies Universal Dictionary enhancements"
-          },
-          {
-            "hash": "0b20d62146fa",
-            "date": "2026-02-26 02:02:05 +0800",
-            "author": "plturrell",
-            "subject": "Initial commit for fresh sap-oss repo"
-          }
-        ]
-      },
-      {
-        "path": "odata-vocabularies-main",
-        "name": "OData Vocabularies",
-        "upstream": "",
-        "plans_path": "",
-        "commits": [
-          {
-            "hash": "9f8ccfcab546",
-            "date": "2026-02-26 10:26:38 +0800",
-            "author": "plturrell",
-            "subject": "Full integration plan - service-by-service implementation guide"
-          },
-          {
-            "hash": "27741f4846cc",
-            "date": "2026-02-26 10:24:17 +0800",
-            "author": "plturrell",
-            "subject": "Bidirectional integration audit - OData Vocabularies as Universal Dictionary"
-          },
-          {
-            "hash": "34244e05197e",
-            "date": "2026-02-26 10:20:30 +0800",
-            "author": "plturrell",
-            "subject": "OpenAI-compatible API endpoints for OData Vocabularies"
-          },
-          {
-            "hash": "13c5ff04a93b",
-            "date": "2026-02-26 10:16:34 +0800",
-            "author": "plturrell",
-            "subject": "Health check enhancements - comprehensive monitoring"
-          },
-          {
-            "hash": "0f57dce72086",
-            "date": "2026-02-26 10:13:51 +0800",
-            "author": "plturrell",
-            "subject": "Complete API documentation for 5/5 rating"
-          },
-          {
-            "hash": "d446b27a4c7c",
-            "date": "2026-02-26 10:09:57 +0800",
-            "author": "plturrell",
-            "subject": "Complete test suite for 5/5 rating - 97 tests total"
-          },
-          {
-            "hash": "cfc07eb6d4ec",
-            "date": "2026-02-26 10:04:16 +0800",
-            "author": "plturrell",
-            "subject": "Quick wins for 5/5 rating - Tests, Docker, CI"
-          },
-          {
-            "hash": "2a4fd20a76fb",
-            "date": "2026-02-26 09:58:34 +0800",
-            "author": "plturrell",
-            "subject": "Production Configuration for OData Vocabularies"
-          },
-          {
-            "hash": "c989079c279f",
-            "date": "2026-02-26 09:53:38 +0800",
-            "author": "plturrell",
-            "subject": "Add Production Readiness Review for OData Vocabularies"
-          },
-          {
-            "hash": "4d661effbe07",
-            "date": "2026-02-26 09:50:37 +0800",
-            "author": "plturrell",
-            "subject": "Phase 5: Cross-Platform Integration for OData Vocabularies"
-          },
-          {
-            "hash": "ad0df2b30ba9",
-            "date": "2026-02-26 09:47:06 +0800",
-            "author": "plturrell",
-            "subject": "Phase 4: Governance & Compliance for OData Vocabularies"
-          },
-          {
-            "hash": "f01820006f55",
-            "date": "2026-02-26 09:42:19 +0800",
-            "author": "plturrell",
-            "subject": "Phase 3: Vector Embeddings & RAG for OData Vocabularies"
-          },
-          {
-            "hash": "9b8071156c1a",
-            "date": "2026-02-26 09:31:42 +0800",
-            "author": "plturrell",
-            "subject": "Phase 1 & 2: OData Vocabularies Universal Dictionary enhancements"
-          },
-          {
-            "hash": "0b20d62146fa",
-            "date": "2026-02-26 02:02:05 +0800",
-            "author": "plturrell",
-            "subject": "Initial commit for fresh sap-oss repo"
-          }
-        ]
-      },
-      {
         "path": "src/generativeUI/training-webcomponents-ngx",
         "name": "Data Cleaning Copilot",
         "upstream": "",
         "plans_path": "",
         "commits": [
           {
-            "hash": "9b8071156c1a",
-            "date": "2026-02-26 09:31:42 +0800",
+            "hash": "445d04e83eae",
+            "date": "2026-04-13 11:11:13 +0800",
             "author": "plturrell",
-            "subject": "Phase 1 & 2: OData Vocabularies Universal Dictionary enhancements"
+            "subject": "feat(generativeUI): workspace readiness, gateway BTP, API hardening"
           },
           {
-            "hash": "2903724fb841",
-            "date": "2026-02-26 02:55:18 +0800",
+            "hash": "432dfd233aa9",
+            "date": "2026-04-13 09:08:21 +0800",
             "author": "plturrell",
-            "subject": "feat: add Angular UI5 frontend and FastAPI backend for data-cleaning-copilot"
+            "subject": "feat(generativeUI): HANA persistence, notifications API, and local auth"
           },
           {
-            "hash": "0b20d62146fa",
-            "date": "2026-02-26 02:02:05 +0800",
+            "hash": "52df72b7cc92",
+            "date": "2026-04-13 08:47:05 +0800",
             "author": "plturrell",
-            "subject": "Initial commit for fresh sap-oss repo"
+            "subject": "docs: update READMEs with correct versions, routes, and add missing docs"
+          },
+          {
+            "hash": "c3edc3c574ef",
+            "date": "2026-04-13 08:42:27 +0800",
+            "author": "plturrell",
+            "subject": "test: add theme-utils spec, extend quick-access search and training shell tests"
+          },
+          {
+            "hash": "6cfe444e4dae",
+            "date": "2026-04-13 08:41:27 +0800",
+            "author": "plturrell",
+            "subject": "style(training): refine nav-island animations, spacing, and design tokens"
+          },
+          {
+            "hash": "efc97d0758a8",
+            "date": "2026-04-10 12:20:56 +0800",
+            "author": "plturrell",
+            "subject": "fix(mode): align types, config, and helpers with spec"
+          },
+          {
+            "hash": "3dbd97a3b4d8",
+            "date": "2026-04-10 08:30:41 +0800",
+            "author": "plturrell",
+            "subject": "Sync all changes to GitHub main remote"
+          },
+          {
+            "hash": "d28635642970",
+            "date": "2026-04-10 08:21:38 +0800",
+            "author": "plturrell",
+            "subject": "feat(nav): add modeRelevance metadata to all route definitions"
+          },
+          {
+            "hash": "bf263823b2e4",
+            "date": "2026-04-10 08:21:36 +0800",
+            "author": "plturrell",
+            "subject": "feat(cowork): add CoworkPlanComponent with approve/edit/reject flow"
+          },
+          {
+            "hash": "0995bb7356b7",
+            "date": "2026-04-10 08:04:23 +0800",
+            "author": "plturrell",
+            "subject": "feat(shell): integrate mode switcher, route highlighting, and mode theme class"
+          },
+          {
+            "hash": "944bcbb95f06",
+            "date": "2026-04-10 08:01:46 +0800",
+            "author": "plturrell",
+            "subject": "feat(mode): add ModeSwitcherComponent with keyboard navigation"
+          },
+          {
+            "hash": "e119fce76d8a",
+            "date": "2026-04-10 07:53:34 +0800",
+            "author": "plturrell",
+            "subject": "feat(store): add activeMode signal with computed capabilities and persistence"
+          },
+          {
+            "hash": "ef331739787a",
+            "date": "2026-04-08 17:50:53 +0800",
+            "author": "plturrell",
+            "subject": "fix: forensic sweep — 13 security/config fixes across ui5-webcomponents-ngx"
+          },
+          {
+            "hash": "82a8c12d8ed6",
+            "date": "2026-04-08 17:31:45 +0800",
+            "author": "plturrell",
+            "subject": "refactor: WWDC sweep — type safety, shared config, specs, i18n"
+          },
+          {
+            "hash": "41131e10033e",
+            "date": "2026-04-08 17:11:08 +0800",
+            "author": "plturrell",
+            "subject": "feat: WWDC-grade Data Product Manager release polish"
+          },
+          {
+            "hash": "ed451e9e7a16",
+            "date": "2026-04-08 11:50:20 +0800",
+            "author": "plturrell",
+            "subject": "chore: final cleanup and metadata sync post-Python migration"
+          },
+          {
+            "hash": "728465a0a511",
+            "date": "2026-04-08 11:49:39 +0800",
+            "author": "plturrell",
+            "subject": "feat: 100% Python migration & Horizon Cinematic refactor"
+          },
+          {
+            "hash": "e9aafb4ce965",
+            "date": "2026-04-08 07:59:31 +0800",
+            "author": "plturrell",
+            "subject": "feat(i18n): elevate all 7 languages to full parity — sync keys, generalize chat, add language switcher"
+          },
+          {
+            "hash": "f798c5ce9a95",
+            "date": "2026-04-08 00:50:39 +0800",
+            "author": "plturrell",
+            "subject": "feat(i18n): internationalize hardcoded strings in shell, dashboard, pipeline, store; clean !important from model-optimizer"
+          },
+          {
+            "hash": "7c6714da38c7",
+            "date": "2026-04-08 00:42:43 +0800",
+            "author": "plturrell",
+            "subject": "polish: 9/10 WWDC-grade refinements — accessibility, architecture, code quality"
+          },
+          {
+            "hash": "cd8802f7c1cd",
+            "date": "2026-04-08 00:37:36 +0800",
+            "author": "plturrell",
+            "subject": "fix: WWDC keynote-grade polish — bugs, accessibility, and code quality"
+          },
+          {
+            "hash": "f3b42f023f54",
+            "date": "2026-04-08 00:25:20 +0800",
+            "author": "plturrell",
+            "subject": "feat(pipeline): sync pipeline state to global AppStore for atmospheric aura"
+          },
+          {
+            "hash": "8012141447b3",
+            "date": "2026-04-08 00:23:41 +0800",
+            "author": "plturrell",
+            "subject": "feat(dashboard): wire live platform narrative and atmospheric aura triggers"
+          },
+          {
+            "hash": "cfd62a293935",
+            "date": "2026-04-08 00:16:53 +0800",
+            "author": "plturrell",
+            "subject": "polish(ui): WWDC-caliber accessibility and design system refinements"
+          },
+          {
+            "hash": "fab1b69652b8",
+            "date": "2026-04-08 00:03:34 +0800",
+            "author": "plturrell",
+            "subject": "feat: comprehensive UI enhancements and cross-app integration"
+          },
+          {
+            "hash": "7b9ac2e9671e",
+            "date": "2026-04-07 23:39:57 +0800",
+            "author": "plturrell",
+            "subject": "chore: cleanup hidden cache directories"
+          },
+          {
+            "hash": "a79f388d629f",
+            "date": "2026-04-07 23:30:18 +0800",
+            "author": "plturrell",
+            "subject": "chore: final cleanup and sync remaining changes"
+          },
+          {
+            "hash": "31560a833127",
+            "date": "2026-04-07 23:28:45 +0800",
+            "author": "plturrell",
+            "subject": "chore: sync remaining component changes"
+          },
+          {
+            "hash": "9f5fd86dddc1",
+            "date": "2026-04-07 23:28:09 +0800",
+            "author": "plturrell",
+            "subject": "chore: cleanup junk files and temporary artifacts"
+          },
+          {
+            "hash": "4dc368f65652",
+            "date": "2026-04-07 22:09:43 +0800",
+            "author": "plturrell",
+            "subject": "chore: force sync mcp service changes"
+          },
+          {
+            "hash": "a96867091979",
+            "date": "2026-04-07 22:09:25 +0800",
+            "author": "plturrell",
+            "subject": "chore: final sync of mcp service"
+          },
+          {
+            "hash": "52a993372344",
+            "date": "2026-04-07 22:09:10 +0800",
+            "author": "plturrell",
+            "subject": "chore: finalize mcp service sync"
+          },
+          {
+            "hash": "65931c9e65a6",
+            "date": "2026-04-07 22:08:54 +0800",
+            "author": "plturrell",
+            "subject": "chore: sync remaining mcp service changes"
+          },
+          {
+            "hash": "bd0093e34a77",
+            "date": "2026-04-07 22:08:39 +0800",
+            "author": "plturrell",
+            "subject": "chore: sync environment configuration changes"
+          },
+          {
+            "hash": "301b67e7689f",
+            "date": "2026-04-07 22:08:17 +0800",
+            "author": "plturrell",
+            "subject": "chore: archive vllm-main and migrate to vllm-turboquant"
+          },
+          {
+            "hash": "8bcfd30f1965",
+            "date": "2026-04-07 21:56:56 +0800",
+            "author": "plturrell",
+            "subject": "chore: sync remaining environment file changes"
+          },
+          {
+            "hash": "0c73a40495ba",
+            "date": "2026-04-07 21:53:19 +0800",
+            "author": "plturrell",
+            "subject": "feat: add comprehensive UX improvements for AI Fabric"
+          },
+          {
+            "hash": "e379ba0bd27b",
+            "date": "2026-04-07 16:04:28 +0800",
+            "author": "turrellcraigjohn-alt",
+            "subject": "fix: resolve all pre-existing build errors in AI Fabric and Training (#58)"
+          },
+          {
+            "hash": "bde06a8056f7",
+            "date": "2026-04-07 15:15:36 +0800",
+            "author": "turrellcraigjohn-alt",
+            "subject": "a11y: add ARIA landmarks, roles, and labels across all three apps (#56)"
+          },
+          {
+            "hash": "577c4b389393",
+            "date": "2026-04-07 14:45:48 +0800",
+            "author": "turrellcraigjohn-alt",
+            "subject": "feat: medium-priority audit enhancements across all apps (#55)"
+          },
+          {
+            "hash": "ebcec175e367",
+            "date": "2026-04-07 13:54:38 +0800",
+            "author": "turrellcraigjohn-alt",
+            "subject": "fix: reconcile shell navigation across all apps (#54)"
+          },
+          {
+            "hash": "13906b57b151",
+            "date": "2026-04-07 12:14:40 +0800",
+            "author": "turrellcraigjohn-alt",
+            "subject": "feat: high-priority UI audit improvements (#53)"
+          },
+          {
+            "hash": "041279beef83",
+            "date": "2026-04-07 11:52:09 +0800",
+            "author": "turrellcraigjohn-alt",
+            "subject": "feat: add team collaboration features and bypass auth for dev (#52)"
+          },
+          {
+            "hash": "af865c99188a",
+            "date": "2026-04-06 15:05:34 +0800",
+            "author": "turrellcraigjohn-alt",
+            "subject": "fix: eliminate all visible UI errors for demo (#50)"
+          },
+          {
+            "hash": "8cf39b664a66",
+            "date": "2026-04-06 14:23:02 +0800",
+            "author": "turrellcraigjohn-alt",
+            "subject": "fix: OCR build, i18n APP_INITIALIZER, test fixes (#48)"
+          },
+          {
+            "hash": "16e2f964f26e",
+            "date": "2026-04-06 14:12:18 +0800",
+            "author": "turrellcraigjohn-alt",
+            "subject": "fix: OCR build + i18n APP_INITIALIZER for OnPush rendering (#47)"
+          },
+          {
+            "hash": "20ef2ff47878",
+            "date": "2026-04-06 11:55:01 +0800",
+            "author": "turrellcraigjohn-alt",
+            "subject": "fix: remove duplicate dismissDemoTour method (#46)"
+          },
+          {
+            "hash": "dcd86d1b2022",
+            "date": "2026-04-06 10:44:12 +0800",
+            "author": "turrellcraigjohn-alt",
+            "subject": "demo perfection: shell i18n fix, UI5 build fix, aifabric Arabic i18n, E2E baselines (#45)"
+          },
+          {
+            "hash": "d44192c1b147",
+            "date": "2026-04-06 10:08:09 +0800",
+            "author": "turrellcraigjohn-alt",
+            "subject": "forensic audit & SAP Sapphire/WWDC demo polish (#44)"
+          },
+          {
+            "hash": "cea2f4461fb3",
+            "date": "2026-04-06 09:44:30 +0800",
+            "author": "plturrell",
+            "subject": "feat: audit fixes + HANA handler wiring (Option B)"
+          },
+          {
+            "hash": "a35a6d0f7cd7",
+            "date": "2026-04-06 09:01:28 +0800",
+            "author": "plturrell",
+            "subject": "docs: update training audit status"
+          },
+          {
+            "hash": "29b6af6ff4ae",
+            "date": "2026-04-06 09:00:05 +0800",
+            "author": "plturrell",
+            "subject": "chore: sync pending UI audit updates"
+          },
+          {
+            "hash": "10070c78f937",
+            "date": "2026-04-06 08:26:19 +0800",
+            "author": "plturrell",
+            "subject": "sync: commit remaining 28 uncommitted changes"
+          },
+          {
+            "hash": "8263faa28f2d",
+            "date": "2026-04-06 08:19:59 +0800",
+            "author": "plturrell",
+            "subject": "sync: commit all pending changes on main"
+          },
+          {
+            "hash": "83d12951fc60",
+            "date": "2026-04-05 20:25:45 +0800",
+            "author": "plturrell",
+            "subject": "merge: integrate remote OCR UI + add pipeline endpoint, DocumentContextService, i18n"
+          },
+          {
+            "hash": "2e99fc0a26db",
+            "date": "2026-04-05 19:47:11 +0800",
+            "author": "plturrell",
+            "subject": "feat(ocr): pipeline endpoint, VectorService, BilingualDate, missing deps"
+          },
+          {
+            "hash": "311b7649ff5c",
+            "date": "2026-04-05 18:21:18 +0800",
+            "author": "turrellcraigjohn-alt",
+            "subject": "feat(ocr-ui): dual-persona document OCR UI (#42)"
+          },
+          {
+            "hash": "6ddfe4e942a6",
+            "date": "2026-04-04 14:35:44 +0800",
+            "author": "plturrell",
+            "subject": "feat(ocr-ui): normal mode tabs, expert split pane HTML, QA/export panels"
+          },
+          {
+            "hash": "56418c7f1f2e",
+            "date": "2026-04-04 14:35:21 +0800",
+            "author": "plturrell",
+            "subject": "feat(ocr-ui): component skeleton — OcrCurationState, isExpert, health polling, all QA methods"
+          },
+          {
+            "hash": "b12231d7eeb5",
+            "date": "2026-04-04 14:24:17 +0800",
+            "author": "plturrell",
+            "subject": "feat(ocr): add curation, export, qa i18n keys (en + ar)"
+          },
+          {
+            "hash": "a6133592ebf1",
+            "date": "2026-04-04 14:17:29 +0800",
+            "author": "plturrell",
+            "subject": "feat(ocr): update service — /ocr/pdf endpoint, health check, 14-term extractAll, pipeline stub"
+          },
+          {
+            "hash": "18f911a33c57",
+            "date": "2026-04-04 10:39:04 +0800",
+            "author": "plturrell",
+            "subject": "Harden generative UI apps and add OCR design spec"
+          },
+          {
+            "hash": "89af57536941",
+            "date": "2026-04-04 09:56:48 +0800",
+            "author": "plturrell",
+            "subject": "feat: add Arabic financial document wizard with OCR, review, and analysi"
+          },
+          {
+            "hash": "b250c4e64cd5",
+            "date": "2026-04-04 09:40:00 +0800",
+            "author": "plturrell",
+            "subject": "feat: add DocumentContextService for OCR to chat integration"
+          },
+          {
+            "hash": "85ec36b039c3",
+            "date": "2026-04-04 09:34:38 +0800",
+            "author": "plturrell",
+            "subject": "feat: add Arabic data generation toggle and stats to pipeline component"
+          },
+          {
+            "hash": "d579e929b271",
+            "date": "2026-04-04 09:34:25 +0800",
+            "author": "plturrell",
+            "subject": "feat: add Arabic AI model dashboard metrics and pipeline orchestration"
+          },
+          {
+            "hash": "56cd4368c3c0",
+            "date": "2026-04-03 19:05:04 +0800",
+            "author": "turrellcraigjohn-alt",
+            "subject": "feat: deploy Gemma 4 Arabic model and connect to chat interface (#36)"
+          },
+          {
+            "hash": "95d299b9c189",
+            "date": "2026-04-03 14:00:09 +0800",
+            "author": "turrellcraigjohn-alt",
+            "subject": "test: add Playwright RTL visual regression tests for Arabic layout (#35)"
+          },
+          {
+            "hash": "ac9d3d6cac6a",
+            "date": "2026-04-03 13:50:53 +0800",
+            "author": "turrellcraigjohn-alt",
+            "subject": "feat: add Arabic document OCR page with FastAPI backend (#34)"
+          },
+          {
+            "hash": "d1b46bfeaf31",
+            "date": "2026-04-03 13:40:18 +0800",
+            "author": "turrellcraigjohn-alt",
+            "subject": "feat: add locale-aware date, number, and currency formatting for Arabic (#33)"
+          },
+          {
+            "hash": "543fe86c31ca",
+            "date": "2026-04-03 13:29:10 +0800",
+            "author": "plturrell",
+            "subject": "feat: i18n Arabic support + UI error fixes across all generativeUI apps"
+          },
+          {
+            "hash": "ff6c06e3249f",
+            "date": "2026-04-03 12:35:46 +0800",
+            "author": "turrellcraigjohn-alt",
+            "subject": "feat: production-grade Arabic support — fonts, BiDi, ICU plurals, translation QA, OCR tests (#30)"
+          },
+          {
+            "hash": "8fbd5538fcc5",
+            "date": "2026-04-03 11:58:43 +0800",
+            "author": "turrellcraigjohn-alt",
+            "subject": "feat: add Arabic language support with RTL, financial training data, and PDF OCR (#29)"
+          },
+          {
+            "hash": "0594dd5a0d7a",
+            "date": "2026-04-03 11:46:51 +0800",
+            "author": "plturrell",
+            "subject": "sync: add Arabic-first OCR and model-routing updates"
+          },
+          {
+            "hash": "0c895111c52a",
+            "date": "2026-04-02 16:05:40 +0800",
+            "author": "plturrell",
+            "subject": "sync: remove stale claude worktrees, add suite Dockerfiles"
+          },
+          {
+            "hash": "2f9dc4025b51",
+            "date": "2026-04-02 15:46:47 +0800",
+            "author": "plturrell",
+            "subject": "sync: update gitignore, add dockerfiles, shell and playground updates"
+          },
+          {
+            "hash": "bf95fac60e29",
+            "date": "2026-04-02 14:35:14 +0800",
+            "author": "plturrell",
+            "subject": "sync: add gateway, Dockerfiles, and connectivity test for generativeUI suite"
+          },
+          {
+            "hash": "aec01dc13f16",
+            "date": "2026-04-02 12:17:50 +0800",
+            "author": "plturrell",
+            "subject": "sync: include pending workspace updates and removals"
+          },
+          {
+            "hash": "5dd5ef8db0fa",
+            "date": "2026-04-02 12:04:09 +0800",
+            "author": "plturrell",
+            "subject": "chore: rebrand generativeUI project names and references"
+          },
+          {
+            "hash": "b6b34a291887",
+            "date": "2026-04-02 12:03:01 +0800",
+            "author": "plturrell",
+            "subject": "sync: stage all renames, modifications, and new files for main"
           }
         ]
       },
       {
-        "path": "langchain-integration-for-sap-hana-cloud-main",
-        "name": "LangChain Integration for SAP HANA Cloud",
+        "path": "src/intelligence/ai-core-pal",
+        "name": "AI Core PAL (MCP / HANA PAL)",
         "upstream": "",
         "plans_path": "",
         "commits": [
           {
-            "hash": "9b8071156c1a",
-            "date": "2026-02-26 09:31:42 +0800",
+            "hash": "41131e10033e",
+            "date": "2026-04-08 17:11:08 +0800",
             "author": "plturrell",
-            "subject": "Phase 1 & 2: OData Vocabularies Universal Dictionary enhancements"
+            "subject": "feat: WWDC-grade Data Product Manager release polish"
           },
           {
-            "hash": "0b20d62146fa",
-            "date": "2026-02-26 02:02:05 +0800",
+            "hash": "728465a0a511",
+            "date": "2026-04-08 11:49:39 +0800",
             "author": "plturrell",
-            "subject": "Initial commit for fresh sap-oss repo"
-          }
-        ]
-      },
-      {
-        "path": "generative-ai-toolkit-for-sap-hana-cloud-main",
-        "name": "Generative AI Toolkit for SAP HANA Cloud",
-        "upstream": "",
-        "plans_path": "",
-        "commits": [
-          {
-            "hash": "9b8071156c1a",
-            "date": "2026-02-26 09:31:42 +0800",
-            "author": "plturrell",
-            "subject": "Phase 1 & 2: OData Vocabularies Universal Dictionary enhancements"
+            "subject": "feat: 100% Python migration & Horizon Cinematic refactor"
           },
           {
-            "hash": "0b20d62146fa",
-            "date": "2026-02-26 02:02:05 +0800",
-            "author": "plturrell",
-            "subject": "Initial commit for fresh sap-oss repo"
-          }
-        ]
-      },
-      {
-        "path": "vllm-main",
-        "name": "vLLM (inference engine)",
-        "upstream": "https://github.com/vllm-project/vllm",
-        "plans_path": "",
-        "commits": [
-          {
-            "hash": "9b8071156c1a",
-            "date": "2026-02-26 09:31:42 +0800",
-            "author": "plturrell",
-            "subject": "Phase 1 & 2: OData Vocabularies Universal Dictionary enhancements"
+            "hash": "176fb51806cf",
+            "date": "2026-04-07 13:28:01 +0800",
+            "author": "Karthikeyan",
+            "subject": "feat: update AI-Core-PAL MCP server and aifabric webcomponents"
           },
           {
-            "hash": "0b20d62146fa",
-            "date": "2026-02-26 02:02:05 +0800",
+            "hash": "79176110c66a",
+            "date": "2026-04-02 12:45:32 +0800",
+            "author": "Karthikeyan",
+            "subject": "docs(ai-core-pal): add ENDPOINTS.md with live MCP URLs and usage samples"
+          },
+          {
+            "hash": "5dd5ef8db0fa",
+            "date": "2026-04-02 12:04:09 +0800",
             "author": "plturrell",
-            "subject": "Initial commit for fresh sap-oss repo"
+            "subject": "chore: rebrand generativeUI project names and references"
+          },
+          {
+            "hash": "3a247c5f5500",
+            "date": "2026-04-01 11:01:52 +0800",
+            "author": "Karthikeyan",
+            "subject": "feat(ai-core-pal): add production MCP server with PAL tools"
+          },
+          {
+            "hash": "dc7da5b8090e",
+            "date": "2026-03-31 09:05:14 +0800",
+            "author": "plturrell",
+            "subject": "chore: consolidate training console and remove deprecated data cleaning app"
+          },
+          {
+            "hash": "d39c7e0d891e",
+            "date": "2026-03-16 11:40:00 +0800",
+            "author": "plturrell",
+            "subject": "feat: merge mangle-query-service into elasticsearch-main"
+          },
+          {
+            "hash": "32388add5791",
+            "date": "2026-03-10 14:21:29 +0800",
+            "author": "plturrell",
+            "subject": "chore: sync all repo changes across monorepo projects"
+          },
+          {
+            "hash": "5b429809ef3c",
+            "date": "2026-03-09 11:51:22 +0800",
+            "author": "plturrell",
+            "subject": "Sync: Reorganize SBOM files, add technical assessments, add SAC components and workflows"
+          },
+          {
+            "hash": "54f39f71b643",
+            "date": "2026-03-07 11:55:00 +0800",
+            "author": "plturrell",
+            "subject": "Add SAP AI Experience service map with 4-sentence descriptions, input dependencies, and outputs for all 14 services across 4 tiers"
+          },
+          {
+            "hash": "0ea145b23002",
+            "date": "2026-03-07 10:43:57 +0800",
+            "author": "plturrell",
+            "subject": "Sync all changes; add .gitignore for node_modules, models, large data files"
           }
         ]
       }

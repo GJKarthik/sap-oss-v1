@@ -151,7 +151,7 @@ curl -X POST https://odata-vocab.c-9323c0b.kyma.ondemand.com/mcp \
 
 ---
 
-## Tool 6: `get_mangle_facts`
+## Tool 6: `get_vocabulary_facts`
 
 ### Purpose
 Export vocabulary knowledge as Prolog-style facts for reasoning/knowledge graph.
@@ -166,7 +166,7 @@ Export vocabulary knowledge as Prolog-style facts for reasoning/knowledge graph.
 curl -X POST https://odata-vocab.c-9323c0b.kyma.ondemand.com/mcp \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer CHANGE_ME_GENERATE_SECURE_TOKEN" \
-  -d '{"jsonrpc":"2.0","id":6,"method":"tools/call","params":{"name":"get_mangle_facts","arguments":{"predicate":"term"}}}'
+  -d '{"jsonrpc":"2.0","id":6,"method":"tools/call","params":{"name":"get_vocabulary_facts","arguments":{"predicate":"term"}}}'
 ```
 
 ### Response (Sample)
@@ -186,7 +186,7 @@ type_property("Graph", "DetailsType", "url", "Edm.String").
 - **1479 total facts** available
 - Facts represent: vocabularies, terms, applies_to relationships, complex types, properties
 - Can query: "What terms apply to Property?" → `term_applies_to(_, _, "Property")`
-- Powers the Mangle knowledge graph for semantic queries
+- Powers vocabulary-backed logical queries and knowledge-graph style reasoning
 
 ---
 
@@ -241,7 +241,7 @@ curl -X POST https://odata-vocab.c-9323c0b.kyma.ondemand.com/mcp \
 - **19 vocabularies** with **242 terms** total
 - **125 complex types** (structured annotation values like HeaderInfoType)
 - **31 enum types** (constrained values like CriticalityType)
-- **1479 mangle facts** for knowledge graph queries
+- **1479 vocabulary Datalog facts** for knowledge graph queries
 - Per-vocabulary breakdown shows which are most feature-rich
 
 ---
@@ -253,7 +253,7 @@ curl -X POST https://odata-vocab.c-9323c0b.kyma.ondemand.com/mcp \
 | `list_vocabularies` | ✅ | 19 vocabularies with term counts |
 | `search_terms` | ✅ | Full-text search across all terms |
 | `get_term` | ✅ | Detailed term metadata |
-| `get_mangle_facts` | ✅ | 1479 Prolog facts for reasoning |
+| `get_vocabulary_facts` | ✅ | 1479 Prolog facts for reasoning |
 | `get_statistics` | ✅ | Aggregate counts and breakdown |
 
 ## Tools Needing Configuration

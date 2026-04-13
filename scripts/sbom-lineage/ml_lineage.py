@@ -31,7 +31,7 @@ except ImportError:
     _YAML_AVAILABLE = False
 
 REPO_ROOT        = Path(__file__).resolve().parents[2]
-MANIFEST_PATH    = REPO_ROOT / "docs" / "sbom-lineage-manifest.yaml"
+MANIFEST_PATH    = REPO_ROOT / "docs" / "sbom" / "sbom-lineage-manifest.yaml"
 BOMS_DIR_DEFAULT = Path(__file__).parent / "boms"
 
 # ── ML framework detection signatures ────────────────────────────────────────

@@ -1866,7 +1866,7 @@ async def index_lineage_entities(payload: LineageIndexPayload):
         "status": "hana_ready" if os.getenv("HANA_HOST", "") else "sample_ready",
     }
 
-# --- PAL & MCP GATEWAY (Migrated from Zig) ---
+# --- PAL & MCP GATEWAY ---
 
 @app.get("/pal/categories")
 async def list_pal_categories():
@@ -1893,7 +1893,7 @@ async def mcp_gateway(request: Request):
     body = await request.json()
     method = body.get("method")
     
-    # Mock handlers for key MCP tools formerly in Zig
+    # Mock handlers for key MCP tools
     if method == "tools/list":
         return {
             "tools": [

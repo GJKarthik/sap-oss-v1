@@ -46,10 +46,10 @@
 \section{Software Bill of Materials (CycloneDX)}
 Each subsection is generated from a CycloneDX~1.5 BOM (components, purl, license, dependency graph). Package URLs (purls) follow the \href{https://github.com/package-url/purl-spec}{PURL spec}.
 
-\subsection{LangChain Integration for SAP HANA Cloud}
-\textbf{Path:} \texttt{langchain-integration-for-sap-hana-cloud-main}
-\\ \textbf{CycloneDX:} spec 1.5, serial \texttt{urn:uuid:8a89088b-b2ae-49cc-94bc-beb946e3a3a4...}
-\\ \textbf{Generated:} 2026-02-28T10:30:32Z
+\subsection{Elasticsearch (SAP fork)}
+\textbf{Path:} \texttt{elasticsearch-main}
+\\ \textbf{CycloneDX:} spec 1.5, serial \texttt{urn:uuid:8a40673d-ea19-4e8a-a0b8-f290d29ce093...}
+\\ \textbf{Generated:} 2026-02-28T09:52:34Z
 \\ \textbf{Tool:} components
 
 \subsubsection*{Components}
@@ -68,26 +68,11 @@ Each subsection is generated from a CycloneDX~1.5 BOM (components, purl, license
 \endfoot
 \bottomrule
 \endlastfoot
-\raggedright langchain-core & 1.2.13 & library & \small\texttt{pkg:pypi/langchain-core@1.2.13} & MIT & \small — \\
-\raggedright langchain-classic & 1.0.1 & library & \small\texttt{pkg:pypi/langchain-classic@1.0.1} & MIT & \small — \\
-\raggedright langchain & 1.2.10 & library & \small\texttt{pkg:pypi/langchain@1.2.10} & MIT & \small — \\
-\raggedright hdbcli & 2.27.23 & library & \small\texttt{pkg:pypi/hdbcli@2.27.23} & LicenseRef-SAP-DeveloperAgreement & \small — \\
-\raggedright rdflib & 7.6.0 & library & \small\texttt{pkg:pypi/rdflib@7.6.0} & BSD-3-Clause & \small — \\
 \end{longtable}
 
 \subsubsection*{Dependency graph (top-level refs)}
 \begin{lstlisting}[style=depgraph]
   root-component
-    -> pkg:pypi/langchain-core@1.2.13, pkg:pypi/langchain-classic@1.0.1, pkg:pypi/langchain@1.2.10, pkg:pypi/hdbcli@2.27.23, pkg:pypi/rdflib@7.6.0
-  pkg:pypi/langchain-core@1.2.13
-    -> 
-  pkg:pypi/langchain-classic@1.0.1
-    -> 
-  pkg:pypi/langchain@1.2.10
-    -> 
-  pkg:pypi/hdbcli@2.27.23
-    -> 
-  pkg:pypi/rdflib@7.6.0
     -> 
 \end{lstlisting}
 

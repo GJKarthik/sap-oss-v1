@@ -197,7 +197,7 @@ src/intelligence/ai-core-pal/
 │   ├── aicore_pal_agent.py      # EXISTING - needs HANA methods
 │   └── hana_client.py           # NEW
 ├── requirements.txt             # NEW
-├── Dockerfile.python            # NEW - Python-only Dockerfile
+├── Dockerfile                   # Python MCP server image
 └── .env.example                 # NEW
 ```
 
@@ -210,7 +210,6 @@ src/intelligence/ai-core-pal/
 | `pal_clustering` | K-Means clustering | PAL_KMEANS |
 | `pal_classification` | Random Forest classifier | PAL_RANDOMFOREST |
 | `pal_regression` | Linear regression | PAL_LASSO |
-| `mangle_query` | Datalog inference | Mangle engine |
 
 ---
 
@@ -397,7 +396,7 @@ def test_mcp_tools_list():
 8. `scripts/populate_data.sql`
 
 ### Phase 4: Deployment
-9. `Dockerfile.python`
+9. `Dockerfile`
 10. `deploy/kyma/namespace.yaml`
 11. `deploy/kyma/statefulset.yaml`
 12. `deploy/kyma/service.yaml`

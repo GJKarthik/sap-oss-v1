@@ -23,7 +23,7 @@ SCHEMA_VERSION="${SCHEMA_VERSION:-1.5}"
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 BOMS_DIR="$REPO_ROOT/scripts/sbom-lineage/boms"
 
-# Python services — keep in sync with docs/sbom-lineage-manifest.yaml
+# Python services — keep in sync with docs/sbom/sbom-lineage-manifest.yaml
 PYTHON_SERVICES=(
   "src/generativeUI/training-webcomponents-ngx/packages/api-server"
   "langchain-integration-for-sap-hana-cloud-main"

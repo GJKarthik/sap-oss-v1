@@ -19,7 +19,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and this
 
 ### Added
 - Initial Nx 22 / Angular 20 monorepo scaffold with standalone component architecture
-- `PipelineComponent` — WebSocket live-log streaming for the Zig data-generation pipeline, 7-stage progress tracker, per-line colour coding
+- `PipelineComponent` — WebSocket live-log streaming for the data-generation pipeline, 7-stage progress tracker, per-line colour coding
 - `HanaExplorerComponent` — HANA Cloud explorer with SQL query workspace and preset library
 - `DataExplorerComponent` — tabbed browser for 16 static data assets and dynamically loaded SQL training pairs, with filtering by category and difficulty
 - `CompareComponent` — side-by-side A/B model comparison with capped 10-entry history and result-length winner indicator

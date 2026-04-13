@@ -15,8 +15,8 @@ from typing import Any, Dict, List, Optional
 from datetime import datetime, timezone
 
 
-class MangleEngine:
-    """Mangle query interface for governance rules."""
+class GovernanceEngine:
+    """In-process governance rules for routing and tool policy."""
     
     def __init__(self, rules_paths: Optional[List[str]] = None):
         self.rules_paths = rules_paths or []
@@ -33,7 +33,7 @@ class MangleEngine:
         
         self.facts["agent_can_use"] = {
             "lookup_vocabulary", "lookup_term", "generate_annotation",
-            "validate_annotation", "list_vocabularies", "mangle_query"
+            "validate_annotation", "list_vocabularies", "get_vocabulary_facts"
         }
         
         # No approval required for public docs
@@ -108,10 +108,7 @@ class ODataVocabAgent:
     """
     
     def __init__(self):
-        self.mangle = MangleEngine([
-            "mangle/domain/agents.mg",
-            "../regulations/mangle/rules.mg"
-        ])
+        self.governance = GovernanceEngine()
         self.mcp_endpoint = "http://localhost:9150/mcp"
         self.vllm_endpoint = "http://localhost:9180/mcp"
         self.audit_log: List[Dict] = []
@@ -122,7 +119,7 @@ class ODataVocabAgent:
         timestamp = datetime.now(timezone.utc).isoformat()
         
         # Check routing - default to AI Core for public docs
-        routing_result = self.mangle.query("route_to_vllm", prompt)
+        routing_result = self.governance.query("route_to_vllm", prompt)
         if routing_result:
             backend = "vllm"
             endpoint = self.vllm_endpoint
@@ -133,7 +130,7 @@ class ODataVocabAgent:
             routing_reason = "Public documentation - AI Core OK"
         
         # Safety check
-        if not self.mangle.query("safety_check_passed", tool):
+        if not self.governance.query("safety_check_passed", tool):
             self._log_audit("blocked", tool, backend, prompt)
             return {
                 "status": "blocked",
@@ -143,7 +140,7 @@ class ODataVocabAgent:
             }
         
         # Get prompting policy
-        prompting = self.mangle.query("get_prompting_policy", "odata-vocabulary-service-v1")
+        prompting = self.governance.query("get_prompting_policy", "odata-vocabulary-service-v1")
         prompting_policy = prompting[0] if prompting else {}
         
         # Execute via MCP
@@ -223,7 +220,7 @@ class ODataVocabAgent:
         return self.audit_log
     
     def check_governance(self, prompt: str) -> Dict[str, Any]:
-        routing_result = self.mangle.query("route_to_vllm", prompt)
+        routing_result = self.governance.query("route_to_vllm", prompt)
         if routing_result:
             backend = "vllm"
             reason = routing_result[0].get("reason", "Contains actual data")
@@ -231,8 +228,8 @@ class ODataVocabAgent:
             backend = "aicore"
             reason = "Public documentation - AI Core OK"
         
-        prompting = self.mangle.query("get_prompting_policy", "odata-vocabulary-service-v1")
-        autonomy = self.mangle.query("autonomy_level")
+        prompting = self.governance.query("get_prompting_policy", "odata-vocabulary-service-v1")
+        autonomy = self.governance.query("autonomy_level")
         
         return {
             "routing": {"backend": backend, "reason": reason},

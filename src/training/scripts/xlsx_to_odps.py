@@ -9,7 +9,7 @@ YAML with quality annotations and missing-data flags.
 Integration points:
   - data-cleaning-copilot: profiling (util_profiler), column mapping
   - ai-core-pal: output wired to PAL input ports
-  - Mangle: field classification rules
+  - Declarative field classification heuristics
 """
 
 import sys
@@ -96,8 +96,7 @@ def pandas_profile(headers, data, profile_fn):
 
 def classify_field(col_name: str, values: List, normalize_fn=None) -> Dict[str, str]:
     """
-    Classify a field as dimension/measure/identifier/date using Mangle-style rules.
-    Mirrors the classification logic in mangle/domain/hana_fields.mg.
+    Classify a field as dimension/measure/identifier/date using naming heuristics.
     """
     name_lower = col_name.lower()
 

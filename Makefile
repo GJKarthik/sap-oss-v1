@@ -55,15 +55,22 @@ scripts/sbom-lineage/boms: scripts/sbom-lineage/lineage.json
 docs/sbom-lineage.tex: scripts/sbom-lineage/boms
 	python3 scripts/sbom-lineage/generate_latex.py \
 	    --output docs/sbom-lineage.tex
+	cp docs/sbom-lineage.tex docs/sbom/sbom-lineage.tex
 
 # Convenience alias: run all three steps
 sbom-lineage: docs/sbom-lineage.tex
 
 # ── PDF: compile combined report (two passes for TOC/cross-refs) ─────────────
+# Uses pdflatex when available; otherwise tectonic (single pass, auto-fetches packages).
 sbom-lineage-pdf: sbom-lineage
-	cd docs && \
-	  pdflatex -interaction=nonstopmode sbom-lineage.tex && \
-	  pdflatex -interaction=nonstopmode sbom-lineage.tex
+	@if command -v pdflatex >/dev/null 2>&1; then \
+	  cd docs && pdflatex -interaction=nonstopmode sbom-lineage.tex && \
+	    pdflatex -interaction=nonstopmode sbom-lineage.tex; \
+	elif command -v tectonic >/dev/null 2>&1; then \
+	  cd docs && tectonic sbom-lineage.tex; \
+	else \
+	  echo "ERROR: install pdflatex (MacTeX/TeX Live) or tectonic (brew install tectonic)."; exit 1; \
+	fi
 	@echo "PDF written to docs/sbom-lineage.pdf"
 
 # ── Word: combined SBOM report (requires pandoc) ─────────────────────────────
@@ -76,13 +83,15 @@ sbom-lineage-export: sbom-lineage-pdf sbom-lineage-docx
 	@echo "Combined report: docs/sbom-lineage.pdf and docs/sbom-lineage.docx"
 
 # ── Per-service .tex files: one per manifest entry ───────────────────────────
-# Reads service paths from the manifest and generates docs/sbom-<service>.tex
+# Reads service paths from the manifest and writes docs/sbom/sbom-<cyclonedx-stem>.tex
 sbom-per-service: sbom-lineage
 	python3 scripts/sbom-lineage/gen_per_service.py
 
 # ── PDF: compile ALL per-service docs ───────────────────────────────────────
 sbom-pdf-all-services: sbom-per-service
-	@cd docs && for f in sbom-*.tex; do \
+	@cd docs/sbom && for f in sbom-*.tex; do \
+	  test -f "$$f" || continue; \
+	  case "$$f" in sbom-lineage.tex) continue;; esac; \
 	  echo "Compiling $$f ..."; \
 	  pdflatex -interaction=nonstopmode "$$f" > /dev/null && \
 	  pdflatex -interaction=nonstopmode "$$f" > /dev/null && \
@@ -93,12 +102,14 @@ sbom-pdf-all-services: sbom-per-service
 # ── Word: all per-service docs ───────────────────────────────────────────────
 sbom-docx-all-services: sbom-per-service
 	@command -v pandoc >/dev/null 2>&1 || (echo "ERROR: pandoc not found. Install from https://pandoc.org/installing.html"; exit 1)
-	@cd docs && for f in sbom-*.tex; do \
+	@cd docs/sbom && for f in sbom-*.tex; do \
+	  test -f "$$f" || continue; \
+	  case "$$f" in sbom-lineage.tex) continue;; esac; \
 	  echo "Converting $$f ..."; \
 	  pandoc "$$f" -o "$${f%.tex}.docx" --from=latex && \
 	  echo "  OK: $${f%.tex}.docx"; \
 	done
-	@echo "All per-service DOCX files written under docs/."
+	@echo "All per-service DOCX files written under docs/sbom/."
 
 sbom-export-all-services: sbom-pdf-all-services sbom-docx-all-services
 	@echo "Per-service PDF and DOCX export complete."
@@ -275,7 +286,7 @@ sbom-sarif:
 sbom-parity: sbom-full-audit sbom-sarif sbom-risk-report
 	@echo ""
 	@echo "========================================================"
-	@echo "  PwC + QuantumBlack + Mangle parity achieved."
+	@echo "  PwC + QuantumBlack SBOM parity achieved."
 	@echo "  Run 'make sbom-vuln' for vulnerability data (network)."
 	@echo "========================================================"
 

@@ -206,7 +206,6 @@ class Settings:
     # Paths
     vocabularies_dir: str = ""
     embeddings_dir: str = ""
-    mangle_dir: str = ""
     
     @classmethod
     def from_env(cls) -> "Settings":
@@ -220,7 +219,6 @@ class Settings:
             server=ServerConfig.from_env(),
             vocabularies_dir=os.getenv("VOCABULARIES_DIR", str(base_dir / "vocabularies")),
             embeddings_dir=os.getenv("EMBEDDINGS_DIR", str(base_dir / "_embeddings")),
-            mangle_dir=os.getenv("MANGLE_DIR", str(base_dir / "mangle"))
         )
     
     @classmethod

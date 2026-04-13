@@ -1,4 +1,4 @@
-# Architectural Patterns: OpenAI, Mangle, MCP, Agentic
+# Architectural Patterns: OpenAI, data prep, MCP, Agentic
 
 **For:** 🏛 Architects, 👩‍💻 Developers
 
@@ -12,7 +12,7 @@
 flowchart TB
     subgraph Patterns["THE FOUR PILLARS"]
         COMM["📡 COMMUNICATION<br/>(OpenAI)"]
-        PREP["🧹 PREPARATION<br/>(Mangle)"]
+        PREP["🧹 PREPARATION<br/>(data prep)"]
         CAP["🔧 CAPABILITY<br/>(MCP)"]
         COG["🧠 COGNITION<br/>(Agentic)"]
     end
@@ -26,7 +26,7 @@ flowchart TB
 | Pattern | Phase | Question | Without It |
 |---------|-------|----------|------------|
 | **OpenAI Compliance** | Communication | "How do services talk?" | Custom code per integration |
-| **Mangle** | Preparation | "Is data safe?" | PII leaks, noisy context |
+| **Data prep** | Preparation | "Is data safe?" | PII leaks, noisy context |
 | **MCP** | Capability | "What can AI do?" | Hard-coded functions |
 | **Agentic** | Cognition | "How does AI decide?" | Brittle if-else trees |
 
@@ -37,7 +37,7 @@ flowchart TB
 | Pattern | ✅ The Pattern | ❌ Anti-Pattern | Value |
 |---------|---------------|----------------|-------|
 | **OpenAI** | `/v1/chat/completions` everywhere | Custom code per provider | Swappable services |
-| **Mangle** | Clean data *before* reasoning | Hope model ignores PII | Security + quality |
+| **Data prep** | Clean data *before* reasoning | Hope model ignores PII | Security + quality |
 | **MCP** | Discoverable "Tools" | Hard-coded function calls | Extensible agents |
 | **Agentic** | Plan → Act → Observe → Correct | Linear if-else trees | Self-healing |
 
@@ -86,7 +86,7 @@ const response = await sdk.chatCompletion({
 
 ---
 
-## 2. Mangle: Data Sanitization
+## 2. Data preparation: Data sanitization
 
 ```mermaid
 flowchart LR
@@ -96,7 +96,7 @@ flowchart LR
         R3["WRBTR: 50000"]
     end
     
-    subgraph Mangle["Mangle Operations"]
+    subgraph DataPrep["Data prep operations"]
         M1["1. Anonymize"]
         M2["2. Enrich"]
         M3["3. Format"]
@@ -108,7 +108,7 @@ flowchart LR
         C3["amount: 50000"]
     end
     
-    Raw --> Mangle --> Clean
+    Raw --> data prep --> Clean
 ```
 
 #### Anti-Pattern
@@ -200,7 +200,7 @@ flowchart TB
     end
     
     subgraph Step2["2. MANGLE"]
-        S2["Mangle (10) → CAP (3) → HANA"]
+        S2["Data prep (10) → CAP (3) → HANA"]
     end
     
     subgraph Step3["3. DISCOVERY"]
@@ -228,7 +228,7 @@ flowchart TD
     Q1 --> |"Yes"| MCP["Implement MCP"]
     Q1 --> |"No"| Q2{"Data needs<br/>cleaning?"}
     
-    Q2 --> |"Yes"| Mangle["Add Mangle layer"]
+    Q2 --> |"Yes"| DataPrep["Add data prep layer"]
     Q2 --> |"No"| Q3{"Complex<br/>decisions?"}
     
     Q3 --> |"Yes"| Agent["Use Agentic"]
@@ -245,7 +245,7 @@ flowchart TD
 | Benefit | Pattern | Impact |
 |---------|---------|--------|
 | **Interoperability** | OpenAI | Add models in hours |
-| **Security** | Mangle | Zero PII exposure |
+| **Security** | Data prep | Zero PII exposure |
 | **Autonomy** | MCP | Any registered tool |
 | **Resilience** | Agentic | Self-correcting |
 

@@ -15,8 +15,8 @@ from typing import Any, Dict, List, Optional
 from datetime import datetime, timezone
 
 
-class MangleEngine:
-    """Mangle query interface for governance rules."""
+class GovernanceEngine:
+    """In-process governance rules for routing and tool policy."""
     
     def __init__(self, rules_paths: Optional[List[str]] = None):
         self.rules_paths = rules_paths or []
@@ -32,8 +32,15 @@ class MangleEngine:
         }
         
         self.facts["agent_can_use"] = {
-            "hana_vector_search", "hana_similarity_search", "hana_query",
-            "get_schema_info", "list_tables", "mangle_query"
+            "langchain_chat",
+            "langchain_vector_store",
+            "langchain_add_documents",
+            "langchain_similarity_search",
+            "langchain_rag_chain",
+            "langchain_embeddings",
+            "langchain_load_documents",
+            "langchain_split_text",
+            "rerank_results",
         }
         
         self.facts["agent_requires_approval"] = {
@@ -132,21 +139,18 @@ class LangChainHanaAgent:
     """
     
     def __init__(self):
-        self.mangle = MangleEngine([
-            "mangle/domain/agents.mg",
-            "../regulations/mangle/rules.mg"
-        ])
+        self.governance = GovernanceEngine()
         self.mcp_endpoint = "http://localhost:9140/mcp"
         self.vllm_endpoint = "http://localhost:9180/mcp"
         self.audit_log: List[Dict] = []
     
     async def invoke(self, prompt: str, context: Optional[Dict] = None) -> Dict[str, Any]:
         context = context or {}
-        tool = context.get("tool", "hana_vector_search")
+        tool = context.get("tool", "langchain_similarity_search")
         timestamp = datetime.now(timezone.utc).isoformat()
         
         # Check routing based on HANA schema/data
-        routing_result = self.mangle.query("route_to_vllm", prompt)
+        routing_result = self.governance.query("route_to_vllm", prompt)
         if routing_result:
             backend = "vllm"
             endpoint = self.vllm_endpoint
@@ -157,7 +161,7 @@ class LangChainHanaAgent:
             routing_reason = "Metadata-only query"
         
         # Check if human review required
-        if self.mangle.query("requires_human_review", tool):
+        if self.governance.query("requires_human_review", tool):
             self._log_audit("pending_approval", tool, backend, prompt)
             return {
                 "status": "pending_approval",
@@ -168,7 +172,7 @@ class LangChainHanaAgent:
             }
         
         # Safety check
-        if not self.mangle.query("safety_check_passed", tool):
+        if not self.governance.query("safety_check_passed", tool):
             self._log_audit("blocked", tool, backend, prompt)
             return {
                 "status": "blocked",
@@ -178,7 +182,7 @@ class LangChainHanaAgent:
             }
         
         # Get prompting policy
-        prompting = self.mangle.query("get_prompting_policy", "hana-vector-store-v1")
+        prompting = self.governance.query("get_prompting_policy", "hana-vector-store-v1")
         prompting_policy = prompting[0] if prompting else {}
         
         # Execute via MCP
@@ -250,7 +254,7 @@ class LangChainHanaAgent:
         return self.audit_log
     
     def check_governance(self, prompt: str) -> Dict[str, Any]:
-        routing_result = self.mangle.query("route_to_vllm", prompt)
+        routing_result = self.governance.query("route_to_vllm", prompt)
         if routing_result:
             backend = "vllm"
             reason = routing_result[0].get("reason", "HANA data access")
@@ -258,8 +262,8 @@ class LangChainHanaAgent:
             backend = "aicore"
             reason = "Metadata-only - can use external LLM"
         
-        prompting = self.mangle.query("get_prompting_policy", "hana-vector-store-v1")
-        autonomy = self.mangle.query("autonomy_level")
+        prompting = self.governance.query("get_prompting_policy", "hana-vector-store-v1")
+        autonomy = self.governance.query("autonomy_level")
         
         return {
             "routing": {"backend": backend, "reason": reason},

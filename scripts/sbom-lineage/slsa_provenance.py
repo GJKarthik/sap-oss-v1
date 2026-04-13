@@ -53,7 +53,7 @@ BOMS_DIR_DEFAULT = Path(__file__).parent / "boms"
 # Stable build type URI for this pipeline
 BUILD_TYPE = "https://github.com/sap-oss/sbom-pipeline/build-type/cyclonedx@v1"
 DEFAULT_BUILDER_ID   = "https://github.com/sap-oss/sbom-pipeline/builder@v1"
-DEFAULT_SOURCE_REPO  = "https://github.com/sap-oss/sap-oss"
+DEFAULT_SOURCE_REPO  = "https://github.com/sap-oss/sap-oss-v1"
 DEFAULT_SOURCE_REF   = "refs/heads/main"
 
 # Tool versions embedded as resolved dependencies

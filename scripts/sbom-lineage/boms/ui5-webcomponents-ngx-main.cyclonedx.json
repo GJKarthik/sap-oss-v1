@@ -33,7 +33,7 @@
       "name": "mcp-server",
       "group": "@ui5-webcomponents-ngx",
       "version": "1.0.0",
-      "description": "UI5 Web Components Angular MCP Server with Mangle reasoning",
+      "description": "UI5 Web Components Angular MCP Server",
       "purl": "pkg:npm/%40ui5-webcomponents-ngx/mcp-server@1.0.0",
       "bom-ref": "pkg:npm/@ui5-webcomponents-ngx/mcp-server@1.0.0",
       "type": "application",

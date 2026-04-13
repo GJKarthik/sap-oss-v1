@@ -1,7 +1,7 @@
-# Mangle Proxy Configuration for SAP OpenAI-Compatible Server (LangChain HANA)
-# Maps OpenAI API endpoints to SAP AI Core with LangChain + HANA Cloud integration
+# Reference Datalog-style proxy routing rules (SAP OpenAI-compatible server sketch).
+# Maps OpenAI API endpoints to a local SAP AI Core–style backend.
 #
-# Usage: Load this file with mangle-query-service to enable proxy routing
+# Not loaded by the Python server by default; kept as a documentation artifact.
 
 # =============================================================================
 # Endpoint Mappings

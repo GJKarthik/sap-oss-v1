@@ -1,12 +1,12 @@
 """
 OData Vocabularies MCP Server - Phase 3 Enhanced
 
-Model Context Protocol server with full XML vocabulary loading, Mangle reasoning,
-and semantic search capabilities using vector embeddings.
+Model Context Protocol server with full XML vocabulary loading, Datalog-style
+vocabulary facts, and semantic search capabilities using vector embeddings.
 
 Phase 1 Improvements:
 - 1.1 Full XML vocabulary loading from vocabularies/*.xml
-- 1.2 Mangle facts generation from vocabulary terms
+- 1.2 Datalog-style fact generation from vocabulary terms
 - 1.3 Enhanced entity extraction with OData types
 
 Phase 2 Improvements:
@@ -197,11 +197,11 @@ class MCPServer:
         self.resources = {}
         self.facts = {}
         self.vocabularies = {}
-        self.mangle_facts = []  # Generated Mangle facts
+        self.vocab_datalog_facts = []  # Datalog-style literals from vocabularies
         self.entity_configs = DEFAULT_ENTITY_CONFIGS
         
         self._load_vocabularies_from_xml()
-        self._generate_mangle_facts()
+        self._generate_vocab_datalog_facts()
         self._load_embeddings()  # Phase 3.1
         self._register_tools()
         self._register_resources()
@@ -512,19 +512,19 @@ class MCPServer:
         }
 
     # =========================================================================
-    # Phase 1.2: Mangle Facts Generation
+    # Phase 1.2: Vocabulary datalog fact generation
     # =========================================================================
     
-    def _generate_mangle_facts(self):
-        """Generate Mangle facts from vocabulary definitions"""
-        self.mangle_facts = []
+    def _generate_vocab_datalog_facts(self):
+        """Generate Datalog-style facts from vocabulary definitions"""
+        self.vocab_datalog_facts = []
         
         # Generate vocabulary facts
         for vocab_name, vocab_data in self.vocabularies.items():
             namespace = vocab_data.get('namespace', '')
             
             # vocabulary(Name, Namespace)
-            self.mangle_facts.append(f'vocabulary("{vocab_name}", "{namespace}").')
+            self.vocab_datalog_facts.append(f'vocabulary("{vocab_name}", "{namespace}").')
             
             # Generate term facts
             for term in vocab_data.get('terms', []):
@@ -536,63 +536,63 @@ class MCPServer:
                 description = description.replace('"', '\\"').replace('\n', ' ')[:200]
                 
                 # term(Vocabulary, Name, Type, Description)
-                self.mangle_facts.append(
+                self.vocab_datalog_facts.append(
                     f'term("{vocab_name}", "{term_name}", "{term_type}", "{description}").'
                 )
                 
                 # term_applies_to facts
                 applies_to = term.get('applies_to', []) if isinstance(term, dict) else []
                 for target in applies_to:
-                    self.mangle_facts.append(
+                    self.vocab_datalog_facts.append(
                         f'term_applies_to("{vocab_name}", "{term_name}", "{target}").'
                     )
                 
                 # term_experimental fact
                 if isinstance(term, dict) and term.get('experimental'):
-                    self.mangle_facts.append(
+                    self.vocab_datalog_facts.append(
                         f'term_experimental("{vocab_name}", "{term_name}").'
                     )
                 
                 # term_deprecated fact
                 if isinstance(term, dict) and term.get('deprecated'):
-                    self.mangle_facts.append(
+                    self.vocab_datalog_facts.append(
                         f'term_deprecated("{vocab_name}", "{term_name}").'
                     )
             
             # Generate complex type facts
             for type_name, type_data in vocab_data.get('complex_types', {}).items():
-                self.mangle_facts.append(
+                self.vocab_datalog_facts.append(
                     f'complex_type("{vocab_name}", "{type_name}").'
                 )
                 for prop in type_data.get('properties', []):
                     prop_name = prop.get('name', '')
                     prop_type = prop.get('type', '')
-                    self.mangle_facts.append(
+                    self.vocab_datalog_facts.append(
                         f'type_property("{vocab_name}", "{type_name}", "{prop_name}", "{prop_type}").'
                     )
             
             # Generate enum type facts
             for type_name, type_data in vocab_data.get('enum_types', {}).items():
-                self.mangle_facts.append(
+                self.vocab_datalog_facts.append(
                     f'enum_type("{vocab_name}", "{type_name}").'
                 )
                 for member in type_data.get('members', []):
                     member_name = member.get('name', '')
-                    self.mangle_facts.append(
+                    self.vocab_datalog_facts.append(
                         f'enum_member("{vocab_name}", "{type_name}", "{member_name}").'
                     )
         
         # Generate entity config facts
         for config in self.entity_configs:
-            self.mangle_facts.append(
+            self.vocab_datalog_facts.append(
                 f'entity_config("{config.entity_type}", "{config.key_property}", "{config.text_property}", "{config.namespace}").'
             )
         
-        print(f"Generated {len(self.mangle_facts)} Mangle facts")
+        print(f"Generated {len(self.vocab_datalog_facts)} vocabulary datalog facts")
 
-    def get_mangle_facts_content(self) -> str:
-        """Get all Mangle facts as a single string"""
-        header = """# Auto-generated Mangle facts from OData vocabularies
+    def get_vocab_datalog_facts_content(self) -> str:
+        """Get all Datalog-style vocabulary facts as a single string"""
+        header = """# Auto-generated Datalog-style facts from OData vocabularies
 # Generated at: {timestamp}
 #
 # Predicate declarations:
@@ -609,7 +609,7 @@ class MCPServer:
 
 """.format(timestamp=time.strftime('%Y-%m-%d %H:%M:%S'))
         
-        return header + "\n".join(self.mangle_facts)
+        return header + "\n".join(self.vocab_datalog_facts)
 
     # =========================================================================
     # Phase 1.3: Enhanced Entity Extraction
@@ -640,8 +640,8 @@ class MCPServer:
         """Add a new entity configuration dynamically"""
         config = ODataEntityConfig(entity_type, pattern, key_property, text_property, namespace)
         self.entity_configs.append(config)
-        # Regenerate Mangle facts
-        self._generate_mangle_facts()
+        # Regenerate vocabulary datalog facts
+        self._generate_vocab_datalog_facts()
 
     # =========================================================================
     # Tool Registration
@@ -713,10 +713,10 @@ class MCPServer:
             },
         }
 
-        # Get Mangle Facts (new)
-        self.tools["get_mangle_facts"] = {
-            "name": "get_mangle_facts",
-            "description": "Get auto-generated Mangle facts from vocabulary definitions",
+        # Vocabulary facts as Datalog-style literals (new)
+        self.tools["get_vocabulary_facts"] = {
+            "name": "get_vocabulary_facts",
+            "description": "Get auto-generated Datalog-style facts from vocabulary definitions",
             "inputSchema": {
                 "type": "object",
                 "properties": {
@@ -781,20 +781,6 @@ class MCPServer:
                     "to_format": {"type": "string", "description": "Target format (json/xml)"},
                 },
                 "required": ["input", "from_format", "to_format"],
-            },
-        }
-
-        # Mangle Query
-        self.tools["mangle_query"] = {
-            "name": "mangle_query",
-            "description": "Query the Mangle reasoning engine with vocabulary facts",
-            "inputSchema": {
-                "type": "object",
-                "properties": {
-                    "predicate": {"type": "string", "description": "Predicate to query"},
-                    "args": {"type": "string", "description": "Arguments as JSON array"},
-                },
-                "required": ["predicate"],
             },
         }
 
@@ -878,10 +864,10 @@ class MCPServer:
             "description": "SAP Analytics vocabulary terms",
             "mimeType": "application/json",
         }
-        self.resources["mangle://facts"] = {
-            "uri": "mangle://facts",
-            "name": "Mangle Facts",
-            "description": "Auto-generated Mangle facts from vocabularies",
+        self.resources["odata://vocabulary-datalog"] = {
+            "uri": "odata://vocabulary-datalog",
+            "name": "Vocabulary Datalog Facts",
+            "description": "Auto-generated Datalog-style facts from vocabularies",
             "mimeType": "text/plain",
         }
         self.resources["odata://entity-configs"] = {
@@ -1052,11 +1038,11 @@ class MCPServer:
             "count": len(entities)
         }
 
-    def _handle_get_mangle_facts(self, args: dict) -> dict:
+    def _handle_get_vocabulary_facts(self, args: dict) -> dict:
         vocabulary = args.get("vocabulary")
         fact_type = args.get("fact_type", "all")
         
-        facts = self.mangle_facts
+        facts = self.vocab_datalog_facts
         
         # Filter by vocabulary
         if vocabulary:
@@ -1081,7 +1067,7 @@ class MCPServer:
         return {
             "facts": facts,
             "count": len(facts),
-            "total_facts": len(self.mangle_facts)
+            "total_facts": len(self.vocab_datalog_facts),
         }
 
     def _handle_validate_annotations(self, args: dict) -> dict:
@@ -1191,40 +1177,13 @@ class MCPServer:
             "status": "Conversion not fully implemented for this format combination",
         }
 
-    def _handle_mangle_query(self, args: dict) -> dict:
-        predicate = args.get("predicate", "")
-        query_args = parse_json_arg(args.get("args", "[]"), [])
-        if not isinstance(query_args, list):
-            query_args = []
-        
-        # Search in generated facts
-        results = []
-        for fact in self.mangle_facts:
-            if fact.startswith(f"{predicate}("):
-                results.append(fact)
-        
-        # Filter by args if provided
-        if query_args:
-            filtered = []
-            for result in results:
-                match = True
-                for i, arg in enumerate(query_args):
-                    if arg and f'"{arg}"' not in result:
-                        match = False
-                        break
-                if match:
-                    filtered.append(result)
-            results = filtered
-        
-        return {"predicate": predicate, "args": query_args, "results": results, "count": len(results)}
-
     def _handle_get_statistics(self, args: dict) -> dict:
         stats = {
             "vocabularies": len(self.vocabularies),
             "total_terms": sum(len(v.get('terms', [])) for v in self.vocabularies.values()),
             "total_complex_types": sum(len(v.get('complex_types', {})) for v in self.vocabularies.values()),
             "total_enum_types": sum(len(v.get('enum_types', {})) for v in self.vocabularies.values()),
-            "mangle_facts": len(self.mangle_facts),
+            "vocabulary_datalog_facts": len(self.vocab_datalog_facts),
             "entity_configs": len(self.entity_configs),
             "embeddings_loaded": len(self.term_embeddings),
             "vocabulary_details": {}
@@ -1321,7 +1280,7 @@ class MCPServer:
             "relevant_vocabularies": [],
             "semantic_matches": [],
             "annotation_context": {},
-            "mangle_facts": []
+            "vocabulary_datalog_facts": []
         }
         
         # 1. Extract entities from query
@@ -1366,10 +1325,10 @@ class MCPServer:
             # Use first extracted entity
             context["annotation_context"] = self._get_annotation_context(entities[0]["entity_type"])
         
-        # 5. Get relevant Mangle facts
+        # 5. Get relevant vocabulary datalog facts
         for vocab in relevant_vocabs:
-            vocab_facts = [f for f in self.mangle_facts if f'"{vocab}"' in f][:10]
-            context["mangle_facts"].extend(vocab_facts)
+            vocab_facts = [f for f in self.vocab_datalog_facts if f'"{vocab}"' in f][:10]
+            context["vocabulary_datalog_facts"].extend(vocab_facts)
 
         return context
 
@@ -1552,12 +1511,11 @@ class MCPServer:
                     "search_terms": self._handle_search_terms,
                     "get_term": self._handle_get_term,
                     "extract_entities": self._handle_extract_entities,
-                    "get_mangle_facts": self._handle_get_mangle_facts,
+                    "get_vocabulary_facts": self._handle_get_vocabulary_facts,
                     "validate_annotations": self._handle_validate_annotations,
                     "generate_annotations": self._handle_generate_annotations,
                     "lookup_term": self._handle_lookup_term,
                     "convert_annotations": self._handle_convert_annotations,
-                    "mangle_query": self._handle_mangle_query,
                     "get_statistics": self._handle_get_statistics,
                     "semantic_search": self._handle_semantic_search,
                     "get_rag_context": self._handle_get_rag_context,
@@ -1587,9 +1545,9 @@ class MCPServer:
                 if uri == "odata://analytics":
                     return MCPResponse(id, {"contents": [{"uri": uri, "mimeType": "application/json", 
                                                           "text": json.dumps(self._handle_get_vocabulary({"name": "Analytics"}), indent=2)}]})
-                if uri == "mangle://facts":
+                if uri == "odata://vocabulary-datalog":
                     return MCPResponse(id, {"contents": [{"uri": uri, "mimeType": "text/plain", 
-                                                          "text": self.get_mangle_facts_content()}]})
+                                                          "text": self.get_vocab_datalog_facts_content()}]})
                 if uri == "odata://entity-configs":
                     configs = [{"entity_type": c.entity_type, "pattern": c.pattern.pattern, 
                                "key_property": c.key_property, "text_property": c.text_property,
@@ -1688,7 +1646,7 @@ class MCPHandler(BaseHTTPRequestHandler):
                 "timestamp": datetime.now(timezone.utc).isoformat(),
                 "vocabularies_loaded": stats["vocabularies"],
                 "total_terms": stats["total_terms"],
-                "mangle_facts": stats["mangle_facts"]
+                "vocabulary_datalog_facts": stats["vocabulary_datalog_facts"]
             }
             self._write_json(200, response)
         elif self.path == "/stats":
@@ -1787,19 +1745,19 @@ Loaded Statistics:
   - Total Terms: {stats['total_terms']}
   - Complex Types: {stats['total_complex_types']}
   - Enum Types: {stats['total_enum_types']}
-  - Mangle Facts: {stats['mangle_facts']}
+  - Vocabulary datalog facts: {stats['vocabulary_datalog_facts']}
   - Entity Configs: {stats['entity_configs']}
   - Embeddings: {stats.get('embeddings_loaded', 0)}
 
 Tools: 
   Phase 1: list_vocabularies, get_vocabulary, search_terms, get_term,
-           extract_entities, get_mangle_facts, validate_annotations,
+           extract_entities, get_vocabulary_facts, validate_annotations,
            generate_annotations, lookup_term, convert_annotations,
-           mangle_query, get_statistics
+           get_statistics
   Phase 3: semantic_search, get_rag_context, suggest_annotations
 
 Resources: odata://vocabularies, odata://common, odata://ui,
-           odata://analytics, mangle://facts, odata://entity-configs,
+           odata://analytics, odata://vocabulary-datalog, odata://entity-configs,
            embeddings://index
 
 Endpoints:

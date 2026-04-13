@@ -3617,7 +3617,7 @@
   dependencies:
     tslib "^2.8.0"
 
-"@training-webcomponents-ngx/angular-shell@file:/Users/user/Documents/sap-oss/src/generativeUI/training-webcomponents-ngx/apps/angular-shell":
+"@training-webcomponents-ngx/angular-shell@file:apps/angular-shell":
   version "1.0.0"
   resolved "file:apps/angular-shell"
   dependencies:

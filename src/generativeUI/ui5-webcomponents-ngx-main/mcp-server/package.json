@@ -1,7 +1,7 @@
 {
   "name": "@ui5-webcomponents-ngx/mcp-server",
   "version": "1.0.0",
-  "description": "UI5 Web Components Angular MCP Server with Mangle reasoning",
+  "description": "UI5 Web Components Angular MCP Server",
   "main": "dist/server.js",
   "scripts": {
     "build": "tsc",

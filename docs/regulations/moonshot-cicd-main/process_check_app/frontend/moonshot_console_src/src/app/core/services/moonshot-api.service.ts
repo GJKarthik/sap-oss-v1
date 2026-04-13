@@ -71,8 +71,8 @@ export class MoonshotApiService {
       status: 'ok',
       service: 'moonshot-gateway',
       moonshot_root: 'regulations/moonshot-cicd-main',
-      moonshot_binary: 'regulations/moonshot-cicd-main/zig/zig-out/bin/moonshot-cicd-zig',
-      binary_exists: true,
+      moonshot_binary: '',
+      binary_exists: false,
       odata_base_url: 'http://127.0.0.1:9882',
       odata_reachable: false,
     }), 'Moonshot health check');

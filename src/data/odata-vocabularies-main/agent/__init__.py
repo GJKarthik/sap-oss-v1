@@ -7,6 +7,6 @@ for OData vocabulary queries and annotation assistance.
 Note: Public documentation - AI Core OK for most queries.
 """
 
-from .odata_vocab_agent import ODataVocabAgent, MangleEngine
+from .odata_vocab_agent import ODataVocabAgent, GovernanceEngine
 
-__all__ = ["ODataVocabAgent", "MangleEngine"]
+__all__ = ["ODataVocabAgent", "GovernanceEngine"]

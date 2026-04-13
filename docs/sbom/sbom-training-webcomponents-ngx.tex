@@ -1,0 +1,219 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage{microtype}
+\usepackage{url}
+\usepackage{longtable}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage[table]{xcolor}
+\usepackage{listings}
+\usepackage{hyperref}
+\usepackage{geometry}
+\usepackage{fancyhdr}
+\geometry{margin=2cm,top=2.5cm,bottom=2.5cm}
+\definecolor{sbomhdr}{RGB}{220,230,242}
+\definecolor{depgraphbg}{RGB}{248,248,248}
+\setlength{\LTcapwidth}{\textwidth}
+\lstdefinestyle{depgraph}{
+  backgroundcolor=\color{depgraphbg},
+  basicstyle=\ttfamily\small,
+  breaklines=true,
+  breakatwhitespace=true,
+  breakindent=2em,
+  columns=fullflexible,
+  keepspaces=true,
+  frame=single,
+  rulecolor=\color{gray!40},
+  xleftmargin=0.5em,
+  xrightmargin=0.5em,
+}
+\hypersetup{colorlinks=true,linkcolor=blue!60!black,urlcolor=blue!70!black}
+\title{\textbf{Software Bill of Materials (CycloneDX) and Change Lineage}}
+\author{Generated from CycloneDX SBOM and git lineage}
+\date{\today}
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\small\textit{SAP OSS — SBOM \& Lineage Report}}
+\fancyhead[R]{\small\today}
+\fancyfoot[C]{\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+\begin{document}
+\maketitle
+\tableofcontents
+\newpage
+\section{Software Bill of Materials (CycloneDX)}
+Each subsection is generated from a CycloneDX~1.5 BOM (components, purl, license, dependency graph). Package URLs (purls) follow the \href{https://github.com/package-url/purl-spec}{PURL spec}.
+
+\subsection{Data Cleaning Copilot}
+\textbf{Path:} \texttt{training-webcomponents-ngx}
+\\ \textbf{CycloneDX:} spec 1.5, serial \texttt{urn:uuid:57fa1e30-308f-4aee-ad3b-457732f38df6...}
+\\ \textbf{Generated:} 2026-02-28T10:30:18Z
+\\ \textbf{Tool:} components
+
+\subsubsection*{Components}
+\begin{longtable}{|p{4cm}|p{2cm}|p{1.6cm}|p{5cm}|p{1.5cm}|p{3.5cm}|}
+\toprule
+\rowcolor{sbomhdr}\textbf{Name} & \textbf{Version} & \textbf{Type} & \textbf{purl} & \textbf{License} & \textbf{Description} \\
+\midrule
+\endfirsthead
+\multicolumn{6}{l}{\small\itshape (continued from previous page)} \\
+\toprule
+\rowcolor{sbomhdr}\textbf{Name} & \textbf{Version} & \textbf{Type} & \textbf{purl} & \textbf{License} & \textbf{Description} \\
+\midrule
+\endhead
+\midrule
+\multicolumn{6}{r}{\small\itshape (continued on next page)} \\
+\endfoot
+\bottomrule
+\endlastfoot
+\raggedright aioboto3 & 15.0.0 & library & \small\texttt{pkg:pypi/aioboto3@15.0.0} & Apache-2.0 & \small — \\
+\raggedright black & 25.1.0 & library & \small\texttt{pkg:pypi/black@25.1.0} & MIT & \small — \\
+\raggedright boto3 & 1.38.27 & library & \small\texttt{pkg:pypi/boto3@1.38.27} & Apache-2.0 & \small — \\
+\raggedright frictionless & 5.18.1 & library & \small\texttt{pkg:pypi/frictionless@5.18.1} & MIT & \small — \\
+\raggedright gradio & 5.42.0 & library & \small\texttt{pkg:pypi/gradio@5.42.0} & Apache-2.0 & \small — \\
+\raggedright instructor & 1.10.0 & library & \small\texttt{pkg:pypi/instructor@1.10.0} & MIT & \small — \\
+\raggedright ipykernel & 6.30.0 & library & \small\texttt{pkg:pypi/ipykernel@6.30.0} & BSD-3-Clause & \small — \\
+\raggedright langchain & 0.3.27 & library & \small\texttt{pkg:pypi/langchain@0.3.27} & MIT & \small — \\
+\raggedright langchain-aws & 0.2.27 & library & \small\texttt{pkg:pypi/langchain-aws@0.2.27} & MIT & \small — \\
+\raggedright langchain-community & 0.3.27 & library & \small\texttt{pkg:pypi/langchain-community@0.3.27} & MIT & \small — \\
+\raggedright langchain-core & 0.3.73 & library & \small\texttt{pkg:pypi/langchain-core@0.3.73} & MIT & \small — \\
+\raggedright loguru & 0.7.3 & library & \small\texttt{pkg:pypi/loguru@0.7.3} & MIT & \small — \\
+\raggedright networkx & 3.3 & library & \small\texttt{pkg:pypi/networkx@3.3} & BSD-3-Clause & \small — \\
+\raggedright numpy & 2.1.0 & library & \small\texttt{pkg:pypi/numpy@2.1.0} & BSD-3-Clause & \small — \\
+\raggedright pandas & 2.2.02.3 & library & \small\texttt{pkg:pypi/pandas@2.2.02.3} & BSD-3-Clause & \small — \\
+\raggedright pandera & 0.25.0 & library & \small\texttt{pkg:pypi/pandera@0.25.0} & MIT & \small — \\
+\raggedright python-dotenv & 1.1.1 & library & \small\texttt{pkg:pypi/python-dotenv@1.1.1} & BSD-3-Clause & \small — \\
+\raggedright pyyaml & 6.0.2 & library & \small\texttt{pkg:pypi/pyyaml@6.0.2} & MIT & \small — \\
+\raggedright relbench & 1.1.0 & library & \small\texttt{pkg:pypi/relbench@1.1.0} & MIT & \small — \\
+\raggedright ruff & 0.12.3 & library & \small\texttt{pkg:pypi/ruff@0.12.3} & MIT & \small — \\
+\raggedright sap-ai-sdk-gen & 5.4.5 & library & \small\texttt{pkg:pypi/sap-ai-sdk-gen@5.4.5} & LicenseRef-SAP-DeveloperAgreement & \small — \\
+\raggedright setuptools & 80.9.0 & library & \small\texttt{pkg:pypi/setuptools@80.9.0} & MIT & \small — \\
+\raggedright sqlalchemy & 2.0.41 & library & \small\texttt{pkg:pypi/sqlalchemy@2.0.41} & MIT & \small — \\
+\raggedright tabulate & 0.9.0 & library & \small\texttt{pkg:pypi/tabulate@0.9.0} & MIT & \small — \\
+\raggedright ydata-profiling & 4.15.1 & library & \small\texttt{pkg:pypi/ydata-profiling@4.15.1} & MIT & \small — \\
+\end{longtable}
+
+\subsubsection*{Dependency graph (top-level refs)}
+\begin{lstlisting}[style=depgraph]
+  root-component
+    -> pkg:pypi/aioboto3@15.0.0, pkg:pypi/black@25.1.0, pkg:pypi/boto3@1.38.27, pkg:pypi/frictionless@5.18.1, pkg:pypi/gradio@5.42.0...
+  pkg:pypi/aioboto3@15.0.0
+    -> 
+  pkg:pypi/black@25.1.0
+    -> 
+  pkg:pypi/boto3@1.38.27
+    -> 
+  pkg:pypi/frictionless@5.18.1
+    -> 
+  pkg:pypi/gradio@5.42.0
+    -> 
+  pkg:pypi/instructor@1.10.0
+    -> 
+  pkg:pypi/ipykernel@6.30.0
+    -> 
+  pkg:pypi/langchain@0.3.27
+    -> 
+  pkg:pypi/langchain-aws@0.2.27
+    -> 
+  pkg:pypi/langchain-community@0.3.27
+    -> 
+  pkg:pypi/langchain-core@0.3.73
+    -> 
+  pkg:pypi/loguru@0.7.3
+    -> 
+  pkg:pypi/networkx@3.3
+    -> 
+  pkg:pypi/numpy@2.1.0
+    -> 
+  pkg:pypi/pandas@2.2.02.3
+    -> 
+  pkg:pypi/pandera@0.25.0
+    -> 
+  pkg:pypi/python-dotenv@1.1.1
+    -> 
+  pkg:pypi/pyyaml@6.0.2
+    -> 
+  pkg:pypi/relbench@1.1.0
+    -> 
+  pkg:pypi/ruff@0.12.3
+    -> 
+  pkg:pypi/sap-ai-sdk-gen@5.4.5
+    -> 
+  pkg:pypi/setuptools@80.9.0
+    -> 
+  pkg:pypi/sqlalchemy@2.0.41
+    -> 
+  pkg:pypi/tabulate@0.9.0
+    -> 
+  pkg:pypi/ydata-profiling@4.15.1
+    -> 
+\end{lstlisting}
+
+\newpage
+\section{Change Lineage from Original Software}
+
+\subsection{Data Cleaning Copilot}
+\textbf{Path:} \texttt{src/generativeUI/training-webcomponents-ngx}
+
+\textbf{Changes (from git history):}
+\begin{longtable}{|p{2.2cm}|p{3.2cm}|l|p{6cm}|}
+\hline \textbf{Hash} & \textbf{Date} & \textbf{Author} & \textbf{Subject} \\ \hline \endfirsthead
+\hline \textbf{Hash} & \textbf{Date} & \textbf{Author} & \textbf{Subject} \\ \hline \endhead
+\texttt{445d04e83eae} & 2026-04-13 11:11:13 +0800 & plturrell & feat(generativeUI): workspace readiness, gateway BTP, API hardening \\
+\texttt{432dfd233aa9} & 2026-04-13 09:08:21 +0800 & plturrell & feat(generativeUI): HANA persistence, notifications API, and local aut \\
+\texttt{52df72b7cc92} & 2026-04-13 08:47:05 +0800 & plturrell & docs: update READMEs with correct versions, routes, and add missing do \\
+\texttt{c3edc3c574ef} & 2026-04-13 08:42:27 +0800 & plturrell & test: add theme-utils spec, extend quick-access search and training sh \\
+\texttt{6cfe444e4dae} & 2026-04-13 08:41:27 +0800 & plturrell & style(training): refine nav-island animations, spacing, and design tok \\
+\texttt{efc97d0758a8} & 2026-04-10 12:20:56 +0800 & plturrell & fix(mode): align types, config, and helpers with spec \\
+\texttt{3dbd97a3b4d8} & 2026-04-10 08:30:41 +0800 & plturrell & Sync all changes to GitHub main remote \\
+\texttt{d28635642970} & 2026-04-10 08:21:38 +0800 & plturrell & feat(nav): add modeRelevance metadata to all route definitions \\
+\texttt{bf263823b2e4} & 2026-04-10 08:21:36 +0800 & plturrell & feat(cowork): add CoworkPlanComponent with approve/edit/reject flow \\
+\texttt{0995bb7356b7} & 2026-04-10 08:04:23 +0800 & plturrell & feat(shell): integrate mode switcher, route highlighting, and mode the \\
+\texttt{944bcbb95f06} & 2026-04-10 08:01:46 +0800 & plturrell & feat(mode): add ModeSwitcherComponent with keyboard navigation \\
+\texttt{e119fce76d8a} & 2026-04-10 07:53:34 +0800 & plturrell & feat(store): add activeMode signal with computed capabilities and pers \\
+\texttt{ef331739787a} & 2026-04-08 17:50:53 +0800 & plturrell & fix: forensic sweep — 13 security/config fixes across ui5-webcomponent \\
+\texttt{82a8c12d8ed6} & 2026-04-08 17:31:45 +0800 & plturrell & refactor: WWDC sweep — type safety, shared config, specs, i18n \\
+\texttt{41131e10033e} & 2026-04-08 17:11:08 +0800 & plturrell & feat: WWDC-grade Data Product Manager release polish \\
+\texttt{ed451e9e7a16} & 2026-04-08 11:50:20 +0800 & plturrell & chore: final cleanup and metadata sync post-Python migration \\
+\texttt{728465a0a511} & 2026-04-08 11:49:39 +0800 & plturrell & feat: 100\% Python migration \& Horizon Cinematic refactor \\
+\texttt{e9aafb4ce965} & 2026-04-08 07:59:31 +0800 & plturrell & feat(i18n): elevate all 7 languages to full parity — sync keys, genera \\
+\texttt{f798c5ce9a95} & 2026-04-08 00:50:39 +0800 & plturrell & feat(i18n): internationalize hardcoded strings in shell, dashboard, pi \\
+\texttt{7c6714da38c7} & 2026-04-08 00:42:43 +0800 & plturrell & polish: 9/10 WWDC-grade refinements — accessibility, architecture, cod \\
+\texttt{cd8802f7c1cd} & 2026-04-08 00:37:36 +0800 & plturrell & fix: WWDC keynote-grade polish — bugs, accessibility, and code quality \\
+\texttt{f3b42f023f54} & 2026-04-08 00:25:20 +0800 & plturrell & feat(pipeline): sync pipeline state to global AppStore for atmospheric \\
+\texttt{8012141447b3} & 2026-04-08 00:23:41 +0800 & plturrell & feat(dashboard): wire live platform narrative and atmospheric aura tri \\
+\texttt{cfd62a293935} & 2026-04-08 00:16:53 +0800 & plturrell & polish(ui): WWDC-caliber accessibility and design system refinements \\
+\texttt{fab1b69652b8} & 2026-04-08 00:03:34 +0800 & plturrell & feat: comprehensive UI enhancements and cross-app integration \\
+\texttt{7b9ac2e9671e} & 2026-04-07 23:39:57 +0800 & plturrell & chore: cleanup hidden cache directories \\
+\texttt{a79f388d629f} & 2026-04-07 23:30:18 +0800 & plturrell & chore: final cleanup and sync remaining changes \\
+\texttt{31560a833127} & 2026-04-07 23:28:45 +0800 & plturrell & chore: sync remaining component changes \\
+\texttt{9f5fd86dddc1} & 2026-04-07 23:28:09 +0800 & plturrell & chore: cleanup junk files and temporary artifacts \\
+\texttt{4dc368f65652} & 2026-04-07 22:09:43 +0800 & plturrell & chore: force sync mcp service changes \\
+\texttt{a96867091979} & 2026-04-07 22:09:25 +0800 & plturrell & chore: final sync of mcp service \\
+\texttt{52a993372344} & 2026-04-07 22:09:10 +0800 & plturrell & chore: finalize mcp service sync \\
+\texttt{65931c9e65a6} & 2026-04-07 22:08:54 +0800 & plturrell & chore: sync remaining mcp service changes \\
+\texttt{bd0093e34a77} & 2026-04-07 22:08:39 +0800 & plturrell & chore: sync environment configuration changes \\
+\texttt{301b67e7689f} & 2026-04-07 22:08:17 +0800 & plturrell & chore: archive vllm-main and migrate to vllm-turboquant \\
+\texttt{8bcfd30f1965} & 2026-04-07 21:56:56 +0800 & plturrell & chore: sync remaining environment file changes \\
+\texttt{0c73a40495ba} & 2026-04-07 21:53:19 +0800 & plturrell & feat: add comprehensive UX improvements for AI Fabric \\
+\texttt{e379ba0bd27b} & 2026-04-07 16:04:28 +0800 & turrellcraigjohn-alt & fix: resolve all pre-existing build errors in AI Fabric and Training ( \\
+\texttt{bde06a8056f7} & 2026-04-07 15:15:36 +0800 & turrellcraigjohn-alt & a11y: add ARIA landmarks, roles, and labels across all three apps (\#56 \\
+\texttt{577c4b389393} & 2026-04-07 14:45:48 +0800 & turrellcraigjohn-alt & feat: medium-priority audit enhancements across all apps (\#55) \\
+\texttt{ebcec175e367} & 2026-04-07 13:54:38 +0800 & turrellcraigjohn-alt & fix: reconcile shell navigation across all apps (\#54) \\
+\texttt{13906b57b151} & 2026-04-07 12:14:40 +0800 & turrellcraigjohn-alt & feat: high-priority UI audit improvements (\#53) \\
+\texttt{041279beef83} & 2026-04-07 11:52:09 +0800 & turrellcraigjohn-alt & feat: add team collaboration features and bypass auth for dev (\#52) \\
+\texttt{af865c99188a} & 2026-04-06 15:05:34 +0800 & turrellcraigjohn-alt & fix: eliminate all visible UI errors for demo (\#50) \\
+\texttt{8cf39b664a66} & 2026-04-06 14:23:02 +0800 & turrellcraigjohn-alt & fix: OCR build, i18n APP\_INITIALIZER, test fixes (\#48) \\
+\texttt{16e2f964f26e} & 2026-04-06 14:12:18 +0800 & turrellcraigjohn-alt & fix: OCR build + i18n APP\_INITIALIZER for OnPush rendering (\#47) \\
+\texttt{20ef2ff47878} & 2026-04-06 11:55:01 +0800 & turrellcraigjohn-alt & fix: remove duplicate dismissDemoTour method (\#46) \\
+\texttt{dcd86d1b2022} & 2026-04-06 10:44:12 +0800 & turrellcraigjohn-alt & demo perfection: shell i18n fix, UI5 build fix, aifabric Arabic i18n,  \\
+\texttt{d44192c1b147} & 2026-04-06 10:08:09 +0800 & turrellcraigjohn-alt & forensic audit \& SAP Sapphire/WWDC demo polish (\#44) \\
+\texttt{cea2f4461fb3} & 2026-04-06 09:44:30 +0800 & plturrell & feat: audit fixes + HANA handler wiring (Option B) \\
+\hline
+\multicolumn{4}{r}{... and 30 more.} \\ \hline
+\end{longtable}
+\textit{Full:} \texttt{git log --follow -- src/generativeUI/training-webcomponents-ngx}
+
+\end{document}

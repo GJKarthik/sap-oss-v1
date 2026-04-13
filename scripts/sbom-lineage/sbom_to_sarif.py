@@ -29,21 +29,19 @@ Rule taxonomy
   SBOM015  SpdxLicenseMismatch      — declared vs. discovered licence differs
 
 Inputs (all optional — tool gracefully skips missing files):
-  --mangle-json    output of: mangle_audit.py --json
-  --audit-json     output of: audit_sbom.py --json
-  --scan-json      output of: scan_licenses.py --json
-  --vuln-json      output of: vuln_overlay.py --json
+  --policy-findings-json   optional JSON list of per-service SBOM policy findings
+  --audit-json             output of: audit_sbom.py --json
+  --scan-json              output of: scan_licenses.py --json
+  --vuln-json              output of: vuln_overlay.py --json
 
 Output:
   boms/sarif/sbom-findings.sarif.json   (SARIF 2.1.0 document)
 
 Usage:
   # Generate all inputs then convert:
-  python3 scripts/sbom-lineage/mangle_audit.py --json > /tmp/mangle.json
   python3 scripts/sbom-lineage/audit_sbom.py   --json > /tmp/audit.json
   python3 scripts/sbom-lineage/scan_licenses.py --json > /tmp/scan.json
   python3 scripts/sbom-lineage/sbom_to_sarif.py \\
-      --mangle-json /tmp/mangle.json \\
       --audit-json  /tmp/audit.json  \\
       --scan-json   /tmp/scan.json
 
@@ -110,7 +108,7 @@ _RULES: dict[str, dict] = {
         "level":        "error",
         "security":     8.0,
         "tags":         ["license", "supply-chain", "transitive"],
-        "help":         f"{TOOL_URI}/blob/main/scripts/sbom-lineage/rules/sbom_policy.mg",
+        "help":         f"{TOOL_URI}/blob/main/scripts/sbom-lineage/policy.yaml",
     },
     "SBOM004": {
         "name":         "TransitiveWeakCopyleft",
@@ -120,7 +118,7 @@ _RULES: dict[str, dict] = {
         "level":        "warning",
         "security":     4.0,
         "tags":         ["license", "supply-chain", "transitive"],
-        "help":         f"{TOOL_URI}/blob/main/scripts/sbom-lineage/rules/sbom_policy.mg",
+        "help":         f"{TOOL_URI}/blob/main/scripts/sbom-lineage/policy.yaml",
     },
     "SBOM005": {
         "name":         "Eccn5D002Review",
@@ -238,8 +236,8 @@ _RULES: dict[str, dict] = {
     },
 }
 
-# Map from mangle predicate reason / audit_sbom category → rule ID
-_MANGLE_REASON_MAP: dict[str, str] = {
+# Map from policy-finding reason codes / audit_sbom category → rule ID
+_POLICY_REASON_MAP: dict[str, str] = {
     "BLOCKED_LICENSE":             "SBOM001",
     "REQUIRES_APPROVAL":           "SBOM002",
     "TRANSITIVE_STRONG_COPYLEFT":  "SBOM003",
@@ -373,7 +371,7 @@ def _build_manifest_index(repo_root: Path) -> dict[tuple[str, str], tuple[str, i
     return index
 
 
-# Module-level manifest index (built lazily on first call to _from_mangle)
+# Module-level manifest index (built lazily on first call to _from_policy_findings)
 _MANIFEST_INDEX: dict[tuple[str, str], tuple[str, int]] | None = None
 
 
@@ -406,7 +404,7 @@ def _result(rule_id: str, message: str, uri: str | None = None, line: int | None
 
 # ── Per-source converters ─────────────────────────────────────────────────────
 
-def _from_mangle(data: list[dict]) -> tuple[list[dict], set[str]]:
+def _from_policy_findings(data: list[dict]) -> tuple[list[dict], set[str]]:
     results: list[dict] = []
     used_rules: set[str] = set()
     manifest_idx = _get_manifest_index()
@@ -418,13 +416,13 @@ def _from_mangle(data: list[dict]) -> tuple[list[dict], set[str]]:
             reason = args[-1] if args else ""
             name   = args[1] if len(args) > 1 else "unknown"
             lic    = args[2] if len(args) > 2 else ""
-            rule_id = _MANGLE_REASON_MAP.get(reason)
+            rule_id = _POLICY_REASON_MAP.get(reason)
             if not rule_id:
                 continue
             msg = f"[{svc}] {reason}: component '{name}'"
             if lic and lic not in (name, reason):
                 msg += f" (licence: {lic})"
-            # Append fixedIn / advisoryUrl when the mangle_audit already enriched
+            # Append fixedIn / advisoryUrl when the policy audit already enriched
             fixed_in = finding.get("fixedIn", "")
             advisory = finding.get("advisoryUrl", "")
             alt      = finding.get("alternative", "")
@@ -513,7 +511,7 @@ def _from_vuln(data: dict) -> tuple[list[dict], set[str]]:
 # ── Main ──────────────────────────────────────────────────────────────────────
 
 def build_sarif(
-    mangle_data:  list[dict] | None,
+    policy_findings: list[dict] | None,
     audit_data:   dict | None,
     scan_data:    dict | None,
     vuln_data:    dict | None,
@@ -522,7 +520,7 @@ def build_sarif(
     all_rules:   set[str]   = set()
 
     for converter, data in [
-        (_from_mangle, mangle_data or []),
+        (_from_policy_findings, policy_findings or []),
         (_from_audit,  audit_data  or {}),
         (_from_scan,   scan_data   or {}),
         (_from_vuln,   vuln_data   or {}),
@@ -657,7 +655,12 @@ def main() -> None:
         description="Convert SBOM audit findings to SARIF 2.1.0"
     )
     parser.add_argument("--boms-dir",      type=Path, default=BOMS_DIR_DEFAULT)
-    parser.add_argument("--mangle-json",   type=Path, default=None)
+    parser.add_argument(
+        "--policy-findings-json",
+        type=Path,
+        default=None,
+        help="Optional JSON list of per-service policy findings (legacy audit interchange format)",
+    )
     parser.add_argument("--audit-json",    type=Path, default=None)
     parser.add_argument("--scan-json",     type=Path, default=None)
     parser.add_argument("--vuln-json",     type=Path, default=None)
@@ -668,12 +671,14 @@ def main() -> None:
                         help="Also print SARIF to stdout")
     args = parser.parse_args()
 
-    mangle = _load_json(args.mangle_json)
+    policy = _load_json(args.policy_findings_json)
+    if isinstance(policy, dict):
+        policy = None  # wrong shape; treat as missing
     audit  = _load_json(args.audit_json)
     scan   = _load_json(args.scan_json)
     vuln   = _load_json(args.vuln_json)
 
-    sarif = build_sarif(mangle, audit, scan, vuln)
+    sarif = build_sarif(policy if isinstance(policy, list) else None, audit, scan, vuln)
 
     # Apply suppressions — check expiry first
     suppressions = _load_suppressions(args.suppressions)

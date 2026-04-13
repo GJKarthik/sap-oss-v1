@@ -128,7 +128,7 @@ flowchart LR
         N3["500MB memory"]
     end
     
-    subgraph After["✅ Zig (Streaming)"]
+    subgraph After["✅ Native streaming"]
         Z1["200ms first token"]
         Z2["10,000 concurrent"]
         Z3["50MB memory"]
@@ -181,7 +181,7 @@ pie title Engineering Effort
 |----------|--------------|----------------|
 | **Logic** | RAG pipeline, vector embedding | SQL injection prevention |
 | **Auth** | LangChain chains, UI5 components | XSUAA integration |
-| **Infra** | — | Zig streaming, OpenTelemetry |
+| **Infra** | — | SSE streaming, OpenTelemetry |
 | **Time** | ~6 months saved | ~6 weeks invested |
 
 ---
@@ -190,7 +190,7 @@ pie title Engineering Effort
 
 > **💡 Insight:** We initially underestimated the complexity of XSUAA integration. Adding the SAP Cloud SDK destination service early saved significant rework later.
 
-> **💡 Insight:** Moving from Node.js to Zig for streaming wasn't just a performance win—the memory safety guarantees eliminated an entire class of security vulnerabilities.
+> **💡 Insight:** Moving from Node.js to a native streaming layer wasn't just a performance win—the memory safety guarantees eliminated an entire class of security vulnerabilities.
 
 ---
 

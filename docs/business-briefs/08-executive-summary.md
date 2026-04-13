@@ -29,13 +29,13 @@ The root cause is simple: general-purpose AI tools are not designed for enterpri
 
 A **13-service Ensemble** built on SAP open-source libraries and orchestrated via **SAP AI Core**. This isn't a collection of disconnected tools—it's a unified architecture where each component has a specific role, and together they solve all four enterprise AI challenges.
 
-The architecture follows four foundational patterns that work together as a system. OpenAI Compliance ensures all services speak the same language. Mangle prepares data before it ever reaches an LLM. MCP enables intelligent tool discovery. And Agentic reasoning allows the system to handle complex, multi-step tasks autonomously.
+The architecture follows four foundational patterns that work together as a system. OpenAI Compliance ensures all services speak the same language. data prep prepares data before it ever reaches an LLM. MCP enables intelligent tool discovery. And Agentic reasoning allows the system to handle complex, multi-step tasks autonomously.
 
 ```mermaid
 flowchart TB
     subgraph Patterns["THE FOUR PILLARS"]
         COMM["📡 COMMUNICATION<br/>OpenAI Compliance"]
-        PREP["🧹 PREPARATION<br/>Mangle"]
+        PREP["🧹 PREPARATION<br/>Data prep"]
         CAP["🔧 CAPABILITY<br/>MCP"]
         COG["🧠 COGNITION<br/>Agentic Reasoning"]
     end
@@ -45,7 +45,7 @@ flowchart TB
 | Pattern | Purpose | Business Value |
 |---------|---------|----------------|
 | **OpenAI Compliance** | All services expose `/v1/chat/completions` | Swap models without code changes |
-| **Mangle** | Data sanitization (anonymization, formatting) | Zero PII exposure, higher-quality reasoning |
+| **Data prep** | Data sanitization (anonymization, formatting) | Zero PII exposure, higher-quality reasoning |
 | **MCP** | Services expose discoverable "Tools" | Autonomous, extensible agents |
 | **Agentic** | Plan → Act → Observe → Correct | Self-healing workflows |
 
@@ -64,7 +64,7 @@ Every service in the Orchestration and Intelligence layers is built on SAP open-
 | **Interaction** | UI5 Web Components, OData Vocabularies | [`SAP/ui5-webcomponents-ngx`](https://github.com/SAP/ui5-webcomponents-ngx) | Enterprise chat, semantic standards |
 | **Orchestration** | AI SDK JS, CAP LLM Plugin, LangChain | [`SAP/ai-sdk-js`](https://github.com/SAP/ai-sdk-js), [`SAP/cap-llm-plugin`](https://github.com/SAP/cap-llm-plugin) | Model routing, RAG, privacy |
 | **Intelligence** | MCP PAL, Data Copilot, GenAI Toolkit | [`SAP/generative-ai-toolkit-for-sap-hana-cloud`](https://github.com/SAP/generative-ai-toolkit-for-sap-hana-cloud) | Forecasting, data quality, ML |
-| **Foundation** | Streaming Core, vLLM, Mangle, HANA Vector Store | Custom + open source | Performance, search, transformation |
+| **Foundation** | Streaming Core, vLLM, data prep, HANA Vector Store | Custom + open source | Performance, search, transformation |
 | **Governance** | World Monitor | Custom | Observability, tracing, audit |
 
 *For the complete service catalog, see [04-ensemble-of-services.md](04-ensemble-of-services.md).*
@@ -75,7 +75,7 @@ Every service in the Orchestration and Intelligence layers is built on SAP open-
 
 Understanding how a request flows through the system reveals why this architecture delivers both speed and security. What looks like a simple chat interaction actually involves coordinated work across multiple services—each optimized for its specific role.
 
-The key insight is parallelization and streaming. We don't wait for the entire response before showing results. The Zig-based Streaming Core begins delivering tokens to the user at 1.1 seconds, well before the LLM has finished generating. This "speed of thought" experience is what transforms AI from a batch tool into an interactive assistant.
+The key insight is parallelization and streaming. We don't wait for the entire response before showing results. The native Streaming Core begins delivering tokens to the user at 1.1 seconds, well before the LLM has finished generating. This "speed of thought" experience is what transforms AI from a batch tool into an interactive assistant.
 
 ```mermaid
 sequenceDiagram
@@ -101,7 +101,7 @@ sequenceDiagram
 
 **What happens in those 2.3 seconds:**
 1. **Ingress** — UI5 validates input, attaches user context, establishes SSE connection
-2. **Mangle** — CAP plugin queries HANA vectors, anonymizes PII, enriches with OData vocabularies
+2. **Data prep** — CAP plugin queries HANA vectors, anonymizes PII, enriches with OData vocabularies
 3. **Discovery** — SDK discovers available MCP tools (PAL forecast, vector search)
 4. **Reasoning** — LLM processes grounded prompt via OpenAI-compliant interface
 5. **Egress** — Streaming Core delivers tokens in real-time, World Monitor traces everything
@@ -146,12 +146,12 @@ The architecture's value emerges from how its components work together. Security
 
 ### Defense in Depth
 
-Three layers of security ensure that no single failure can compromise user data. XSUAA validates tokens at the network layer. Mangle anonymizes PII before it reaches any LLM. And the AI SDK's safety filter catches inappropriate content in real-time.
+Three layers of security ensure that no single failure can compromise user data. XSUAA validates tokens at the network layer. data prep anonymizes PII before it reaches any LLM. And the AI SDK's safety filter catches inappropriate content in real-time.
 
 | Layer | Protection | Component |
 |-------|------------|-----------|
 | **Network** | XSUAA token validation, role-based access | Streaming Core |
-| **Data** | PII masking, data classification | Mangle layer |
+| **Data** | PII masking, data classification | data prep layer |
 | **Content** | Harmful content blocking, compliance | AI SDK Safety Filter |
 
 ### Resilience Patterns
@@ -162,7 +162,7 @@ The system is designed to degrade gracefully rather than fail completely. If Azu
 |---------|-----------|----------|-------------|
 | LLM Provider Down | SDK health check | Auto-failover to vLLM | <3s delay |
 | HANA Timeout | 5s timeout | Serve cached context | Degraded + warning |
-| PII Leak Attempt | Mangle detection | Block + alert | Request rejected |
+| PII Leak Attempt | data prep detection | Block + alert | Request rejected |
 
 ### Cost-Optimized Routing
 
@@ -191,13 +191,13 @@ flowchart LR
 | 1 | UI5 Web Components | Interaction | [`SAP/ui5-webcomponents-ngx`](https://github.com/SAP/ui5-webcomponents-ngx) | Chat dashboard |
 | 2 | AI SDK JS | Orchestration | [`SAP/ai-sdk-js`](https://github.com/SAP/ai-sdk-js) | Model routing |
 | 3 | CAP LLM Plugin | Orchestration | [`SAP/cap-llm-plugin`](https://github.com/SAP/cap-llm-plugin) | ACDOCA RAG |
-| 4 | Streaming Core | Foundation | Custom (Zig) | Real-time delivery |
+| 4 | Streaming Core | Foundation | Custom (streaming) | Real-time delivery |
 | 5 | MCP PAL | Intelligence | Custom | Sales forecast |
 | 6 | Data Cleaning Copilot | Intelligence | Custom | Data quality audit |
 | 7 | HANA Vector Store | Foundation | SAP HANA Cloud | Knowledge search |
 | 8 | GenAI Toolkit | Intelligence | [`SAP/generative-ai-toolkit-for-sap-hana-cloud`](https://github.com/SAP/generative-ai-toolkit-for-sap-hana-cloud) | Custom ML |
 | 9 | LangChain Integration | Orchestration | [`SAP/langchain-integration-for-sap-hana-cloud`](https://github.com/SAP/langchain-integration-for-sap-hana-cloud) | Vector store |
-| 10 | Mangle Query | Foundation | Custom | Log transformation |
+| 10 | Vocabulary query | Foundation | Custom | Log transformation |
 | 11 | OData Vocabularies | Interaction | Custom | Semantic definitions |
 | 12 | vLLM | Foundation | vLLM | Private LLM |
 | 13 | World Monitor | Governance | Custom | Observability |
@@ -241,9 +241,9 @@ From OSS to enterprise-grade (based on [05-oss-adaptation-strategy.md](05-oss-ad
 
 | Capability | How It's Achieved | Business Value |
 |------------|-------------------|----------------|
-| **Speed** | Zig streaming + SSE | 2.3s response, first token at 1.1s |
+| **Speed** | SSE streaming + SSE | 2.3s response, first token at 1.1s |
 | **Accuracy** | HANA RAG + OData vocabularies | No hallucinations, grounded responses |
-| **Security** | Defense-in-depth (XSUAA + Mangle) | Zero PII exposure |
+| **Security** | Defense-in-depth (XSUAA + data prep) | Zero PII exposure |
 | **Resilience** | Circuit breaker + failover | 99.9% availability |
 | **Cost** | Intelligent model routing | 67% reduction |
 | **Future-proof** | SAP open-source strategy alignment | Long-term ecosystem compatibility |

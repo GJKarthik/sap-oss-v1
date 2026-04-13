@@ -1,30 +1,54 @@
-# MCP Mesh Gateway Service - SAP AI Core Ready
-FROM ubuntu:22.04 AS builder
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    wget xz-utils build-essential ca-certificates && \
-    wget https://ziglang.org/download/0.14.0/zig-linux-x86_64-0.14.0.tar.xz && \
-    tar -xf zig-linux-x86_64-0.14.0.tar.xz && \
-    mv zig-linux-x86_64-0.14.0 /opt/zig && \
-    rm -rf zig-linux-x86_64-0.14.0.tar.xz /var/lib/apt/lists/*
-ENV PATH="/opt/zig:${PATH}"
-WORKDIR /build
-ARG ZIG_TARGET=native
-COPY zig/ ./zig/
-COPY mangle/ ./mangle/
-WORKDIR /build/zig
-RUN zig build -Doptimize=ReleaseFast -Dtarget=${ZIG_TARGET}
+# SPDX-License-Identifier: Apache-2.0
+# SPDX-FileCopyrightText: 2024 SAP SE
+#
+# SAP OSS ai-core-pal - Python MCP Server Dockerfile
+#
+# Build:  docker build -t ai-core-pal:latest .
+# Run:    docker run -p 8084:8084 --env-file .env ai-core-pal:latest
+#
+FROM python:3.11-slim
 
-FROM nvidia/cuda:12.2.0-runtime-ubuntu22.04
+LABEL org.opencontainers.image.title="ai-core-pal"
+LABEL org.opencontainers.image.description="SAP PAL MCP Server"
+LABEL org.opencontainers.image.vendor="SAP SE"
+LABEL org.opencontainers.image.version="1.0.0"
+LABEL org.opencontainers.image.licenses="Apache-2.0"
+
+# Install system dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    ca-certificates curl && rm -rf /var/lib/apt/lists/*
-RUN useradd --no-create-home --uid 10001 appuser
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# Create non-root user
+RUN groupadd -r mcppal && useradd -r -g mcppal mcppal
+
+# Set working directory
 WORKDIR /app
-COPY --from=builder /build/zig/zig-out/bin/mcp-mesh-gateway /app/mcp-mesh-gateway
-COPY --from=builder /build/mangle/ /app/mangle/
-RUN chown -R appuser:appuser /app
-USER appuser
-ENV PORT=8080 CUDA_VISIBLE_DEVICES=0 NVIDIA_VISIBLE_DEVICES=all NVIDIA_DRIVER_CAPABILITIES=compute,utility
-HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD curl -f http://localhost:${PORT}/health || exit 1
-EXPOSE 8080 9090
-CMD ["/app/mcp-mesh-gateway"]
+
+# Copy requirements first for caching
+COPY requirements.txt .
+
+# Install Python dependencies
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copy application code
+COPY agent/ ./agent/
+COPY mcp_server/ ./mcp_server/
+
+# Set environment
+ENV PYTHONUNBUFFERED=1
+ENV MCP_HOST=0.0.0.0
+ENV MCP_PORT=8084
+
+# Switch to non-root user
+USER mcppal
+
+# Expose port
+EXPOSE 8084
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
+    CMD curl -f http://localhost:8084/health || exit 1
+
+# Start server
+CMD ["python", "-m", "mcp_server.btp_pal_mcp_server"]

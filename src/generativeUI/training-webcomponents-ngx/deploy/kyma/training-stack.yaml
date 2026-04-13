@@ -5,7 +5,7 @@ metadata:
   name: sap-ai-services
   labels:
     app.kubernetes.io/name: sap-ai-services
-    app.kubernetes.io/part-of: sap-oss
+    app.kubernetes.io/part-of: sap-oss-v1
 ---
 apiVersion: v1
 kind: ConfigMap
@@ -176,10 +176,10 @@ spec:
         sidecar.istio.io/inject: "true"
     spec:
       imagePullSecrets:
-        - name: sap-oss-registry
+        - name: sap-oss-v1-registry
       containers:
         - name: api-server
-          image: ghcr.io/your-org/sap-oss-api-server:latest
+          image: ghcr.io/your-org/sap-oss-v1-api-server:latest
           imagePullPolicy: Always
           ports:
             - containerPort: 8002
@@ -278,10 +278,10 @@ spec:
         sidecar.istio.io/inject: "true"
     spec:
       imagePullSecrets:
-        - name: sap-oss-registry
+        - name: sap-oss-v1-registry
       containers:
         - name: angular-shell
-          image: ghcr.io/your-org/sap-oss-angular-shell:latest
+          image: ghcr.io/your-org/sap-oss-v1-angular-shell:latest
           imagePullPolicy: Always
           ports:
             - containerPort: 80

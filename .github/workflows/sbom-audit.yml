@@ -19,7 +19,7 @@ on:
       - '**/build.gradle.kts'
       # Re-run if the audit pipeline itself changes
       - 'scripts/sbom-lineage/**'
-      - 'docs/sbom-lineage-manifest.yaml'
+      - 'docs/sbom/sbom-lineage-manifest.yaml'
   pull_request:
     branches: [main, develop]
     paths:
@@ -68,22 +68,6 @@ jobs:
           python-version: '3.11'
           cache: pip
 
-      - name: Set up Go (for Mangle mg binary)
-        uses: actions/setup-go@v5
-        with:
-          go-version: '1.23'
-          cache: true
-          cache-dependency-path: mangle-main/go.sum
-
-      # Cache the compiled mg binary keyed on Go source hash (P3-B).
-      # A cache hit skips the ~45 s go build step entirely.
-      - name: Cache mg binary
-        id: cache-mg
-        uses: actions/cache@v4
-        with:
-          path: scripts/sbom-lineage/bin/mg
-          key: mg-${{ runner.os }}-${{ hashFiles('mangle-main/**/*.go', 'mangle-main/go.sum') }}
-
       - name: Install Python dependencies
         run: pip install pyyaml
 
@@ -115,18 +99,6 @@ jobs:
       # ── Step 5: ML model card + dataset provenance ──────────────────────────
       - name: ML lineage
         run: python3 scripts/sbom-lineage/ml_lineage.py --json > /tmp/ml-lineage.json
-
-      # ── Step 5b: Mangle Datalog policy audit ────────────────────────────────
-      - name: Build mg binary (skipped on cache hit)
-        if: steps.cache-mg.outputs.cache-hit != 'true'
-        run: |
-          mkdir -p scripts/sbom-lineage/bin
-          cd mangle-main && go build -o ../scripts/sbom-lineage/bin/mg ./interpreter/mg/...
-          echo "mg binary built from source."
-
-      - name: Mangle Datalog policy audit
-        run: |
-          python3 scripts/sbom-lineage/mangle_audit.py --json > /tmp/mangle-audit.json
 
       # ── Step 6: SLSA v1.0 provenance ────────────────────────────────────────
       - name: SLSA provenance
@@ -195,7 +167,6 @@ jobs:
         if: always()
         run: |
           python3 scripts/sbom-lineage/sbom_to_sarif.py \
-            --mangle-json /tmp/mangle-audit.json \
             --audit-json  /tmp/audit-policy.json \
             --scan-json   /tmp/scan-licenses.json \
             --vuln-json   /tmp/vuln-report.json
@@ -228,7 +199,6 @@ jobs:
             scripts/sbom-lineage/boms/*.cyclonedx.json.sigstore
             /tmp/audit-baseline.json
             /tmp/audit-policy.json
-            /tmp/mangle-audit.json
             /tmp/scan-licenses.json
             /tmp/ml-lineage.json
             /tmp/vuln-report.json

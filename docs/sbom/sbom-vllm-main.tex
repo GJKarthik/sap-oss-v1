@@ -1,54 +1,500 @@
-\documentclass[11pt]{article}
+\documentclass[11pt,a4paper]{article}
 \usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage{microtype}
 \usepackage{url}
 \usepackage{longtable}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage[table]{xcolor}
+\usepackage{listings}
 \usepackage{hyperref}
 \usepackage{geometry}
-\geometry{margin=2.5cm}
-\title{Software Bill of Materials (CycloneDX) and Change Lineage}
+\usepackage{fancyhdr}
+\geometry{margin=2cm,top=2.5cm,bottom=2.5cm}
+\definecolor{sbomhdr}{RGB}{220,230,242}
+\definecolor{depgraphbg}{RGB}{248,248,248}
+\setlength{\LTcapwidth}{\textwidth}
+\lstdefinestyle{depgraph}{
+  backgroundcolor=\color{depgraphbg},
+  basicstyle=\ttfamily\small,
+  breaklines=true,
+  breakatwhitespace=true,
+  breakindent=2em,
+  columns=fullflexible,
+  keepspaces=true,
+  frame=single,
+  rulecolor=\color{gray!40},
+  xleftmargin=0.5em,
+  xrightmargin=0.5em,
+}
+\hypersetup{colorlinks=true,linkcolor=blue!60!black,urlcolor=blue!70!black}
+\title{\textbf{Software Bill of Materials (CycloneDX) and Change Lineage}}
 \author{Generated from CycloneDX SBOM and git lineage}
 \date{\today}
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\small\textit{SAP OSS — SBOM \& Lineage Report}}
+\fancyhead[R]{\small\today}
+\fancyfoot[C]{\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
 \begin{document}
 \maketitle
 \tableofcontents
 \newpage
 \section{Software Bill of Materials (CycloneDX)}
-Each subsection is generated from a CycloneDX 1.5 BOM (components, purl, license, dependency graph).
+Each subsection is generated from a CycloneDX~1.5 BOM (components, purl, license, dependency graph). Package URLs (purls) follow the \href{https://github.com/package-url/purl-spec}{PURL spec}.
 
 \subsection{vLLM (inference engine)}
 \textbf{Path:} \texttt{vllm-main}
-\\ \textbf{CycloneDX:} spec 1.5, serial \texttt{urn:uuid:dd4c0bb7-8e30-4cdd-a362-5807f24820ba...}
-\\ \textbf{Generated:} 2026-02-28T08:39:38Z
-\\ \textbf{Tool:} build\_cyclonedx.py
+\\ \textbf{CycloneDX:} spec 1.5, serial \texttt{urn:uuid:d7f3f612-b4bd-496f-9aad-34f9ae0c9406...}
+\\ \textbf{Generated:} 2026-02-28T09:52:34Z
+\\ \textbf{Tool:} components
 
 \subsubsection*{Components}
-\begin{longtable}{|l|l|l|p{2.2cm}|l|p{4cm}|}
-\hline
-\textbf{Name} & \textbf{Version} & \textbf{Type} & \textbf{purl} & \textbf{License} & \textbf{Description} \\
-\hline
+\begin{longtable}{|p{4cm}|p{2cm}|p{1.6cm}|p{5cm}|p{1.5cm}|p{3.5cm}|}
+\toprule
+\rowcolor{sbomhdr}\textbf{Name} & \textbf{Version} & \textbf{Type} & \textbf{purl} & \textbf{License} & \textbf{Description} \\
+\midrule
 \endfirsthead
-\hline
-\textbf{Name} & \textbf{Version} & \textbf{Type} & \textbf{purl} & \textbf{License} & \textbf{Description} \\
-\hline
+\multicolumn{6}{l}{\small\itshape (continued from previous page)} \\
+\toprule
+\rowcolor{sbomhdr}\textbf{Name} & \textbf{Version} & \textbf{Type} & \textbf{purl} & \textbf{License} & \textbf{Description} \\
+\midrule
 \endhead
-\hline
+\midrule
+\multicolumn{6}{r}{\small\itshape (continued on next page)} \\
+\endfoot
+\bottomrule
+\endlastfoot
+\raggedright six & 1.16.0 & library & \small\texttt{pkg:pypi/six@1.16.0} & MIT & \small — \\
+\raggedright setuptools & 77.0.3 & library & \small\texttt{pkg:pypi/setuptools@77.0.3} & MIT & \small — \\
+\raggedright depyf & 0.20.0 & library & \small\texttt{pkg:pypi/depyf@0.20.0} & MIT & \small — \\
+\raggedright grpcio & 1.78.0 & library & \small\texttt{pkg:pypi/grpcio@1.78.0} & Apache-2.0 & \small — \\
+\raggedright grpcio-reflection & 1.78.0 & library & \small\texttt{pkg:pypi/grpcio-reflection@1.78.0} & Apache-2.0 & \small — \\
+\raggedright grpcio-tools & 1.78.0 & library & \small\texttt{pkg:pypi/grpcio-tools@1.78.0} & Apache-2.0 & \small — \\
+\raggedright ray & 2.48.0 & library & \small\texttt{pkg:pypi/ray@2.48.0} & Apache-2.0 & \small — \\
+\raggedright tensorizer & 2.10.1 & library & \small\texttt{pkg:pypi/tensorizer@2.10.1} & MIT & \small — \\
+\raggedright packaging & 24.2 & library & \small\texttt{pkg:pypi/packaging@24.2} & Apache-2.0 & \small — \\
+\raggedright setuptools-scm & 8 & library & \small\texttt{pkg:pypi/setuptools-scm@8} & MIT & \small — \\
+\raggedright runai-model-streamer & 0.15.3 & library & \small\texttt{pkg:pypi/runai-model-streamer@0.15.3} & NOASSERTION & \small — \\
+\raggedright conch-triton-kernels & 1.2.1 & library & \small\texttt{pkg:pypi/conch-triton-kernels@1.2.1} & Apache-2.0 & \small — \\
+\raggedright timm & 1.0.17 & library & \small\texttt{pkg:pypi/timm@1.0.17} & Apache-2.0 & \small — \\
+\raggedright torch & 2.10.0 & library & \small\texttt{pkg:pypi/torch@2.10.0} & BSD-3-Clause & \small — \\
+\raggedright torchaudio & 2.10.0 & library & \small\texttt{pkg:pypi/torchaudio@2.10.0} & BSD-3-Clause & \small — \\
+\raggedright torchvision & 0.25.0 & library & \small\texttt{pkg:pypi/torchvision@0.25.0} & BSD-3-Clause & \small — \\
+\raggedright flashinfer-python & 0.6.4 & library & \small\texttt{pkg:pypi/flashinfer-python@0.6.4} & Apache-2.0 & \small — \\
+\raggedright triton & 3.6.0 & library & \small\texttt{pkg:pypi/triton@3.6.0} & MIT & \small — \\
+\raggedright cmake & 3.26.1 & library & \small\texttt{pkg:pypi/cmake@3.26.1} & Apache-2.0 & \small — \\
+\raggedright jinja2 & 3.1.6 & library & \small\texttt{pkg:pypi/jinja2@3.1.6} & BSD-3-Clause & \small — \\
+\raggedright amdsmi & 6.4.3 & library & \small\texttt{pkg:pypi/amdsmi@6.4.3} & NOASSERTION & \small — \\
+\raggedright intel-openmp & 2024.2.1 & library & \small\texttt{pkg:pypi/intel-openmp@2024.2.1} & LicenseRef-Intel-EULA & \small — \\
+\raggedright tblib & 3.1.0 & library & \small\texttt{pkg:pypi/tblib@3.1.0} & BSD-2-Clause & \small — \\
+\raggedright pytest & 8.3.5 & library & \small\texttt{pkg:pypi/pytest@8.3.5} & MIT & \small — \\
+\raggedright pytest-asyncio & 0.24.0 & library & \small\texttt{pkg:pypi/pytest-asyncio@0.24.0} & Apache-2.0 & \small — \\
+\raggedright pytest-timeout & 2.3.1 & library & \small\texttt{pkg:pypi/pytest-timeout@2.3.1} & MIT & \small — \\
+\raggedright pytest-cov & 6.3.0 & library & \small\texttt{pkg:pypi/pytest-cov@6.3.0} & MIT & \small — \\
+\raggedright pytest-forked & 1.6.0 & library & \small\texttt{pkg:pypi/pytest-forked@1.6.0} & MIT & \small — \\
+\raggedright pytest-rerunfailures & 14.0 & library & \small\texttt{pkg:pypi/pytest-rerunfailures@14.0} & MPL-2.0 & \small — \\
+\raggedright pytest-shard & 0.1.2 & library & \small\texttt{pkg:pypi/pytest-shard@0.1.2} & MIT & \small — \\
+\raggedright anyio & 4.6.2.post1 & library & \small\texttt{pkg:pypi/anyio@4.6.2.post1} & MIT & \small — \\
+\raggedright aiohttp & 3.13.3 & library & \small\texttt{pkg:pypi/aiohttp@3.13.3} & Apache-2.0 & \small — \\
+\raggedright httpx & 0.27.2 & library & \small\texttt{pkg:pypi/httpx@0.27.2} & BSD-3-Clause & \small — \\
+\raggedright audioread & 3.0.1 & library & \small\texttt{pkg:pypi/audioread@3.0.1} & MIT & \small — \\
+\raggedright cffi & 1.17.1 & library & \small\texttt{pkg:pypi/cffi@1.17.1} & MIT & \small — \\
+\raggedright decorator & 5.2.1 & library & \small\texttt{pkg:pypi/decorator@5.2.1} & BSD-3-Clause & \small — \\
+\raggedright lazy-loader & 0.4 & library & \small\texttt{pkg:pypi/lazy-loader@0.4} & BSD-3-Clause & \small — \\
+\raggedright platformdirs & 4.3.6 & library & \small\texttt{pkg:pypi/platformdirs@4.3.6} & MIT & \small — \\
+\raggedright pooch & 1.8.2 & library & \small\texttt{pkg:pypi/pooch@1.8.2} & BSD-3-Clause & \small — \\
+\raggedright soundfile & 0.13.1 & library & \small\texttt{pkg:pypi/soundfile@0.13.1} & BSD-3-Clause & \small — \\
+\raggedright soxr & 0.5.0.post1 & library & \small\texttt{pkg:pypi/soxr@0.5.0.post1} & LGPL-2.1-or-later & \small — \\
+\raggedright librosa & 0.10.2.post1 & library & \small\texttt{pkg:pypi/librosa@0.10.2.post1} & ISC & \small — \\
+\raggedright bm25s & 0.2.13 & library & \small\texttt{pkg:pypi/bm25s@0.2.13} & MIT & \small — \\
+\raggedright pystemmer & 3.0.0 & library & \small\texttt{pkg:pypi/pystemmer@3.0.0} & BSD-3-Clause & \small — \\
+\raggedright blobfile & 3.0.0 & library & \small\texttt{pkg:pypi/blobfile@3.0.0} & CC0-1.0 & \small — \\
+\raggedright decord & 0.6.0 & library & \small\texttt{pkg:pypi/decord@0.6.0} & Apache-2.0 & \small — \\
+\raggedright rapidfuzz & 3.12.1 & library & \small\texttt{pkg:pypi/rapidfuzz@3.12.1} & MIT & \small — \\
+\raggedright gpt-oss & 0.0.8 & library & \small\texttt{pkg:pypi/gpt-oss@0.0.8} & NOASSERTION & \small — \\
+\raggedright schemathesis & 3.39.15 & library & \small\texttt{pkg:pypi/schemathesis@3.39.15} & MIT & \small — \\
+\raggedright lm-eval & 0.4.11 & library & \small\texttt{pkg:pypi/lm-eval@0.4.11} & MIT & \small — \\
+\raggedright jiwer & 4.0.0 & library & \small\texttt{pkg:pypi/jiwer@4.0.0} & Apache-2.0 & \small — \\
+\raggedright multiprocess & 0.70.16 & library & \small\texttt{pkg:pypi/multiprocess@0.70.16} & BSD-3-Clause & \small — \\
+\raggedright torchgeo & 0.7.0 & library & \small\texttt{pkg:pypi/torchgeo@0.7.0} & MIT & \small — \\
+\raggedright mteb & 2 & library & \small\texttt{pkg:pypi/mteb@2} & Apache-2.0 & \small — \\
+\raggedright num2words & 0.5.14 & library & \small\texttt{pkg:pypi/num2words@0.5.14} & LGPL-2.1-or-later & \small — \\
+\raggedright pqdm & 0.2.0 & library & \small\texttt{pkg:pypi/pqdm@0.2.0} & MIT & \small — \\
+\raggedright open-clip-torch & 2.32.0 & library & \small\texttt{pkg:pypi/open-clip-torch@2.32.0} & MIT & \small — \\
+\raggedright perceptron & 0.1.4 & library & \small\texttt{pkg:pypi/perceptron@0.1.4} & NOASSERTION & \small — \\
+\raggedright albumentations & 1.4.6 & library & \small\texttt{pkg:pypi/albumentations@1.4.6} & MIT & \small — \\
+\raggedright transformers & 4.57.3 & library & \small\texttt{pkg:pypi/transformers@4.57.3} & Apache-2.0 & \small — \\
+\raggedright huggingface-hub & 0.36.2 & library & \small\texttt{pkg:pypi/huggingface-hub@0.36.2} & Apache-2.0 & \small — \\
+\raggedright mistral-common & 1.9.1 & library & \small\texttt{pkg:pypi/mistral-common@1.9.1} & Apache-2.0 & \small — \\
+\raggedright terratorch & 1.2.2 & library & \small\texttt{pkg:pypi/terratorch@1.2.2} & Apache-2.0 & \small — \\
+\raggedright segmentation-models-pytorch & 0.5.0 & library & \small\texttt{pkg:pypi/segmentation-models-pytorch@0.5.0} & MIT & \small — \\
+\raggedright imagehash & 4.3.2 & library & \small\texttt{pkg:pypi/imagehash@4.3.2} & BSD-2-Clause & \small — \\
+\raggedright bitsandbytes & 0.49.2 & library & \small\texttt{pkg:pypi/bitsandbytes@0.49.2} & MIT & \small — \\
+\raggedright pre-commit & 4.0.1 & library & \small\texttt{pkg:pypi/pre-commit@4.0.1} & MIT & \small — \\
+\raggedright nixl & 0.3.0 & library & \small\texttt{pkg:pypi/nixl@0.3.0} & — & \small — \\
+\raggedright tpu-inference & 0.12.0 & library & \small\texttt{pkg:pypi/tpu-inference@0.12.0} & Apache-2.0 & \small — \\
+\raggedright absl-py & 2.1.0 & library & \small\texttt{pkg:pypi/absl-py@2.1.0} & Apache-2.0 & \small — \\
+\raggedright accelerate & 1.0.1 & library & \small\texttt{pkg:pypi/accelerate@1.0.1} & Apache-2.0 & \small — \\
+\raggedright aenum & 3.1.16 & library & \small\texttt{pkg:pypi/aenum@3.1.16} & BSD-3-Clause & \small — \\
+\raggedright affine & 2.4.0 & library & \small\texttt{pkg:pypi/affine@2.4.0} & BSD-3-Clause & \small — \\
+\raggedright aiohappyeyeballs & 2.6.1 & library & \small\texttt{pkg:pypi/aiohappyeyeballs@2.6.1} & PSF-2.0 & \small — \\
+\raggedright aiohttp-cors & 0.8.1 & library & \small\texttt{pkg:pypi/aiohttp-cors@0.8.1} & Apache-2.0 & \small — \\
+\raggedright aiosignal & 1.4.0 & library & \small\texttt{pkg:pypi/aiosignal@1.4.0} & Apache-2.0 & \small — \\
+\raggedright albucore & 0.0.16 & library & \small\texttt{pkg:pypi/albucore@0.0.16} & MIT & \small — \\
+\raggedright alembic & 1.16.4 & library & \small\texttt{pkg:pypi/alembic@1.16.4} & MIT & \small — \\
+\raggedright annotated-doc & 0.0.4 & library & \small\texttt{pkg:pypi/annotated-doc@0.0.4} & MIT & \small — \\
+\raggedright annotated-types & 0.7.0 & library & \small\texttt{pkg:pypi/annotated-types@0.7.0} & MIT & \small — \\
+\raggedright antlr4-python3-runtime & 4.9.3 & library & \small\texttt{pkg:pypi/antlr4-python3-runtime@4.9.3} & BSD-3-Clause & \small — \\
+\raggedright arctic-inference & 0.1.1 & library & \small\texttt{pkg:pypi/arctic-inference@0.1.1} & NOASSERTION & \small — \\
+\raggedright argcomplete & 3.5.1 & library & \small\texttt{pkg:pypi/argcomplete@3.5.1} & Apache-2.0 & \small — \\
+\raggedright arrow & 1.3.0 & library & \small\texttt{pkg:pypi/arrow@1.3.0} & Apache-2.0 & \small — \\
+\raggedright attrs & 24.2.0 & library & \small\texttt{pkg:pypi/attrs@24.2.0} & MIT & \small — \\
+\raggedright backoff & 2.2.1 & library & \small\texttt{pkg:pypi/backoff@2.2.1} & MIT & \small — \\
+\raggedright black & 24.10.0 & library & \small\texttt{pkg:pypi/black@24.10.0} & MIT & \small — \\
+\raggedright boto3 & 1.35.57 & library & \small\texttt{pkg:pypi/boto3@1.35.57} & Apache-2.0 & \small — \\
+\raggedright botocore & 1.35.57 & library & \small\texttt{pkg:pypi/botocore@1.35.57} & Apache-2.0 & \small — \\
+\raggedright bounded-pool-executor & 0.0.3 & library & \small\texttt{pkg:pypi/bounded-pool-executor@0.0.3} & MIT & \small — \\
+\raggedright buildkite-test-collector & 0.1.9 & library & \small\texttt{pkg:pypi/buildkite-test-collector@0.1.9} & MIT & \small — \\
+\raggedright cachetools & 5.5.2 & library & \small\texttt{pkg:pypi/cachetools@5.5.2} & MIT & \small — \\
+\raggedright certifi & 2024.8.30 & library & \small\texttt{pkg:pypi/certifi@2024.8.30} & MPL-2.0 & \small — \\
+\raggedright chardet & 5.2.0 & library & \small\texttt{pkg:pypi/chardet@5.2.0} & LGPL-2.1-or-later & \small — \\
+\raggedright charset-normalizer & 3.4.0 & library & \small\texttt{pkg:pypi/charset-normalizer@3.4.0} & MIT & \small — \\
+\raggedright chz & 0.3.0 & library & \small\texttt{pkg:pypi/chz@0.3.0} & MIT & \small — \\
+\raggedright click & 8.1.7 & library & \small\texttt{pkg:pypi/click@8.1.7} & BSD-3-Clause & \small — \\
+\raggedright click-plugins & 1.1.1.2 & library & \small\texttt{pkg:pypi/click-plugins@1.1.1.2} & BSD-3-Clause & \small — \\
+\raggedright cligj & 0.7.2 & library & \small\texttt{pkg:pypi/cligj@0.7.2} & BSD-3-Clause & \small — \\
+\raggedright colorama & 0.4.6 & library & \small\texttt{pkg:pypi/colorama@0.4.6} & BSD-3-Clause & \small — \\
+\raggedright colorful & 0.5.6 & library & \small\texttt{pkg:pypi/colorful@0.5.6} & MIT & \small — \\
+\raggedright colorlog & 6.10.1 & library & \small\texttt{pkg:pypi/colorlog@6.10.1} & MIT & \small — \\
+\raggedright contourpy & 1.3.0 & library & \small\texttt{pkg:pypi/contourpy@1.3.0} & BSD-3-Clause & \small — \\
+\raggedright coverage & 7.10.6 & library & \small\texttt{pkg:pypi/coverage@7.10.6} & Apache-2.0 & \small — \\
+\raggedright cramjam & 2.9.0 & library & \small\texttt{pkg:pypi/cramjam@2.9.0} & MIT & \small — \\
+\raggedright cuda-bindings & 12.9.4 & library & \small\texttt{pkg:pypi/cuda-bindings@12.9.4} & LicenseRef-NVIDIA-SOFTWARE-LICENSE & \small — \\
+\raggedright cuda-pathfinder & 1.3.3 & library & \small\texttt{pkg:pypi/cuda-pathfinder@1.3.3} & Apache-2.0 & \small — \\
+\raggedright cupy-cuda12x & 13.6.0 & library & \small\texttt{pkg:pypi/cupy-cuda12x@13.6.0} & MIT & \small — \\
+\raggedright cycler & 0.12.1 & library & \small\texttt{pkg:pypi/cycler@0.12.1} & BSD-3-Clause & \small — \\
+\raggedright datamodel-code-generator & 0.26.3 & library & \small\texttt{pkg:pypi/datamodel-code-generator@0.26.3} & MIT & \small — \\
+\raggedright dataproperty & 1.0.1 & library & \small\texttt{pkg:pypi/dataproperty@1.0.1} & MIT & \small — \\
+\raggedright datasets & 3.3.0 & library & \small\texttt{pkg:pypi/datasets@3.3.0} & Apache-2.0 & \small — \\
+\raggedright diffusers & 0.36.0 & library & \small\texttt{pkg:pypi/diffusers@0.36.0} & Apache-2.0 & \small — \\
+\raggedright dill & 0.3.8 & library & \small\texttt{pkg:pypi/dill@0.3.8} & BSD-3-Clause & \small — \\
+\raggedright distlib & 0.3.9 & library & \small\texttt{pkg:pypi/distlib@0.3.9} & PSF-2.0 & \small — \\
+\raggedright dnspython & 2.7.0 & library & \small\texttt{pkg:pypi/dnspython@2.7.0} & ISC & \small — \\
+\raggedright docker & 7.1.0 & library & \small\texttt{pkg:pypi/docker@7.1.0} & Apache-2.0 & \small — \\
+\raggedright docopt & 0.6.2 & library & \small\texttt{pkg:pypi/docopt@0.6.2} & MIT & \small — \\
+\raggedright docstring-parser & 0.17.0 & library & \small\texttt{pkg:pypi/docstring-parser@0.17.0} & MIT & \small — \\
+\raggedright einops & 0.8.1 & library & \small\texttt{pkg:pypi/einops@0.8.1} & MIT & \small — \\
+\raggedright einx & 0.3.0 & library & \small\texttt{pkg:pypi/einx@0.3.0} & MIT & \small — \\
+\raggedright email-validator & 2.2.0 & library & \small\texttt{pkg:pypi/email-validator@2.2.0} & Unlicense & \small — \\
+\raggedright encodec & 0.1.1 & library & \small\texttt{pkg:pypi/encodec@0.1.1} & LicenseRef-Commercial & \small — \\
+\raggedright evaluate & 0.4.3 & library & \small\texttt{pkg:pypi/evaluate@0.4.3} & Apache-2.0 & \small — \\
+\raggedright fastapi & 0.128.0 & library & \small\texttt{pkg:pypi/fastapi@0.128.0} & MIT & \small — \\
+\raggedright fastparquet & 2024.11.0 & library & \small\texttt{pkg:pypi/fastparquet@2024.11.0} & Apache-2.0 & \small — \\
+\raggedright fastrlock & 0.8.2 & library & \small\texttt{pkg:pypi/fastrlock@0.8.2} & MIT & \small — \\
+\raggedright fastsafetensors & 0.2.2 & library & \small\texttt{pkg:pypi/fastsafetensors@0.2.2} & Apache-2.0 & \small — \\
+\raggedright filelock & 3.16.1 & library & \small\texttt{pkg:pypi/filelock@3.16.1} & Unlicense & \small — \\
+\raggedright fiona & 1.10.1 & library & \small\texttt{pkg:pypi/fiona@1.10.1} & BSD-3-Clause & \small — \\
+\raggedright fonttools & 4.55.0 & library & \small\texttt{pkg:pypi/fonttools@4.55.0} & MIT & \small — \\
+\raggedright fqdn & 1.5.1 & library & \small\texttt{pkg:pypi/fqdn@1.5.1} & MPL-2.0 & \small — \\
+\raggedright frozendict & 2.4.6 & library & \small\texttt{pkg:pypi/frozendict@2.4.6} & LGPL-2.1-or-later & \small — \\
+\raggedright frozenlist & 1.5.0 & library & \small\texttt{pkg:pypi/frozenlist@1.5.0} & Apache-2.0 & \small — \\
+\raggedright fsspec & 2024.12.0 & library & \small\texttt{pkg:pypi/fsspec@2024.12.0} & BSD-3-Clause & \small — \\
+\raggedright ftfy & 6.3.1 & library & \small\texttt{pkg:pypi/ftfy@6.3.1} & Apache-2.0 & \small — \\
+\raggedright genai-perf & 0.0.16 & library & \small\texttt{pkg:pypi/genai-perf@0.0.16} & BSD-3-Clause & \small — \\
+\raggedright genson & 1.3.0 & library & \small\texttt{pkg:pypi/genson@1.3.0} & MIT & \small — \\
+\raggedright geopandas & 1.0.1 & library & \small\texttt{pkg:pypi/geopandas@1.0.1} & BSD-3-Clause & \small — \\
+\raggedright gitdb & 4.0.12 & library & \small\texttt{pkg:pypi/gitdb@4.0.12} & BSD-3-Clause & \small — \\
+\raggedright gitpython & 3.1.44 & library & \small\texttt{pkg:pypi/gitpython@3.1.44} & BSD-3-Clause & \small — \\
+\raggedright google-api-core & 2.24.2 & library & \small\texttt{pkg:pypi/google-api-core@2.24.2} & Apache-2.0 & \small — \\
+\raggedright google-auth & 2.40.2 & library & \small\texttt{pkg:pypi/google-auth@2.40.2} & Apache-2.0 & \small — \\
+\raggedright google-cloud-core & 2.4.3 & library & \small\texttt{pkg:pypi/google-cloud-core@2.4.3} & Apache-2.0 & \small — \\
+\raggedright google-cloud-storage & 3.4.0 & library & \small\texttt{pkg:pypi/google-cloud-storage@3.4.0} & Apache-2.0 & \small — \\
+\raggedright google-crc32c & 1.7.1 & library & \small\texttt{pkg:pypi/google-crc32c@1.7.1} & Apache-2.0 & \small — \\
+\raggedright google-resumable-media & 2.7.2 & library & \small\texttt{pkg:pypi/google-resumable-media@2.7.2} & Apache-2.0 & \small — \\
+\raggedright googleapis-common-protos & 1.70.0 & library & \small\texttt{pkg:pypi/googleapis-common-protos@1.70.0} & Apache-2.0 & \small — \\
+\raggedright graphql-core & 3.2.6 & library & \small\texttt{pkg:pypi/graphql-core@3.2.6} & MIT & \small — \\
+\raggedright greenlet & 3.2.3 & library & \small\texttt{pkg:pypi/greenlet@3.2.3} & — & \small — \\
+\raggedright h11 & 0.14.0 & library & \small\texttt{pkg:pypi/h11@0.14.0} & MIT & \small — \\
+\raggedright h2 & 4.3.0 & library & \small\texttt{pkg:pypi/h2@4.3.0} & MIT & \small — \\
+\raggedright h5py & 3.13.0 & library & \small\texttt{pkg:pypi/h5py@3.13.0} & BSD-3-Clause & \small — \\
+\raggedright harfile & 0.3.0 & library & \small\texttt{pkg:pypi/harfile@0.3.0} & MIT & \small — \\
+\raggedright hf-xet & 1.1.7 & library & \small\texttt{pkg:pypi/hf-xet@1.1.7} & Apache-2.0 & \small — \\
+\raggedright hiredis & 3.0.0 & library & \small\texttt{pkg:pypi/hiredis@3.0.0} & MIT & \small — \\
+\raggedright hpack & 4.1.0 & library & \small\texttt{pkg:pypi/hpack@4.1.0} & MIT & \small — \\
+\raggedright html2text & 2025.4.15 & library & \small\texttt{pkg:pypi/html2text@2025.4.15} & GPL-3.0-or-later & \small — \\
+\raggedright httpcore & 1.0.6 & library & \small\texttt{pkg:pypi/httpcore@1.0.6} & BSD-3-Clause & \small — \\
+\raggedright humanize & 4.11.0 & library & \small\texttt{pkg:pypi/humanize@4.11.0} & MIT & \small — \\
+\raggedright hydra-core & 1.3.2 & library & \small\texttt{pkg:pypi/hydra-core@1.3.2} & MIT & \small — \\
+\raggedright hyperframe & 6.1.0 & library & \small\texttt{pkg:pypi/hyperframe@6.1.0} & MIT & \small — \\
+\raggedright hypothesis & 6.131.0 & library & \small\texttt{pkg:pypi/hypothesis@6.131.0} & MPL-2.0 & \small — \\
+\raggedright hypothesis-graphql & 0.11.1 & library & \small\texttt{pkg:pypi/hypothesis-graphql@0.11.1} & MIT & \small — \\
+\raggedright hypothesis-jsonschema & 0.23.1 & library & \small\texttt{pkg:pypi/hypothesis-jsonschema@0.23.1} & MPL-2.0 & \small — \\
+\raggedright idna & 3.10 & library & \small\texttt{pkg:pypi/idna@3.10} & BSD-3-Clause & \small — \\
+\raggedright imageio & 2.37.0 & library & \small\texttt{pkg:pypi/imageio@2.37.0} & BSD-3-Clause & \small — \\
+\raggedright importlib-metadata & 8.7.0 & library & \small\texttt{pkg:pypi/importlib-metadata@8.7.0} & Apache-2.0 & \small — \\
+\raggedright importlib-resources & 6.5.2 & library & \small\texttt{pkg:pypi/importlib-resources@6.5.2} & Apache-2.0 & \small — \\
+\raggedright inflect & 5.6.2 & library & \small\texttt{pkg:pypi/inflect@5.6.2} & MIT & \small — \\
+\raggedright iniconfig & 2.0.0 & library & \small\texttt{pkg:pypi/iniconfig@2.0.0} & MIT & \small — \\
+\raggedright isoduration & 20.11.0 & library & \small\texttt{pkg:pypi/isoduration@20.11.0} & ISC & \small — \\
+\raggedright isort & 5.13.2 & library & \small\texttt{pkg:pypi/isort@5.13.2} & MIT & \small — \\
+\raggedright jmespath & 1.0.1 & library & \small\texttt{pkg:pypi/jmespath@1.0.1} & MIT & \small — \\
+\raggedright joblib & 1.4.2 & library & \small\texttt{pkg:pypi/joblib@1.4.2} & BSD-3-Clause & \small — \\
+\raggedright jsonargparse & 4.46.0 & library & \small\texttt{pkg:pypi/jsonargparse@4.46.0} & MIT & \small — \\
+\raggedright jsonlines & 4.0.0 & library & \small\texttt{pkg:pypi/jsonlines@4.0.0} & BSD-3-Clause & \small — \\
+\raggedright jsonnet & 0.21.0 & library & \small\texttt{pkg:pypi/jsonnet@0.21.0} & Apache-2.0 & \small — \\
+\raggedright jsonpointer & 3.0.0 & library & \small\texttt{pkg:pypi/jsonpointer@3.0.0} & BSD-3-Clause & \small — \\
+\raggedright jsonschema & 4.23.0 & library & \small\texttt{pkg:pypi/jsonschema@4.23.0} & MIT & \small — \\
+\raggedright jsonschema-specifications & 2024.10.1 & library & \small\texttt{pkg:pypi/jsonschema-specifications@2024.10.1} & MIT & \small — \\
+\raggedright junit-xml & 1.9 & library & \small\texttt{pkg:pypi/junit-xml@1.9} & MIT & \small — \\
+\raggedright kaleido & 0.2.1 & library & \small\texttt{pkg:pypi/kaleido@0.2.1} & MIT & \small — \\
+\raggedright kiwisolver & 1.4.7 & library & \small\texttt{pkg:pypi/kiwisolver@1.4.7} & BSD-3-Clause & \small — \\
+\raggedright kornia & 0.8.1 & library & \small\texttt{pkg:pypi/kornia@0.8.1} & Apache-2.0 & \small — \\
+\raggedright kornia-rs & 0.1.9 & library & \small\texttt{pkg:pypi/kornia-rs@0.1.9} & Apache-2.0 & \small — \\
+\raggedright libnacl & 2.1.0 & library & \small\texttt{pkg:pypi/libnacl@2.1.0} & Apache-2.0 & \small — \\
+\raggedright lightly & 1.5.22 & library & \small\texttt{pkg:pypi/lightly@1.5.22} & MIT & \small — \\
+\raggedright lightly-utils & 0.0.2 & library & \small\texttt{pkg:pypi/lightly-utils@0.0.2} & MIT & \small — \\
+\raggedright lightning & 2.6.1 & library & \small\texttt{pkg:pypi/lightning@2.6.1} & Apache-2.0 & \small — \\
+\raggedright lightning-utilities & 0.14.3 & library & \small\texttt{pkg:pypi/lightning-utilities@0.14.3} & Apache-2.0 & \small — \\
+\raggedright llvmlite & 0.44.0 & library & \small\texttt{pkg:pypi/llvmlite@0.44.0} & BSD-3-Clause & \small — \\
+\raggedright lxml & 5.3.0 & library & \small\texttt{pkg:pypi/lxml@5.3.0} & BSD-3-Clause & \small — \\
+\raggedright mako & 1.3.10 & library & \small\texttt{pkg:pypi/mako@1.3.10} & MIT & \small — \\
+\raggedright markdown & 3.8.2 & library & \small\texttt{pkg:pypi/markdown@3.8.2} & BSD-3-Clause & \small — \\
+\raggedright markdown-it-py & 3.0.0 & library & \small\texttt{pkg:pypi/markdown-it-py@3.0.0} & MIT & \small — \\
+\raggedright markupsafe & 3.0.1 & library & \small\texttt{pkg:pypi/markupsafe@3.0.1} & BSD-3-Clause & \small — \\
+\raggedright matplotlib & 3.9.2 & library & \small\texttt{pkg:pypi/matplotlib@3.9.2} & PSF-2.0 & \small — \\
+\raggedright mbstrdecoder & 1.1.3 & library & \small\texttt{pkg:pypi/mbstrdecoder@1.1.3} & MIT & \small — \\
+\raggedright mdurl & 0.1.2 & library & \small\texttt{pkg:pypi/mdurl@0.1.2} & MIT & \small — \\
+\raggedright more-itertools & 10.5.0 & library & \small\texttt{pkg:pypi/more-itertools@10.5.0} & MIT & \small — \\
+\raggedright mpmath & 1.3.0 & library & \small\texttt{pkg:pypi/mpmath@1.3.0} & BSD-3-Clause & \small — \\
+\raggedright msgpack & 1.1.0 & library & \small\texttt{pkg:pypi/msgpack@1.1.0} & Apache-2.0 & \small — \\
+\raggedright multidict & 6.1.0 & library & \small\texttt{pkg:pypi/multidict@6.1.0} & Apache-2.0 & \small — \\
+\raggedright mypy-extensions & 1.0.0 & library & \small\texttt{pkg:pypi/mypy-extensions@1.0.0} & MIT & \small — \\
+\raggedright networkx & 3.2.1 & library & \small\texttt{pkg:pypi/networkx@3.2.1} & BSD-3-Clause & \small — \\
+\raggedright nltk & 3.9.1 & library & \small\texttt{pkg:pypi/nltk@3.9.1} & Apache-2.0 & \small — \\
+\raggedright numba & 0.61.2 & library & \small\texttt{pkg:pypi/numba@0.61.2} & BSD-3-Clause & \small — \\
+\raggedright numpy & 2.2.6 & library & \small\texttt{pkg:pypi/numpy@2.2.6} & BSD-3-Clause & \small — \\
+\raggedright nvidia-cublas-cu12 & 12.9.1.4 & library & \small\texttt{pkg:pypi/nvidia-cublas-cu12@12.9.1.4} & LicenseRef-Proprietary & \small — \\
+\raggedright nvidia-cuda-cupti-cu12 & 12.9.79 & library & \small\texttt{pkg:pypi/nvidia-cuda-cupti-cu12@12.9.79} & LicenseRef-Proprietary & \small — \\
+\raggedright nvidia-cuda-nvrtc-cu12 & 12.9.86 & library & \small\texttt{pkg:pypi/nvidia-cuda-nvrtc-cu12@12.9.86} & LicenseRef-Proprietary & \small — \\
+\raggedright nvidia-cuda-runtime-cu12 & 12.9.79 & library & \small\texttt{pkg:pypi/nvidia-cuda-runtime-cu12@12.9.79} & LicenseRef-Proprietary & \small — \\
+\raggedright nvidia-cudnn-cu12 & 9.10.2.21 & library & \small\texttt{pkg:pypi/nvidia-cudnn-cu12@9.10.2.21} & LicenseRef-Proprietary & \small — \\
+\raggedright nvidia-cufft-cu12 & 11.4.1.4 & library & \small\texttt{pkg:pypi/nvidia-cufft-cu12@11.4.1.4} & LicenseRef-Proprietary & \small — \\
+\raggedright nvidia-cufile-cu12 & 1.14.1.1 & library & \small\texttt{pkg:pypi/nvidia-cufile-cu12@1.14.1.1} & LicenseRef-Proprietary & \small — \\
+\raggedright nvidia-curand-cu12 & 10.3.10.19 & library & \small\texttt{pkg:pypi/nvidia-curand-cu12@10.3.10.19} & LicenseRef-Proprietary & \small — \\
+\raggedright nvidia-cusolver-cu12 & 11.7.5.82 & library & \small\texttt{pkg:pypi/nvidia-cusolver-cu12@11.7.5.82} & LicenseRef-Proprietary & \small — \\
+\raggedright nvidia-cusparse-cu12 & 12.5.10.65 & library & \small\texttt{pkg:pypi/nvidia-cusparse-cu12@12.5.10.65} & LicenseRef-Proprietary & \small — \\
+\raggedright nvidia-cusparselt-cu12 & 0.7.1 & library & \small\texttt{pkg:pypi/nvidia-cusparselt-cu12@0.7.1} & LicenseRef-Proprietary & \small — \\
+\raggedright nvidia-nccl-cu12 & 2.27.5 & library & \small\texttt{pkg:pypi/nvidia-nccl-cu12@2.27.5} & BSD-3-Clause & \small — \\
+\raggedright nvidia-nvjitlink-cu12 & 12.9.86 & library & \small\texttt{pkg:pypi/nvidia-nvjitlink-cu12@12.9.86} & LicenseRef-Proprietary & \small — \\
+\raggedright nvidia-nvshmem-cu12 & 3.4.5 & library & \small\texttt{pkg:pypi/nvidia-nvshmem-cu12@3.4.5} & NOASSERTION & \small — \\
+\raggedright nvidia-nvtx-cu12 & 12.9.79 & library & \small\texttt{pkg:pypi/nvidia-nvtx-cu12@12.9.79} & Apache-2.0 & \small — \\
+\raggedright omegaconf & 2.3.0 & library & \small\texttt{pkg:pypi/omegaconf@2.3.0} & BSD-3-Clause & \small — \\
+\raggedright openai-harmony & 0.0.4 & library & \small\texttt{pkg:pypi/openai-harmony@0.0.4} & NOASSERTION & \small — \\
+\raggedright opencensus & 0.11.4 & library & \small\texttt{pkg:pypi/opencensus@0.11.4} & Apache-2.0 & \small — \\
+\raggedright opencensus-context & 0.1.3 & library & \small\texttt{pkg:pypi/opencensus-context@0.1.3} & Apache-2.0 & \small — \\
+\raggedright opencv-python-headless & 4.13.0.90 & library & \small\texttt{pkg:pypi/opencv-python-headless@4.13.0.90} & Apache-2.0 & \small — \\
+\raggedright opentelemetry-api & 1.35.0 & library & \small\texttt{pkg:pypi/opentelemetry-api@1.35.0} & Apache-2.0 & \small — \\
+\raggedright opentelemetry-exporter-prometheus & 0.56b0 & library & \small\texttt{pkg:pypi/opentelemetry-exporter-prometheus@0.56b0} & Apache-2.0 & \small — \\
+\raggedright opentelemetry-proto & 1.36.0 & library & \small\texttt{pkg:pypi/opentelemetry-proto@1.36.0} & Apache-2.0 & \small — \\
+\raggedright opentelemetry-sdk & 1.35.0 & library & \small\texttt{pkg:pypi/opentelemetry-sdk@1.35.0} & Apache-2.0 & \small — \\
+\raggedright opentelemetry-semantic-conventions & 0.56b0 & library & \small\texttt{pkg:pypi/opentelemetry-semantic-conventions@0.56b0} & Apache-2.0 & \small — \\
+\raggedright optuna & 3.6.1 & library & \small\texttt{pkg:pypi/optuna@3.6.1} & MIT & \small — \\
+\raggedright orjson & 3.11.5 & library & \small\texttt{pkg:pypi/orjson@3.11.5} & — & \small — \\
+\raggedright pandas & 2.2.3 & library & \small\texttt{pkg:pypi/pandas@2.2.3} & BSD-3-Clause & \small — \\
+\raggedright pathspec & 0.12.1 & library & \small\texttt{pkg:pypi/pathspec@0.12.1} & MPL-2.0 & \small — \\
+\raggedright pathvalidate & 3.2.1 & library & \small\texttt{pkg:pypi/pathvalidate@3.2.1} & MIT & \small — \\
+\raggedright patsy & 1.0.1 & library & \small\texttt{pkg:pypi/patsy@1.0.1} & BSD-3-Clause & \small — \\
+\raggedright peft & 0.16.0 & library & \small\texttt{pkg:pypi/peft@0.16.0} & Apache-2.0 & \small — \\
+\raggedright perf-analyzer & 0.1.0 & library & \small\texttt{pkg:pypi/perf-analyzer@0.1.0} & BSD-3-Clause & \small — \\
+\raggedright pillow & 10.4.0 & library & \small\texttt{pkg:pypi/pillow@10.4.0} & ISC & \small — \\
+\raggedright plotly & 5.24.1 & library & \small\texttt{pkg:pypi/plotly@5.24.1} & MIT & \small — \\
+\raggedright pluggy & 1.5.0 & library & \small\texttt{pkg:pypi/pluggy@1.5.0} & MIT & \small — \\
+\raggedright polars & 1.29.0 & library & \small\texttt{pkg:pypi/polars@1.29.0} & MIT & \small — \\
+\raggedright portalocker & 2.10.1 & library & \small\texttt{pkg:pypi/portalocker@2.10.1} & BSD-3-Clause & \small — \\
+\raggedright prometheus-client & 0.22.0 & library & \small\texttt{pkg:pypi/prometheus-client@0.22.0} & Apache-2.0 & \small — \\
+\raggedright propcache & 0.2.0 & library & \small\texttt{pkg:pypi/propcache@0.2.0} & Apache-2.0 & \small — \\
+\raggedright proto-plus & 1.26.1 & library & \small\texttt{pkg:pypi/proto-plus@1.26.1} & Apache-2.0 & \small — \\
+\raggedright protobuf & 6.33.2 & library & \small\texttt{pkg:pypi/protobuf@6.33.2} & BSD-3-Clause & \small — \\
+\raggedright psutil & 6.1.0 & library & \small\texttt{pkg:pypi/psutil@6.1.0} & BSD-3-Clause & \small — \\
+\raggedright py & 1.11.0 & library & \small\texttt{pkg:pypi/py@1.11.0} & MIT & \small — \\
+\raggedright py-spy & 0.4.0 & library & \small\texttt{pkg:pypi/py-spy@0.4.0} & MIT & \small — \\
+\raggedright pyarrow & 23.0.0 & library & \small\texttt{pkg:pypi/pyarrow@23.0.0} & Apache-2.0 & \small — \\
+\raggedright pyasn1 & 0.6.1 & library & \small\texttt{pkg:pypi/pyasn1@0.6.1} & BSD-3-Clause & \small — \\
+\raggedright pyasn1-modules & 0.4.2 & library & \small\texttt{pkg:pypi/pyasn1-modules@0.4.2} & BSD-3-Clause & \small — \\
+\raggedright pycocotools & 2.0.8 & library & \small\texttt{pkg:pypi/pycocotools@2.0.8} & BSD-2-Clause & \small — \\
+\raggedright pycountry & 24.6.1 & library & \small\texttt{pkg:pypi/pycountry@24.6.1} & LGPL-2.1-or-later & \small — \\
+\raggedright pycparser & 2.22 & library & \small\texttt{pkg:pypi/pycparser@2.22} & BSD-3-Clause & \small — \\
+\raggedright pycryptodomex & 3.22.0 & library & \small\texttt{pkg:pypi/pycryptodomex@3.22.0} & BSD-3-Clause & \small — \\
+\raggedright pydantic & 2.12.0 & library & \small\texttt{pkg:pypi/pydantic@2.12.0} & MIT & \small — \\
+\raggedright pydantic-core & 2.41.1 & library & \small\texttt{pkg:pypi/pydantic-core@2.41.1} & MIT & \small — \\
+\raggedright pydantic-extra-types & 2.10.5 & library & \small\texttt{pkg:pypi/pydantic-extra-types@2.10.5} & MIT & \small — \\
+\raggedright pygments & 2.18.0 & library & \small\texttt{pkg:pypi/pygments@2.18.0} & BSD-3-Clause & \small — \\
+\raggedright pyogrio & 0.11.0 & library & \small\texttt{pkg:pypi/pyogrio@0.11.0} & MIT & \small — \\
+\raggedright pyparsing & 3.2.0 & library & \small\texttt{pkg:pypi/pyparsing@3.2.0} & MIT & \small — \\
+\raggedright pyproj & 3.7.1 & library & \small\texttt{pkg:pypi/pyproj@3.7.1} & MIT & \small — \\
+\raggedright pyrate-limiter & 3.7.0 & library & \small\texttt{pkg:pypi/pyrate-limiter@3.7.0} & MIT & \small — \\
+\raggedright pytablewriter & 1.2.0 & library & \small\texttt{pkg:pypi/pytablewriter@1.2.0} & MIT & \small — \\
+\raggedright pytest-mock & 3.14.0 & library & \small\texttt{pkg:pypi/pytest-mock@3.14.0} & MIT & \small — \\
+\raggedright pytest-subtests & 0.14.1 & library & \small\texttt{pkg:pypi/pytest-subtests@0.14.1} & MIT & \small — \\
+\raggedright python-box & 7.3.2 & library & \small\texttt{pkg:pypi/python-box@7.3.2} & MIT & \small — \\
+\raggedright python-dateutil & 2.9.0.post0 & library & \small\texttt{pkg:pypi/python-dateutil@2.9.0.post0} & Apache-2.0 & \small — \\
+\raggedright python-rapidjson & 1.20 & library & \small\texttt{pkg:pypi/python-rapidjson@1.20} & MIT & \small — \\
+\raggedright pytorch-lightning & 2.5.2 & library & \small\texttt{pkg:pypi/pytorch-lightning@2.5.2} & Apache-2.0 & \small — \\
+\raggedright pytrec-eval-terrier & 0.5.7 & library & \small\texttt{pkg:pypi/pytrec-eval-terrier@0.5.7} & MIT & \small — \\
+\raggedright pytz & 2024.2 & library & \small\texttt{pkg:pypi/pytz@2024.2} & MIT & \small — \\
+\raggedright pywavelets & 1.9.0 & library & \small\texttt{pkg:pypi/pywavelets@1.9.0} & — & \small — \\
+\raggedright pyyaml & 6.0.2 & library & \small\texttt{pkg:pypi/pyyaml@6.0.2} & MIT & \small — \\
+\raggedright rasterio & 1.4.3 & library & \small\texttt{pkg:pypi/rasterio@1.4.3} & BSD-3-Clause & \small — \\
+\raggedright redis & 5.2.0 & library & \small\texttt{pkg:pypi/redis@5.2.0} & MIT & \small — \\
+\raggedright referencing & 0.35.1 & library & \small\texttt{pkg:pypi/referencing@0.35.1} & MIT & \small — \\
+\raggedright regex & 2024.9.11 & library & \small\texttt{pkg:pypi/regex@2024.9.11} & Apache-2.0 & \small — \\
+\raggedright requests & 2.32.3 & library & \small\texttt{pkg:pypi/requests@2.32.3} & Apache-2.0 & \small — \\
+\raggedright responses & 0.25.3 & library & \small\texttt{pkg:pypi/responses@0.25.3} & Apache-2.0 & \small — \\
+\raggedright rfc3339-validator & 0.1.4 & library & \small\texttt{pkg:pypi/rfc3339-validator@0.1.4} & MIT & \small — \\
+\raggedright rfc3987 & 1.3.8 & library & \small\texttt{pkg:pypi/rfc3987@1.3.8} & GPL-3.0-or-later & \small — \\
+\raggedright rich & 13.9.4 & library & \small\texttt{pkg:pypi/rich@13.9.4} & MIT & \small — \\
+\raggedright rioxarray & 0.19.0 & library & \small\texttt{pkg:pypi/rioxarray@0.19.0} & Apache-2.0 & \small — \\
+\raggedright rouge-score & 0.1.2 & library & \small\texttt{pkg:pypi/rouge-score@0.1.2} & Apache-2.0 & \small — \\
+\raggedright rpds-py & 0.20.1 & library & \small\texttt{pkg:pypi/rpds-py@0.20.1} & MIT & \small — \\
+\raggedright rsa & 4.9.1 & library & \small\texttt{pkg:pypi/rsa@4.9.1} & Apache-2.0 & \small — \\
+\raggedright rtree & 1.4.0 & library & \small\texttt{pkg:pypi/rtree@1.4.0} & MIT & \small — \\
+\raggedright runai-model-streamer-gcs & 0.15.3 & library & \small\texttt{pkg:pypi/runai-model-streamer-gcs@0.15.3} & NOASSERTION & \small — \\
+\raggedright runai-model-streamer-s3 & 0.15.3 & library & \small\texttt{pkg:pypi/runai-model-streamer-s3@0.15.3} & NOASSERTION & \small — \\
+\raggedright s3transfer & 0.10.3 & library & \small\texttt{pkg:pypi/s3transfer@0.10.3} & Apache-2.0 & \small — \\
+\raggedright sacrebleu & 2.4.3 & library & \small\texttt{pkg:pypi/sacrebleu@2.4.3} & Apache-2.0 & \small — \\
+\raggedright safetensors & 0.4.5 & library & \small\texttt{pkg:pypi/safetensors@0.4.5} & Apache-2.0 & \small — \\
+\raggedright scikit-image & 0.25.2 & library & \small\texttt{pkg:pypi/scikit-image@0.25.2} & BSD-3-Clause & \small — \\
+\raggedright scikit-learn & 1.5.2 & library & \small\texttt{pkg:pypi/scikit-learn@1.5.2} & BSD-3-Clause & \small — \\
+\raggedright scipy & 1.13.1 & library & \small\texttt{pkg:pypi/scipy@1.13.1} & BSD-3-Clause & \small — \\
+\raggedright sentence-transformers & 5.2.0 & library & \small\texttt{pkg:pypi/sentence-transformers@5.2.0} & Apache-2.0 & \small — \\
+\raggedright sentry-sdk & 2.52.0 & library & \small\texttt{pkg:pypi/sentry-sdk@2.52.0} & BSD-3-Clause & \small — \\
+\raggedright shapely & 2.1.1 & library & \small\texttt{pkg:pypi/shapely@2.1.1} & BSD-3-Clause & \small — \\
+\raggedright shellingham & 1.5.4 & library & \small\texttt{pkg:pypi/shellingham@1.5.4} & ISC & \small — \\
+\raggedright smart-open & 7.1.0 & library & \small\texttt{pkg:pypi/smart-open@7.1.0} & MIT & \small — \\
+\raggedright smmap & 5.0.2 & library & \small\texttt{pkg:pypi/smmap@5.0.2} & BSD-3-Clause & \small — \\
+\raggedright sniffio & 1.3.1 & library & \small\texttt{pkg:pypi/sniffio@1.3.1} & Apache-2.0 & \small — \\
+\raggedright sortedcontainers & 2.4.0 & library & \small\texttt{pkg:pypi/sortedcontainers@2.4.0} & Apache-2.0 & \small — \\
+\raggedright sqlalchemy & 2.0.41 & library & \small\texttt{pkg:pypi/sqlalchemy@2.0.41} & MIT & \small — \\
+\raggedright sqlitedict & 2.1.0 & library & \small\texttt{pkg:pypi/sqlitedict@2.1.0} & Apache-2.0 & \small — \\
+\raggedright starlette & 0.50.0 & library & \small\texttt{pkg:pypi/starlette@0.50.0} & BSD-3-Clause & \small — \\
+\raggedright starlette-testclient & 0.4.1 & library & \small\texttt{pkg:pypi/starlette-testclient@0.4.1} & BSD-3-Clause & \small — \\
+\raggedright statsmodels & 0.14.4 & library & \small\texttt{pkg:pypi/statsmodels@0.14.4} & BSD-3-Clause & \small — \\
+\raggedright structlog & 25.4.0 & library & \small\texttt{pkg:pypi/structlog@25.4.0} & — & \small — \\
+\raggedright sympy & 1.13.3 & library & \small\texttt{pkg:pypi/sympy@1.13.3} & BSD-3-Clause & \small — \\
+\raggedright tabledata & 1.3.3 & library & \small\texttt{pkg:pypi/tabledata@1.3.3} & MIT & \small — \\
+\raggedright tabulate & 0.9.0 & library & \small\texttt{pkg:pypi/tabulate@0.9.0} & MIT & \small — \\
+\raggedright tacoreader & 0.5.6 & library & \small\texttt{pkg:pypi/tacoreader@0.5.6} & MIT & \small — \\
+\raggedright tcolorpy & 0.1.6 & library & \small\texttt{pkg:pypi/tcolorpy@0.1.6} & MIT & \small — \\
+\raggedright tenacity & 9.1.2 & library & \small\texttt{pkg:pypi/tenacity@9.1.2} & Apache-2.0 & \small — \\
+\raggedright tensorboard & 2.20.0 & library & \small\texttt{pkg:pypi/tensorboard@2.20.0} & Apache-2.0 & \small — \\
+\raggedright tensorboard-data-server & 0.7.2 & library & \small\texttt{pkg:pypi/tensorboard-data-server@0.7.2} & Apache-2.0 & \small — \\
+\raggedright tensorboardx & 2.6.4 & library & \small\texttt{pkg:pypi/tensorboardx@2.6.4} & MIT & \small — \\
+\raggedright termcolor & 3.1.0 & library & \small\texttt{pkg:pypi/termcolor@3.1.0} & MIT & \small — \\
+\raggedright threadpoolctl & 3.5.0 & library & \small\texttt{pkg:pypi/threadpoolctl@3.5.0} & BSD-3-Clause & \small — \\
+\raggedright tifffile & 2025.3.30 & library & \small\texttt{pkg:pypi/tifffile@2025.3.30} & BSD-3-Clause & \small — \\
+\raggedright tiktoken & 0.12.0 & library & \small\texttt{pkg:pypi/tiktoken@0.12.0} & MIT & \small — \\
+\raggedright tokenizers & 0.22.0 & library & \small\texttt{pkg:pypi/tokenizers@0.22.0} & Apache-2.0 & \small — \\
+\raggedright tomli & 2.2.1 & library & \small\texttt{pkg:pypi/tomli@2.2.1} & MIT & \small — \\
+\raggedright tomli-w & 1.2.0 & library & \small\texttt{pkg:pypi/tomli-w@1.2.0} & MIT & \small — \\
+\raggedright torchmetrics & 1.7.4 & library & \small\texttt{pkg:pypi/torchmetrics@1.7.4} & Apache-2.0 & \small — \\
+\raggedright tqdm & 4.67.3 & library & \small\texttt{pkg:pypi/tqdm@4.67.3} & MPL-2.0 & \small — \\
+\raggedright transformers-stream-generator & 0.0.5 & library & \small\texttt{pkg:pypi/transformers-stream-generator@0.0.5} & Apache-2.0 & \small — \\
+\raggedright tritonclient & 2.64.0 & library & \small\texttt{pkg:pypi/tritonclient@2.64.0} & BSD-3-Clause & \small — \\
+\raggedright typepy & 1.3.2 & library & \small\texttt{pkg:pypi/typepy@1.3.2} & MIT & \small — \\
+\raggedright typer & 0.15.2 & library & \small\texttt{pkg:pypi/typer@0.15.2} & MIT & \small — \\
+\raggedright types-python-dateutil & 2.9.0.20241206 & library & \small\texttt{pkg:pypi/types-python-dateutil@2.9.0.20241206} & Apache-2.0 & \small — \\
+\raggedright typeshed-client & 2.8.2 & library & \small\texttt{pkg:pypi/typeshed-client@2.8.2} & MIT & \small — \\
+\raggedright typing-extensions & 4.15.0 & library & \small\texttt{pkg:pypi/typing-extensions@4.15.0} & PSF-2.0 & \small — \\
+\raggedright typing-inspection & 0.4.2 & library & \small\texttt{pkg:pypi/typing-inspection@0.4.2} & MIT & \small — \\
+\raggedright tzdata & 2024.2 & library & \small\texttt{pkg:pypi/tzdata@2024.2} & Apache-2.0 & \small — \\
+\raggedright uri-template & 1.3.0 & library & \small\texttt{pkg:pypi/uri-template@1.3.0} & MIT & \small — \\
+\raggedright urllib3 & 2.2.3 & library & \small\texttt{pkg:pypi/urllib3@2.2.3} & MIT & \small — \\
+\raggedright uvicorn & 0.35.0 & library & \small\texttt{pkg:pypi/uvicorn@0.35.0} & BSD-3-Clause & \small — \\
+\raggedright vector-quantize-pytorch & 1.21.2 & library & \small\texttt{pkg:pypi/vector-quantize-pytorch@1.21.2} & MIT & \small — \\
+\raggedright virtualenv & 20.31.2 & library & \small\texttt{pkg:pypi/virtualenv@20.31.2} & MIT & \small — \\
+\raggedright vocos & 0.1.0 & library & \small\texttt{pkg:pypi/vocos@0.1.0} & NOASSERTION & \small — \\
+\raggedright wandb & 0.24.2 & library & \small\texttt{pkg:pypi/wandb@0.24.2} & MIT & \small — \\
+\raggedright wcwidth & 0.2.13 & library & \small\texttt{pkg:pypi/wcwidth@0.2.13} & MIT & \small — \\
+\raggedright webcolors & 24.11.1 & library & \small\texttt{pkg:pypi/webcolors@24.11.1} & BSD-3-Clause & \small — \\
+\raggedright werkzeug & 3.1.3 & library & \small\texttt{pkg:pypi/werkzeug@3.1.3} & BSD-3-Clause & \small — \\
+\raggedright word2number & 1.1 & library & \small\texttt{pkg:pypi/word2number@1.1} & MIT & \small — \\
+\raggedright wrapt & 1.17.2 & library & \small\texttt{pkg:pypi/wrapt@1.17.2} & BSD-3-Clause & \small — \\
+\raggedright xarray & 2025.7.1 & library & \small\texttt{pkg:pypi/xarray@2025.7.1} & Apache-2.0 & \small — \\
+\raggedright xxhash & 3.5.0 & library & \small\texttt{pkg:pypi/xxhash@3.5.0} & BSD-3-Clause & \small — \\
+\raggedright yarl & 1.17.1 & library & \small\texttt{pkg:pypi/yarl@1.17.1} & Apache-2.0 & \small — \\
+\raggedright zipp & 3.23.0 & library & \small\texttt{pkg:pypi/zipp@3.23.0} & MIT & \small — \\
+\raggedright zstandard & 0.23.0 & library & \small\texttt{pkg:pypi/zstandard@0.23.0} & BSD-3-Clause & \small — \\
 \end{longtable}
+
+\subsubsection*{Dependency graph (top-level refs)}
+\begin{lstlisting}[style=depgraph]
+  root-component
+    -> pkg:pypi/six@1.16.0, pkg:pypi/setuptools@77.0.3, pkg:pypi/depyf@0.20.0, pkg:pypi/grpcio@1.78.0, pkg:pypi/grpcio-reflection@1.78.0...
+  pkg:pypi/six@1.16.0
+    -> 
+  pkg:pypi/setuptools@77.0.3
+    -> 
+  pkg:pypi/depyf@0.20.0
+    -> 
+  pkg:pypi/grpcio@1.78.0
+    -> 
+  pkg:pypi/grpcio-reflection@1.78.0
+    -> 
+  pkg:pypi/grpcio-tools@1.78.0
+    -> 
+  pkg:pypi/ray@2.48.0
+    -> 
+  pkg:pypi/tensorizer@2.10.1
+    -> 
+  pkg:pypi/packaging@24.2
+    -> 
+  pkg:pypi/setuptools-scm@8
+    -> 
+  pkg:pypi/runai-model-streamer@0.15.3
+    -> 
+  pkg:pypi/conch-triton-kernels@1.2.1
+    -> 
+  pkg:pypi/timm@1.0.17
+    -> 
+  pkg:pypi/torch@2.10.0
+    -> 
+  pkg:pypi/torchaudio@2.10.0
+    -> 
+  pkg:pypi/torchvision@0.25.0
+    -> 
+  pkg:pypi/flashinfer-python@0.6.4
+    -> 
+  pkg:pypi/triton@3.6.0
+    -> 
+  pkg:pypi/cmake@3.26.1
+    -> 
+  pkg:pypi/jinja2@3.1.6
+    -> 
+  pkg:pypi/amdsmi@6.4.3
+    -> 
+  pkg:pypi/intel-openmp@2024.2.1
+    -> 
+  pkg:pypi/tblib@3.1.0
+    -> 
+  pkg:pypi/pytest@8.3.5
+    -> 
+  pkg:pypi/pytest-asyncio@0.24.0
+    -> 
+  pkg:pypi/pytest-timeout@2.3.1
+    -> 
+  pkg:pypi/pytest-cov@6.3.0
+    -> 
+  pkg:pypi/pytest-forked@1.6.0
+    -> 
+  pkg:pypi/pytest-rerunfailures@14.0
+    -> 
+\end{lstlisting}
 
 \newpage
 \section{Change Lineage from Original Software}
-
-\subsection{vLLM (inference engine)}
-\textbf{Path:} \texttt{vllm-main}
-\\ \textbf{Upstream:} \url{https://github.com/vllm-project/vllm}
-
-\textbf{Changes (from git history):}
-\begin{longtable}{|p{2.2cm}|p{3.2cm}|l|p{6cm}|}
-\hline \textbf{Hash} & \textbf{Date} & \textbf{Author} & \textbf{Subject} \\ \hline \endfirsthead
-\hline \textbf{Hash} & \textbf{Date} & \textbf{Author} & \textbf{Subject} \\ \hline \endhead
-\texttt{9b8071156c1a} & 2026-02-26 09:31:42 +0800 & plturrell & Phase 1 \& 2: OData Vocabularies Universal Dictionary enhancements \\
-\texttt{0b20d62146fa} & 2026-02-26 02:02:05 +0800 & plturrell & Initial commit for fresh sap-oss repo \\
-\hline
-\end{longtable}
-\textit{Full:} \texttt{git log --follow -- vllm-main}
 
 \end{document}

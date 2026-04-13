@@ -21,7 +21,7 @@
 | Term | Definition | Document Reference |
 |------|------------|-------------------|
 | **Agentic Reasoning** | AI systems that Plan → Act → Observe → Correct autonomously | [06](06-architectural-patterns.md) |
-| **Mangle** | Data transformation layer for anonymization, formatting, filtering | [02](02-component-mapping.md), [06](06-architectural-patterns.md) |
+| **Data prep** | Data transformation layer for anonymization, formatting, filtering | [02](02-component-mapping.md), [06](06-architectural-patterns.md) |
 | **MCP** | Model Context Protocol — enables AI to discover and use tools | [04](04-ensemble-of-services.md), [06](06-architectural-patterns.md) |
 | **OpenAI Compliance** | Standard `/v1/chat/completions` API across all services | [06](06-architectural-patterns.md) |
 | **RAG** | Retrieval-Augmented Generation — adding enterprise context to prompts | [02](02-component-mapping.md), [03](03-ensemble-strategy.md) |
@@ -33,7 +33,7 @@
 | Term | Definition | Used In |
 |------|------------|---------|
 | **ACDOCA** | Universal Journal table in SAP S/4HANA (FI/CO integration) | Context examples |
-| **BUKRS** | Company Code field in SAP | Mangle examples |
+| **BUKRS** | Company Code field in SAP | Data examples |
 | **DSO** | Days Sales Outstanding — receivables collection metric | Problem scenarios |
 | **EBITDA** | Earnings Before Interest, Taxes, Depreciation, Amortization | Query examples |
 | **KUNNR** | Customer Number field in SAP | Anonymization examples |
@@ -79,7 +79,7 @@
 | 7 | HANA Vector Store | Foundation | Knowledge search |
 | 8 | GenAI Toolkit | Intelligence | Custom ML |
 | 9 | LangChain Integration | Orchestration | Vector store |
-| 10 | Mangle Query | Foundation | Data transformation |
+| 10 | Vocabulary query | Foundation | Data transformation |
 | 11 | OData Vocabularies | Interaction | Semantic definitions |
 | 12 | vLLM | Foundation | Private LLM |
 | 13 | World Monitor | Governance | Observability |
@@ -91,7 +91,7 @@
 | Pattern | Purpose | When to Use |
 |---------|---------|-------------|
 | **OpenAI Compliance** | Universal API interface | Multiple LLM providers |
-| **Mangle** | Data sanitization | Before any AI reasoning |
+| **Data prep** | Data sanitization | Before any AI reasoning |
 | **MCP** | Tool discovery | Exposing capabilities to agents |
 | **Agentic Reasoning** | Autonomous decisions | Complex, multi-step tasks |
 

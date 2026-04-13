@@ -1,59 +1,109 @@
-\documentclass[11pt]{article}
+\documentclass[11pt,a4paper]{article}
 \usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage{microtype}
 \usepackage{url}
 \usepackage{longtable}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage[table]{xcolor}
+\usepackage{listings}
 \usepackage{hyperref}
 \usepackage{geometry}
-\geometry{margin=2.5cm}
-\title{Software Bill of Materials (CycloneDX) and Change Lineage}
+\usepackage{fancyhdr}
+\geometry{margin=2cm,top=2.5cm,bottom=2.5cm}
+\definecolor{sbomhdr}{RGB}{220,230,242}
+\definecolor{depgraphbg}{RGB}{248,248,248}
+\setlength{\LTcapwidth}{\textwidth}
+\lstdefinestyle{depgraph}{
+  backgroundcolor=\color{depgraphbg},
+  basicstyle=\ttfamily\small,
+  breaklines=true,
+  breakatwhitespace=true,
+  breakindent=2em,
+  columns=fullflexible,
+  keepspaces=true,
+  frame=single,
+  rulecolor=\color{gray!40},
+  xleftmargin=0.5em,
+  xrightmargin=0.5em,
+}
+\hypersetup{colorlinks=true,linkcolor=blue!60!black,urlcolor=blue!70!black}
+\title{\textbf{Software Bill of Materials (CycloneDX) and Change Lineage}}
 \author{Generated from CycloneDX SBOM and git lineage}
 \date{\today}
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\small\textit{SAP OSS — SBOM \& Lineage Report}}
+\fancyhead[R]{\small\today}
+\fancyfoot[C]{\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
 \begin{document}
 \maketitle
 \tableofcontents
 \newpage
 \section{Software Bill of Materials (CycloneDX)}
-Each subsection is generated from a CycloneDX 1.5 BOM (components, purl, license, dependency graph).
+Each subsection is generated from a CycloneDX~1.5 BOM (components, purl, license, dependency graph). Package URLs (purls) follow the \href{https://github.com/package-url/purl-spec}{PURL spec}.
 
 \subsection{Generative AI Toolkit for SAP HANA Cloud}
 \textbf{Path:} \texttt{generative-ai-toolkit-for-sap-hana-cloud-main}
-\\ \textbf{CycloneDX:} spec 1.5, serial \texttt{urn:uuid:9015e085-fa40-48a5-b6e4-ba7d75fd71fa...}
-\\ \textbf{Generated:} 2026-02-28T08:39:38Z
-\\ \textbf{Tool:} build\_cyclonedx.py
+\\ \textbf{CycloneDX:} spec 1.5, serial \texttt{urn:uuid:7fede9e7-0d58-4855-878d-22dc920a6712...}
+\\ \textbf{Generated:} 2026-02-28T10:30:23Z
+\\ \textbf{Tool:} components
 
 \subsubsection*{Components}
-\begin{longtable}{|l|l|l|p{2.2cm}|l|p{4cm}|}
-\hline
-\textbf{Name} & \textbf{Version} & \textbf{Type} & \textbf{purl} & \textbf{License} & \textbf{Description} \\
-\hline
+\begin{longtable}{|p{4cm}|p{2cm}|p{1.6cm}|p{5cm}|p{1.5cm}|p{3.5cm}|}
+\toprule
+\rowcolor{sbomhdr}\textbf{Name} & \textbf{Version} & \textbf{Type} & \textbf{purl} & \textbf{License} & \textbf{Description} \\
+\midrule
 \endfirsthead
-\hline
-\textbf{Name} & \textbf{Version} & \textbf{Type} & \textbf{purl} & \textbf{License} & \textbf{Description} \\
-\hline
+\multicolumn{6}{l}{\small\itshape (continued from previous page)} \\
+\toprule
+\rowcolor{sbomhdr}\textbf{Name} & \textbf{Version} & \textbf{Type} & \textbf{purl} & \textbf{License} & \textbf{Description} \\
+\midrule
 \endhead
-requirements & .txt & library & \texttt{pkg:pypi/requirements@.txt} & — & — \\
-\hline
+\midrule
+\multicolumn{6}{r}{\small\itshape (continued on next page)} \\
+\endfoot
+\bottomrule
+\endlastfoot
+\raggedright langchain-community & 0 & library & \small\texttt{pkg:pypi/langchain-community@0} & MIT & \small — \\
+\raggedright langchain-text-splitters & 0 & library & \small\texttt{pkg:pypi/langchain-text-splitters@0} & MIT & \small — \\
+\raggedright numpy & 0 & library & \small\texttt{pkg:pypi/numpy@0} & — & \small — \\
+\raggedright pandas & 0 & library & \small\texttt{pkg:pypi/pandas@0} & BSD-3-Clause & \small — \\
+\raggedright hana-ml & 2.27.26020601 & library & \small\texttt{pkg:pypi/hana-ml@2.27.26020601} & LicenseRef-SAP-DeveloperAgreement & \small — \\
+\raggedright pydantic & 2.11 & library & \small\texttt{pkg:pypi/pydantic@2.11} & MIT & \small — \\
+\raggedright sap-ai-sdk-gen & 0 & library & \small\texttt{pkg:pypi/sap-ai-sdk-gen@0} & LicenseRef-SAP-DeveloperAgreement & \small — \\
+\raggedright langchain-hana & 0 & library & \small\texttt{pkg:pypi/langchain-hana@0} & Apache-2.0 & \small — \\
+\raggedright fastmcp & 2.0 & library & \small\texttt{pkg:pypi/fastmcp@2.0} & Apache-2.0 & \small — \\
 \end{longtable}
 
-\subsubsection*{Dependency graph (refs)}
-\begin{verbatim}
-  root-component -> pkg:pypi/requirements@.txt
-\end{verbatim}
+\subsubsection*{Dependency graph (top-level refs)}
+\begin{lstlisting}[style=depgraph]
+  root-component
+    -> pkg:pypi/langchain-community@0, pkg:pypi/langchain-text-splitters@0, pkg:pypi/numpy@0, pkg:pypi/pandas@0, pkg:pypi/hana-ml@2.27.26020601...
+  pkg:pypi/langchain-community@0
+    -> 
+  pkg:pypi/langchain-text-splitters@0
+    -> 
+  pkg:pypi/numpy@0
+    -> 
+  pkg:pypi/pandas@0
+    -> 
+  pkg:pypi/hana-ml@2.27.26020601
+    -> 
+  pkg:pypi/pydantic@2.11
+    -> 
+  pkg:pypi/sap-ai-sdk-gen@0
+    -> 
+  pkg:pypi/langchain-hana@0
+    -> 
+  pkg:pypi/fastmcp@2.0
+    -> 
+\end{lstlisting}
 
 \newpage
 \section{Change Lineage from Original Software}
-
-\subsection{Generative AI Toolkit for SAP HANA Cloud}
-\textbf{Path:} \texttt{generative-ai-toolkit-for-sap-hana-cloud-main}
-
-\textbf{Changes (from git history):}
-\begin{longtable}{|p{2.2cm}|p{3.2cm}|l|p{6cm}|}
-\hline \textbf{Hash} & \textbf{Date} & \textbf{Author} & \textbf{Subject} \\ \hline \endfirsthead
-\hline \textbf{Hash} & \textbf{Date} & \textbf{Author} & \textbf{Subject} \\ \hline \endhead
-\texttt{9b8071156c1a} & 2026-02-26 09:31:42 +0800 & plturrell & Phase 1 \& 2: OData Vocabularies Universal Dictionary enhancements \\
-\texttt{0b20d62146fa} & 2026-02-26 02:02:05 +0800 & plturrell & Initial commit for fresh sap-oss repo \\
-\hline
-\end{longtable}
-\textit{Full:} \texttt{git log --follow -- generative-ai-toolkit-for-sap-hana-cloud-main}
 
 \end{document}

@@ -39,7 +39,7 @@ except ImportError:
     _YAML_AVAILABLE = False
 
 BOMS_DIR_DEFAULT  = Path(__file__).parent / "boms"
-MANIFEST_DEFAULT  = Path(__file__).parents[2] / "docs" / "sbom-lineage-manifest.yaml"
+MANIFEST_DEFAULT  = Path(__file__).parents[2] / "docs" / "sbom" / "sbom-lineage-manifest.yaml"
 
 # ── SPDX 3.24 identifiers (common subset; extend as needed) ──────────────────
 KNOWN_SPDX = {
@@ -90,7 +90,7 @@ def _load_stub_boms(manifest_path: Path = MANIFEST_DEFAULT) -> set[str]:
         return _fallback
 
 
-# BOMs with legitimately empty components — driven from docs/sbom-lineage-manifest.yaml.
+# BOMs with legitimately empty components — driven from docs/sbom/sbom-lineage-manifest.yaml.
 # Each entry must have `stub: true` in the manifest.  Do not add paths here directly.
 STUB_BOMS: set[str] = _load_stub_boms()
 

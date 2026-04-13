@@ -30,7 +30,7 @@ flowchart TB
     subgraph Foundation["⚡ FOUNDATION"]
         Stream["Streaming Core"]
         VLLM["vLLM Engine"]
-        Mangle["Mangle Query"]
+        DataPrep["Vocabulary query"]
         HVS["HANA Vector Store"]
     end
     
@@ -53,7 +53,7 @@ flowchart TB
 | **Interaction** | UI5 Web Components, OData Vocabularies | User interface, semantic standards |
 | **Orchestration** | AI SDK, CAP LLM Plugin, LangChain | Model routing, RAG, privacy |
 | **Intelligence** | MCP PAL, Data Copilot, GenAI Toolkit | Forecasting, data quality, ML |
-| **Foundation** | Streaming Core, vLLM, Mangle, HANA Vector Store | Performance, search, transformation |
+| **Foundation** | Streaming Core, vLLM, data prep, HANA Vector Store | Performance, search, transformation |
 | **Governance** | World Monitor | Observability, tracing, audit |
 
 ---
@@ -82,7 +82,7 @@ flowchart TD
     subgraph DataLayer["Data & Knowledge Base"]
         HANA["SAP HANA Cloud"]
         HVS["HANA Vector Store (7)"]
-        MANGLE["Mangle Query (10)"]
+        VOCAB["Vocabulary query (10)"]
     end
 
     subgraph AgenticLayer["Agentic & Science Tools"]
@@ -216,13 +216,13 @@ flowchart TB
 | 1 | UI5 Web Components | Interaction | `SAP/ui5-webcomponents-ngx` | Chat dashboard |
 | 2 | AI SDK JS | Orchestration | `SAP/ai-sdk-js` | Model routing |
 | 3 | CAP LLM Plugin | Orchestration | `SAP/cap-llm-plugin` | ACDOCA RAG |
-| 4 | Streaming Core | Foundation | Custom (Zig) | Real-time delivery |
+| 4 | Streaming Core | Foundation | Custom (streaming) | Real-time delivery |
 | 5 | MCP PAL | Intelligence | Custom | Sales forecast |
 | 6 | Data Cleaning Copilot | Intelligence | Custom | Data quality audit |
 | 7 | HANA Vector Store | Foundation | SAP HANA Cloud | Knowledge search |
 | 8 | GenAI Toolkit | Intelligence | `SAP/generative-ai-toolkit-for-sap-hana-cloud` | Custom ML |
 | 9 | LangChain Integration | Orchestration | `SAP/langchain-integration-for-sap-hana-cloud` | Vector store |
-| 10 | Mangle Query | Foundation | Custom | Log transformation |
+| 10 | Vocabulary query | Foundation | Custom | Log transformation |
 | 11 | OData Vocabularies | Interaction | Custom | Semantic definitions |
 | 12 | vLLM | Foundation | vLLM | Private LLM |
 | 13 | World Monitor | Governance | Custom | Observability |

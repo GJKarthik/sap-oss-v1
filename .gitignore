@@ -69,10 +69,6 @@ src/training/data/massive_semantic/training_data.json
 **/.gradle/
 **/build/
 
-# Zig build cache and compiled outputs
-**/.zig-cache/
-**/zig-out/
-
 # Yarn PnP runtime files
 .pnp.cjs
 .pnp.loader.mjs

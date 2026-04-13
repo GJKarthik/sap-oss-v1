@@ -7,7 +7,7 @@ pipeline: xlsx_to_odps.py
 copilotIntegration:
   profilerAvailable: false
   columnMappingAvailable: true
-  copilotPath: /Users/user/Documents/sap-oss/src/generativeUI/training-webcomponents-ngx
+  copilotPath: src/generativeUI/training-webcomponents-ngx
 profile:
   rowCount: 9
   columnCount: 2

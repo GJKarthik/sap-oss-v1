@@ -15,7 +15,7 @@ sequenceDiagram
     participant SDK as 🎯 AI SDK
     participant CAP as 📦 CAP Plugin
     participant HANA as 💾 HANA Cloud
-    participant Mangle as 🔒 Mangle
+    participant DataPrep as 🔒 Data prep
     participant LLM as 🤖 LLM (AI Core)
     participant Stream as ⚡ Streaming
     
@@ -30,8 +30,8 @@ sequenceDiagram
     activate CAP
     CAP->>HANA: Vector search ACDOCA
     HANA-->>CAP: 23 relevant entries (0.5s)
-    CAP->>Mangle: Anonymize PII
-    Mangle-->>CAP: "[VENDOR_012]" (0.15s)
+    CAP->>DataPrep: Anonymize PII
+    DataPrep-->>CAP: "[VENDOR_012]" (0.15s)
     CAP-->>SDK: Enriched context (0.8s total)
     deactivate CAP
     
@@ -91,7 +91,7 @@ flowchart TB
 | Intent parsing | CAP service | 50ms |
 | Vector search | HANA Cloud | 500ms |
 | Vocabulary lookup | OData service | 100ms |
-| PII anonymization | Mangle layer | 150ms |
+| PII anonymization | data prep layer | 150ms |
 
 ### Stage 3: Governance & Orchestration (0.9-1.1s)
 
@@ -129,7 +129,7 @@ flowchart LR
 | Action | Technology | Time |
 |--------|------------|------|
 | Token generation | LLM (GPT-4) | 1100ms |
-| SSE streaming | Zig async I/O | <5ms latency |
+| SSE streaming | async I/O | <5ms latency |
 | Total response | 150 tokens | 1200ms |
 
 ---
@@ -161,7 +161,7 @@ flowchart LR
 flowchart TB
     subgraph Security["🔒 DEFENSE IN DEPTH"]
         L1["Layer 1: NETWORK<br/>XSUAA at Streaming Core"]
-        L2["Layer 2: DATA<br/>Mangle Anonymization"]
+        L2["Layer 2: DATA<br/>Data anonymization"]
         L3["Layer 3: CONTENT<br/>AI SDK Safety Filter"]
     end
     
@@ -174,7 +174,7 @@ flowchart TB
 | Layer | Protection | Component |
 |-------|------------|-----------|
 | **Network** | Token validation, role-based access | XSUAA + Streaming Core |
-| **Data** | PII masking, data classification | Mangle layer |
+| **Data** | PII masking, data classification | data prep layer |
 | **Content** | Harmful content blocking, compliance | AI SDK Safety Filter |
 
 ---
@@ -211,7 +211,7 @@ flowchart TB
 | **LLM Provider Down** | SDK health check | Auto-failover to vLLM | <3s delay |
 | **HANA Timeout** | 5s timeout | Serve cached context | Degraded + warning |
 | **Streaming Overload** | Load threshold | Horizontal scale-out | Queue delay |
-| **PII Leak Attempt** | Mangle detection | Block + alert | Request rejected |
+| **PII Leak Attempt** | data prep detection | Block + alert | Request rejected |
 
 ### Circuit Breaker
 
@@ -286,7 +286,7 @@ flowchart LR
 
 | Capability | How It's Achieved | Business Value |
 |------------|-------------------|----------------|
-| **Speed** | Zig streaming + SSE | 2.3s response |
+| **Speed** | SSE streaming + SSE | 2.3s response |
 | **Accuracy** | HANA RAG + OData | No hallucinations |
 | **Security** | Defense-in-depth | Zero PII exposure |
 | **Resilience** | Circuit breaker | 99.9% availability |

@@ -14,7 +14,7 @@ except ImportError:
     yaml = None
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
-MANIFEST_PATH = REPO_ROOT / "docs" / "sbom-lineage-manifest.yaml"
+MANIFEST_PATH = REPO_ROOT / "docs" / "sbom" / "sbom-lineage-manifest.yaml"
 
 
 def load_manifest(path: Path) -> list[dict]:

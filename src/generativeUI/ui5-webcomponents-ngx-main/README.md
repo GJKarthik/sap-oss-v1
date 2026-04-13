@@ -125,7 +125,6 @@ Edit `.env` and fill in the values for the services you want to use:
 
 | Variable | Description | Required for |
 |----------|-------------|--------------|
-| `MANGLE_ENDPOINT` | Mangle reasoning engine URL | Joule AI |
 | `HANA_BASE_URL` / `HANA_AUTH_URL` / `HANA_CLIENT_ID` / `HANA_CLIENT_SECRET` | SAP HANA Cloud REST SQL | Persistent audit/metrics |
 | `AICORE_CLIENT_ID` / `AICORE_CLIENT_SECRET` / `AICORE_AUTH_URL` / `AICORE_BASE_URL` | SAP AI Core credentials | OpenAI-compat server |
 | `MCP_AUTH_TOKEN` | Bearer token for `/mcp` endpoint | MCP server (optional for localhost) |
@@ -273,7 +272,7 @@ libs/
   genui-collab/        Real-time CRDT-backed collaboration (WebSocket)
   openai-server/       OpenAI-compatible proxy → SAP AI Core + HANA Vector
 
-mcp-server/            MCP server — Express + Mangle reasoning
+mcp-server/            MCP server — Express (Model Context Protocol)
 ```
 
 ---

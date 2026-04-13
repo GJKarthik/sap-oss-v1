@@ -13,7 +13,7 @@
 | **UI5 Web Components** | `SAP/ui5-webcomponents-ngx` | Inconsistent UI/UX | Standard chat interface |
 | **CAP LLM Plugin** | `SAP/cap-llm-plugin` | Data Gap & PII Risk | Auto-retrieve ACDOCA, mask names |
 | **AI SDK JS** | `SAP/ai-sdk-js` | Provider Fragmentation | Switch GPT-4/Claude in config |
-| **Streaming Core** | Custom (Zig) | Performance & Scale | 50 concurrent users at month-end |
+| **Streaming Core** | Custom (streaming) | Performance & Scale | 50 concurrent users at month-end |
 
 ---
 
@@ -33,12 +33,12 @@ flowchart TB
     end
     
     subgraph Layer3["📦 LAYER 3: CONTEXT & SECURITY"]
-        MNG["Mangle Layer<br/>PII Anonymization"]
+        DP["Data prep layer<br/>PII Anonymization"]
         RAG["RAG Pipeline<br/>Vector Search"]
     end
     
     subgraph Layer4["⚡ LAYER 4: FOUNDATION"]
-        STR["Streaming Core<br/>Zig-based SSE"]
+        STR["Streaming Core<br/>native SSE"]
         HANA["SAP HANA Cloud<br/>Vectors, PAL"]
     end
     
@@ -107,14 +107,14 @@ sequenceDiagram
     participant User as 👤 User
     participant CAP as 📦 CAP Plugin
     participant HANA as 💾 HANA Cloud
-    participant Mangle as 🔒 Mangle
+    participant DataPrep as 🔒 Data prep
     participant SDK as 🎯 AI SDK
     
     User->>CAP: "What caused Q3 cost overrun?"
     CAP->>HANA: Vector search: "cost" + "Q3"
     HANA-->>CAP: 47 relevant ACDOCA rows
-    CAP->>Mangle: Raw data with PII
-    Mangle-->>CAP: Anonymized data
+    CAP->>DataPrep: Raw data with PII
+    DataPrep-->>CAP: Anonymized data
     CAP->>CAP: Enrich with OData vocab
     CAP-->>SDK: Clean, enriched context
     SDK-->>User: Specific, actionable answer
@@ -187,13 +187,13 @@ const response = await client.chatCompletion({
 
 ---
 
-## 4. Streaming Core: High-Performance Gateway (Zig)
+## 4. Streaming Core: High-Performance Gateway
 
 **Problem Addressed**: Real-Time Performance and Scalability.
 
-The Streaming Core is a high-performance, low-latency engine designed for massive throughput. Built with Zig, it acts as a high-performance gateway for AI responses.
+The Streaming Core is a high-performance, low-latency engine designed for massive throughput. Built for low-latency streaming, it acts as a high-performance gateway for AI responses.
 
-### Why Zig?
+### Why a dedicated streaming gateway?
 
 | Aspect | Benefit | Alternative Comparison | When to Use |
 |--------|---------|----------------------|-------------|
@@ -212,7 +212,7 @@ flowchart TB
         UN["User N"]
     end
     
-    subgraph Gateway["⚡ Streaming Core (Zig)"]
+    subgraph Gateway["⚡ Streaming Core (native)"]
         LB["Load Balancer"]
         SSE["SSE Manager<br/>async I/O"]
         AUTH["XSUAA Auth<br/>native"]
@@ -257,7 +257,7 @@ flowchart LR
     
     subgraph Core["Deploy Second"]
         STR["Streaming Core"]
-        MNG["Mangle Service"]
+        DP["Data prep service"]
     end
     
     subgraph Services["Deploy Third"]
@@ -283,8 +283,8 @@ flowchart LR
 | HANA Cloud | — | 1st |
 | XSUAA | — | 1st |
 | Streaming Core | XSUAA | 2nd |
-| Mangle Service | HANA | 2nd |
-| CAP LLM Plugin | HANA, Mangle | 3rd |
+| Data prep service | HANA | 2nd |
+| CAP LLM Plugin | HANA, data prep | 3rd |
 | AI SDK | XSUAA, Streaming, CAP | 4th |
 | UI5 Components | AI SDK | 5th |
 

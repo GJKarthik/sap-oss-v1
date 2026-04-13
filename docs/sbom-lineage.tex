@@ -7,7 +7,7 @@
 \usepackage{longtable}
 \usepackage{booktabs}
 \usepackage{array}
-\usepackage{xcolor}
+\usepackage[table]{xcolor}
 \usepackage{listings}
 \usepackage{hyperref}
 \usepackage{geometry}
@@ -46,7 +46,7 @@
 \section{Software Bill of Materials (CycloneDX)}
 Each subsection is generated from a CycloneDX~1.5 BOM (components, purl, license, dependency graph). Package URLs (purls) follow the \href{https://github.com/package-url/purl-spec}{PURL spec}.
 
-\subsection{Ai Core Pal}
+\subsection{AI Core PAL (MCP / HANA PAL)}
 \textbf{Path:} \texttt{ai-core-pal}
 \\ \textbf{CycloneDX:} spec 1.5, serial \texttt{urn:uuid:e4bed47a-ab8a-4955-8975-72871093cd25...}
 \\ \textbf{Generated:} 2026-02-28T09:52:34Z
@@ -76,7 +76,7 @@ Each subsection is generated from a CycloneDX~1.5 BOM (components, purl, license
     -> 
 \end{lstlisting}
 
-\subsection{Ai Core Streaming}
+\subsection{AI Core Streaming (mesh coordinator)}
 \textbf{Path:} \texttt{ai-core-streaming}
 \\ \textbf{CycloneDX:} spec 1.5, serial \texttt{urn:uuid:35ea06e8-175a-4a0d-a4c3-2fb9f8e1cad9...}
 \\ \textbf{Generated:} 2026-02-28T09:52:34Z
@@ -935,7 +935,7 @@ Each subsection is generated from a CycloneDX~1.5 BOM (components, purl, license
 \raggedright npm-run-path & 6.0.0 & library & \small\texttt{pkg:npm/npm-run-path@6.0.0} & MIT & \small Get your PATH prepended with locally installed binaries \\
 \raggedright oas-kit-common & 1.0.8 & library & \small\texttt{pkg:npm/oas-kit-common@1.0.8} & BSD-3-Clause & \small Common utility functions for oas-kit \\
 \raggedright oas-linter & 3.2.2 & library & \small\texttt{pkg:npm/oas-linter@3.2.2} & BSD-3-Clause & \small Default linter plugin for oas-validator \\
-\raggedright oas-resolver & 2.5.6 & library & \small\texttt{pkg:npm/oas-resolver@2.5.6} & BSD-3-Clause & \small Resolve external $refs in OpenAPI (swagger) 2.0 / 3.x definitions \\
+\raggedright oas-resolver & 2.5.6 & library & \small\texttt{pkg:npm/oas-resolver@2.5.6} & BSD-3-Clause & \small Resolve external \$refs in OpenAPI (swagger) 2.0 / 3.x definitions \\
 \raggedright oas-schema-walker & 1.1.5 & library & \small\texttt{pkg:npm/oas-schema-walker@1.1.5} & BSD-3-Clause & \small Library to walk OAS 3 schema objects and call a callback \\
 \raggedright oas-validator & 5.0.8 & library & \small\texttt{pkg:npm/oas-validator@5.0.8} & BSD-3-Clause & \small Parser/validator for OpenAPI 3.x definitions \\
 \raggedright object-assign & 4.1.1 & library & \small\texttt{pkg:npm/object-assign@4.1.1} & MIT & \small ES2015 `Object.assign()` ponyfill \\
@@ -2086,112 +2086,7 @@ Each subsection is generated from a CycloneDX~1.5 BOM (components, purl, license
     -> 
 \end{lstlisting}
 
-\subsection{Data Cleaning Copilot}
-\textbf{Path:} \texttt{src/generativeUI/training-webcomponents-ngx}
-\\ \textbf{CycloneDX:} spec 1.5, serial \texttt{urn:uuid:57fa1e30-308f-4aee-ad3b-457732f38df6...}
-\\ \textbf{Generated:} 2026-02-28T10:30:18Z
-\\ \textbf{Tool:} components
-
-\subsubsection*{Components}
-\begin{longtable}{|p{4cm}|p{2cm}|p{1.6cm}|p{5cm}|p{1.5cm}|p{3.5cm}|}
-\toprule
-\rowcolor{sbomhdr}\textbf{Name} & \textbf{Version} & \textbf{Type} & \textbf{purl} & \textbf{License} & \textbf{Description} \\
-\midrule
-\endfirsthead
-\multicolumn{6}{l}{\small\itshape (continued from previous page)} \\
-\toprule
-\rowcolor{sbomhdr}\textbf{Name} & \textbf{Version} & \textbf{Type} & \textbf{purl} & \textbf{License} & \textbf{Description} \\
-\midrule
-\endhead
-\midrule
-\multicolumn{6}{r}{\small\itshape (continued on next page)} \\
-\endfoot
-\bottomrule
-\endlastfoot
-\raggedright aioboto3 & 15.0.0 & library & \small\texttt{pkg:pypi/aioboto3@15.0.0} & Apache-2.0 & \small — \\
-\raggedright black & 25.1.0 & library & \small\texttt{pkg:pypi/black@25.1.0} & MIT & \small — \\
-\raggedright boto3 & 1.38.27 & library & \small\texttt{pkg:pypi/boto3@1.38.27} & Apache-2.0 & \small — \\
-\raggedright frictionless & 5.18.1 & library & \small\texttt{pkg:pypi/frictionless@5.18.1} & MIT & \small — \\
-\raggedright gradio & 5.42.0 & library & \small\texttt{pkg:pypi/gradio@5.42.0} & Apache-2.0 & \small — \\
-\raggedright instructor & 1.10.0 & library & \small\texttt{pkg:pypi/instructor@1.10.0} & MIT & \small — \\
-\raggedright ipykernel & 6.30.0 & library & \small\texttt{pkg:pypi/ipykernel@6.30.0} & BSD-3-Clause & \small — \\
-\raggedright langchain & 0.3.27 & library & \small\texttt{pkg:pypi/langchain@0.3.27} & MIT & \small — \\
-\raggedright langchain-aws & 0.2.27 & library & \small\texttt{pkg:pypi/langchain-aws@0.2.27} & MIT & \small — \\
-\raggedright langchain-community & 0.3.27 & library & \small\texttt{pkg:pypi/langchain-community@0.3.27} & MIT & \small — \\
-\raggedright langchain-core & 0.3.73 & library & \small\texttt{pkg:pypi/langchain-core@0.3.73} & MIT & \small — \\
-\raggedright loguru & 0.7.3 & library & \small\texttt{pkg:pypi/loguru@0.7.3} & MIT & \small — \\
-\raggedright networkx & 3.3 & library & \small\texttt{pkg:pypi/networkx@3.3} & BSD-3-Clause & \small — \\
-\raggedright numpy & 2.1.0 & library & \small\texttt{pkg:pypi/numpy@2.1.0} & BSD-3-Clause & \small — \\
-\raggedright pandas & 2.2.02.3 & library & \small\texttt{pkg:pypi/pandas@2.2.02.3} & BSD-3-Clause & \small — \\
-\raggedright pandera & 0.25.0 & library & \small\texttt{pkg:pypi/pandera@0.25.0} & MIT & \small — \\
-\raggedright python-dotenv & 1.1.1 & library & \small\texttt{pkg:pypi/python-dotenv@1.1.1} & BSD-3-Clause & \small — \\
-\raggedright pyyaml & 6.0.2 & library & \small\texttt{pkg:pypi/pyyaml@6.0.2} & MIT & \small — \\
-\raggedright relbench & 1.1.0 & library & \small\texttt{pkg:pypi/relbench@1.1.0} & MIT & \small — \\
-\raggedright ruff & 0.12.3 & library & \small\texttt{pkg:pypi/ruff@0.12.3} & MIT & \small — \\
-\raggedright sap-ai-sdk-gen & 5.4.5 & library & \small\texttt{pkg:pypi/sap-ai-sdk-gen@5.4.5} & LicenseRef-SAP-DeveloperAgreement & \small — \\
-\raggedright setuptools & 80.9.0 & library & \small\texttt{pkg:pypi/setuptools@80.9.0} & MIT & \small — \\
-\raggedright sqlalchemy & 2.0.41 & library & \small\texttt{pkg:pypi/sqlalchemy@2.0.41} & MIT & \small — \\
-\raggedright tabulate & 0.9.0 & library & \small\texttt{pkg:pypi/tabulate@0.9.0} & MIT & \small — \\
-\raggedright ydata-profiling & 4.15.1 & library & \small\texttt{pkg:pypi/ydata-profiling@4.15.1} & MIT & \small — \\
-\end{longtable}
-
-\subsubsection*{Dependency graph (top-level refs)}
-\begin{lstlisting}[style=depgraph]
-  root-component
-    -> pkg:pypi/aioboto3@15.0.0, pkg:pypi/black@25.1.0, pkg:pypi/boto3@1.38.27, pkg:pypi/frictionless@5.18.1, pkg:pypi/gradio@5.42.0...
-  pkg:pypi/aioboto3@15.0.0
-    -> 
-  pkg:pypi/black@25.1.0
-    -> 
-  pkg:pypi/boto3@1.38.27
-    -> 
-  pkg:pypi/frictionless@5.18.1
-    -> 
-  pkg:pypi/gradio@5.42.0
-    -> 
-  pkg:pypi/instructor@1.10.0
-    -> 
-  pkg:pypi/ipykernel@6.30.0
-    -> 
-  pkg:pypi/langchain@0.3.27
-    -> 
-  pkg:pypi/langchain-aws@0.2.27
-    -> 
-  pkg:pypi/langchain-community@0.3.27
-    -> 
-  pkg:pypi/langchain-core@0.3.73
-    -> 
-  pkg:pypi/loguru@0.7.3
-    -> 
-  pkg:pypi/networkx@3.3
-    -> 
-  pkg:pypi/numpy@2.1.0
-    -> 
-  pkg:pypi/pandas@2.2.02.3
-    -> 
-  pkg:pypi/pandera@0.25.0
-    -> 
-  pkg:pypi/python-dotenv@1.1.1
-    -> 
-  pkg:pypi/pyyaml@6.0.2
-    -> 
-  pkg:pypi/relbench@1.1.0
-    -> 
-  pkg:pypi/ruff@0.12.3
-    -> 
-  pkg:pypi/sap-ai-sdk-gen@5.4.5
-    -> 
-  pkg:pypi/setuptools@80.9.0
-    -> 
-  pkg:pypi/sqlalchemy@2.0.41
-    -> 
-  pkg:pypi/tabulate@0.9.0
-    -> 
-  pkg:pypi/ydata-profiling@4.15.1
-    -> 
-\end{lstlisting}
-
-\subsection{Elasticsearch Main}
+\subsection{Elasticsearch (SAP fork)}
 \textbf{Path:} \texttt{elasticsearch-main}
 \\ \textbf{CycloneDX:} spec 1.5, serial \texttt{urn:uuid:8a40673d-ea19-4e8a-a0b8-f290d29ce093...}
 \\ \textbf{Generated:} 2026-02-28T09:52:34Z
@@ -2320,99 +2215,6 @@ Each subsection is generated from a CycloneDX~1.5 BOM (components, purl, license
   pkg:pypi/hdbcli@2.27.23
     -> 
   pkg:pypi/rdflib@7.6.0
-    -> 
-\end{lstlisting}
-
-\subsection{Mangle Main}
-\textbf{Path:} \texttt{mangle-main}
-\\ \textbf{CycloneDX:} spec 1.5, serial \texttt{urn:uuid:722994b0-d187-4cfb-a105-5bcd0b58625c...}
-\\ \textbf{Generated:} 2026-02-28T10:41:06Z
-\\ \textbf{Tool:} components
-
-\subsubsection*{Components}
-\begin{longtable}{|p{4cm}|p{2cm}|p{1.6cm}|p{5cm}|p{1.5cm}|p{3.5cm}|}
-\toprule
-\rowcolor{sbomhdr}\textbf{Name} & \textbf{Version} & \textbf{Type} & \textbf{purl} & \textbf{License} & \textbf{Description} \\
-\midrule
-\endfirsthead
-\multicolumn{6}{l}{\small\itshape (continued from previous page)} \\
-\toprule
-\rowcolor{sbomhdr}\textbf{Name} & \textbf{Version} & \textbf{Type} & \textbf{purl} & \textbf{License} & \textbf{Description} \\
-\midrule
-\endhead
-\midrule
-\multicolumn{6}{r}{\small\itshape (continued on next page)} \\
-\endfoot
-\bottomrule
-\endlastfoot
-\raggedright bitbucket.org/creachadair/stringset & 0.0.11 & library & \small\texttt{pkg:golang/bitbucket.org/creachadair/stringset@0.0.11} & BSD-3-Clause & \small — \\
-\raggedright github.com/antlr4-go/antlr/v4 & 4.13.1 & library & \small\texttt{pkg:golang/github.com/antlr4-go/antlr/v4@4.13.1} & BSD-3-Clause & \small — \\
-\raggedright github.com/chzyer/readline & 1.5.1 & library & \small\texttt{pkg:golang/github.com/chzyer/readline@1.5.1} & MIT & \small — \\
-\raggedright github.com/golang/glog & 1.2.4 & library & \small\texttt{pkg:golang/github.com/golang/glog@1.2.4} & Apache-2.0 & \small — \\
-\raggedright github.com/google/go-cmp & 0.6.0 & library & \small\texttt{pkg:golang/github.com/google/go-cmp@0.6.0} & BSD-3-Clause & \small — \\
-\raggedright go.uber.org/multierr & 1.11.0 & library & \small\texttt{pkg:golang/go.uber.org/multierr@1.11.0} & MIT & \small — \\
-\raggedright google.golang.org/protobuf & 1.34.0 & library & \small\texttt{pkg:golang/google.golang.org/protobuf@1.34.0} & BSD-3-Clause & \small — \\
-\end{longtable}
-
-\subsubsection*{Dependency graph (top-level refs)}
-\begin{lstlisting}[style=depgraph]
-  root-component
-    -> pkg:golang/bitbucket.org/creachadair/stringset@0.0.11, pkg:golang/github.com/antlr4-go/antlr/v4@4.13.1, pkg:golang/github.com/chzyer/readline@1.5.1, pkg:golang/github.com/golang/glog@1.2.4, pkg:golang/github.com/google/go-cmp@0.6.0...
-  pkg:golang/bitbucket.org/creachadair/stringset@0.0.11
-    -> 
-  pkg:golang/github.com/antlr4-go/antlr/v4@4.13.1
-    -> 
-  pkg:golang/github.com/chzyer/readline@1.5.1
-    -> 
-  pkg:golang/github.com/golang/glog@1.2.4
-    -> 
-  pkg:golang/github.com/google/go-cmp@0.6.0
-    -> 
-  pkg:golang/go.uber.org/multierr@1.11.0
-    -> 
-  pkg:golang/google.golang.org/protobuf@1.34.0
-    -> 
-\end{lstlisting}
-
-\subsection{Mangle Query Service}
-\textbf{Path:} \texttt{mangle-query-service}
-\\ \textbf{CycloneDX:} spec 1.5, serial \texttt{urn:uuid:e2508415-d355-4798-9fe4-2e22a0e4de81...}
-\\ \textbf{Generated:} 2026-02-28T10:41:06Z
-\\ \textbf{Tool:} components
-
-\subsubsection*{Components}
-\begin{longtable}{|p{4cm}|p{2cm}|p{1.6cm}|p{5cm}|p{1.5cm}|p{3.5cm}|}
-\toprule
-\rowcolor{sbomhdr}\textbf{Name} & \textbf{Version} & \textbf{Type} & \textbf{purl} & \textbf{License} & \textbf{Description} \\
-\midrule
-\endfirsthead
-\multicolumn{6}{l}{\small\itshape (continued from previous page)} \\
-\toprule
-\rowcolor{sbomhdr}\textbf{Name} & \textbf{Version} & \textbf{Type} & \textbf{purl} & \textbf{License} & \textbf{Description} \\
-\midrule
-\endhead
-\midrule
-\multicolumn{6}{r}{\small\itshape (continued on next page)} \\
-\endfoot
-\bottomrule
-\endlastfoot
-\raggedright github.com/elastic/go-elasticsearch/v8 & 8.19.3 & library & \small\texttt{pkg:golang/github.com/elastic/go-elasticsearch/v8@8.19.3} & Apache-2.0 & \small — \\
-\raggedright github.com/google/mangle & 0.0.0-00010101000000-000000000000 & library & \small\texttt{pkg:golang/github.com/google/mangle@0.0.0-00010101000000-000000000000} & Apache-2.0 & \small — \\
-\raggedright google.golang.org/grpc & 1.79.1 & library & \small\texttt{pkg:golang/google.golang.org/grpc@1.79.1} & Apache-2.0 & \small — \\
-\raggedright google.golang.org/protobuf & 1.36.11 & library & \small\texttt{pkg:golang/google.golang.org/protobuf@1.36.11} & BSD-3-Clause & \small — \\
-\end{longtable}
-
-\subsubsection*{Dependency graph (top-level refs)}
-\begin{lstlisting}[style=depgraph]
-  root-component
-    -> pkg:golang/github.com/elastic/go-elasticsearch/v8@8.19.3, pkg:golang/github.com/google/mangle@0.0.0-00010101000000-000000000000, pkg:golang/google.golang.org/grpc@1.79.1, pkg:golang/google.golang.org/protobuf@1.36.11
-  pkg:golang/github.com/elastic/go-elasticsearch/v8@8.19.3
-    -> 
-  pkg:golang/github.com/google/mangle@0.0.0-00010101000000-000000000000
-    -> 
-  pkg:golang/google.golang.org/grpc@1.79.1
-    -> 
-  pkg:golang/google.golang.org/protobuf@1.36.11
     -> 
 \end{lstlisting}
 
@@ -2686,6 +2488,111 @@ Each subsection is generated from a CycloneDX~1.5 BOM (components, purl, license
     -> 
   pkg:npm/js-yaml@4.1.1
     -> pkg:npm/argparse@2.0.1
+\end{lstlisting}
+
+\subsection{Data Cleaning Copilot}
+\textbf{Path:} \texttt{training-webcomponents-ngx}
+\\ \textbf{CycloneDX:} spec 1.5, serial \texttt{urn:uuid:57fa1e30-308f-4aee-ad3b-457732f38df6...}
+\\ \textbf{Generated:} 2026-02-28T10:30:18Z
+\\ \textbf{Tool:} components
+
+\subsubsection*{Components}
+\begin{longtable}{|p{4cm}|p{2cm}|p{1.6cm}|p{5cm}|p{1.5cm}|p{3.5cm}|}
+\toprule
+\rowcolor{sbomhdr}\textbf{Name} & \textbf{Version} & \textbf{Type} & \textbf{purl} & \textbf{License} & \textbf{Description} \\
+\midrule
+\endfirsthead
+\multicolumn{6}{l}{\small\itshape (continued from previous page)} \\
+\toprule
+\rowcolor{sbomhdr}\textbf{Name} & \textbf{Version} & \textbf{Type} & \textbf{purl} & \textbf{License} & \textbf{Description} \\
+\midrule
+\endhead
+\midrule
+\multicolumn{6}{r}{\small\itshape (continued on next page)} \\
+\endfoot
+\bottomrule
+\endlastfoot
+\raggedright aioboto3 & 15.0.0 & library & \small\texttt{pkg:pypi/aioboto3@15.0.0} & Apache-2.0 & \small — \\
+\raggedright black & 25.1.0 & library & \small\texttt{pkg:pypi/black@25.1.0} & MIT & \small — \\
+\raggedright boto3 & 1.38.27 & library & \small\texttt{pkg:pypi/boto3@1.38.27} & Apache-2.0 & \small — \\
+\raggedright frictionless & 5.18.1 & library & \small\texttt{pkg:pypi/frictionless@5.18.1} & MIT & \small — \\
+\raggedright gradio & 5.42.0 & library & \small\texttt{pkg:pypi/gradio@5.42.0} & Apache-2.0 & \small — \\
+\raggedright instructor & 1.10.0 & library & \small\texttt{pkg:pypi/instructor@1.10.0} & MIT & \small — \\
+\raggedright ipykernel & 6.30.0 & library & \small\texttt{pkg:pypi/ipykernel@6.30.0} & BSD-3-Clause & \small — \\
+\raggedright langchain & 0.3.27 & library & \small\texttt{pkg:pypi/langchain@0.3.27} & MIT & \small — \\
+\raggedright langchain-aws & 0.2.27 & library & \small\texttt{pkg:pypi/langchain-aws@0.2.27} & MIT & \small — \\
+\raggedright langchain-community & 0.3.27 & library & \small\texttt{pkg:pypi/langchain-community@0.3.27} & MIT & \small — \\
+\raggedright langchain-core & 0.3.73 & library & \small\texttt{pkg:pypi/langchain-core@0.3.73} & MIT & \small — \\
+\raggedright loguru & 0.7.3 & library & \small\texttt{pkg:pypi/loguru@0.7.3} & MIT & \small — \\
+\raggedright networkx & 3.3 & library & \small\texttt{pkg:pypi/networkx@3.3} & BSD-3-Clause & \small — \\
+\raggedright numpy & 2.1.0 & library & \small\texttt{pkg:pypi/numpy@2.1.0} & BSD-3-Clause & \small — \\
+\raggedright pandas & 2.2.02.3 & library & \small\texttt{pkg:pypi/pandas@2.2.02.3} & BSD-3-Clause & \small — \\
+\raggedright pandera & 0.25.0 & library & \small\texttt{pkg:pypi/pandera@0.25.0} & MIT & \small — \\
+\raggedright python-dotenv & 1.1.1 & library & \small\texttt{pkg:pypi/python-dotenv@1.1.1} & BSD-3-Clause & \small — \\
+\raggedright pyyaml & 6.0.2 & library & \small\texttt{pkg:pypi/pyyaml@6.0.2} & MIT & \small — \\
+\raggedright relbench & 1.1.0 & library & \small\texttt{pkg:pypi/relbench@1.1.0} & MIT & \small — \\
+\raggedright ruff & 0.12.3 & library & \small\texttt{pkg:pypi/ruff@0.12.3} & MIT & \small — \\
+\raggedright sap-ai-sdk-gen & 5.4.5 & library & \small\texttt{pkg:pypi/sap-ai-sdk-gen@5.4.5} & LicenseRef-SAP-DeveloperAgreement & \small — \\
+\raggedright setuptools & 80.9.0 & library & \small\texttt{pkg:pypi/setuptools@80.9.0} & MIT & \small — \\
+\raggedright sqlalchemy & 2.0.41 & library & \small\texttt{pkg:pypi/sqlalchemy@2.0.41} & MIT & \small — \\
+\raggedright tabulate & 0.9.0 & library & \small\texttt{pkg:pypi/tabulate@0.9.0} & MIT & \small — \\
+\raggedright ydata-profiling & 4.15.1 & library & \small\texttt{pkg:pypi/ydata-profiling@4.15.1} & MIT & \small — \\
+\end{longtable}
+
+\subsubsection*{Dependency graph (top-level refs)}
+\begin{lstlisting}[style=depgraph]
+  root-component
+    -> pkg:pypi/aioboto3@15.0.0, pkg:pypi/black@25.1.0, pkg:pypi/boto3@1.38.27, pkg:pypi/frictionless@5.18.1, pkg:pypi/gradio@5.42.0...
+  pkg:pypi/aioboto3@15.0.0
+    -> 
+  pkg:pypi/black@25.1.0
+    -> 
+  pkg:pypi/boto3@1.38.27
+    -> 
+  pkg:pypi/frictionless@5.18.1
+    -> 
+  pkg:pypi/gradio@5.42.0
+    -> 
+  pkg:pypi/instructor@1.10.0
+    -> 
+  pkg:pypi/ipykernel@6.30.0
+    -> 
+  pkg:pypi/langchain@0.3.27
+    -> 
+  pkg:pypi/langchain-aws@0.2.27
+    -> 
+  pkg:pypi/langchain-community@0.3.27
+    -> 
+  pkg:pypi/langchain-core@0.3.73
+    -> 
+  pkg:pypi/loguru@0.7.3
+    -> 
+  pkg:pypi/networkx@3.3
+    -> 
+  pkg:pypi/numpy@2.1.0
+    -> 
+  pkg:pypi/pandas@2.2.02.3
+    -> 
+  pkg:pypi/pandera@0.25.0
+    -> 
+  pkg:pypi/python-dotenv@1.1.1
+    -> 
+  pkg:pypi/pyyaml@6.0.2
+    -> 
+  pkg:pypi/relbench@1.1.0
+    -> 
+  pkg:pypi/ruff@0.12.3
+    -> 
+  pkg:pypi/sap-ai-sdk-gen@5.4.5
+    -> 
+  pkg:pypi/setuptools@80.9.0
+    -> 
+  pkg:pypi/sqlalchemy@2.0.41
+    -> 
+  pkg:pypi/tabulate@0.9.0
+    -> 
+  pkg:pypi/ydata-profiling@4.15.1
+    -> 
 \end{lstlisting}
 
 \subsection{UI5 Web Components (Angular)}
@@ -7058,87 +6965,6 @@ Each subsection is generated from a CycloneDX~1.5 BOM (components, purl, license
 \newpage
 \section{Change Lineage from Original Software}
 
-\subsection{SAP AI SDK (JavaScript)}
-\textbf{Path:} \texttt{ai-sdk-js-main}
-
-\textbf{Changes (from git history):}
-\begin{longtable}{|p{2.2cm}|p{3.2cm}|l|p{6cm}|}
-\hline \textbf{Hash} & \textbf{Date} & \textbf{Author} & \textbf{Subject} \\ \hline \endfirsthead
-\hline \textbf{Hash} & \textbf{Date} & \textbf{Author} & \textbf{Subject} \\ \hline \endhead
-\texttt{f5e4fda56c4e} & 2026-02-26 10:34:16 +0800 & plturrell & ai-sdk-js: OData Vocabularies integration for TypeScript type generati \\
-\texttt{9b8071156c1a} & 2026-02-26 09:31:42 +0800 & plturrell & Phase 1 \& 2: OData Vocabularies Universal Dictionary enhancements \\
-\texttt{2903724fb841} & 2026-02-26 02:55:18 +0800 & plturrell & feat: add Angular UI5 frontend and FastAPI backend for data-cleaning-c \\
-\texttt{2adac6cec957} & 2026-02-26 02:07:06 +0800 & plturrell & Update \\
-\texttt{0b20d62146fa} & 2026-02-26 02:02:05 +0800 & plturrell & Initial commit for fresh sap-oss repo \\
-\hline
-\end{longtable}
-\textit{Full:} \texttt{git log --follow -- ai-sdk-js-main}
-
-\subsection{CAP LLM Plugin}
-\textbf{Path:} \texttt{cap-llm-plugin-main}
-
-\textbf{Changes (from git history):}
-\begin{longtable}{|p{2.2cm}|p{3.2cm}|l|p{6cm}|}
-\hline \textbf{Hash} & \textbf{Date} & \textbf{Author} & \textbf{Subject} \\ \hline \endfirsthead
-\hline \textbf{Hash} & \textbf{Date} & \textbf{Author} & \textbf{Subject} \\ \hline \endhead
-\texttt{9b8071156c1a} & 2026-02-26 09:31:42 +0800 & plturrell & Phase 1 \& 2: OData Vocabularies Universal Dictionary enhancements \\
-\texttt{2903724fb841} & 2026-02-26 02:55:18 +0800 & plturrell & feat: add Angular UI5 frontend and FastAPI backend for data-cleaning-c \\
-\texttt{0b20d62146fa} & 2026-02-26 02:02:05 +0800 & plturrell & Initial commit for fresh sap-oss repo \\
-\hline
-\end{longtable}
-\textit{Full:} \texttt{git log --follow -- cap-llm-plugin-main}
-
-\subsection{World Monitor}
-\textbf{Path:} \texttt{world-monitor-main}
-
-\textbf{Changes (from git history):}
-\begin{longtable}{|p{2.2cm}|p{3.2cm}|l|p{6cm}|}
-\hline \textbf{Hash} & \textbf{Date} & \textbf{Author} & \textbf{Subject} \\ \hline \endfirsthead
-\hline \textbf{Hash} & \textbf{Date} & \textbf{Author} & \textbf{Subject} \\ \hline \endhead
-\texttt{9b8071156c1a} & 2026-02-26 09:31:42 +0800 & plturrell & Phase 1 \& 2: OData Vocabularies Universal Dictionary enhancements \\
-\texttt{0b20d62146fa} & 2026-02-26 02:02:05 +0800 & plturrell & Initial commit for fresh sap-oss repo \\
-\hline
-\end{longtable}
-\textit{Full:} \texttt{git log --follow -- world-monitor-main}
-
-\subsection{UI5 Web Components (Angular)}
-\textbf{Path:} \texttt{ui5-webcomponents-ngx-main}
-
-\textbf{Changes (from git history):}
-\begin{longtable}{|p{2.2cm}|p{3.2cm}|l|p{6cm}|}
-\hline \textbf{Hash} & \textbf{Date} & \textbf{Author} & \textbf{Subject} \\ \hline \endfirsthead
-\hline \textbf{Hash} & \textbf{Date} & \textbf{Author} & \textbf{Subject} \\ \hline \endhead
-\texttt{9b8071156c1a} & 2026-02-26 09:31:42 +0800 & plturrell & Phase 1 \& 2: OData Vocabularies Universal Dictionary enhancements \\
-\texttt{0b20d62146fa} & 2026-02-26 02:02:05 +0800 & plturrell & Initial commit for fresh sap-oss repo \\
-\hline
-\end{longtable}
-\textit{Full:} \texttt{git log --follow -- ui5-webcomponents-ngx-main}
-
-\subsection{OData Vocabularies}
-\textbf{Path:} \texttt{odata-vocabularies-main}
-
-\textbf{Changes (from git history):}
-\begin{longtable}{|p{2.2cm}|p{3.2cm}|l|p{6cm}|}
-\hline \textbf{Hash} & \textbf{Date} & \textbf{Author} & \textbf{Subject} \\ \hline \endfirsthead
-\hline \textbf{Hash} & \textbf{Date} & \textbf{Author} & \textbf{Subject} \\ \hline \endhead
-\texttt{9f8ccfcab546} & 2026-02-26 10:26:38 +0800 & plturrell & Full integration plan - service-by-service implementation guide \\
-\texttt{27741f4846cc} & 2026-02-26 10:24:17 +0800 & plturrell & Bidirectional integration audit - OData Vocabularies as Universal Dict \\
-\texttt{34244e05197e} & 2026-02-26 10:20:30 +0800 & plturrell & OpenAI-compatible API endpoints for OData Vocabularies \\
-\texttt{13c5ff04a93b} & 2026-02-26 10:16:34 +0800 & plturrell & Health check enhancements - comprehensive monitoring \\
-\texttt{0f57dce72086} & 2026-02-26 10:13:51 +0800 & plturrell & Complete API documentation for 5/5 rating \\
-\texttt{d446b27a4c7c} & 2026-02-26 10:09:57 +0800 & plturrell & Complete test suite for 5/5 rating - 97 tests total \\
-\texttt{cfc07eb6d4ec} & 2026-02-26 10:04:16 +0800 & plturrell & Quick wins for 5/5 rating - Tests, Docker, CI \\
-\texttt{2a4fd20a76fb} & 2026-02-26 09:58:34 +0800 & plturrell & Production Configuration for OData Vocabularies \\
-\texttt{c989079c279f} & 2026-02-26 09:53:38 +0800 & plturrell & Add Production Readiness Review for OData Vocabularies \\
-\texttt{4d661effbe07} & 2026-02-26 09:50:37 +0800 & plturrell & Phase 5: Cross-Platform Integration for OData Vocabularies \\
-\texttt{ad0df2b30ba9} & 2026-02-26 09:47:06 +0800 & plturrell & Phase 4: Governance \& Compliance for OData Vocabularies \\
-\texttt{f01820006f55} & 2026-02-26 09:42:19 +0800 & plturrell & Phase 3: Vector Embeddings \& RAG for OData Vocabularies \\
-\texttt{9b8071156c1a} & 2026-02-26 09:31:42 +0800 & plturrell & Phase 1 \& 2: OData Vocabularies Universal Dictionary enhancements \\
-\texttt{0b20d62146fa} & 2026-02-26 02:02:05 +0800 & plturrell & Initial commit for fresh sap-oss repo \\
-\hline
-\end{longtable}
-\textit{Full:} \texttt{git log --follow -- odata-vocabularies-main}
-
 \subsection{Data Cleaning Copilot}
 \textbf{Path:} \texttt{src/generativeUI/training-webcomponents-ngx}
 
@@ -7146,51 +6972,82 @@ Each subsection is generated from a CycloneDX~1.5 BOM (components, purl, license
 \begin{longtable}{|p{2.2cm}|p{3.2cm}|l|p{6cm}|}
 \hline \textbf{Hash} & \textbf{Date} & \textbf{Author} & \textbf{Subject} \\ \hline \endfirsthead
 \hline \textbf{Hash} & \textbf{Date} & \textbf{Author} & \textbf{Subject} \\ \hline \endhead
-\texttt{9b8071156c1a} & 2026-02-26 09:31:42 +0800 & plturrell & Phase 1 \& 2: OData Vocabularies Universal Dictionary enhancements \\
-\texttt{2903724fb841} & 2026-02-26 02:55:18 +0800 & plturrell & feat: add Angular UI5 frontend and FastAPI backend for data-cleaning-c \\
-\texttt{0b20d62146fa} & 2026-02-26 02:02:05 +0800 & plturrell & Initial commit for fresh sap-oss repo \\
+\texttt{445d04e83eae} & 2026-04-13 11:11:13 +0800 & plturrell & feat(generativeUI): workspace readiness, gateway BTP, API hardening \\
+\texttt{432dfd233aa9} & 2026-04-13 09:08:21 +0800 & plturrell & feat(generativeUI): HANA persistence, notifications API, and local aut \\
+\texttt{52df72b7cc92} & 2026-04-13 08:47:05 +0800 & plturrell & docs: update READMEs with correct versions, routes, and add missing do \\
+\texttt{c3edc3c574ef} & 2026-04-13 08:42:27 +0800 & plturrell & test: add theme-utils spec, extend quick-access search and training sh \\
+\texttt{6cfe444e4dae} & 2026-04-13 08:41:27 +0800 & plturrell & style(training): refine nav-island animations, spacing, and design tok \\
+\texttt{efc97d0758a8} & 2026-04-10 12:20:56 +0800 & plturrell & fix(mode): align types, config, and helpers with spec \\
+\texttt{3dbd97a3b4d8} & 2026-04-10 08:30:41 +0800 & plturrell & Sync all changes to GitHub main remote \\
+\texttt{d28635642970} & 2026-04-10 08:21:38 +0800 & plturrell & feat(nav): add modeRelevance metadata to all route definitions \\
+\texttt{bf263823b2e4} & 2026-04-10 08:21:36 +0800 & plturrell & feat(cowork): add CoworkPlanComponent with approve/edit/reject flow \\
+\texttt{0995bb7356b7} & 2026-04-10 08:04:23 +0800 & plturrell & feat(shell): integrate mode switcher, route highlighting, and mode the \\
+\texttt{944bcbb95f06} & 2026-04-10 08:01:46 +0800 & plturrell & feat(mode): add ModeSwitcherComponent with keyboard navigation \\
+\texttt{e119fce76d8a} & 2026-04-10 07:53:34 +0800 & plturrell & feat(store): add activeMode signal with computed capabilities and pers \\
+\texttt{ef331739787a} & 2026-04-08 17:50:53 +0800 & plturrell & fix: forensic sweep — 13 security/config fixes across ui5-webcomponent \\
+\texttt{82a8c12d8ed6} & 2026-04-08 17:31:45 +0800 & plturrell & refactor: WWDC sweep — type safety, shared config, specs, i18n \\
+\texttt{41131e10033e} & 2026-04-08 17:11:08 +0800 & plturrell & feat: WWDC-grade Data Product Manager release polish \\
+\texttt{ed451e9e7a16} & 2026-04-08 11:50:20 +0800 & plturrell & chore: final cleanup and metadata sync post-Python migration \\
+\texttt{728465a0a511} & 2026-04-08 11:49:39 +0800 & plturrell & feat: 100\% Python migration \& Horizon Cinematic refactor \\
+\texttt{e9aafb4ce965} & 2026-04-08 07:59:31 +0800 & plturrell & feat(i18n): elevate all 7 languages to full parity — sync keys, genera \\
+\texttt{f798c5ce9a95} & 2026-04-08 00:50:39 +0800 & plturrell & feat(i18n): internationalize hardcoded strings in shell, dashboard, pi \\
+\texttt{7c6714da38c7} & 2026-04-08 00:42:43 +0800 & plturrell & polish: 9/10 WWDC-grade refinements — accessibility, architecture, cod \\
+\texttt{cd8802f7c1cd} & 2026-04-08 00:37:36 +0800 & plturrell & fix: WWDC keynote-grade polish — bugs, accessibility, and code quality \\
+\texttt{f3b42f023f54} & 2026-04-08 00:25:20 +0800 & plturrell & feat(pipeline): sync pipeline state to global AppStore for atmospheric \\
+\texttt{8012141447b3} & 2026-04-08 00:23:41 +0800 & plturrell & feat(dashboard): wire live platform narrative and atmospheric aura tri \\
+\texttt{cfd62a293935} & 2026-04-08 00:16:53 +0800 & plturrell & polish(ui): WWDC-caliber accessibility and design system refinements \\
+\texttt{fab1b69652b8} & 2026-04-08 00:03:34 +0800 & plturrell & feat: comprehensive UI enhancements and cross-app integration \\
+\texttt{7b9ac2e9671e} & 2026-04-07 23:39:57 +0800 & plturrell & chore: cleanup hidden cache directories \\
+\texttt{a79f388d629f} & 2026-04-07 23:30:18 +0800 & plturrell & chore: final cleanup and sync remaining changes \\
+\texttt{31560a833127} & 2026-04-07 23:28:45 +0800 & plturrell & chore: sync remaining component changes \\
+\texttt{9f5fd86dddc1} & 2026-04-07 23:28:09 +0800 & plturrell & chore: cleanup junk files and temporary artifacts \\
+\texttt{4dc368f65652} & 2026-04-07 22:09:43 +0800 & plturrell & chore: force sync mcp service changes \\
+\texttt{a96867091979} & 2026-04-07 22:09:25 +0800 & plturrell & chore: final sync of mcp service \\
+\texttt{52a993372344} & 2026-04-07 22:09:10 +0800 & plturrell & chore: finalize mcp service sync \\
+\texttt{65931c9e65a6} & 2026-04-07 22:08:54 +0800 & plturrell & chore: sync remaining mcp service changes \\
+\texttt{bd0093e34a77} & 2026-04-07 22:08:39 +0800 & plturrell & chore: sync environment configuration changes \\
+\texttt{301b67e7689f} & 2026-04-07 22:08:17 +0800 & plturrell & chore: archive vllm-main and migrate to vllm-turboquant \\
+\texttt{8bcfd30f1965} & 2026-04-07 21:56:56 +0800 & plturrell & chore: sync remaining environment file changes \\
+\texttt{0c73a40495ba} & 2026-04-07 21:53:19 +0800 & plturrell & feat: add comprehensive UX improvements for AI Fabric \\
+\texttt{e379ba0bd27b} & 2026-04-07 16:04:28 +0800 & turrellcraigjohn-alt & fix: resolve all pre-existing build errors in AI Fabric and Training ( \\
+\texttt{bde06a8056f7} & 2026-04-07 15:15:36 +0800 & turrellcraigjohn-alt & a11y: add ARIA landmarks, roles, and labels across all three apps (\#56 \\
+\texttt{577c4b389393} & 2026-04-07 14:45:48 +0800 & turrellcraigjohn-alt & feat: medium-priority audit enhancements across all apps (\#55) \\
+\texttt{ebcec175e367} & 2026-04-07 13:54:38 +0800 & turrellcraigjohn-alt & fix: reconcile shell navigation across all apps (\#54) \\
+\texttt{13906b57b151} & 2026-04-07 12:14:40 +0800 & turrellcraigjohn-alt & feat: high-priority UI audit improvements (\#53) \\
+\texttt{041279beef83} & 2026-04-07 11:52:09 +0800 & turrellcraigjohn-alt & feat: add team collaboration features and bypass auth for dev (\#52) \\
+\texttt{af865c99188a} & 2026-04-06 15:05:34 +0800 & turrellcraigjohn-alt & fix: eliminate all visible UI errors for demo (\#50) \\
+\texttt{8cf39b664a66} & 2026-04-06 14:23:02 +0800 & turrellcraigjohn-alt & fix: OCR build, i18n APP\_INITIALIZER, test fixes (\#48) \\
+\texttt{16e2f964f26e} & 2026-04-06 14:12:18 +0800 & turrellcraigjohn-alt & fix: OCR build + i18n APP\_INITIALIZER for OnPush rendering (\#47) \\
+\texttt{20ef2ff47878} & 2026-04-06 11:55:01 +0800 & turrellcraigjohn-alt & fix: remove duplicate dismissDemoTour method (\#46) \\
+\texttt{dcd86d1b2022} & 2026-04-06 10:44:12 +0800 & turrellcraigjohn-alt & demo perfection: shell i18n fix, UI5 build fix, aifabric Arabic i18n,  \\
+\texttt{d44192c1b147} & 2026-04-06 10:08:09 +0800 & turrellcraigjohn-alt & forensic audit \& SAP Sapphire/WWDC demo polish (\#44) \\
+\texttt{cea2f4461fb3} & 2026-04-06 09:44:30 +0800 & plturrell & feat: audit fixes + HANA handler wiring (Option B) \\
 \hline
+\multicolumn{4}{r}{... and 30 more.} \\ \hline
 \end{longtable}
 \textit{Full:} \texttt{git log --follow -- src/generativeUI/training-webcomponents-ngx}
 
-\subsection{LangChain Integration for SAP HANA Cloud}
-\textbf{Path:} \texttt{langchain-integration-for-sap-hana-cloud-main}
+\subsection{AI Core PAL (MCP / HANA PAL)}
+\textbf{Path:} \texttt{src/intelligence/ai-core-pal}
 
 \textbf{Changes (from git history):}
 \begin{longtable}{|p{2.2cm}|p{3.2cm}|l|p{6cm}|}
 \hline \textbf{Hash} & \textbf{Date} & \textbf{Author} & \textbf{Subject} \\ \hline \endfirsthead
 \hline \textbf{Hash} & \textbf{Date} & \textbf{Author} & \textbf{Subject} \\ \hline \endhead
-\texttt{9b8071156c1a} & 2026-02-26 09:31:42 +0800 & plturrell & Phase 1 \& 2: OData Vocabularies Universal Dictionary enhancements \\
-\texttt{0b20d62146fa} & 2026-02-26 02:02:05 +0800 & plturrell & Initial commit for fresh sap-oss repo \\
+\texttt{41131e10033e} & 2026-04-08 17:11:08 +0800 & plturrell & feat: WWDC-grade Data Product Manager release polish \\
+\texttt{728465a0a511} & 2026-04-08 11:49:39 +0800 & plturrell & feat: 100\% Python migration \& Horizon Cinematic refactor \\
+\texttt{176fb51806cf} & 2026-04-07 13:28:01 +0800 & Karthikeyan & feat: update AI-Core-PAL MCP server and aifabric webcomponents \\
+\texttt{79176110c66a} & 2026-04-02 12:45:32 +0800 & Karthikeyan & docs(ai-core-pal): add ENDPOINTS.md with live MCP URLs and usage sampl \\
+\texttt{5dd5ef8db0fa} & 2026-04-02 12:04:09 +0800 & plturrell & chore: rebrand generativeUI project names and references \\
+\texttt{3a247c5f5500} & 2026-04-01 11:01:52 +0800 & Karthikeyan & feat(ai-core-pal): add production MCP server with PAL tools \\
+\texttt{dc7da5b8090e} & 2026-03-31 09:05:14 +0800 & plturrell & chore: consolidate training console and remove deprecated data cleanin \\
+\texttt{d39c7e0d891e} & 2026-03-16 11:40:00 +0800 & plturrell & feat: merge mangle-query-service into elasticsearch-main \\
+\texttt{32388add5791} & 2026-03-10 14:21:29 +0800 & plturrell & chore: sync all repo changes across monorepo projects \\
+\texttt{5b429809ef3c} & 2026-03-09 11:51:22 +0800 & plturrell & Sync: Reorganize SBOM files, add technical assessments, add SAC compon \\
+\texttt{54f39f71b643} & 2026-03-07 11:55:00 +0800 & plturrell & Add SAP AI Experience service map with 4-sentence descriptions, input  \\
+\texttt{0ea145b23002} & 2026-03-07 10:43:57 +0800 & plturrell & Sync all changes; add .gitignore for node\_modules, models, large data  \\
 \hline
 \end{longtable}
-\textit{Full:} \texttt{git log --follow -- langchain-integration-for-sap-hana-cloud-main}
-
-\subsection{Generative AI Toolkit for SAP HANA Cloud}
-\textbf{Path:} \texttt{generative-ai-toolkit-for-sap-hana-cloud-main}
-
-\textbf{Changes (from git history):}
-\begin{longtable}{|p{2.2cm}|p{3.2cm}|l|p{6cm}|}
-\hline \textbf{Hash} & \textbf{Date} & \textbf{Author} & \textbf{Subject} \\ \hline \endfirsthead
-\hline \textbf{Hash} & \textbf{Date} & \textbf{Author} & \textbf{Subject} \\ \hline \endhead
-\texttt{9b8071156c1a} & 2026-02-26 09:31:42 +0800 & plturrell & Phase 1 \& 2: OData Vocabularies Universal Dictionary enhancements \\
-\texttt{0b20d62146fa} & 2026-02-26 02:02:05 +0800 & plturrell & Initial commit for fresh sap-oss repo \\
-\hline
-\end{longtable}
-\textit{Full:} \texttt{git log --follow -- generative-ai-toolkit-for-sap-hana-cloud-main}
-
-\subsection{vLLM (inference engine)}
-\textbf{Path:} \texttt{vllm-main}
-\\ \textbf{Upstream:} \url{https://github.com/vllm-project/vllm}
-
-\textbf{Changes (from git history):}
-\begin{longtable}{|p{2.2cm}|p{3.2cm}|l|p{6cm}|}
-\hline \textbf{Hash} & \textbf{Date} & \textbf{Author} & \textbf{Subject} \\ \hline \endfirsthead
-\hline \textbf{Hash} & \textbf{Date} & \textbf{Author} & \textbf{Subject} \\ \hline \endhead
-\texttt{9b8071156c1a} & 2026-02-26 09:31:42 +0800 & plturrell & Phase 1 \& 2: OData Vocabularies Universal Dictionary enhancements \\
-\texttt{0b20d62146fa} & 2026-02-26 02:02:05 +0800 & plturrell & Initial commit for fresh sap-oss repo \\
-\hline
-\end{longtable}
-\textit{Full:} \texttt{git log --follow -- vllm-main}
+\textit{Full:} \texttt{git log --follow -- src/intelligence/ai-core-pal}
 
 \end{document}

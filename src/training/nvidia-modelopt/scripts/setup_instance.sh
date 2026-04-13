@@ -41,11 +41,11 @@ echo ""
 echo "Setting up training data..."
 cd /workspace 2>/dev/null || cd ~
 
-if [ ! -d "sap-oss" ]; then
-    git clone https://github.com/GJKarthik/sap-oss-v1.git sap-oss
+if [ ! -d "sap-oss-v1" ]; then
+    git clone https://github.com/GJKarthik/sap-oss-v1.git sap-oss-v1
 fi
 
-cd sap-oss/src/training
+cd sap-oss-v1/src/training
 
 # Generate training data
 echo ""
