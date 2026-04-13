@@ -1,7 +1,7 @@
 // Jest Snapshot v1, https://jestjs.io/docs/snapshot-testing
 
 exports[`parseAgUiEvent matches snapshot for a well-formed text.delta event 1`] = `
-Object {
+{
   "delta": "Hello",
   "id": "snap-id",
   "runId": "snap-run",

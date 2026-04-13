@@ -157,13 +157,13 @@ property is set to \`true\`.
 
 **Note:** If \`image\` slot is provided, the property will be ignored.
 
-**Note:** You should import the desired icon first, then use its name as \\"icon\\".
+**Note:** You should import the desired icon first, then use its name as "icon".
 
-\`import \\"@ui5/webcomponents-icons/dist/{icon_name}.js\\"\`
+\`import "@ui5/webcomponents-icons/dist/{icon_name}.js"\`
 
-\`<ui5-avatar icon=\\"employee\\">\`
+\`<ui5-avatar icon="employee">\`
 
-**Note:** If no icon or an empty one is provided, by default the \\"employee\\" icon should be displayed.
+**Note:** If no icon or an empty one is provided, by default the "employee" icon should be displayed.
 
 See all the available icons in the [Icon Explorer](https://sdk.openui5.org/test-resources/sap/m/demokit/iconExplorer/webapp/index.html).
         */
@@ -175,13 +175,13 @@ See all the available icons in the [Icon Explorer](https://sdk.openui5.org/test-
 	- If there are three initials and they do not fit in the shape (e.g. WWW for some of the sizes).
 	- If the image src is wrong.
 
-**Note:** If not set, a default fallback icon \\"employee\\" is displayed.
+**Note:** If not set, a default fallback icon "employee" is displayed.
 
-**Note:** You should import the desired icon first, then use its name as \\"fallback-icon\\".
+**Note:** You should import the desired icon first, then use its name as "fallback-icon".
 
-\`import \\"@ui5/webcomponents-icons/dist/{icon_name}.js\\"\`
+\`import "@ui5/webcomponents-icons/dist/{icon_name}.js"\`
 
-\`<ui5-avatar fallback-icon=\\"alert\\">\`
+\`<ui5-avatar fallback-icon="alert">\`
 
 See all the available icons in the [Icon Explorer](https://sdk.openui5.org/test-resources/sap/m/demokit/iconExplorer/webapp/index.html).
         */
@@ -290,9 +290,9 @@ class BarComponent {
 
 **Note:**
 
-- Set accessibleRole to \\"toolbar\\" only when the component contains two or more active, interactive elements (such as buttons, links, or input fields) within the bar.
+- Set accessibleRole to "toolbar" only when the component contains two or more active, interactive elements (such as buttons, links, or input fields) within the bar.
 
-- If there is only one or no active element, it is recommended to avoid using the \\"toolbar\\" role, as it implies a grouping of multiple interactive controls.
+- If there is only one or no active element, it is recommended to avoid using the "toolbar" role, as it implies a grouping of multiple interactive controls.
         */
   accessibleRole!: 'Toolbar' | 'None';
   /**
@@ -411,8 +411,8 @@ class BreadcrumbsComponent {
         Defines the visual appearance of the last BreadcrumbsItem.
 
 The Breadcrumbs supports two visual appearances for the last BreadcrumbsItem:
-- \\"Standard\\" - displaying the last item as \\"current page\\" (bold and without separator)
-- \\"NoCurrentPage\\" - displaying the last item as a regular BreadcrumbsItem, followed by separator
+- "Standard" - displaying the last item as "current page" (bold and without separator)
+- "NoCurrentPage" - displaying the last item as a regular BreadcrumbsItem, followed by separator
         */
   design!: 'Standard' | 'NoCurrentPage';
   /**
@@ -541,7 +541,7 @@ class ButtonBadgeComponent {
 
 **Note:** Text is not applied when the \`design\` property is set to \`AttentionDot\`.
 
-**Note:** The badge component only accepts numeric values and the \\"+\\" symbol. Using other characters or formats may result in unpredictable behavior, which is not guaranteed or supported.
+**Note:** The badge component only accepts numeric values and the "+" symbol. Using other characters or formats may result in unpredictable behavior, which is not guaranteed or supported.
         */
   text!: string;
 
@@ -1518,8 +1518,8 @@ pressing the Enter or Space key.
   /**
         Defines whether the component text wraps when there is not enough space.
 
-**Note:** for option \\"Normal\\" the text will wrap and the words will not be broken based on hyphenation.
-**Note:** for option \\"None\\" the text will be truncated with an ellipsis.
+**Note:** for option "Normal" the text will wrap and the words will not be broken based on hyphenation.
+**Note:** for option "None" the text will be truncated with an ellipsis.
         */
   wrappingType!: 'None' | 'Normal';
   /**
@@ -1867,7 +1867,7 @@ class ComboBoxItemGroupComponent {
   headerAccessibleName!: string | undefined;
   /**
         Defines if the text of the component should wrap when it's too long.
-When set to \\"Normal\\", the content (title, description) will be wrapped
+When set to "Normal", the content (title, description) will be wrapped
 using the \`ui5-expandable-text\` component.<br/>
 
 The text can wrap up to 100 characters on small screens (size S) and
@@ -3061,7 +3061,7 @@ when the popup closes.
         Determines if the dialog will be stretched to full screen on mobile. On desktop,
 the dialog will be stretched to approximately 90% of the viewport.
 
-**Note:** For better usability of the component it is recommended to set this property to \\"true\\" when the dialog is opened on phone.
+**Note:** For better usability of the component it is recommended to set this property to "true" when the dialog is opened on phone.
         */
   @InputDecorator({ transform: booleanAttribute })
   stretch!: boolean;
@@ -3071,9 +3071,9 @@ If this property is set to true, the Dialog will be draggable by its header.
 
 **Note:** The component can be draggable only in desktop mode.
 
-**Note:** This property overrides the default HTML \\"draggable\\" attribute native behavior.
-When \\"draggable\\" is set to true, the native browser \\"draggable\\"
-behavior is prevented and only the Dialog custom logic (\\"draggable by its header\\") works.
+**Note:** This property overrides the default HTML "draggable" attribute native behavior.
+When "draggable" is set to true, the native browser "draggable"
+behavior is prevented and only the Dialog custom logic ("draggable by its header") works.
         */
   @InputDecorator({ transform: booleanAttribute })
   draggable!: boolean;
@@ -3091,8 +3091,8 @@ In RTL languages, the resize handle will be placed in the bottom left corner.
   /**
         Defines the state of the \`Dialog\`.
 
-**Note:** If \`\\"Negative\\"\` and \`\\"Critical\\"\` states is set, it will change the
-accessibility role to \\"alertdialog\\", if the accessibleRole property is set to \`\\"Dialog\\"\`.
+**Note:** If \`"Negative"\` and \`"Critical"\` states is set, it will change the
+accessibility role to "alertdialog", if the accessibleRole property is set to \`"Dialog"\`.
         */
   state!: 'None' | 'Positive' | 'Critical' | 'Negative' | 'Information';
 
@@ -3161,7 +3161,7 @@ class DynamicDateRangeComponent {
   value!: DynamicDateRangeValue | undefined;
   /**
         Defines the options listed as a string, separated by commas and using capital case.
-Example: \\"TODAY, YESTERDAY, DATERANGE\\"
+Example: "TODAY, YESTERDAY, DATERANGE"
         */
   options!: string;
 
@@ -3211,7 +3211,7 @@ class ExpandableTextComponent {
         */
   text!: string | undefined;
   /**
-        Maximum number of characters to be displayed initially. If the text length exceeds this limit, the text will be truncated with an ellipsis, and the \\"More\\" link will be displayed.
+        Maximum number of characters to be displayed initially. If the text length exceeds this limit, the text will be truncated with an ellipsis, and the "More" link will be displayed.
         */
   maxCharacters!: number;
   /**
@@ -3308,7 +3308,7 @@ class FileUploaderComponent {
         */
   accept!: string | undefined;
   /**
-        If set to \\"true\\", the input field of component will not be rendered. Only the default slot that is passed will be rendered.
+        If set to "true", the input field of component will not be rendered. Only the default slot that is passed will be rendered.
 
 **Note:** Use this property in combination with the default slot to achieve a button-only file uploader design.
         */
@@ -3573,14 +3573,14 @@ class FormComponent {
         */
   accessibleNameRef!: string | undefined;
   /**
-        Defines the accessibility mode of the component in \\"edit\\" and \\"display\\" use-cases.
+        Defines the accessibility mode of the component in "edit" and "display" use-cases.
 
 Based on the mode, the component renders different HTML elements and ARIA attributes,
 which are appropriate for the use-case.
 
 **Usage:**
-- Set this property to \\"Display\\", when the form consists of non-editable (e.g. texts) form items.
-- Set this property to \\"Edit\\", when the form consists of editable (e.g. input fields) form items.
+- Set this property to "Display", when the form consists of non-editable (e.g. texts) form items.
+- Set this property to "Edit", when the form consists of editable (e.g. input fields) form items.
         */
   accessibleMode!: 'Display' | 'Edit';
   /**
@@ -3601,7 +3601,7 @@ and 12/12 in S size, e.g in S the label is on top of its associated field.
 
 The supported values are between 1 and 12. Greater the number, more space the label will use.
 
-**Note:** If \\"12\\" is set, the label will be displayed on top of its assosiated field.
+**Note:** If "12" is set, the label will be displayed on top of its assosiated field.
         */
   labelSpan!: string;
   /**
@@ -3629,9 +3629,9 @@ set by the \`headerText\`.
   /**
         Defines the vertical spacing between form items.
 
-**Note:** If the Form is meant to be switched between \\"display\\"(\\"non-edit\\") and \\"edit\\" modes,
-we recommend using \\"Large\\" item spacing in \\"display\\"(\\"non-edit\\") mode, and \\"Normal\\" - for \\"edit\\" mode,
-to avoid \\"jumping\\" effect, caused by the hight difference between texts in \\"display\\"(\\"non-edit\\") mode and the input fields in \\"edit\\" mode.
+**Note:** If the Form is meant to be switched between "display"("non-edit") and "edit" modes,
+we recommend using "Large" item spacing in "display"("non-edit") mode, and "Normal" - for "edit" mode,
+to avoid "jumping" effect, caused by the hight difference between texts in "display"("non-edit") mode and the input fields in "edit" mode.
         */
   itemSpacing!: 'Normal' | 'Large';
 
@@ -4038,7 +4038,7 @@ the corresponding input should also be set.
   /**
         Defines how the text of a component will be displayed when there is not enough space.
 
-**Note:** for option \\"Normal\\" the text will wrap and the words will not be broken based on hyphenation.
+**Note:** for option "Normal" the text will wrap and the words will not be broken based on hyphenation.
         */
   wrappingType!: 'None' | 'Normal';
 
@@ -4167,7 +4167,7 @@ Setting the <code>interactiveAreaSize</code> property to <code>InteractiveAreaSi
   /**
         Defines how the text of a component will be displayed when there is not enough space.
 
-**Note:** By default the text will wrap. If \\"None\\" is set - the text will truncate.
+**Note:** By default the text will wrap. If "None" is set - the text will truncate.
         */
   wrappingType!: 'None' | 'Normal';
   /**
@@ -4319,7 +4319,7 @@ If set to \`true\`, a navigation indicator is displayed at the end of the list i
   tooltip!: string | undefined;
   /**
         Defines the highlight state of the list items.
-Available options are: \`\\"None\\"\` (by default), \`\\"Positive\\"\`, \`\\"Critical\\"\`, \`\\"Information\\"\` and \`\\"Negative\\"\`.
+Available options are: \`"None"\` (by default), \`"Positive"\`, \`"Critical"\`, \`"Information"\` and \`"Negative"\`.
         */
   highlight!: 'None' | 'Positive' | 'Critical' | 'Negative' | 'Information';
   /**
@@ -4396,7 +4396,7 @@ class ListItemGroupComponent {
   headerAccessibleName!: string | undefined;
   /**
         Defines if the text of the component should wrap when it's too long.
-When set to \\"Normal\\", the content (title, description) will be wrapped
+When set to "Normal", the content (title, description) will be wrapped
 using the \`ui5-expandable-text\` component.<br/>
 
 The text can wrap up to 100 characters on small screens (size S) and
@@ -4527,7 +4527,7 @@ If set to \`true\`, a navigation indicator is displayed at the end of the list i
   tooltip!: string | undefined;
   /**
         Defines the highlight state of the list items.
-Available options are: \`\\"None\\"\` (by default), \`\\"Positive\\"\`, \`\\"Critical\\"\`, \`\\"Information\\"\` and \`\\"Negative\\"\`.
+Available options are: \`"None"\` (by default), \`"Positive"\`, \`"Critical"\`, \`"Information"\` and \`"Negative"\`.
         */
   highlight!: 'None' | 'Positive' | 'Critical' | 'Negative' | 'Information';
   /**
@@ -4563,7 +4563,7 @@ SAP-icons font provides numerous built-in icons. To find all the available icons
   /**
         Defines the state of the \`additionalText\`.
 
-Available options are: \`\\"None\\"\` (by default), \`\\"Positive\\"\`, \`\\"Critical\\"\`, \`\\"Information\\"\` and \`\\"Negative\\"\`.
+Available options are: \`"None"\` (by default), \`"Positive"\`, \`"Critical"\`, \`"Information"\` and \`"Negative"\`.
         */
   additionalTextState!:
     | 'None'
@@ -4583,7 +4583,7 @@ Note: If not provided a default text alternative will be set, if present.
   accessibleName!: string | undefined;
   /**
         Defines if the text of the component should wrap when it's too long.
-When set to \\"Normal\\", the content (title, description) will be wrapped
+When set to "Normal", the content (title, description) will be wrapped
 using the \`ui5-expandable-text\` component.<br/>
 
 The text can wrap up to 100 characters on small screens (size S) and
@@ -4741,8 +4741,8 @@ class ListComponent {
         Defines whether the component will have growing capability either by pressing a \`More\` button,
 or via user scroll. In both cases \`load-more\` event is fired.
 
-**Restrictions:** \`growing=\\"Scroll\\"\` is not supported for Internet Explorer,
-on IE the component will fallback to \`growing=\\"Button\\"\`.
+**Restrictions:** \`growing="Scroll"\` is not supported for Internet Explorer,
+on IE the component will fallback to \`growing="Button"\`.
         */
   growing!: 'Button' | 'Scroll' | 'None';
   /**
@@ -4999,7 +4999,7 @@ The following fields are supported:
 
 - **ariaKeyShortcuts**: Indicated the availability of a keyboard shortcuts defined for the menu item.
 
-- **role**: Defines the role of the menu item. If not set, menu item will have default role=\\"menuitem\\".
+- **role**: Defines the role of the menu item. If not set, menu item will have default role="menuitem".
         */
   accessibilityAttributes!: MenuItemAccessibilityAttributes;
   /**
@@ -5014,7 +5014,7 @@ If set to \`true\`, a navigation indicator is displayed at the end of the list i
   tooltip!: string | undefined;
   /**
         Defines the highlight state of the list items.
-Available options are: \`\\"None\\"\` (by default), \`\\"Positive\\"\`, \`\\"Critical\\"\`, \`\\"Information\\"\` and \`\\"Negative\\"\`.
+Available options are: \`"None"\` (by default), \`"Positive"\`, \`"Critical"\`, \`"Information"\` and \`"Negative"\`.
         */
   highlight!: 'None' | 'Positive' | 'Critical' | 'Negative' | 'Information';
   /**
@@ -5325,7 +5325,7 @@ class MessageStripComponent {
   /**
         Defines the color scheme of the component.
 There are 10 predefined schemes.
-To use one you can set a number from \`\\"1\\"\` to \`\\"10\\"\`. The \`colorScheme\` \`\\"1\\"\` will be set by default.
+To use one you can set a number from \`"1"\` to \`"10"\`. The \`colorScheme\` \`"1"\` will be set by default.
         */
   colorScheme!: string;
   /**
@@ -5398,7 +5398,7 @@ class MultiComboBoxItemGroupComponent {
   headerAccessibleName!: string | undefined;
   /**
         Defines if the text of the component should wrap when it's too long.
-When set to \\"Normal\\", the content (title, description) will be wrapped
+When set to "Normal", the content (title, description) will be wrapped
 using the \`ui5-expandable-text\` component.<br/>
 
 The text can wrap up to 100 characters on small screens (size S) and
@@ -5956,7 +5956,7 @@ export { MultiInputComponent };
 "
 `;
 
-exports[`Snapshot test Main Ng Package Json should match the snapshot 1`] = `"{\\"lib\\":{\\"entryFile\\":\\"./index.ts\\"}}"`;
+exports[`Snapshot test Main Ng Package Json should match the snapshot 1`] = `"{"lib":{"entryFile":"./index.ts"}}"`;
 
 exports[`Snapshot test Main Option Custom should match the snapshot 1`] = `
 "import {
@@ -6154,7 +6154,7 @@ to \`Region\` or \`Complementary\`.
         */
   accessibleRole!: 'Complementary' | 'Form' | 'Region';
   /**
-        Defines the \\"aria-level\\" of component heading,
+        Defines the "aria-level" of component heading,
 set by the \`headerText\`.
         */
   headerLevel!: 'H1' | 'H2' | 'H3' | 'H4' | 'H5' | 'H6';
@@ -6571,7 +6571,7 @@ will be the value of the currently selected radio button.
   /**
         Defines whether the component text wraps when there is not enough space.
 
-**Note:** for option \\"Normal\\" the text will wrap and the words will not be broken based on hyphenation.
+**Note:** for option "Normal" the text will wrap and the words will not be broken based on hyphenation.
         */
   wrappingType!: 'None' | 'Normal';
   /**
@@ -7746,7 +7746,7 @@ The \`accessibilityAttributes\` property accepts an object with the following op
 
 - **root**: Attributes that will be applied to the main (text) button.
   - **hasPopup**: Indicates the presence and type of popup triggered by the button.
-    Accepts string values: \`\\"dialog\\"\`, \`\\"grid\\"\`, \`\\"listbox\\"\`, \`\\"menu\\"\`, or \`\\"tree\\"\`.
+    Accepts string values: \`"dialog"\`, \`"grid"\`, \`"listbox"\`, \`"menu"\`, or \`"tree"\`.
   - **roleDescription**: Provides a human-readable description for the role of the button.
     Accepts any string value.
   - **title**: Specifies a tooltip or description for screen readers.
@@ -7755,7 +7755,7 @@ The \`accessibilityAttributes\` property accepts an object with the following op
 
 - **arrowButton**: Attributes applied specifically to the arrow (split) button.
   - **hasPopup**: Indicates the presence and type of popup triggered by the arrow button.
-    Accepts string values: \`\\"dialog\\"\`, \`\\"grid\\"\`, \`\\"listbox\\"\`, \`\\"menu\\"\`, or \`\\"tree\\"\`.
+    Accepts string values: \`"dialog"\`, \`"grid"\`, \`"listbox"\`, \`"menu"\`, or \`"tree"\`.
   - **expanded**: Indicates whether the popup triggered by the arrow button is currently expanded.
     Accepts boolean values: \`true\` or \`false\`.
         */
@@ -8015,7 +8015,7 @@ class SuggestionItemGroupComponent {
   headerAccessibleName!: string | undefined;
   /**
         Defines if the text of the component should wrap when it's too long.
-When set to \\"Normal\\", the content (title, description) will be wrapped
+When set to "Normal", the content (title, description) will be wrapped
 using the \`ui5-expandable-text\` component.<br/>
 
 The text can wrap up to 100 characters on small screens (size S) and
@@ -8317,7 +8317,7 @@ but when set to \`Inline\`, they would be displayed horizontally.
   tabLayout!: 'Inline' | 'Standard';
   /**
         Defines the overflow mode of the header (the tab strip). If you have a large number of tabs, only the tabs that can fit on screen will be visible.
-All other tabs that can 't fit on the screen are available in an overflow tab \\"More\\".
+All other tabs that can 't fit on the screen are available in an overflow tab "More".
 
 **Note:**
 Only one overflow at the end would be displayed by default,
@@ -8456,7 +8456,7 @@ class TabComponent {
   @InputDecorator({ transform: booleanAttribute })
   disabled!: boolean;
   /**
-        Represents the \\"additionalText\\" text, which is displayed in the tab. In the cases when in the same time there are tabs with icons and tabs without icons, if a tab has no icon the \\"additionalText\\" is displayed larger.
+        Represents the "additionalText" text, which is displayed in the tab. In the cases when in the same time there are tabs with icons and tabs without icons, if a tab has no icon the "additionalText" is displayed larger.
         */
   additionalText!: string | undefined;
   /**
@@ -8474,7 +8474,7 @@ The design is applied to:
 - the \`text\` when the component overflows
 - the tab selection line
 
-Available designs are: \`\\"Default\\"\`, \`\\"Neutral\\"\`, \`\\"Positive\\"\`, \`\\"Critical\\"\` and \`\\"Negative\\"\`.
+Available designs are: \`"Default"\`, \`"Neutral"\`, \`"Positive"\`, \`"Critical"\` and \`"Negative"\`.
 
 **Note:** The design depends on the current theme.
         */
@@ -8708,8 +8708,8 @@ class TableHeaderCellComponent {
 By default, the column will grow and shrink according to the available space.
 This will distribute the space proportionally among all columns with no specific width set.
 
-See [\\\\<length\\\\>](https://developer.mozilla.org/en-US/docs/Web/CSS/length) and
-[\\\\<percentage\\\\>](https://developer.mozilla.org/en-US/docs/Web/CSS/percentage) for possible width values.
+See [\\<length\\>](https://developer.mozilla.org/en-US/docs/Web/CSS/length) and
+[\\<percentage\\>](https://developer.mozilla.org/en-US/docs/Web/CSS/percentage) for possible width values.
         */
   width!: string | undefined;
   /**
@@ -8721,7 +8721,7 @@ the column will move into the popin.
 By default, the table prevents the column from becoming too small.
 Changing this value to a small value might lead to accessibility issues.
 
-**Note:** This property only takes effect for columns with a [\\\\<percentage\\\\>](https://developer.mozilla.org/en-US/docs/Web/CSS/percentage) value
+**Note:** This property only takes effect for columns with a [\\<percentage\\>](https://developer.mozilla.org/en-US/docs/Web/CSS/percentage) value
 or the default width.
         */
   minWidth!: string | undefined;
@@ -8791,7 +8791,7 @@ class TableHeaderRowComponent {
   /**
         Sticks the \`ui5-table-header-row\` to the top of a table.
 
-Note: If used in combination with overflowMode \\"Scroll\\", the table needs a defined height for the sticky header to work as expected.
+Note: If used in combination with overflowMode "Scroll", the table needs a defined height for the sticky header to work as expected.
         */
   @InputDecorator({ transform: booleanAttribute })
   sticky!: boolean;
@@ -9431,7 +9431,7 @@ class TagComponent {
   /**
         Defines the color scheme of the component.
 There are 10 predefined schemes.
-To use one you can set a number from \`\\"1\\"\` to \`\\"10\\"\`. The \`colorScheme\` \`\\"1\\"\` will be set by default.
+To use one you can set a number from \`"1"\` to \`"10"\`. The \`colorScheme\` \`"1"\` will be set by default.
         */
   colorScheme!: string;
   /**
@@ -9447,7 +9447,7 @@ To use one you can set a number from \`\\"1\\"\` to \`\\"10\\"\`. The \`colorSch
   /**
         Defines how the text of a component will be displayed when there is not enough space.
 
-**Note:** For option \\"Normal\\" the text will wrap and the
+**Note:** For option "Normal" the text will wrap and the
 words will not be broken based on hyphenation.
         */
   wrappingType!: 'None' | 'Normal';
@@ -9584,8 +9584,8 @@ but still provides visual feedback upon user interaction.
         Defines the value state of the component.
 
 **Note:** If \`maxlength\` property is set,
-the component turns into \\"Critical\\" state once the characters exceeds the limit.
-In this case, only the \\"Negative\\" state is considered and can be applied.
+the component turns into "Critical" state once the characters exceeds the limit.
+In this case, only the "Negative" state is considered and can be applied.
         */
   valueState!: 'None' | 'Positive' | 'Critical' | 'Negative' | 'Information';
   /**
@@ -9889,7 +9889,7 @@ mm:ss -> 12:04 (only minutes and seconds)
   accessibleDescriptionRef!: string | undefined;
 
   /**
-     Fired when the input operation has finished by clicking the \\"OK\\" button or
+     Fired when the input operation has finished by clicking the "OK" button or
 when the text in the input field has changed and the focus leaves the input field.
     */
   ui5Change!: EventEmitter<TimePickerChangeEventDetail>;
@@ -9955,19 +9955,19 @@ class TitleComponent {
   /**
         Defines how the text of a component will be displayed when there is not enough space.
 
-**Note:** for option \\"Normal\\" the text will wrap and the words will not be broken based on hyphenation.
+**Note:** for option "Normal" the text will wrap and the words will not be broken based on hyphenation.
         */
   wrappingType!: 'None' | 'Normal';
   /**
         Defines the component level.
-Available options are: \`\\"H6\\"\` to \`\\"H1\\"\`.
+Available options are: \`"H6"\` to \`"H1"\`.
 This property does not influence the style of the component.
 Use the property \`size\` for this purpose instead.
         */
   level!: 'H1' | 'H2' | 'H3' | 'H4' | 'H5' | 'H6';
   /**
         Defines the visual appearance of the title.
-Available options are: \`\\"H6\\"\` to \`\\"H1\\"\`.
+Available options are: \`"H6"\` to \`"H1"\`.
         */
   size!: 'H1' | 'H2' | 'H3' | 'H4' | 'H5' | 'H6';
 
@@ -10375,7 +10375,7 @@ the value is sent as the first element in the form data, even if it's empty.
         */
   name!: string | undefined;
   /**
-        Defines whether \\"Clear All\\" button is present. Ensure \`multiLine\` is enabled, otherwise \`showClearAll\` will have no effect.
+        Defines whether "Clear All" button is present. Ensure \`multiLine\` is enabled, otherwise \`showClearAll\` will have no effect.
 
 **Note:** The \`showClearAll\` property is in an experimental state and is a subject to change.
         */
@@ -10479,8 +10479,8 @@ import {
 })
 class ToolbarButtonComponent {
   /**
-        Property used to define the access of the item to the overflow Popover. If \\"NeverOverflow\\" option is set,
-the item never goes in the Popover, if \\"AlwaysOverflow\\" - it never comes out of it.
+        Property used to define the access of the item to the overflow Popover. If "NeverOverflow" option is set,
+the item never goes in the Popover, if "AlwaysOverflow" - it never comes out of it.
         */
   overflowPriority!: 'Default' | 'NeverOverflow' | 'AlwaysOverflow';
   /**
@@ -10691,8 +10691,8 @@ import {
 })
 class ToolbarSelectComponent {
   /**
-        Property used to define the access of the item to the overflow Popover. If \\"NeverOverflow\\" option is set,
-the item never goes in the Popover, if \\"AlwaysOverflow\\" - it never comes out of it.
+        Property used to define the access of the item to the overflow Popover. If "NeverOverflow" option is set,
+the item never goes in the Popover, if "AlwaysOverflow" - it never comes out of it.
         */
   overflowPriority!: 'Default' | 'NeverOverflow' | 'AlwaysOverflow';
   /**
@@ -10783,8 +10783,8 @@ import ToolbarSeparator from '@ui5/webcomponents/dist/ToolbarSeparator.js';
 })
 class ToolbarSeparatorComponent {
   /**
-        Property used to define the access of the item to the overflow Popover. If \\"NeverOverflow\\" option is set,
-the item never goes in the Popover, if \\"AlwaysOverflow\\" - it never comes out of it.
+        Property used to define the access of the item to the overflow Popover. If "NeverOverflow" option is set,
+the item never goes in the Popover, if "AlwaysOverflow" - it never comes out of it.
         */
   overflowPriority!: 'Default' | 'NeverOverflow' | 'AlwaysOverflow';
   /**
@@ -10833,8 +10833,8 @@ import ToolbarSpacer from '@ui5/webcomponents/dist/ToolbarSpacer.js';
 })
 class ToolbarSpacerComponent {
   /**
-        Property used to define the access of the item to the overflow Popover. If \\"NeverOverflow\\" option is set,
-the item never goes in the Popover, if \\"AlwaysOverflow\\" - it never comes out of it.
+        Property used to define the access of the item to the overflow Popover. If "NeverOverflow" option is set,
+the item never goes in the Popover, if "AlwaysOverflow" - it never comes out of it.
         */
   overflowPriority!: 'Default' | 'NeverOverflow' | 'AlwaysOverflow';
   /**
@@ -11006,7 +11006,7 @@ If set to \`true\`, a navigation indicator is displayed at the end of the list i
   tooltip!: string | undefined;
   /**
         Defines the highlight state of the list items.
-Available options are: \`\\"None\\"\` (by default), \`\\"Positive\\"\`, \`\\"Critical\\"\`, \`\\"Information\\"\` and \`\\"Negative\\"\`.
+Available options are: \`"None"\` (by default), \`"Positive"\`, \`"Critical"\`, \`"Information"\` and \`"Negative"\`.
         */
   highlight!: 'None' | 'Positive' | 'Critical' | 'Negative' | 'Information';
   /**
@@ -11055,7 +11055,7 @@ It is not necessary to set this property otherwise. If a tree item has children,
   /**
         Defines the state of the \`additionalText\`.
 
-Available options are: \`\\"None\\"\` (by default), \`\\"Positive\\"\`, \`\\"Critical\\"\`, \`\\"Information\\"\` and \`\\"Negative\\"\`.
+Available options are: \`"None"\` (by default), \`"Positive"\`, \`"Critical"\`, \`"Information"\` and \`"Negative"\`.
         */
   additionalTextState!:
     | 'None'
@@ -11183,7 +11183,7 @@ If set to \`true\`, a navigation indicator is displayed at the end of the list i
   tooltip!: string | undefined;
   /**
         Defines the highlight state of the list items.
-Available options are: \`\\"None\\"\` (by default), \`\\"Positive\\"\`, \`\\"Critical\\"\`, \`\\"Information\\"\` and \`\\"Negative\\"\`.
+Available options are: \`"None"\` (by default), \`"Positive"\`, \`"Critical"\`, \`"Information"\` and \`"Negative"\`.
         */
   highlight!: 'None' | 'Positive' | 'Critical' | 'Negative' | 'Information';
   /**
@@ -11232,7 +11232,7 @@ It is not necessary to set this property otherwise. If a tree item has children,
   /**
         Defines the state of the \`additionalText\`.
 
-Available options are: \`\\"None\\"\` (by default), \`\\"Positive\\"\`, \`\\"Critical\\"\`, \`\\"Information\\"\` and \`\\"Negative\\"\`.
+Available options are: \`"None"\` (by default), \`"Positive"\`, \`"Critical"\`, \`"Information"\` and \`"Negative"\`.
         */
   additionalTextState!:
     | 'None'
@@ -11448,114 +11448,114 @@ export { TreeComponent };
 `;
 
 exports[`Snapshot test Main Ui 5 Main Module Ts should match the snapshot 1`] = `
-"import { NgModule } from \\"@angular/core\\";
-import { Ui5WebcomponentsMainThemingService } from \\"@ui5/webcomponents-ngx/main/theming\\";
-import \\"@ui5/webcomponents/dist/Assets.js\\";
-import { AvatarComponent } from \\"@ui5/webcomponents-ngx/main/avatar\\";
-import { AvatarGroupComponent } from \\"@ui5/webcomponents-ngx/main/avatar-group\\";
-import { BarComponent } from \\"@ui5/webcomponents-ngx/main/bar\\";
-import { BreadcrumbsComponent } from \\"@ui5/webcomponents-ngx/main/breadcrumbs\\";
-import { BreadcrumbsItemComponent } from \\"@ui5/webcomponents-ngx/main/breadcrumbs-item\\";
-import { BusyIndicatorComponent } from \\"@ui5/webcomponents-ngx/main/busy-indicator\\";
-import { ButtonComponent } from \\"@ui5/webcomponents-ngx/main/button\\";
-import { ButtonBadgeComponent } from \\"@ui5/webcomponents-ngx/main/button-badge\\";
-import { CalendarComponent } from \\"@ui5/webcomponents-ngx/main/calendar\\";
-import { CalendarDateComponent } from \\"@ui5/webcomponents-ngx/main/calendar-date\\";
-import { CalendarDateRangeComponent } from \\"@ui5/webcomponents-ngx/main/calendar-date-range\\";
-import { CalendarLegendComponent } from \\"@ui5/webcomponents-ngx/main/calendar-legend\\";
-import { CalendarLegendItemComponent } from \\"@ui5/webcomponents-ngx/main/calendar-legend-item\\";
-import { CardComponent } from \\"@ui5/webcomponents-ngx/main/card\\";
-import { CardHeaderComponent } from \\"@ui5/webcomponents-ngx/main/card-header\\";
-import { CarouselComponent } from \\"@ui5/webcomponents-ngx/main/carousel\\";
-import { CheckBoxComponent } from \\"@ui5/webcomponents-ngx/main/check-box\\";
-import { ColorPaletteComponent } from \\"@ui5/webcomponents-ngx/main/color-palette\\";
-import { ColorPaletteItemComponent } from \\"@ui5/webcomponents-ngx/main/color-palette-item\\";
-import { ColorPalettePopoverComponent } from \\"@ui5/webcomponents-ngx/main/color-palette-popover\\";
-import { ColorPickerComponent } from \\"@ui5/webcomponents-ngx/main/color-picker\\";
-import { ComboBoxComponent } from \\"@ui5/webcomponents-ngx/main/combo-box\\";
-import { ComboBoxItemComponent } from \\"@ui5/webcomponents-ngx/main/combo-box-item\\";
-import { ComboBoxItemGroupComponent } from \\"@ui5/webcomponents-ngx/main/combo-box-item-group\\";
-import { DatePickerComponent } from \\"@ui5/webcomponents-ngx/main/date-picker\\";
-import { DateRangePickerComponent } from \\"@ui5/webcomponents-ngx/main/date-range-picker\\";
-import { DateTimePickerComponent } from \\"@ui5/webcomponents-ngx/main/date-time-picker\\";
-import { DialogComponent } from \\"@ui5/webcomponents-ngx/main/dialog\\";
-import { DynamicDateRangeComponent } from \\"@ui5/webcomponents-ngx/main/dynamic-date-range\\";
-import { ExpandableTextComponent } from \\"@ui5/webcomponents-ngx/main/expandable-text\\";
-import { FileUploaderComponent } from \\"@ui5/webcomponents-ngx/main/file-uploader\\";
-import { FormComponent } from \\"@ui5/webcomponents-ngx/main/form\\";
-import { FormGroupComponent } from \\"@ui5/webcomponents-ngx/main/form-group\\";
-import { FormItemComponent } from \\"@ui5/webcomponents-ngx/main/form-item\\";
-import { IconComponent } from \\"@ui5/webcomponents-ngx/main/icon\\";
-import { InputComponent } from \\"@ui5/webcomponents-ngx/main/input\\";
-import { LabelComponent } from \\"@ui5/webcomponents-ngx/main/label\\";
-import { LinkComponent } from \\"@ui5/webcomponents-ngx/main/link\\";
-import { ListComponent } from \\"@ui5/webcomponents-ngx/main/list\\";
-import { ListItemCustomComponent } from \\"@ui5/webcomponents-ngx/main/list-item-custom\\";
-import { ListItemGroupComponent } from \\"@ui5/webcomponents-ngx/main/list-item-group\\";
-import { ListItemStandardComponent } from \\"@ui5/webcomponents-ngx/main/list-item-standard\\";
-import { MenuComponent } from \\"@ui5/webcomponents-ngx/main/menu\\";
-import { MenuItemComponent } from \\"@ui5/webcomponents-ngx/main/menu-item\\";
-import { MenuItemGroupComponent } from \\"@ui5/webcomponents-ngx/main/menu-item-group\\";
-import { MenuSeparatorComponent } from \\"@ui5/webcomponents-ngx/main/menu-separator\\";
-import { MessageStripComponent } from \\"@ui5/webcomponents-ngx/main/message-strip\\";
-import { MultiComboBoxComponent } from \\"@ui5/webcomponents-ngx/main/multi-combo-box\\";
-import { MultiComboBoxItemComponent } from \\"@ui5/webcomponents-ngx/main/multi-combo-box-item\\";
-import { MultiComboBoxItemGroupComponent } from \\"@ui5/webcomponents-ngx/main/multi-combo-box-item-group\\";
-import { MultiInputComponent } from \\"@ui5/webcomponents-ngx/main/multi-input\\";
-import { OptionComponent } from \\"@ui5/webcomponents-ngx/main/option\\";
-import { OptionCustomComponent } from \\"@ui5/webcomponents-ngx/main/option-custom\\";
-import { PanelComponent } from \\"@ui5/webcomponents-ngx/main/panel\\";
-import { PopoverComponent } from \\"@ui5/webcomponents-ngx/main/popover\\";
-import { ProgressIndicatorComponent } from \\"@ui5/webcomponents-ngx/main/progress-indicator\\";
-import { RadioButtonComponent } from \\"@ui5/webcomponents-ngx/main/radio-button\\";
-import { RangeSliderComponent } from \\"@ui5/webcomponents-ngx/main/range-slider\\";
-import { RatingIndicatorComponent } from \\"@ui5/webcomponents-ngx/main/rating-indicator\\";
-import { ResponsivePopoverComponent } from \\"@ui5/webcomponents-ngx/main/responsive-popover\\";
-import { SegmentedButtonComponent } from \\"@ui5/webcomponents-ngx/main/segmented-button\\";
-import { SegmentedButtonItemComponent } from \\"@ui5/webcomponents-ngx/main/segmented-button-item\\";
-import { SelectComponent } from \\"@ui5/webcomponents-ngx/main/select\\";
-import { SliderComponent } from \\"@ui5/webcomponents-ngx/main/slider\\";
-import { SpecialCalendarDateComponent } from \\"@ui5/webcomponents-ngx/main/special-calendar-date\\";
-import { SplitButtonComponent } from \\"@ui5/webcomponents-ngx/main/split-button\\";
-import { StepInputComponent } from \\"@ui5/webcomponents-ngx/main/step-input\\";
-import { SuggestionItemComponent } from \\"@ui5/webcomponents-ngx/main/suggestion-item\\";
-import { SuggestionItemCustomComponent } from \\"@ui5/webcomponents-ngx/main/suggestion-item-custom\\";
-import { SuggestionItemGroupComponent } from \\"@ui5/webcomponents-ngx/main/suggestion-item-group\\";
-import { SwitchComponent } from \\"@ui5/webcomponents-ngx/main/switch\\";
-import { TabComponent } from \\"@ui5/webcomponents-ngx/main/tab\\";
-import { TabContainerComponent } from \\"@ui5/webcomponents-ngx/main/tab-container\\";
-import { TabSeparatorComponent } from \\"@ui5/webcomponents-ngx/main/tab-separator\\";
-import { TableComponent } from \\"@ui5/webcomponents-ngx/main/table\\";
-import { TableCellComponent } from \\"@ui5/webcomponents-ngx/main/table-cell\\";
-import { TableGrowingComponent } from \\"@ui5/webcomponents-ngx/main/table-growing\\";
-import { TableHeaderCellComponent } from \\"@ui5/webcomponents-ngx/main/table-header-cell\\";
-import { TableHeaderCellActionAIComponent } from \\"@ui5/webcomponents-ngx/main/table-header-cell-action-ai\\";
-import { TableHeaderRowComponent } from \\"@ui5/webcomponents-ngx/main/table-header-row\\";
-import { TableRowComponent } from \\"@ui5/webcomponents-ngx/main/table-row\\";
-import { TableRowActionComponent } from \\"@ui5/webcomponents-ngx/main/table-row-action\\";
-import { TableRowActionNavigationComponent } from \\"@ui5/webcomponents-ngx/main/table-row-action-navigation\\";
-import { TableSelectionComponent } from \\"@ui5/webcomponents-ngx/main/table-selection\\";
-import { TableSelectionMultiComponent } from \\"@ui5/webcomponents-ngx/main/table-selection-multi\\";
-import { TableSelectionSingleComponent } from \\"@ui5/webcomponents-ngx/main/table-selection-single\\";
-import { TableVirtualizerComponent } from \\"@ui5/webcomponents-ngx/main/table-virtualizer\\";
-import { TagComponent } from \\"@ui5/webcomponents-ngx/main/tag\\";
-import { TextComponent } from \\"@ui5/webcomponents-ngx/main/text\\";
-import { TextAreaComponent } from \\"@ui5/webcomponents-ngx/main/text-area\\";
-import { TimePickerComponent } from \\"@ui5/webcomponents-ngx/main/time-picker\\";
-import { TitleComponent } from \\"@ui5/webcomponents-ngx/main/title\\";
-import { ToastComponent } from \\"@ui5/webcomponents-ngx/main/toast\\";
-import { ToggleButtonComponent } from \\"@ui5/webcomponents-ngx/main/toggle-button\\";
-import { TokenComponent } from \\"@ui5/webcomponents-ngx/main/token\\";
-import { TokenizerComponent } from \\"@ui5/webcomponents-ngx/main/tokenizer\\";
-import { ToolbarComponent } from \\"@ui5/webcomponents-ngx/main/toolbar\\";
-import { ToolbarButtonComponent } from \\"@ui5/webcomponents-ngx/main/toolbar-button\\";
-import { ToolbarSelectComponent } from \\"@ui5/webcomponents-ngx/main/toolbar-select\\";
-import { ToolbarSelectOptionComponent } from \\"@ui5/webcomponents-ngx/main/toolbar-select-option\\";
-import { ToolbarSeparatorComponent } from \\"@ui5/webcomponents-ngx/main/toolbar-separator\\";
-import { ToolbarSpacerComponent } from \\"@ui5/webcomponents-ngx/main/toolbar-spacer\\";
-import { TreeComponent } from \\"@ui5/webcomponents-ngx/main/tree\\";
-import { TreeItemComponent } from \\"@ui5/webcomponents-ngx/main/tree-item\\";
-import { TreeItemCustomComponent } from \\"@ui5/webcomponents-ngx/main/tree-item-custom\\";
+"import { NgModule } from "@angular/core";
+import { Ui5WebcomponentsMainThemingService } from "@ui5/webcomponents-ngx/main/theming";
+import "@ui5/webcomponents/dist/Assets.js";
+import { AvatarComponent } from "@ui5/webcomponents-ngx/main/avatar";
+import { AvatarGroupComponent } from "@ui5/webcomponents-ngx/main/avatar-group";
+import { BarComponent } from "@ui5/webcomponents-ngx/main/bar";
+import { BreadcrumbsComponent } from "@ui5/webcomponents-ngx/main/breadcrumbs";
+import { BreadcrumbsItemComponent } from "@ui5/webcomponents-ngx/main/breadcrumbs-item";
+import { BusyIndicatorComponent } from "@ui5/webcomponents-ngx/main/busy-indicator";
+import { ButtonComponent } from "@ui5/webcomponents-ngx/main/button";
+import { ButtonBadgeComponent } from "@ui5/webcomponents-ngx/main/button-badge";
+import { CalendarComponent } from "@ui5/webcomponents-ngx/main/calendar";
+import { CalendarDateComponent } from "@ui5/webcomponents-ngx/main/calendar-date";
+import { CalendarDateRangeComponent } from "@ui5/webcomponents-ngx/main/calendar-date-range";
+import { CalendarLegendComponent } from "@ui5/webcomponents-ngx/main/calendar-legend";
+import { CalendarLegendItemComponent } from "@ui5/webcomponents-ngx/main/calendar-legend-item";
+import { CardComponent } from "@ui5/webcomponents-ngx/main/card";
+import { CardHeaderComponent } from "@ui5/webcomponents-ngx/main/card-header";
+import { CarouselComponent } from "@ui5/webcomponents-ngx/main/carousel";
+import { CheckBoxComponent } from "@ui5/webcomponents-ngx/main/check-box";
+import { ColorPaletteComponent } from "@ui5/webcomponents-ngx/main/color-palette";
+import { ColorPaletteItemComponent } from "@ui5/webcomponents-ngx/main/color-palette-item";
+import { ColorPalettePopoverComponent } from "@ui5/webcomponents-ngx/main/color-palette-popover";
+import { ColorPickerComponent } from "@ui5/webcomponents-ngx/main/color-picker";
+import { ComboBoxComponent } from "@ui5/webcomponents-ngx/main/combo-box";
+import { ComboBoxItemComponent } from "@ui5/webcomponents-ngx/main/combo-box-item";
+import { ComboBoxItemGroupComponent } from "@ui5/webcomponents-ngx/main/combo-box-item-group";
+import { DatePickerComponent } from "@ui5/webcomponents-ngx/main/date-picker";
+import { DateRangePickerComponent } from "@ui5/webcomponents-ngx/main/date-range-picker";
+import { DateTimePickerComponent } from "@ui5/webcomponents-ngx/main/date-time-picker";
+import { DialogComponent } from "@ui5/webcomponents-ngx/main/dialog";
+import { DynamicDateRangeComponent } from "@ui5/webcomponents-ngx/main/dynamic-date-range";
+import { ExpandableTextComponent } from "@ui5/webcomponents-ngx/main/expandable-text";
+import { FileUploaderComponent } from "@ui5/webcomponents-ngx/main/file-uploader";
+import { FormComponent } from "@ui5/webcomponents-ngx/main/form";
+import { FormGroupComponent } from "@ui5/webcomponents-ngx/main/form-group";
+import { FormItemComponent } from "@ui5/webcomponents-ngx/main/form-item";
+import { IconComponent } from "@ui5/webcomponents-ngx/main/icon";
+import { InputComponent } from "@ui5/webcomponents-ngx/main/input";
+import { LabelComponent } from "@ui5/webcomponents-ngx/main/label";
+import { LinkComponent } from "@ui5/webcomponents-ngx/main/link";
+import { ListComponent } from "@ui5/webcomponents-ngx/main/list";
+import { ListItemCustomComponent } from "@ui5/webcomponents-ngx/main/list-item-custom";
+import { ListItemGroupComponent } from "@ui5/webcomponents-ngx/main/list-item-group";
+import { ListItemStandardComponent } from "@ui5/webcomponents-ngx/main/list-item-standard";
+import { MenuComponent } from "@ui5/webcomponents-ngx/main/menu";
+import { MenuItemComponent } from "@ui5/webcomponents-ngx/main/menu-item";
+import { MenuItemGroupComponent } from "@ui5/webcomponents-ngx/main/menu-item-group";
+import { MenuSeparatorComponent } from "@ui5/webcomponents-ngx/main/menu-separator";
+import { MessageStripComponent } from "@ui5/webcomponents-ngx/main/message-strip";
+import { MultiComboBoxComponent } from "@ui5/webcomponents-ngx/main/multi-combo-box";
+import { MultiComboBoxItemComponent } from "@ui5/webcomponents-ngx/main/multi-combo-box-item";
+import { MultiComboBoxItemGroupComponent } from "@ui5/webcomponents-ngx/main/multi-combo-box-item-group";
+import { MultiInputComponent } from "@ui5/webcomponents-ngx/main/multi-input";
+import { OptionComponent } from "@ui5/webcomponents-ngx/main/option";
+import { OptionCustomComponent } from "@ui5/webcomponents-ngx/main/option-custom";
+import { PanelComponent } from "@ui5/webcomponents-ngx/main/panel";
+import { PopoverComponent } from "@ui5/webcomponents-ngx/main/popover";
+import { ProgressIndicatorComponent } from "@ui5/webcomponents-ngx/main/progress-indicator";
+import { RadioButtonComponent } from "@ui5/webcomponents-ngx/main/radio-button";
+import { RangeSliderComponent } from "@ui5/webcomponents-ngx/main/range-slider";
+import { RatingIndicatorComponent } from "@ui5/webcomponents-ngx/main/rating-indicator";
+import { ResponsivePopoverComponent } from "@ui5/webcomponents-ngx/main/responsive-popover";
+import { SegmentedButtonComponent } from "@ui5/webcomponents-ngx/main/segmented-button";
+import { SegmentedButtonItemComponent } from "@ui5/webcomponents-ngx/main/segmented-button-item";
+import { SelectComponent } from "@ui5/webcomponents-ngx/main/select";
+import { SliderComponent } from "@ui5/webcomponents-ngx/main/slider";
+import { SpecialCalendarDateComponent } from "@ui5/webcomponents-ngx/main/special-calendar-date";
+import { SplitButtonComponent } from "@ui5/webcomponents-ngx/main/split-button";
+import { StepInputComponent } from "@ui5/webcomponents-ngx/main/step-input";
+import { SuggestionItemComponent } from "@ui5/webcomponents-ngx/main/suggestion-item";
+import { SuggestionItemCustomComponent } from "@ui5/webcomponents-ngx/main/suggestion-item-custom";
+import { SuggestionItemGroupComponent } from "@ui5/webcomponents-ngx/main/suggestion-item-group";
+import { SwitchComponent } from "@ui5/webcomponents-ngx/main/switch";
+import { TabComponent } from "@ui5/webcomponents-ngx/main/tab";
+import { TabContainerComponent } from "@ui5/webcomponents-ngx/main/tab-container";
+import { TabSeparatorComponent } from "@ui5/webcomponents-ngx/main/tab-separator";
+import { TableComponent } from "@ui5/webcomponents-ngx/main/table";
+import { TableCellComponent } from "@ui5/webcomponents-ngx/main/table-cell";
+import { TableGrowingComponent } from "@ui5/webcomponents-ngx/main/table-growing";
+import { TableHeaderCellComponent } from "@ui5/webcomponents-ngx/main/table-header-cell";
+import { TableHeaderCellActionAIComponent } from "@ui5/webcomponents-ngx/main/table-header-cell-action-ai";
+import { TableHeaderRowComponent } from "@ui5/webcomponents-ngx/main/table-header-row";
+import { TableRowComponent } from "@ui5/webcomponents-ngx/main/table-row";
+import { TableRowActionComponent } from "@ui5/webcomponents-ngx/main/table-row-action";
+import { TableRowActionNavigationComponent } from "@ui5/webcomponents-ngx/main/table-row-action-navigation";
+import { TableSelectionComponent } from "@ui5/webcomponents-ngx/main/table-selection";
+import { TableSelectionMultiComponent } from "@ui5/webcomponents-ngx/main/table-selection-multi";
+import { TableSelectionSingleComponent } from "@ui5/webcomponents-ngx/main/table-selection-single";
+import { TableVirtualizerComponent } from "@ui5/webcomponents-ngx/main/table-virtualizer";
+import { TagComponent } from "@ui5/webcomponents-ngx/main/tag";
+import { TextComponent } from "@ui5/webcomponents-ngx/main/text";
+import { TextAreaComponent } from "@ui5/webcomponents-ngx/main/text-area";
+import { TimePickerComponent } from "@ui5/webcomponents-ngx/main/time-picker";
+import { TitleComponent } from "@ui5/webcomponents-ngx/main/title";
+import { ToastComponent } from "@ui5/webcomponents-ngx/main/toast";
+import { ToggleButtonComponent } from "@ui5/webcomponents-ngx/main/toggle-button";
+import { TokenComponent } from "@ui5/webcomponents-ngx/main/token";
+import { TokenizerComponent } from "@ui5/webcomponents-ngx/main/tokenizer";
+import { ToolbarComponent } from "@ui5/webcomponents-ngx/main/toolbar";
+import { ToolbarButtonComponent } from "@ui5/webcomponents-ngx/main/toolbar-button";
+import { ToolbarSelectComponent } from "@ui5/webcomponents-ngx/main/toolbar-select";
+import { ToolbarSelectOptionComponent } from "@ui5/webcomponents-ngx/main/toolbar-select-option";
+import { ToolbarSeparatorComponent } from "@ui5/webcomponents-ngx/main/toolbar-separator";
+import { ToolbarSpacerComponent } from "@ui5/webcomponents-ngx/main/toolbar-spacer";
+import { TreeComponent } from "@ui5/webcomponents-ngx/main/tree";
+import { TreeItemComponent } from "@ui5/webcomponents-ngx/main/tree-item";
+import { TreeItemCustomComponent } from "@ui5/webcomponents-ngx/main/tree-item-custom";
 
 const imports = [
   AvatarComponent,

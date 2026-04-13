@@ -350,6 +350,7 @@ Full description of current CI PipeLine can be found [here](<https://github.com/
 To ensure consistency throughout the source code, keep these rules in mind as you are working:
 
 -   All features or bug fixes **must be tested** by one or more specs (unit-tests).
+-   **Jest snapshots:** The workspace uses Jest’s default snapshot format (via `jest.preset.js` without a custom `snapshotFormat`). After intentional output changes, refresh snapshots with `yarn nx run <project>:test --updateSnapshot` (e.g. `ui5-angular`, `ag-ui-angular`, `genui-renderer`).
 -   All public API methods **must be documented**. [Documentation Guideline](https://github.com/SAP/ui5-webcomponents-ngx/wiki/Documenting-Code)
 -   We follow [Google's JavaScript Style Guide][js-style-guide], but wrap all code at
     **100 characters**. An automated formatter is available, see
