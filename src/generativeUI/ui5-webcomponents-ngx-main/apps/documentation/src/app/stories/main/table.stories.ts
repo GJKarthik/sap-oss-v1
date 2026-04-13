@@ -73,6 +73,14 @@ export const Table: StoryObj<TableComponent> = {
 };
 
 export const OverflowTable: StoryObj<TableComponent> = {
+  parameters: {
+    docs: {
+      description: {
+        story:
+          'Demonstrates **Scroll** overflow plus a **Popin** table with segmented buttons for layout hints. The segmented buttons are illustrative only (no click handlers); in an app, drive column visibility or table width from component state.',
+      },
+    },
+  },
   render: (args) => ({
     props: args,
     template: `
@@ -159,7 +167,7 @@ export const OverflowTable: StoryObj<TableComponent> = {
         </div>
     `,
   }),
-}; // TODO
+};
 
 export const StickyHeaderRowTable: StoryObj<TableComponent> = {
   render: (args) => ({
@@ -301,6 +309,14 @@ export const NoDataTable: StoryObj<TableComponent> = {
 };
 
 export const InteractiveTable: StoryObj<TableComponent> = {
+  parameters: {
+    docs: {
+      description: {
+        story:
+          'Rows use the `interactive` attribute where selection/hover feedback applies. Toast is included for copy parity with WC samples; hook `selection-change` / row events in your app for real behaviour.',
+      },
+    },
+  },
   render: (args) => ({
     props: args,
     template: `
@@ -338,9 +354,17 @@ export const InteractiveTable: StoryObj<TableComponent> = {
     </ui5-table>
     `,
   }),
-}; // TODO
+};
 
 export const DragAndDropTable: StoryObj<TableComponent> = {
+  parameters: {
+    docs: {
+      description: {
+        story:
+          '`movable` rows indicate reorder-capable rows in the web component. Full drag-and-drop ordering still requires application logic (listen for move events and persist order).',
+      },
+    },
+  },
   render: (args) => ({
     props: args,
     template: `
@@ -376,4 +400,4 @@ export const DragAndDropTable: StoryObj<TableComponent> = {
 		</ui5-table>
     `,
   }),
-}; // TODO
+};

@@ -90,6 +90,14 @@ export const SelectionModes: StoryObj<ListComponent> = {
 };
 
 export const ListWithGrowingScroll: StoryObj<ListComponent> = {
+  parameters: {
+    docs: {
+      description: {
+        story:
+          '`growing="Scroll"` loads more when the user scrolls to the bottom. Wire `load-more` in application code to append data; this canvas shows a fixed set of items.',
+      },
+    },
+  },
   render: (args: ListComponent & any) => ({
     props: args,
     template: `
@@ -108,24 +116,33 @@ export const ListWithGrowingScroll: StoryObj<ListComponent> = {
 };
 
 export const ListWithGrowingButton: StoryObj<ListComponent> = {
+  parameters: {
+    docs: {
+      description: {
+        story:
+          'Uses `growing="Button"` with the same `additional-text-state` values as the Basic list sample (Success, Critical, Error, Information). ' +
+          'In a real app, listen for `load-more` on `ui5-list` and append rows; this Storybook sample is static so the grow button does not load more items.',
+      },
+    },
+  },
   render: (args: ListComponent & any) => ({
     props: args,
     template: `
-		<ui5-list id="growingList" style="height: 300px" growing="Button" loading-delay="0">
+		<ui5-list id="growingList" style="height: 300px" growing="Button" growing-button-text="More" loading-delay="0">
 			<ui5-li icon="nutrition-activity" description="Tropical plant with an edible fruit" additional-text="In-stock"
-				additional-text-state="Positive">Pineapple</ui5-li>
+				additional-text-state="Success">Pineapple</ui5-li>
 			<ui5-li icon="nutrition-activity" description="Occurs between red and yellow" additional-text="Expires"
 				additional-text-state="Critical">Orange</ui5-li>
 			<ui5-li icon="nutrition-activity" description="The yellow lengthy fruit" additional-text="Re-stock"
-				additional-text-state="Negative">Banana</ui5-li>
+				additional-text-state="Error">Banana</ui5-li>
 			<ui5-li icon="nutrition-activity" description="Small fruit that comes in various colors, including red, purple" additional-text="Re-stock"
 				additional-text-state="Information">Plum</ui5-li>
 			<ui5-li icon="nutrition-activity" description=" tropical fruit known for its sweet and juicy interior" additional-text="Re-stock"
-				additional-text-state="Negative">Mango</ui5-li>
+				additional-text-state="Error">Mango</ui5-li>
 		</ui5-list>
 		`,
   }),
-}; // TODO: Button growing is not working
+};
 
 export const BusyList: StoryObj<ListComponent> = {
   render: (args: ListComponent & any) => ({
