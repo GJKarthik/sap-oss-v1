@@ -153,6 +153,15 @@ def test_default_data_products_dir_points_to_real_repo_data():
     assert (data_products_module.DATA_PRODUCTS_DIR / "registry.yaml").exists()
 
 
+def test_resolve_default_data_products_dir_handles_shallow_container_layout(tmp_path: Path):
+    container_src = tmp_path / "app" / "src"
+    container_src.mkdir(parents=True)
+
+    resolved = data_products_module._resolve_default_data_products_dir(container_src)
+
+    assert resolved == container_src / "data_products"
+
+
 @pytest.mark.anyio
 async def test_list_products(client: AsyncClient, isolated_data_products_dir: Path):
     response = await client.get("/data-products/products")
