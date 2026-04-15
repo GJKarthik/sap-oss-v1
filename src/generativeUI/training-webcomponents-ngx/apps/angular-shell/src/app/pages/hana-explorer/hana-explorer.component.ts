@@ -79,8 +79,8 @@ interface ArchLayer {
           <div class="stat-label">{{ i18n.t('hanaExplorer.pairsStored') }}</div>
         </div>
         <div class="stat-card">
-          <div class="stat-value">6</div>
-          <div class="stat-label">{{ i18n.t('hanaExplorer.schemas') }}</div>
+          <div class="stat-value">7</div>
+          <div class="stat-label">Governance Tables</div>
         </div>
       </div>
 
@@ -332,12 +332,16 @@ export class HanaExplorerComponent implements OnInit, OnDestroy {
   readonly querying = signal(false);
   readonly queryError = signal('');
 
-  sql = 'SELECT * FROM TRAINING_PAIRS LIMIT 10';
+  sql = 'SELECT * FROM TRAINING_RUNS LIMIT 10';
 
   readonly presets: QueryPreset[] = [
     { label: this.i18n.t('hanaExplorer.presetAllTables'), sql: 'SELECT TABLE_NAME, SCHEMA_NAME FROM SYS.TABLES WHERE SCHEMA_NAME NOT LIKE \'SYS%\' LIMIT 20' },
     { label: this.i18n.t('hanaExplorer.presetTrainingPairs'), sql: 'SELECT * FROM TRAINING_PAIRS LIMIT 20' },
     { label: this.i18n.t('hanaExplorer.presetCountPairs'), sql: 'SELECT COUNT(*) AS total FROM TRAINING_PAIRS' },
+    { label: 'Training runs', sql: 'SELECT ID, WORKFLOW_TYPE, STATUS, RISK_TIER, GATE_STATUS FROM TRAINING_RUNS LIMIT 20' },
+    { label: 'Approvals', sql: 'SELECT ID, RUN_ID, STATUS, RISK_LEVEL FROM TRAINING_APPROVALS LIMIT 20' },
+    { label: 'Gate checks', sql: 'SELECT RUN_ID, GATE_KEY, STATUS, CATEGORY FROM TRAINING_GATE_CHECKS LIMIT 20' },
+    { label: 'Metric snapshots', sql: 'SELECT RUN_ID, METRIC_KEY, VALUE, STAGE FROM TRAINING_METRIC_SNAPSHOTS LIMIT 20' },
   ];
 
   readonly archLayers: ArchLayer[] = [

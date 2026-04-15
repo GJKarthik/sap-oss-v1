@@ -10,12 +10,6 @@ import { AppStore } from '../../store/app.store';
 import { RealtimeConnectionService } from '../../services/realtime-connection.service';
 import { of } from 'rxjs';
 
-const MOCK_ENV_URL = 'http://localhost:8001';
-
-jest.mock('../../../environments/environment', () => ({
-  environment: { apiBaseUrl: 'http://localhost:8001' },
-}));
-
 function makeWsMock() {
   const sent: unknown[] = [];
   return {
@@ -112,7 +106,7 @@ describe('PipelineComponent', () => {
 
     component.startPipeline();
 
-    httpMock.expectNone(`${MOCK_ENV_URL}/pipeline/start`);
+    httpMock.expectNone('/api/governance/training-runs');
     expect(appStore.setMode).toHaveBeenCalledWith('training');
     expect(toastSpy.info).toHaveBeenCalled();
   });
@@ -122,7 +116,7 @@ describe('PipelineComponent', () => {
 
     component.startPipeline();
 
-    httpMock.expectNone(`${MOCK_ENV_URL}/pipeline/start`);
+    httpMock.expectNone('/api/governance/training-runs');
     expect(component.confirmExecutionOpen()).toBe(true);
   });
 
@@ -210,13 +204,64 @@ describe('PipelineComponent', () => {
 
   // ── startPipeline ────────────────────────────────────────────────────────────
 
-  it('should POST to /pipeline/start and set running state on success', fakeAsync(() => {
+  it('should create, submit, and launch a governed pipeline run on success', fakeAsync(() => {
     component.startPipeline();
     expect(component.starting()).toBe(true);
 
-    const req = httpMock.expectOne(`${MOCK_ENV_URL}/pipeline/start`);
-    expect(req.request.method).toBe('POST');
-    req.flush({});
+    const createReq = httpMock.expectOne('/api/governance/training-runs');
+    expect(createReq.request.method).toBe('POST');
+    createReq.flush({
+      id: 'run-1',
+      workflow_type: 'pipeline',
+      run_name: 'Pipeline test',
+      team: 'training-console',
+      requested_by: 'training-user',
+      config_json: {},
+      risk_tier: 'medium',
+      risk_score: 55,
+      approval_status: 'not_required',
+      gate_status: 'draft',
+      status: 'draft',
+      blocking_checks: [],
+      created_at: new Date().toISOString(),
+    });
+
+    const submitReq = httpMock.expectOne('/api/governance/training-runs/run-1/submit');
+    expect(submitReq.request.method).toBe('POST');
+    submitReq.flush({
+      id: 'run-1',
+      workflow_type: 'pipeline',
+      run_name: 'Pipeline test',
+      team: 'training-console',
+      requested_by: 'training-user',
+      config_json: {},
+      risk_tier: 'medium',
+      risk_score: 55,
+      approval_status: 'not_required',
+      gate_status: 'passed',
+      status: 'submitted',
+      blocking_checks: [],
+      created_at: new Date().toISOString(),
+    });
+
+    const launchReq = httpMock.expectOne('/api/governance/training-runs/run-1/launch');
+    expect(launchReq.request.method).toBe('POST');
+    launchReq.flush({
+      id: 'run-1',
+      workflow_type: 'pipeline',
+      run_name: 'Pipeline test',
+      team: 'training-console',
+      requested_by: 'training-user',
+      config_json: {},
+      risk_tier: 'medium',
+      risk_score: 55,
+      approval_status: 'not_required',
+      gate_status: 'passed',
+      status: 'running',
+      job_id: 'pipe-1',
+      blocking_checks: [],
+      created_at: new Date().toISOString(),
+    });
     tick();
 
     expect(component.pipelineState()).toBe('running');
@@ -224,10 +269,44 @@ describe('PipelineComponent', () => {
     expect(toastSpy.success).toHaveBeenCalled();
   }));
 
-  it('should show error toast and clear starting flag when POST fails', fakeAsync(() => {
+  it('should show error toast and clear starting flag when launch is blocked', fakeAsync(() => {
     component.startPipeline();
-    const req = httpMock.expectOne(`${MOCK_ENV_URL}/pipeline/start`);
-    req.flush({ detail: 'Pipeline already running' }, { status: 409, statusText: 'Conflict' });
+
+    httpMock.expectOne('/api/governance/training-runs').flush({
+      id: 'run-1',
+      workflow_type: 'pipeline',
+      run_name: 'Pipeline test',
+      team: 'training-console',
+      requested_by: 'training-user',
+      config_json: {},
+      risk_tier: 'medium',
+      risk_score: 55,
+      approval_status: 'pending',
+      gate_status: 'draft',
+      status: 'draft',
+      blocking_checks: [],
+      created_at: new Date().toISOString(),
+    });
+    httpMock.expectOne('/api/governance/training-runs/run-1/submit').flush({
+      id: 'run-1',
+      workflow_type: 'pipeline',
+      run_name: 'Pipeline test',
+      team: 'training-console',
+      requested_by: 'training-user',
+      config_json: {},
+      risk_tier: 'medium',
+      risk_score: 55,
+      approval_status: 'pending',
+      gate_status: 'pending_approval',
+      status: 'submitted',
+      blocking_checks: [{ gate_key: 'required_approvals', category: 'control', detail: 'Awaiting approval.', status: 'pending' }],
+      created_at: new Date().toISOString(),
+    });
+    const launchReq = httpMock.expectOne('/api/governance/training-runs/run-1/launch');
+    launchReq.flush(
+      { detail: { message: 'Training run is blocked.', blocking_checks: [{ detail: 'Awaiting approval.' }] } },
+      { status: 409, statusText: 'Conflict' }
+    );
     tick();
 
     expect(component.starting()).toBe(false);

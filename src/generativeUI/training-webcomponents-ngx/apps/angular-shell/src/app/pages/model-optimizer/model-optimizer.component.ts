@@ -4,13 +4,12 @@ import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { Subject, takeUntil, forkJoin, catchError, of } from 'rxjs';
 import { ApiService } from '../../services/api.service';
 import { ToastService } from '../../services/toast.service';
-import { HttpErrorResponse } from '@angular/common/http';
-import { UserSettingsService } from '../../services/user-settings.service';
 import { AppStore } from '../../store/app.store';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { I18nService } from '../../services/i18n.service';
 import { Ui5TrainingComponentsModule } from '../../shared/ui5-training-components.module';
 import { JobDetailComponent } from '../../components/job-detail/job-detail.component';
+import { TrainingGovernanceService, type GovernanceSummary, type TrainingRun } from '../../services/training-governance.service';
 
 interface ModelInfo {
   name: string;
@@ -27,16 +26,15 @@ interface JobConfig {
 }
 
 interface JobHistory {
+  step: number;
+  loss: number;
   epoch: number;
-  train_loss: number;
-  val_loss: number;
 }
 
 interface JobResponse {
   id: string;
-  name: string;
   status: string;
-  config: JobConfig;
+  config: Record<string, unknown>;
   created_at: string;
   progress: number;
   error?: string;
@@ -47,6 +45,7 @@ interface JobResponse {
     eval_loss: number;
     runtime_sec: number;
   };
+  governance?: GovernanceSummary;
 }
 
 @Component({
@@ -141,6 +140,34 @@ interface JobResponse {
                     <ui5-option value="vllm">vLLM Engine Compiled</ui5-option>
                   </ui5-select>
 
+                  <div class="governance-panel">
+                    <div class="governance-header">
+                      <ui5-icon name="shield"></ui5-icon>
+                      <span>Governance</span>
+                    </div>
+                    <div class="governance-row">
+                      <span>Risk tier</span>
+                      <ui5-tag [design]="riskTagDesign(plannedRiskTier())">{{ plannedRiskTier() }}</ui5-tag>
+                    </div>
+                    <div class="governance-row">
+                      <span>Cost class</span>
+                      <ui5-tag design="Information">{{ estimatedCostClass() }}</ui5-tag>
+                    </div>
+                    <div class="governance-row">
+                      <span>Approvals</span>
+                      <span class="text-small">{{ plannedApprovalText() }}</span>
+                    </div>
+                    <div class="governance-row">
+                      <span>Gate preview</span>
+                      <span class="text-small">{{ plannedGateText() }}</span>
+                    </div>
+                    @if (latestRun(); as run) {
+                      <div class="governance-last-run">
+                        Latest run: <code>{{ run.id }}</code>
+                      </div>
+                    }
+                  </div>
+
                   <ui5-button design="Emphasized" (click)="createJob()" [disabled]="jobForm.invalid || submitting() || isVramExceeded()">
                     {{ submitting() ? 'Preparing Forge…' : 'Launch Tuning Run' }}
                   </ui5-button>
@@ -161,11 +188,11 @@ interface JobResponse {
                     <div class="job-entry" [class.expanded]="expandedJobId() === j.id">
                       <div class="job-main-row" (click)="toggleExpand(j.id)">
                         <div class="j-info">
-                          <div class="j-title">{{ j.name }}</div>
-                          <div class="j-meta">{{ j.config.model_name }} · {{ j.config.quant_format }}</div>
+                          <div class="j-title">{{ jobModelName(j) }}</div>
+                          <div class="j-meta">{{ jobModelName(j) }} · {{ jobQuantFormat(j) }}</div>
                         </div>
                         <div class="j-progress">
-                          <ui5-progress-indicator [value]="j.progress * 100" [design]="j.status === 'completed' ? 'Positive' : 'Information'"></ui5-progress-indicator>
+                          <ui5-progress-indicator [value]="jobProgress(j)" [design]="j.status === 'completed' ? 'Positive' : 'Information'"></ui5-progress-indicator>
                         </div>
                         <ui5-tag [design]="jobBadgeDesign(j.status)">{{ j.status.toUpperCase() }}</ui5-tag>
                       </div>
@@ -173,6 +200,23 @@ interface JobResponse {
                       @if (expandedJobId() === j.id) {
                         <div class="job-expanded-content">
                           <app-job-detail [job]="j"></app-job-detail>
+                          @if (j.governance) {
+                            <div class="job-governance">
+                              <ui5-tag [design]="riskTagDesign(j.governance.risk_tier)">Risk {{ j.governance.risk_tier }}</ui5-tag>
+                              <ui5-tag [design]="governanceStateDesign(j.governance.approval_status)">{{ j.governance.approval_status }}</ui5-tag>
+                              <ui5-tag [design]="governanceStateDesign(j.governance.gate_status)">{{ j.governance.gate_status }}</ui5-tag>
+                              <span class="text-small">
+                                {{ j.evaluation ? 'Evaluation complete' : 'Evaluation pending' }}
+                              </span>
+                            </div>
+                            @if (j.governance.blocking_checks.length) {
+                              <div class="job-blockers">
+                                @for (check of j.governance.blocking_checks; track check.gate_key) {
+                                  <div class="job-blocker">{{ check.detail }}</div>
+                                }
+                              </div>
+                            }
+                          }
                           <div class="job-actions">
                             @if (j.status === 'completed') {
                               @if (!j.deployed) {
@@ -270,6 +314,13 @@ interface JobResponse {
     .job-actions { margin-top: 1rem; display: flex; gap: 0.5rem; }
 
     .status-success { color: var(--sapPositiveColor); }
+    .governance-panel { padding: 0.85rem; background: rgba(8, 84, 160, 0.06); border-radius: 0.75rem; display: flex; flex-direction: column; gap: 0.65rem; }
+    .governance-header, .governance-row { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; }
+    .governance-header { font-size: 0.8125rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; }
+    .governance-last-run { font-size: 0.75rem; color: var(--sapContent_LabelColor); }
+    .job-governance { margin-top: 1rem; display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; }
+    .job-blockers { display: flex; flex-direction: column; gap: 0.35rem; margin-top: 0.75rem; }
+    .job-blocker { font-size: 0.75rem; color: var(--sapCriticalTextColor, #8d2a0b); background: rgba(226, 96, 52, 0.08); border-radius: 10px; padding: 0.5rem 0.65rem; }
     
     .p-1 { padding: 1rem; }
     .p-2 { padding: 2rem; }
@@ -291,6 +342,7 @@ interface JobResponse {
 export class ModelOptimizerComponent implements OnInit, OnDestroy {
   public readonly store = inject(AppStore);
   private readonly api = inject(ApiService);
+  private readonly governance = inject(TrainingGovernanceService);
   private readonly toast = inject(ToastService);
   readonly i18n = inject(I18nService);
   private readonly fb = inject(FormBuilder);
@@ -303,6 +355,7 @@ export class ModelOptimizerComponent implements OnInit, OnDestroy {
   readonly jobs = signal<JobResponse[]>([]);
   readonly loading = signal(false);
   readonly submitting = signal(false);
+  readonly latestRun = signal<TrainingRun | null>(null);
 
   readonly deployingJob = signal<string | null>(null);
   readonly activeChatJob = signal<JobResponse | null>(null);
@@ -344,6 +397,21 @@ export class ModelOptimizerComponent implements OnInit, OnDestroy {
     return req > 0 && req > tot * 0.95;
   });
 
+  readonly plannedRiskTier = computed<'low' | 'medium' | 'high' | 'critical'>(() => {
+    const vram = this.estimatedVram();
+    if (vram >= 30) return 'critical';
+    if (vram >= 16) return 'high';
+    if (vram >= 8) return 'medium';
+    return 'low';
+  });
+
+  readonly estimatedCostClass = computed(() => {
+    const vram = this.estimatedVram();
+    if (vram >= 30) return 'high-cost';
+    if (vram >= 12) return 'moderate';
+    return 'standard';
+  });
+
   mathMin(a: number, b: number) { return Math.min(a, b); }
 
   ngOnInit(): void {
@@ -369,9 +437,9 @@ export class ModelOptimizerComponent implements OnInit, OnDestroy {
     this.loading.set(true);
     forkJoin({
       models: this.api.get<ModelInfo[]>('/models/catalog').pipe(catchError(() => of([]))),
-      jobs: this.api.get<JobResponse[]>('/jobs').pipe(catchError(() => of([]))),
+      jobs: this.governance.listJobs().pipe(catchError(() => of([]))),
     }).pipe(takeUntil(this.destroy$)).subscribe((res) => {
-      this.models.set(res.models); this.jobs.set(res.jobs); this.loading.set(false);
+      this.models.set(res.models); this.jobs.set(res.jobs.map((job) => this.normalizeJob(job))); this.loading.set(false);
     });
   }
 
@@ -380,9 +448,43 @@ export class ModelOptimizerComponent implements OnInit, OnDestroy {
   createJob(): void {
     if (this.jobForm.invalid) return;
     this.submitting.set(true);
-    this.api.post<JobResponse>('/jobs', { config: this.jobForm.getRawValue() }).pipe(takeUntil(this.destroy$)).subscribe({
-      next: (j) => { this.jobs.update(js => [j, ...js]); this.submitting.set(false); this.toast.success(this.i18n.t('modelOptimizer.jobCreated')); },
-      error: () => { this.submitting.set(false); this.toast.error(this.i18n.t('modelOptimizer.jobFailed')); }
+    const config = {
+      ...this.jobForm.getRawValue(),
+      estimated_vram_gb: this.estimatedVram(),
+    };
+    this.governance.createRun({
+      workflow_type: 'optimization',
+      use_case_family: 'model_optimization',
+      requested_by: 'training-user',
+      team: 'training-console',
+      run_name: `${config.model_name} optimization`,
+      model_name: config.model_name,
+      config_json: config,
+    }).pipe(takeUntil(this.destroy$)).subscribe({
+      next: (run) => {
+        this.latestRun.set(run);
+        this.governance.submitRun(run.id).pipe(takeUntil(this.destroy$)).subscribe({
+          next: (submittedRun) => {
+            this.latestRun.set(submittedRun);
+            this.governance.launchRun(run.id).pipe(takeUntil(this.destroy$)).subscribe({
+              next: (launchedRun) => {
+                this.latestRun.set(launchedRun);
+                const launchedJob = launchedRun.job;
+                if (launchedJob) {
+                  this.jobs.update(js => [this.normalizeJob(launchedJob), ...js]);
+                } else {
+                  this.loadData();
+                }
+                this.submitting.set(false);
+                this.toast.success(this.i18n.t('modelOptimizer.jobCreated'));
+              },
+              error: (error) => this.handleGovernanceError(error),
+            });
+          },
+          error: (error) => this.handleGovernanceError(error),
+        });
+      },
+      error: (error) => this.handleGovernanceError(error),
     });
   }
 
@@ -400,9 +502,36 @@ export class ModelOptimizerComponent implements OnInit, OnDestroy {
 
   deployJob(job: JobResponse) {
     this.deployingJob.set(job.id);
-    this.api.post(`/jobs/${job.id}/deploy`, {}).pipe(takeUntil(this.destroy$)).subscribe({
-      next: () => { this.jobs.update(js => js.map(j => j.id === job.id ? {...j, deployed: true} : j)); this.deployingJob.set(null); },
-      error: () => this.deployingJob.set(null)
+    this.governance.createRun({
+      workflow_type: 'deployment',
+      use_case_family: 'model_release',
+      requested_by: 'training-user',
+      team: 'training-console',
+      run_name: `Deploy ${this.jobModelName(job)}`,
+      model_name: this.jobModelName(job),
+      config_json: {
+        job_id: job.id,
+        source_job_id: job.id,
+      },
+    }).pipe(takeUntil(this.destroy$)).subscribe({
+      next: (run) => {
+        this.latestRun.set(run);
+        this.governance.submitRun(run.id).pipe(takeUntil(this.destroy$)).subscribe({
+          next: (submittedRun) => {
+            this.latestRun.set(submittedRun);
+            this.governance.launchRun(run.id).pipe(takeUntil(this.destroy$)).subscribe({
+              next: () => {
+                this.jobs.update(js => js.map(j => j.id === job.id ? {...j, deployed: true} : j));
+                this.deployingJob.set(null);
+                this.loadData();
+              },
+              error: (error) => this.handleGovernanceError(error, () => this.deployingJob.set(null)),
+            });
+          },
+          error: (error) => this.handleGovernanceError(error, () => this.deployingJob.set(null)),
+        });
+      },
+      error: (error) => this.handleGovernanceError(error, () => this.deployingJob.set(null)),
     });
   }
 
@@ -424,5 +553,72 @@ export class ModelOptimizerComponent implements OnInit, OnDestroy {
       next: (res) => { this.chatHistory.update(h => [...h, { role: 'model', text: res.response }]); this.chatLoading.set(false); },
       error: () => this.chatLoading.set(false)
     });
+  }
+
+  jobProgress(job: JobResponse): number {
+    return job.progress > 1 ? job.progress : job.progress * 100;
+  }
+
+  jobModelName(job: JobResponse): string {
+    return String(job.config['model_name'] || job.id);
+  }
+
+  jobQuantFormat(job: JobResponse): string {
+    return String(job.config['quant_format'] || '—');
+  }
+
+  plannedApprovalText(): string {
+    return this.plannedRiskTier() === 'high' || this.plannedRiskTier() === 'critical'
+      ? 'Team lead and risk owner review required'
+      : 'Policy-based approval only if thresholds are exceeded';
+  }
+
+  plannedGateText(): string {
+    return 'Model metadata, cost profile, evaluation evidence, and deployment eligibility are checked server-side.';
+  }
+
+  riskTagDesign(risk: string): 'Positive' | 'Information' | 'Critical' | 'Negative' {
+    if (risk === 'critical') return 'Negative';
+    if (risk === 'high') return 'Critical';
+    if (risk === 'medium') return 'Information';
+    return 'Positive';
+  }
+
+  governanceStateDesign(status: string): 'Neutral' | 'Information' | 'Positive' | 'Critical' | 'Negative' {
+    if (status === 'approved' || status === 'passed') return 'Positive';
+    if (status === 'pending' || status === 'pending_approval') return 'Critical';
+    if (status === 'blocked' || status === 'rejected') return 'Negative';
+    return 'Information';
+  }
+
+  private handleGovernanceError(error: unknown, finalize?: () => void): void {
+    const detail = (error as { error?: { detail?: { message?: string; blocking_checks?: Array<{ detail: string }> } | string } })?.error?.detail;
+    this.submitting.set(false);
+    this.deployingJob.set(null);
+    finalize?.();
+    if (detail && typeof detail === 'object' && Array.isArray(detail.blocking_checks) && detail.blocking_checks.length) {
+      this.toast.error(detail.blocking_checks.map((check) => check.detail).join(' | '));
+      return;
+    }
+    this.toast.error(typeof detail === 'string' ? detail : this.i18n.t('modelOptimizer.jobFailed'));
+  }
+
+  private normalizeJob(job: { id: string; status: string; progress: number; config: Record<string, unknown>; created_at: string; error?: string | null; history?: Array<Record<string, unknown>>; evaluation?: JobResponse['evaluation'] | null; deployed?: boolean; governance?: GovernanceSummary; }): JobResponse {
+    return {
+      id: job.id,
+      status: job.status,
+      progress: job.progress,
+      config: job.config,
+      created_at: job.created_at,
+      error: job.error || undefined,
+      history: (job.history || []).map((point) => ({
+        step: Number(point['step'] || 0),
+        loss: Number(point['loss'] || 0),
+        epoch: Number(point['epoch'] || 0),
+      })),
+      evaluation: job.evaluation || undefined,
+      deployed: Boolean(job.deployed),
+      governance: job.governance,
+    };
   }
 }

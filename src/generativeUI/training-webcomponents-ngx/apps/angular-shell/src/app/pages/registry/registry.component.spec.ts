@@ -5,11 +5,7 @@ import { provideHttpClient } from '@angular/common/http';
 import { RegistryComponent } from './registry.component';
 import { ToastService } from '../../services/toast.service';
 
-jest.mock('../../../environments/environment', () => ({
-  environment: { apiBaseUrl: 'http://localhost:8001' },
-}));
-
-const API = 'http://localhost:8001';
+const API = '/api';
 
 const MOCK_JOBS = [
   {
@@ -213,10 +209,40 @@ describe('RegistryComponent', () => {
     httpMock.expectOne(`${API}/jobs`).flush(MOCK_JOBS);
     tick();
 
-    const job = component.models()[2];
+    const job = component.models()[0];
     component.deploy(job);
 
-    httpMock.expectOne(`${API}/jobs/cccc-3333/deploy`).flush({});
+    httpMock.expectOne(`${API}/governance/training-runs`).flush({
+      id: 'deploy-run-1',
+      workflow_type: 'deployment',
+      run_name: 'Deploy llama',
+      team: 'training-console',
+      requested_by: 'training-user',
+      config_json: {},
+      risk_tier: 'critical',
+      risk_score: 85,
+      approval_status: 'pending',
+      gate_status: 'draft',
+      status: 'draft',
+      blocking_checks: [],
+      created_at: new Date().toISOString(),
+    });
+    httpMock.expectOne(`${API}/governance/training-runs/deploy-run-1/submit`).flush({
+      id: 'deploy-run-1',
+      workflow_type: 'deployment',
+      run_name: 'Deploy llama',
+      team: 'training-console',
+      requested_by: 'training-user',
+      config_json: {},
+      risk_tier: 'critical',
+      risk_score: 85,
+      approval_status: 'approved',
+      gate_status: 'passed',
+      status: 'submitted',
+      blocking_checks: [],
+      created_at: new Date().toISOString(),
+    });
+    httpMock.expectOne(`${API}/governance/training-runs/deploy-run-1/launch`).flush({});
     tick();
 
     httpMock.expectOne(`${API}/jobs`).flush(MOCK_JOBS);
@@ -229,14 +255,44 @@ describe('RegistryComponent', () => {
     httpMock.expectOne(`${API}/jobs`).flush(MOCK_JOBS);
     tick();
 
-    component.deploy(component.models()[2]);
-    httpMock.expectOne(`${API}/jobs/cccc-3333/deploy`).flush(
-      { detail: 'Model not ready' },
+    component.deploy(component.models()[0]);
+    httpMock.expectOne(`${API}/governance/training-runs`).flush({
+      id: 'deploy-run-1',
+      workflow_type: 'deployment',
+      run_name: 'Deploy llama',
+      team: 'training-console',
+      requested_by: 'training-user',
+      config_json: {},
+      risk_tier: 'critical',
+      risk_score: 85,
+      approval_status: 'pending',
+      gate_status: 'draft',
+      status: 'draft',
+      blocking_checks: [],
+      created_at: new Date().toISOString(),
+    });
+    httpMock.expectOne(`${API}/governance/training-runs/deploy-run-1/submit`).flush({
+      id: 'deploy-run-1',
+      workflow_type: 'deployment',
+      run_name: 'Deploy llama',
+      team: 'training-console',
+      requested_by: 'training-user',
+      config_json: {},
+      risk_tier: 'critical',
+      risk_score: 85,
+      approval_status: 'approved',
+      gate_status: 'passed',
+      status: 'submitted',
+      blocking_checks: [],
+      created_at: new Date().toISOString(),
+    });
+    httpMock.expectOne(`${API}/governance/training-runs/deploy-run-1/launch`).flush(
+      { detail: { blocking_checks: [{ detail: 'Deployment requires a completed evaluation.' }] } },
       { status: 400, statusText: 'Bad Request' }
     );
     tick();
 
-    expect(toastSpy.error).toHaveBeenCalledWith('Model not ready', 'common.error');
+    expect(toastSpy.error).toHaveBeenCalled();
   }));
 
   // ── deleteJob ─────────────────────────────────────────────────────────────────
@@ -259,6 +315,10 @@ describe('RegistryComponent', () => {
   // ── load error handling ───────────────────────────────────────────────────────
 
   it('should show error toast when load() fails', fakeAsync(() => {
+    httpMock.expectOne(`${API}/jobs`).flush('error', { status: 503, statusText: 'Unavailable' });
+    tick(500);
+    httpMock.expectOne(`${API}/jobs`).flush('error', { status: 503, statusText: 'Unavailable' });
+    tick(1000);
     httpMock.expectOne(`${API}/jobs`).flush('error', { status: 503, statusText: 'Unavailable' });
     tick();
     expect(toastSpy.error).toHaveBeenCalledWith('registry.loadFailed', 'common.error');

@@ -7,6 +7,7 @@ Adds CORS for the Angular dev server on port 4200.
 import json
 import os
 import re
+from collections import defaultdict
 from contextlib import asynccontextmanager
 from datetime import datetime, timezone
 from pathlib import Path
@@ -113,17 +114,24 @@ def save_job(job_data: dict):
     finally:
         db.close()
 
+
+def _attach_job_governance(job_payload: dict) -> dict:
+    summary = get_store().get_governance_summary_for_job(job_payload["id"])
+    if summary:
+        job_payload["governance"] = summary
+    return job_payload
+
 def get_job(job_id: str):
     db = SessionLocal()
     try:
         job = db.query(JobRecord).filter(JobRecord.id == job_id).first()
         if not job: return None
-        return {
+        return _attach_job_governance({
             "id": job.id, "status": job.status, "progress": job.progress, 
             "config": job.config, "error": job.error, "history": job.history,
             "evaluation": job.evaluation, "deployed": job.deployed,
             "created_at": _serialize_utc(job.created_at)
-        }
+        })
     finally:
         db.close()
 
@@ -131,14 +139,64 @@ def get_all_jobs():
     db = SessionLocal()
     try:
         jobs = db.query(JobRecord).order_by(JobRecord.created_at.desc()).all()
-        return [{
+        return [_attach_job_governance({
             "id": job.id, "status": job.status, "progress": job.progress, 
             "config": job.config, "error": job.error, "history": job.history,
             "evaluation": job.evaluation, "deployed": job.deployed,
             "created_at": _serialize_utc(job.created_at)
-        } for job in jobs]
+        }) for job in jobs]
     finally:
         db.close()
+
+
+def _append_training_artifact(
+    run_id: str,
+    *,
+    artifact_type: str,
+    artifact_ref: str,
+    metadata_json: Optional[Dict[str, Any]] = None,
+) -> None:
+    store = get_store()
+    artifacts = store.list_training_artifacts(run_id)
+    next_artifacts = [artifact for artifact in artifacts if not (artifact["artifact_type"] == artifact_type and artifact["artifact_ref"] == artifact_ref)]
+    next_artifacts.append(
+        {
+            "artifact_type": artifact_type,
+            "artifact_ref": artifact_ref,
+            "metadata_json": metadata_json or {},
+        }
+    )
+    store.replace_training_artifacts(run_id, next_artifacts)
+
+
+def _update_governed_run_state(
+    run_id: Optional[str],
+    *,
+    job_id: Optional[str] = None,
+    status: Optional[str] = None,
+    event_type: Optional[str] = None,
+    actor: Optional[str] = None,
+    detail: Optional[Dict[str, Any]] = None,
+    completed: bool = False,
+) -> None:
+    if not run_id:
+        return
+    store = get_store()
+    run = store.get_training_run(run_id)
+    if not run:
+        return
+    updates: Dict[str, Any] = {}
+    if job_id:
+        updates["job_id"] = job_id
+    if status:
+        updates["status"] = status
+    if completed:
+        updates["completed_at"] = _utc_now_naive()
+    if updates:
+        run = store.update_training_run(run_id, updates) or run
+    if event_type:
+        _record_training_audit_event(run, actor=actor or run.get("requested_by"), event_type=event_type, job_id=job_id, detail=detail)
+    _refresh_training_governance_state(run_id)
 
 from src.telemetry import get_system_telemetry
 
@@ -463,6 +521,7 @@ async def _run_native_data_cleaning_workflow(run_id: str, message: str) -> None:
 async def lifespan(app: FastAPI):  # type: ignore[type-arg]
     await init_database()
     seed_store()
+    ensure_training_governance_seed_defaults()
     try:
         yield
     finally:
@@ -621,96 +680,1175 @@ class ApprovalRequest(BaseModel):
     description: str = ""
     risk_level: str = "medium"  # low, medium, high, critical
     requested_by: str = "system"
-    approvers: list[str] = []
+    approvers: list[str] = Field(default_factory=list)
+    workflow_type: str = "training"
+    run_id: Optional[str] = None
 
-_governance_approvals: dict[str, dict] = {}
-_governance_policies: list[dict] = [
-    {"id": "pol-1", "name": "Model Deployment Review", "description": "All model deployments require team lead approval", "enabled": True},
-    {"id": "pol-2", "name": "Data Export Policy", "description": "Data exports over 10k rows require governance review", "enabled": True},
-    {"id": "pol-3", "name": "Training Budget Gate", "description": "Training jobs exceeding $100 estimated cost need approval", "enabled": True},
+
+class ApprovalDecisionRequest(BaseModel):
+    approver: str = "unknown"
+    action: str = "approve"
+    comment: str = ""
+
+
+class TrainingPolicyUpdateRequest(BaseModel):
+    enabled: Optional[bool] = None
+    description: Optional[str] = None
+    severity: Optional[str] = None
+    condition_json: Optional[Dict[str, Any]] = None
+
+
+class TrainingRunCreateRequest(BaseModel):
+    workflow_type: str
+    use_case_family: str = "training"
+    team: str = ""
+    requested_by: str = "system"
+    run_name: str = ""
+    model_name: Optional[str] = None
+    dataset_ref: Optional[str] = None
+    config_json: Dict[str, Any] = Field(default_factory=dict)
+    tag: Optional[str] = None
+
+
+class TrainingRunUpdateRequest(BaseModel):
+    run_name: Optional[str] = None
+    dataset_ref: Optional[str] = None
+    tag: Optional[str] = None
+
+
+DEFAULT_TRAINING_POLICIES: list[dict[str, Any]] = [
+    {
+        "id": "training-policy-deployment-approval",
+        "name": "Deployment Approval Gate",
+        "description": "All deployment runs require explicit approval before launch.",
+        "workflow_type": "deployment",
+        "rule_type": "approval",
+        "enabled": True,
+        "severity": "high",
+        "condition_json": {"always": True},
+    },
+    {
+        "id": "training-policy-validation-required",
+        "name": "Validation Required",
+        "description": "Pipeline training generation runs must keep validation enabled.",
+        "workflow_type": "pipeline",
+        "rule_type": "block",
+        "enabled": True,
+        "severity": "high",
+        "condition_json": {"validate_required": True},
+    },
+    {
+        "id": "training-policy-metadata-required",
+        "name": "Metadata Required",
+        "description": "Training runs must provide enough metadata to identify the model or dataset in scope.",
+        "workflow_type": None,
+        "rule_type": "block",
+        "enabled": True,
+        "severity": "high",
+        "condition_json": {"metadata_required": True},
+    },
+    {
+        "id": "training-policy-large-generation-approval",
+        "name": "Large Data Generation Approval",
+        "description": "Large training-data generation batches require approval.",
+        "workflow_type": "pipeline",
+        "rule_type": "approval",
+        "enabled": True,
+        "severity": "medium",
+        "condition_json": {"examples_per_domain_gte": 50000},
+    },
+    {
+        "id": "training-policy-high-cost-model-approval",
+        "name": "High Cost Model Approval",
+        "description": "Optimization runs for larger models require approval.",
+        "workflow_type": "optimization",
+        "rule_type": "approval",
+        "enabled": True,
+        "severity": "high",
+        "condition_json": {"model_size_gb_gte": 10},
+    },
 ]
 
-# Seed some sample approvals
-for i, seed in enumerate([
-    {"title": "Deploy arabic-nlp-v3 to production", "risk_level": "high", "requested_by": "ahmed"},
-    {"title": "Export trial-balance dataset (50k rows)", "risk_level": "medium", "requested_by": "sarah"},
-]):
-    aid = f"appr-seed-{i+1}"
-    created_at = _utc_now_iso()
-    _governance_approvals[aid] = {
-        "id": aid, **seed, "description": seed.get("description", ""),
-        "status": "pending", "approvers": ["team-lead", "data-owner"],
-        "decisions": [], "created_at": created_at, "updated_at": created_at,
+
+def ensure_training_governance_seed_defaults() -> None:
+    get_store().ensure_training_governance_defaults(DEFAULT_TRAINING_POLICIES)
+
+
+def _parse_iso_utc(value: Optional[str]) -> Optional[datetime]:
+    if not value:
+        return None
+    try:
+        return datetime.fromisoformat(value.replace("Z", "+00:00"))
+    except Exception:
+        return None
+
+
+def _extract_examples_per_domain(config: Dict[str, Any]) -> int:
+    value = config.get("examples_per_domain", config.get("examplesPerDomain", 0))
+    try:
+        return int(value or 0)
+    except Exception:
+        return 0
+
+
+def _extract_model_size_gb(model_name: Optional[str], config: Dict[str, Any]) -> float:
+    for key in ("estimated_size_gb", "size_gb", "estimated_vram_gb"):
+        value = config.get(key)
+        if isinstance(value, (int, float)):
+            return float(value)
+        if isinstance(value, str):
+            try:
+                return float(value)
+            except ValueError:
+                pass
+
+    for model in SUPPORTED_MODELS:
+        if model_name and model.get("name") == model_name:
+            return float(model.get("size_gb", 0.0))
+
+    match = re.search(r"(\d+(?:\.\d+)?)\s*[bB]", model_name or "")
+    if match:
+        return float(match.group(1)) * 2.0
+    return 0.0
+
+
+def _metadata_present(run: Dict[str, Any]) -> bool:
+    config = run.get("config_json", {}) or {}
+    workflow_type = run.get("workflow_type")
+    if workflow_type == "pipeline":
+        return bool(run.get("dataset_ref") or run.get("team") or _extract_examples_per_domain(config) > 0)
+    if workflow_type == "optimization":
+        return bool(run.get("model_name") or config.get("model_name"))
+    if workflow_type == "deployment":
+        return bool(run.get("job_id") or config.get("job_id") or config.get("source_job_id") or run.get("model_name"))
+    return bool(run.get("dataset_ref") or run.get("model_name") or run.get("job_id"))
+
+
+def _validation_enabled(run: Dict[str, Any]) -> bool:
+    config = run.get("config_json", {}) or {}
+    if "validate" in config:
+        return bool(config.get("validate"))
+    if "should_validate" in config:
+        return bool(config.get("should_validate"))
+    return True
+
+
+def _risk_tier(score: float) -> str:
+    if score >= 80:
+        return "critical"
+    if score >= 60:
+        return "high"
+    if score >= 35:
+        return "medium"
+    return "low"
+
+
+def _calculate_risk_profile(
+    workflow_type: str,
+    config: Dict[str, Any],
+    model_name: Optional[str],
+    dataset_ref: Optional[str],
+) -> tuple[float, str]:
+    base = {"pipeline": 45.0, "optimization": 60.0, "deployment": 80.0}.get(workflow_type, 50.0)
+    examples = _extract_examples_per_domain(config)
+    size_gb = _extract_model_size_gb(model_name, config)
+
+    if examples >= 50000:
+        base += 10
+    if examples >= 200000:
+        base += 10
+    if workflow_type == "pipeline" and not bool(config.get("validate", config.get("should_validate", True))):
+        base += 25
+    if size_gb >= 10:
+        base += 10
+    if size_gb >= 40:
+        base += 10
+    if workflow_type == "deployment":
+        base += 5
+    if not dataset_ref and workflow_type == "pipeline":
+        base += 5
+
+    score = max(0.0, min(100.0, base))
+    return score, _risk_tier(score)
+
+
+def _default_approvers_for_run(run: Dict[str, Any]) -> list[str]:
+    approvers: list[str] = ["team-lead"]
+    if run.get("workflow_type") == "pipeline":
+        approvers.append("data-owner")
+    if run.get("workflow_type") == "deployment" or run.get("risk_tier") in {"high", "critical"}:
+        approvers.append("risk-owner")
+    deduped: list[str] = []
+    for approver in approvers:
+        if approver not in deduped:
+            deduped.append(approver)
+    return deduped
+
+
+def _policy_matches(policy: Dict[str, Any], run: Dict[str, Any]) -> bool:
+    if policy.get("workflow_type") and policy["workflow_type"] != run["workflow_type"]:
+        return False
+    condition = policy.get("condition_json", {}) or {}
+    config = run.get("config_json", {}) or {}
+    if condition.get("always"):
+        return True
+    if condition.get("validate_required"):
+        return not _validation_enabled(run)
+    if condition.get("metadata_required"):
+        return not _metadata_present(run)
+    threshold = condition.get("examples_per_domain_gte")
+    if threshold is not None:
+        return _extract_examples_per_domain(config) >= int(threshold)
+    threshold = condition.get("model_size_gb_gte")
+    if threshold is not None:
+        return _extract_model_size_gb(run.get("model_name"), config) >= float(threshold)
+    return False
+
+
+def _evaluate_policy_actions(run: Dict[str, Any], policies: list[Dict[str, Any]]) -> tuple[list[str], list[str]]:
+    approval_reasons: list[str] = []
+    block_reasons: list[str] = []
+    for policy in policies:
+        if not policy.get("enabled", True):
+            continue
+        if not _policy_matches(policy, run):
+            continue
+        if policy.get("rule_type") == "approval":
+            approval_reasons.append(policy["name"])
+        elif policy.get("rule_type") == "block":
+            block_reasons.append(policy["name"])
+    return approval_reasons, block_reasons
+
+
+def _record_training_audit_event(
+    run: Dict[str, Any],
+    *,
+    actor: Optional[str],
+    event_type: str,
+    job_id: Optional[str] = None,
+    detail: Optional[Dict[str, Any]] = None,
+) -> None:
+    store = get_store()
+    payload = {
+        "run_id": run["id"],
+        "job_id": job_id or run.get("job_id"),
+        "workflow_type": run["workflow_type"],
+        "actor": actor or run.get("requested_by") or "system",
+        "event_type": event_type,
+        "risk_tier": run.get("risk_tier"),
+        "gate_status": run.get("gate_status"),
+        "approval_status": run.get("approval_status"),
+        "detail": detail or {},
+        "timestamp": _utc_now_iso(),
+    }
+    store.insert_audit_batch([payload])
+
+
+def _build_gate_checks(
+    run: Dict[str, Any],
+    approval: Optional[Dict[str, Any]],
+    policy_blockers: list[str],
+    approval_required: bool,
+    job: Optional[Dict[str, Any]],
+    audit_entries: list[Dict[str, Any]],
+    artifacts: list[Dict[str, Any]],
+) -> list[dict[str, Any]]:
+    metadata_present = _metadata_present(run)
+    validation_enabled = _validation_enabled(run)
+    evaluation_available = bool(job and job.get("evaluation"))
+    deployment_ready = bool(job and job.get("status") == "completed" and evaluation_available)
+    artifact_ready = bool(artifacts or run.get("dataset_ref") or run.get("job_id") or run.get("model_name"))
+
+    checks: list[dict[str, Any]] = [
+        {
+            "gate_key": "metadata_present",
+            "category": "control",
+            "status": "passed" if metadata_present else "blocked",
+            "detail": "Run metadata is registered." if metadata_present else "Run metadata is incomplete.",
+            "blocking": True,
+            "metadata_json": {"workflow_type": run["workflow_type"]},
+        },
+        {
+            "gate_key": "validation_enabled",
+            "category": "control",
+            "status": "passed" if validation_enabled else "blocked",
+            "detail": "Validation is enabled." if validation_enabled else "Validation is disabled for this run.",
+            "blocking": run["workflow_type"] == "pipeline",
+            "metadata_json": {"validate": validation_enabled},
+        },
+        {
+            "gate_key": "policy_compliance",
+            "category": "control",
+            "status": "blocked" if policy_blockers else "passed",
+            "detail": "; ".join(policy_blockers) if policy_blockers else "No policy violations detected.",
+            "blocking": True,
+            "metadata_json": {"policy_blockers": policy_blockers},
+        },
+        {
+            "gate_key": "required_approvals",
+            "category": "control",
+            "status": (
+                "passed"
+                if not approval_required or (approval and approval.get("status") == "approved")
+                else ("blocked" if approval and approval.get("status") == "rejected" else "pending")
+            ),
+            "detail": (
+                "No approval is required."
+                if not approval_required
+                else (
+                    "Approval completed."
+                    if approval and approval.get("status") == "approved"
+                    else (
+                        "Approval rejected."
+                        if approval and approval.get("status") == "rejected"
+                        else "Awaiting approval."
+                    )
+                )
+            ),
+            "blocking": approval_required,
+            "metadata_json": {"approval_id": approval.get("id") if approval else None},
+        },
+        {
+            "gate_key": "dataset_quality_available",
+            "category": "metric",
+            "status": "passed" if run["workflow_type"] != "pipeline" or validation_enabled else "blocked",
+            "detail": (
+                "Dataset quality controls are defined."
+                if run["workflow_type"] == "pipeline"
+                else "Dataset quality metric not required for this workflow."
+            ),
+            "blocking": run["workflow_type"] == "pipeline",
+            "metadata_json": {},
+        },
+        {
+            "gate_key": "training_evaluation_available",
+            "category": "metric",
+            "status": (
+                "passed"
+                if run["workflow_type"] != "deployment" or evaluation_available
+                else "blocked"
+            ),
+            "detail": (
+                "Training evaluation is available."
+                if evaluation_available
+                else "Deployment requires a completed evaluation."
+            ),
+            "blocking": run["workflow_type"] == "deployment",
+            "metadata_json": {"job_id": run.get("job_id")},
+        },
+        {
+            "gate_key": "deployment_readiness_available",
+            "category": "metric",
+            "status": (
+                "passed"
+                if run["workflow_type"] != "deployment" or deployment_ready
+                else "blocked"
+            ),
+            "detail": (
+                "Deployment readiness is confirmed."
+                if deployment_ready
+                else "Deployment requires a completed linked optimization job."
+            ),
+            "blocking": run["workflow_type"] == "deployment",
+            "metadata_json": {"job_status": job.get("status") if job else None},
+        },
+        {
+            "gate_key": "audit_event_written",
+            "category": "evidence",
+            "status": "passed" if audit_entries else "pending",
+            "detail": "Audit evidence exists." if audit_entries else "No audit evidence has been recorded yet.",
+            "blocking": False,
+            "metadata_json": {"audit_count": len(audit_entries)},
+        },
+        {
+            "gate_key": "artifacts_registered",
+            "category": "evidence",
+            "status": "passed" if artifact_ready else "pending",
+            "detail": "Artifact references are registered." if artifact_ready else "Artifact references are not registered yet.",
+            "blocking": False,
+            "metadata_json": {"artifact_count": len(artifacts)},
+        },
+    ]
+    return checks
+
+
+def _effective_gate_status(checks: list[Dict[str, Any]]) -> str:
+    blocking_checks = [check for check in checks if check.get("blocking")]
+    if any(check["status"] == "blocked" for check in blocking_checks):
+        return "blocked"
+    if any(check["status"] == "pending" for check in blocking_checks):
+        return "pending_approval"
+    return "passed"
+
+
+def _build_metric_snapshots(
+    run: Dict[str, Any],
+    approval: Optional[Dict[str, Any]],
+    checks: list[Dict[str, Any]],
+    job: Optional[Dict[str, Any]],
+) -> list[Dict[str, Any]]:
+    blocking_checks = [check for check in checks if check.get("blocking")]
+    passed_blocking = [check for check in blocking_checks if check["status"] == "passed"]
+    total_blocking = len(blocking_checks)
+    gate_fraction = (len(passed_blocking) / total_blocking) if total_blocking else 1.0
+
+    approval_latency = 0.0
+    if approval and approval.get("status") == "approved" and approval.get("decisions"):
+        created_at = _parse_iso_utc(approval.get("created_at"))
+        final_decision_at = _parse_iso_utc(approval["decisions"][-1].get("decided_at"))
+        if created_at and final_decision_at:
+            approval_latency = max(0.0, (final_decision_at - created_at).total_seconds())
+
+    evaluation = job.get("evaluation") if job else None
+    evaluation_available = bool(evaluation)
+
+    metrics: list[Dict[str, Any]] = [
+        {
+            "workflow_type": run["workflow_type"],
+            "team": run.get("team", ""),
+            "metric_key": "risk_score",
+            "stage": "governance",
+            "value": float(run["risk_score"]),
+            "unit": "score",
+            "threshold_max": 79.0,
+            "passed": float(run["risk_score"]) < 80.0,
+            "metadata_json": {"risk_tier": run["risk_tier"]},
+        },
+        {
+            "workflow_type": run["workflow_type"],
+            "team": run.get("team", ""),
+            "metric_key": "gate_pass_fraction",
+            "stage": "governance",
+            "value": gate_fraction,
+            "unit": "ratio",
+            "numerator": float(len(passed_blocking)),
+            "denominator": float(total_blocking),
+            "threshold_min": 1.0,
+            "passed": gate_fraction >= 1.0,
+            "metadata_json": {},
+        },
+        {
+            "workflow_type": run["workflow_type"],
+            "team": run.get("team", ""),
+            "metric_key": "approval_completed",
+            "stage": "governance",
+            "value": 0.0 if approval and approval.get("status") != "approved" else 1.0,
+            "unit": "flag",
+            "threshold_min": 1.0,
+            "passed": not approval or approval.get("status") == "approved",
+            "metadata_json": {"approval_status": approval.get("status") if approval else "not_required"},
+        },
+        {
+            "workflow_type": run["workflow_type"],
+            "team": run.get("team", ""),
+            "metric_key": "approval_latency_seconds",
+            "stage": "governance",
+            "value": approval_latency,
+            "unit": "seconds",
+            "passed": True,
+            "metadata_json": {},
+        },
+        {
+            "workflow_type": run["workflow_type"],
+            "team": run.get("team", ""),
+            "metric_key": "blocked_run",
+            "stage": "governance",
+            "value": 1.0 if run.get("gate_status") == "blocked" else 0.0,
+            "unit": "flag",
+            "threshold_max": 0.0,
+            "passed": run.get("gate_status") != "blocked",
+            "metadata_json": {},
+        },
+        {
+            "workflow_type": run["workflow_type"],
+            "team": run.get("team", ""),
+            "metric_key": "run_success",
+            "stage": "runtime",
+            "value": 1.0 if run.get("status") == "completed" else 0.0,
+            "unit": "flag",
+            "threshold_min": 1.0,
+            "passed": run.get("status") == "completed",
+            "metadata_json": {},
+        },
+        {
+            "workflow_type": run["workflow_type"],
+            "team": run.get("team", ""),
+            "metric_key": "evaluation_complete",
+            "stage": "runtime",
+            "value": 1.0 if evaluation_available else 0.0,
+            "unit": "flag",
+            "threshold_min": 1.0 if run["workflow_type"] == "deployment" else 0.0,
+            "passed": evaluation_available if run["workflow_type"] == "deployment" else True,
+            "metadata_json": {},
+        },
+    ]
+
+    if evaluation:
+        metrics.extend(
+            [
+                {
+                    "workflow_type": run["workflow_type"],
+                    "team": run.get("team", ""),
+                    "metric_key": "perplexity",
+                    "stage": "evaluation",
+                    "value": float(evaluation.get("perplexity", 0.0)),
+                    "unit": "perplexity",
+                    "passed": True,
+                    "metadata_json": {},
+                },
+                {
+                    "workflow_type": run["workflow_type"],
+                    "team": run.get("team", ""),
+                    "metric_key": "eval_loss",
+                    "stage": "evaluation",
+                    "value": float(evaluation.get("eval_loss", 0.0)),
+                    "unit": "loss",
+                    "passed": True,
+                    "metadata_json": {},
+                },
+            ]
+        )
+    return metrics
+
+
+def _training_run_detail(run_id: str) -> Dict[str, Any]:
+    store = get_store()
+    run = store.get_training_run(run_id)
+    if not run:
+        raise HTTPException(status_code=404, detail="Training run not found")
+    approval = store.get_training_approval_for_run(run_id)
+    gate_checks = store.list_training_gate_checks(run_id)
+    metrics = store.list_training_metric_snapshots(run_id=run_id)
+    artifacts = store.list_training_artifacts(run_id)
+    audit_entries = store.list_audit_entries(run_id=run_id, limit=200)
+    job = get_job(run["job_id"]) if run.get("job_id") else None
+    return {
+        **run,
+        "approvals": [approval] if approval else [],
+        "gate_checks": gate_checks,
+        "metrics": metrics,
+        "artifacts": artifacts,
+        "audit_entries": audit_entries,
+        "job": job,
     }
 
 
+def _refresh_training_governance_state(run_id: str) -> Dict[str, Any]:
+    store = get_store()
+    run = store.get_training_run(run_id)
+    if not run:
+        raise HTTPException(status_code=404, detail="Training run not found")
+
+    policies = [policy for policy in store.list_training_policies(workflow_type=run["workflow_type"]) if policy.get("enabled", True)]
+    approval_required_reasons, policy_blockers = _evaluate_policy_actions(run, policies)
+    approval_required = len(approval_required_reasons) > 0
+
+    approval = store.get_training_approval_for_run(run_id)
+    if approval_required and not approval:
+        approval = store.create_training_approval(
+            {
+                "run_id": run_id,
+                "workflow_type": run["workflow_type"],
+                "title": f"Approve {run['workflow_type']} run {run.get('run_name') or run_id}",
+                "description": "Required by policy: " + ", ".join(approval_required_reasons),
+                "risk_level": run["risk_tier"],
+                "requested_by": run["requested_by"],
+                "approvers": _default_approvers_for_run(run),
+            }
+        )
+        run = store.update_training_run(run_id, {"approval_status": "pending"}) or run
+
+    audit_entries = store.list_audit_entries(run_id=run_id, limit=200)
+    artifacts = store.list_training_artifacts(run_id)
+    job = get_job(run["job_id"]) if run.get("job_id") else None
+
+    checks = _build_gate_checks(
+        run,
+        approval,
+        policy_blockers,
+        approval_required,
+        job,
+        audit_entries,
+        artifacts,
+    )
+    gate_status = _effective_gate_status(checks)
+    approval_status = approval["status"] if approval else "not_required"
+    blocking_checks = [
+        {
+            "gate_key": check["gate_key"],
+            "category": check["category"],
+            "detail": check["detail"],
+            "status": check["status"],
+        }
+        for check in checks
+        if check["blocking"] and check["status"] != "passed"
+    ]
+
+    updated_run = store.update_training_run(
+        run_id,
+        {
+            "approval_status": approval_status,
+            "gate_status": gate_status,
+            "blocking_checks": blocking_checks,
+        },
+    ) or run
+    updated_run["gate_status"] = gate_status
+    updated_run["approval_status"] = approval_status
+
+    metrics = _build_metric_snapshots(updated_run, approval, checks, job)
+    store.replace_training_gate_checks(run_id, checks)
+    store.replace_training_metric_snapshots(run_id, metrics)
+    return _training_run_detail(run_id)
+
+
+def _create_and_submit_training_run(
+    *,
+    workflow_type: str,
+    config_json: Optional[Dict[str, Any]] = None,
+    use_case_family: str = "training",
+    team: str = "",
+    requested_by: str = "system",
+    run_name: Optional[str] = None,
+    model_name: Optional[str] = None,
+    dataset_ref: Optional[str] = None,
+    job_id: Optional[str] = None,
+    tag: Optional[str] = None,
+) -> Dict[str, Any]:
+    normalized_config = dict(config_json or {})
+    derived_model_name = model_name or normalized_config.get("model_name")
+    derived_dataset_ref = dataset_ref or normalized_config.get("dataset_ref")
+    risk_score, risk_tier = _calculate_risk_profile(
+        workflow_type,
+        normalized_config,
+        derived_model_name,
+        derived_dataset_ref,
+    )
+    run = get_store().create_training_run(
+        {
+            "workflow_type": workflow_type,
+            "use_case_family": use_case_family,
+            "team": team,
+            "requested_by": requested_by or "system",
+            "run_name": run_name or f"{workflow_type}-{uuid.uuid4().hex[:6]}",
+            "model_name": derived_model_name,
+            "dataset_ref": derived_dataset_ref,
+            "job_id": job_id,
+            "config_json": normalized_config,
+            "risk_tier": risk_tier,
+            "risk_score": risk_score,
+            "approval_status": "not_required",
+            "gate_status": "draft",
+            "status": "draft",
+            "tag": tag,
+        }
+    )
+    _record_training_audit_event(run, actor=requested_by or "system", event_type="training_run_created")
+    run = get_store().update_training_run(
+        run["id"],
+        {
+            "job_id": job_id,
+            "status": "submitted",
+            "submitted_at": _utc_now_naive(),
+        },
+    ) or run
+    _record_training_audit_event(run, actor=requested_by or "system", event_type="training_run_submitted")
+    return _refresh_training_governance_state(run["id"])
+
+
+def _resolve_governance_run_detail(
+    *,
+    workflow_type: str,
+    governance_run_id: Optional[str],
+    config_json: Optional[Dict[str, Any]] = None,
+    use_case_family: str = "training",
+    team: str = "",
+    requested_by: str = "system",
+    run_name: Optional[str] = None,
+    model_name: Optional[str] = None,
+    dataset_ref: Optional[str] = None,
+    job_id: Optional[str] = None,
+    tag: Optional[str] = None,
+) -> Dict[str, Any]:
+    if not governance_run_id:
+        return _create_and_submit_training_run(
+            workflow_type=workflow_type,
+            config_json=config_json,
+            use_case_family=use_case_family,
+            team=team,
+            requested_by=requested_by,
+            run_name=run_name,
+            model_name=model_name,
+            dataset_ref=dataset_ref,
+            job_id=job_id,
+            tag=tag,
+        )
+
+    run = get_store().get_training_run(governance_run_id)
+    if not run:
+        raise HTTPException(status_code=404, detail="Training run not found")
+    if run["workflow_type"] != workflow_type:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Training run {governance_run_id} is for workflow_type={run['workflow_type']}, expected {workflow_type}.",
+        )
+
+    updates: Dict[str, Any] = {}
+    if job_id and not run.get("job_id"):
+        updates["job_id"] = job_id
+    if run.get("status") == "draft":
+        updates["status"] = "submitted"
+        updates["submitted_at"] = _utc_now_naive()
+    if updates:
+        run = get_store().update_training_run(governance_run_id, updates) or run
+        if updates.get("status") == "submitted":
+            _record_training_audit_event(run, actor=requested_by or run.get("requested_by"), event_type="training_run_submitted")
+    return _refresh_training_governance_state(governance_run_id)
+
+
+def _enforce_launchable_governance(detail: Dict[str, Any], *, message: str) -> None:
+    blocking_checks = _blocking_gate_checks(detail)
+    if not blocking_checks:
+        return
+    raise HTTPException(
+        status_code=409,
+        detail={
+            "message": message,
+            "governance_run_id": detail["id"],
+            "approval_status": detail.get("approval_status"),
+            "gate_status": detail.get("gate_status"),
+            "blocking_checks": blocking_checks,
+        },
+    )
+
+
+def _latest_deployment_run_for_job(job_id: str) -> Optional[Dict[str, Any]]:
+    for run in get_store().list_training_runs(workflow_type="deployment"):
+        config = run.get("config_json", {}) or {}
+        if run.get("job_id") == job_id or config.get("source_job_id") == job_id or config.get("job_id") == job_id:
+            return run
+    return None
+
+
 @app.get("/governance/approvals")
-async def list_approvals(status: str | None = None):
-    approvals = list(_governance_approvals.values())
-    if status:
-        approvals = [a for a in approvals if a["status"] == status]
+async def list_approvals(
+    status: str | None = None,
+    risk_level: str | None = None,
+    workflow_type: str | None = None,
+):
+    approvals = get_store().list_training_approvals(
+        status=status,
+        risk_level=risk_level,
+        workflow_type=workflow_type,
+    )
     return {"approvals": approvals, "total": len(approvals)}
 
 
 @app.get("/governance/approvals/{approval_id}")
 async def get_approval(approval_id: str):
-    a = _governance_approvals.get(approval_id)
-    if not a:
-        raise HTTPException(404, "Approval not found")
-    return a
+    approval = get_store().get_training_approval(approval_id)
+    if not approval:
+        raise HTTPException(status_code=404, detail="Approval not found")
+    return approval
 
 
 @app.post("/governance/approvals", status_code=201)
 async def create_approval(body: ApprovalRequest):
-    aid = str(uuid.uuid4())
-    now = _utc_now_iso()
-    approval = {
-        "id": aid, "title": body.title, "description": body.description,
-        "risk_level": body.risk_level, "requested_by": body.requested_by,
-        "approvers": body.approvers or ["team-lead"],
-        "status": "pending", "decisions": [],
-        "created_at": now, "updated_at": now,
-    }
-    _governance_approvals[aid] = approval
+    run_id = body.run_id
+    if not run_id:
+        synthetic_run = get_store().create_training_run(
+            {
+                "workflow_type": body.workflow_type,
+                "run_name": body.title,
+                "requested_by": body.requested_by,
+                "risk_tier": body.risk_level,
+                "risk_score": {"low": 20.0, "medium": 50.0, "high": 70.0, "critical": 90.0}.get(body.risk_level, 50.0),
+                "status": "submitted",
+                "approval_status": "pending",
+                "gate_status": "pending_approval",
+                "config_json": {},
+            }
+        )
+        run_id = synthetic_run["id"]
+        _record_training_audit_event(synthetic_run, actor=body.requested_by, event_type="approval_run_created")
+    approval = get_store().create_training_approval(
+        {
+            "run_id": run_id,
+            "workflow_type": body.workflow_type,
+            "title": body.title,
+            "description": body.description,
+            "risk_level": body.risk_level,
+            "requested_by": body.requested_by,
+            "approvers": body.approvers or ["team-lead"],
+        }
+    )
+    run = get_store().get_training_run(run_id)
+    if run:
+        _record_training_audit_event(run, actor=body.requested_by, event_type="approval_created", detail={"approval_id": approval["id"]})
+        _refresh_training_governance_state(run_id)
     return approval
 
 
 @app.post("/governance/approvals/{approval_id}/decide")
-async def decide_approval(approval_id: str, decision: dict):
-    a = _governance_approvals.get(approval_id)
-    if not a:
-        raise HTTPException(404, "Approval not found")
-    d = {
-        "approver": decision.get("approver", "unknown"),
-        "action": decision.get("action", "approve"),  # approve | reject
-        "comment": decision.get("comment", ""),
-        "decided_at": _utc_now_iso(),
-    }
-    a["decisions"].append(d)
-    a["updated_at"] = d["decided_at"]
-    # Auto-resolve: if all approvers have decided, set final status
-    decided_by = {dec["approver"] for dec in a["decisions"]}
-    if decided_by >= set(a["approvers"]):
-        rejected = any(dec["action"] == "reject" for dec in a["decisions"])
-        a["status"] = "rejected" if rejected else "approved"
-    return a
+async def decide_approval(approval_id: str, decision: ApprovalDecisionRequest):
+    approval = get_store().add_training_approval_decision(
+        approval_id,
+        approver=decision.approver,
+        action=decision.action,
+        comment=decision.comment,
+    )
+    if not approval:
+        raise HTTPException(status_code=404, detail="Approval not found")
+    run = get_store().get_training_run(approval["run_id"])
+    if run:
+        _record_training_audit_event(
+            run,
+            actor=decision.approver,
+            event_type="approval_decided",
+            detail={"approval_id": approval_id, "action": decision.action},
+        )
+        _refresh_training_governance_state(run["id"])
+    return get_store().get_training_approval(approval_id)
 
 
 @app.get("/governance/policies")
-async def list_policies():
-    return {"policies": _governance_policies}
+async def list_policies(workflow_type: str | None = None):
+    policies = get_store().list_training_policies(workflow_type=workflow_type)
+    return {"policies": policies}
 
 
 @app.patch("/governance/policies/{policy_id}")
-async def update_policy(policy_id: str, body: dict):
-    for p in _governance_policies:
-        if p["id"] == policy_id:
-            if "enabled" in body:
-                p["enabled"] = body["enabled"]
-            if "description" in body:
-                p["description"] = body["description"]
-            return p
-    raise HTTPException(404, "Policy not found")
+async def update_policy(policy_id: str, body: TrainingPolicyUpdateRequest):
+    policy = get_store().update_training_policy(
+        policy_id,
+        body.model_dump(exclude_none=True),
+    )
+    if not policy:
+        raise HTTPException(status_code=404, detail="Policy not found")
+    return policy
+
+
+@app.get("/governance/training-runs")
+async def list_training_runs(
+    workflow_type: str | None = None,
+    status: str | None = None,
+    risk_tier: str | None = None,
+    team: str | None = None,
+    requested_by: str | None = None,
+):
+    runs = get_store().list_training_runs(
+        workflow_type=workflow_type,
+        status=status,
+        risk_tier=risk_tier,
+        team=team,
+        requested_by=requested_by,
+    )
+    return {"runs": runs, "total": len(runs)}
+
+
+@app.post("/governance/training-runs", status_code=201)
+async def create_training_run(body: TrainingRunCreateRequest):
+    config_json = dict(body.config_json or {})
+    model_name = body.model_name or config_json.get("model_name")
+    dataset_ref = body.dataset_ref or config_json.get("dataset_ref")
+    risk_score, risk_tier = _calculate_risk_profile(body.workflow_type, config_json, model_name, dataset_ref)
+    run = get_store().create_training_run(
+        {
+            "workflow_type": body.workflow_type,
+            "use_case_family": body.use_case_family,
+            "team": body.team,
+            "requested_by": body.requested_by,
+            "run_name": body.run_name or f"{body.workflow_type}-{uuid.uuid4().hex[:6]}",
+            "model_name": model_name,
+            "dataset_ref": dataset_ref,
+            "config_json": config_json,
+            "risk_tier": risk_tier,
+            "risk_score": risk_score,
+            "approval_status": "not_required",
+            "gate_status": "draft",
+            "status": "draft",
+            "tag": body.tag,
+        }
+    )
+    _record_training_audit_event(run, actor=body.requested_by, event_type="training_run_created")
+    return _refresh_training_governance_state(run["id"])
+
+
+@app.get("/governance/training-runs/{run_id}")
+async def get_training_run_detail(run_id: str):
+    return _training_run_detail(run_id)
+
+
+@app.patch("/governance/training-runs/{run_id}")
+async def update_training_run(run_id: str, body: TrainingRunUpdateRequest):
+    run = get_store().update_training_run(run_id, body.model_dump(exclude_none=True))
+    if not run:
+        raise HTTPException(status_code=404, detail="Training run not found")
+    _record_training_audit_event(run, actor=run.get("requested_by"), event_type="training_run_updated", detail=body.model_dump(exclude_none=True))
+    return _refresh_training_governance_state(run_id)
+
+
+@app.post("/governance/training-runs/{run_id}/submit")
+async def submit_training_run(run_id: str):
+    run = get_store().update_training_run(
+        run_id,
+        {
+            "status": "submitted",
+            "submitted_at": _utc_now_naive(),
+        },
+    )
+    if not run:
+        raise HTTPException(status_code=404, detail="Training run not found")
+    _record_training_audit_event(run, actor=run.get("requested_by"), event_type="training_run_submitted")
+    return _refresh_training_governance_state(run_id)
+
+
+def _training_metrics_overview(window_days: int, workflow_type: Optional[str], team: Optional[str]) -> Dict[str, Any]:
+    runs = get_store().list_training_runs(workflow_type=workflow_type, team=team)
+    cutoff = _utc_now()
+    filtered_runs = []
+    for run in runs:
+        created = _parse_iso_utc(run.get("created_at"))
+        if created and (cutoff - created).days <= window_days:
+            filtered_runs.append(run)
+
+    approvals = get_store().list_training_approvals(workflow_type=workflow_type)
+    filtered_approvals = []
+    for approval in approvals:
+        created = _parse_iso_utc(approval.get("created_at"))
+        if not created or (cutoff - created).days > window_days:
+            continue
+        run = get_store().get_training_run(approval["run_id"])
+        if team and run and run.get("team") != team:
+            continue
+        filtered_approvals.append(approval)
+
+    total_runs = len(filtered_runs)
+    gate_passed = len([run for run in filtered_runs if run.get("gate_status") == "passed"])
+    blocked_runs = len([run for run in filtered_runs if run.get("gate_status") == "blocked"])
+    launched_runs = len([run for run in filtered_runs if run.get("status") in {"running", "completed", "failed"}])
+    completed_runs = len([run for run in filtered_runs if run.get("status") == "completed"])
+    optimization_runs = [run for run in filtered_runs if run.get("workflow_type") == "optimization"]
+    optimization_eval_complete = 0
+    for run in optimization_runs:
+        metrics = get_store().list_training_metric_snapshots(run_id=run["id"])
+        if any(metric["metric_key"] == "evaluation_complete" and metric["value"] >= 1.0 for metric in metrics):
+            optimization_eval_complete += 1
+
+    approval_latencies: list[float] = []
+    for approval in filtered_approvals:
+        if approval.get("status") != "approved" or not approval.get("decisions"):
+            continue
+        created_at = _parse_iso_utc(approval.get("created_at"))
+        decided_at = _parse_iso_utc(approval["decisions"][-1].get("decided_at"))
+        if created_at and decided_at:
+            approval_latencies.append(max(0.0, (decided_at - created_at).total_seconds()))
+
+    return {
+        "window_days": window_days,
+        "workflow_type": workflow_type,
+        "team": team,
+        "total_runs": total_runs,
+        "gate_pass_rate": round((gate_passed / total_runs) * 100, 2) if total_runs else 0.0,
+        "blocked_run_count": blocked_runs,
+        "run_success_rate": round((completed_runs / launched_runs) * 100, 2) if launched_runs else 0.0,
+        "approval_latency_sec_avg": round(sum(approval_latencies) / len(approval_latencies), 2) if approval_latencies else 0.0,
+        "evaluation_completeness_rate": round((optimization_eval_complete / len(optimization_runs)) * 100, 2) if optimization_runs else 0.0,
+    }
+
+
+def _training_metrics_trends(window_days: int, workflow_type: Optional[str], team: Optional[str]) -> Dict[str, Any]:
+    runs = get_store().list_training_runs(workflow_type=workflow_type, team=team)
+    cutoff = _utc_now()
+    rows: dict[str, dict[str, Any]] = defaultdict(
+        lambda: {
+            "date": "",
+            "runs": 0,
+            "blocked_runs": 0,
+            "completed_runs": 0,
+            "gate_passed_runs": 0,
+            "pending_approvals": 0,
+        }
+    )
+
+    for run in runs:
+        created_at = _parse_iso_utc(run.get("created_at"))
+        if not created_at or (cutoff - created_at).days > window_days:
+            continue
+        key = created_at.date().isoformat()
+        row = rows[key]
+        row["date"] = key
+        row["runs"] += 1
+        if run.get("gate_status") == "blocked":
+            row["blocked_runs"] += 1
+        if run.get("status") == "completed":
+            row["completed_runs"] += 1
+        if run.get("gate_status") == "passed":
+            row["gate_passed_runs"] += 1
+        if run.get("approval_status") == "pending":
+            row["pending_approvals"] += 1
+
+    ordered = [rows[key] for key in sorted(rows.keys())]
+    for row in ordered:
+        row["gate_pass_rate"] = round((row["gate_passed_runs"] / row["runs"]) * 100, 2) if row["runs"] else 0.0
+        row["run_success_rate"] = round((row["completed_runs"] / row["runs"]) * 100, 2) if row["runs"] else 0.0
+
+    return {"window_days": window_days, "rows": ordered}
+
+
+@app.get("/governance/metrics/overview")
+async def get_training_metrics_overview(
+    window: int = 30,
+    workflow_type: str | None = None,
+    team: str | None = None,
+):
+    return _training_metrics_overview(window, workflow_type, team)
+
+
+@app.get("/governance/metrics/trends")
+async def get_training_metrics_trends(
+    window: int = 30,
+    workflow_type: str | None = None,
+    team: str | None = None,
+):
+    return _training_metrics_trends(window, workflow_type, team)
+
+
+@app.get("/governance/training-runs/{run_id}/metrics")
+async def get_training_run_metrics(run_id: str):
+    run = get_store().get_training_run(run_id)
+    if not run:
+        raise HTTPException(status_code=404, detail="Training run not found")
+    return {"metrics": get_store().list_training_metric_snapshots(run_id=run_id)}
+
+
+@app.get("/governance/training-runs/{run_id}/gate-checks")
+async def get_training_run_gate_checks(run_id: str):
+    run = get_store().get_training_run(run_id)
+    if not run:
+        raise HTTPException(status_code=404, detail="Training run not found")
+    return {"gate_checks": get_store().list_training_gate_checks(run_id)}
+
+
+def _new_governed_job_record(job_id: str, config: Dict[str, Any]) -> Dict[str, Any]:
+    return {
+        "id": job_id,
+        "status": "pending",
+        "progress": 0.0,
+        "config": config,
+        "history": [],
+        "deployed": False,
+        "evaluation": None,
+        "error": None,
+    }
+
+
+def _blocking_gate_checks(detail: Dict[str, Any]) -> list[Dict[str, Any]]:
+    return [check for check in detail.get("gate_checks", []) if check.get("blocking") and check.get("status") != "passed"]
+
+
+def _extract_training_evaluation(metrics: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+    candidate = metrics.get("final_evaluation") if isinstance(metrics.get("final_evaluation"), dict) else metrics
+    if not isinstance(candidate, dict):
+        return None
+    if "eval_loss" not in candidate and "perplexity" not in candidate:
+        return None
+
+    def _safe_float(value: Any, default: float = 0.0) -> float:
+        try:
+            return float(value)
+        except Exception:
+            return default
+
+    return {
+        "eval_loss": round(_safe_float(candidate.get("eval_loss", 0.0)), 4),
+        "perplexity": round(_safe_float(candidate.get("perplexity", 0.0)), 2),
+        "runtime_sec": round(_safe_float(candidate.get("runtime_sec", metrics.get("runtime_sec", 0.0))), 2),
+    }
+
+
+@app.post("/governance/training-runs/{run_id}/launch")
+async def launch_training_run(run_id: str, background_tasks: BackgroundTasks):
+    detail = _refresh_training_governance_state(run_id)
+    blocking_checks = _blocking_gate_checks(detail)
+    if blocking_checks:
+        raise HTTPException(
+            status_code=409,
+            detail={
+                "message": "Training run is blocked.",
+                "blocking_checks": blocking_checks,
+            },
+        )
+
+    run = detail
+    store = get_store()
+    config = dict(run.get("config_json", {}) or {})
+
+    if run["workflow_type"] == "pipeline":
+        job_id = run.get("job_id") or f"pipe-{uuid.uuid4().hex[:8]}"
+        config.update(
+            {
+                "workflow_type": "pipeline",
+                "governance_run_id": run_id,
+                "dataset_ref": run.get("dataset_ref"),
+                "team": run.get("team"),
+            }
+        )
+        save_job(_new_governed_job_record(job_id, config))
+        store.update_training_run(
+            run_id,
+            {"job_id": job_id, "status": "running", "launched_at": _utc_now_naive()},
+        )
+        store.replace_training_artifacts(
+            run_id,
+            [
+                {
+                    "artifact_type": "dataset_reference",
+                    "artifact_ref": run.get("dataset_ref") or f"team:{run.get('team') or 'global'}",
+                    "metadata_json": {"workflow_type": "pipeline"},
+                }
+            ],
+        )
+        _record_training_audit_event(run, actor=run.get("requested_by"), event_type="training_run_launched", job_id=job_id)
+        background_tasks.add_task(run_pipeline_worker, run_id, job_id)
+        return _refresh_training_governance_state(run_id)
+
+    if run["workflow_type"] == "optimization":
+        job_id = run.get("job_id") or str(uuid.uuid4())
+        config.setdefault("model_name", run.get("model_name") or "gpt2")
+        config["workflow_type"] = "optimization"
+        config["governance_run_id"] = run_id
+        save_job(_new_governed_job_record(job_id, config))
+        store.update_training_run(
+            run_id,
+            {"job_id": job_id, "status": "running", "launched_at": _utc_now_naive()},
+        )
+        store.replace_training_artifacts(
+            run_id,
+            [
+                {
+                    "artifact_type": "model_request",
+                    "artifact_ref": config["model_name"],
+                    "metadata_json": {"quant_format": config.get("quant_format")},
+                }
+            ],
+        )
+        _record_training_audit_event(run, actor=run.get("requested_by"), event_type="training_run_launched", job_id=job_id)
+        asyncio.create_task(real_worker_task(job_id, governance_run_id=run_id))
+        return _refresh_training_governance_state(run_id)
+
+    if run["workflow_type"] == "deployment":
+        linked_job_id = run.get("job_id") or config.get("job_id") or config.get("source_job_id")
+        if not linked_job_id:
+            raise HTTPException(status_code=400, detail="Deployment run requires a linked job_id.")
+        store.update_training_run(
+            run_id,
+            {"job_id": linked_job_id, "status": "running", "launched_at": _utc_now_naive()},
+        )
+        _record_training_audit_event(run, actor=run.get("requested_by"), event_type="training_run_launched", job_id=linked_job_id)
+        await _deploy_job_internal(linked_job_id, governance_run_id=run_id)
+        return _refresh_training_governance_state(run_id)
+
+    raise HTTPException(status_code=400, detail=f"Unsupported workflow_type '{run['workflow_type']}'.")
 
 
 # ---------------------------------------------------------------------------
@@ -1046,9 +2184,16 @@ class TrainingGenerationRequest(BaseModel):
     team: str = ""              # e.g. "AE:treasury", "treasury", "AE", or "" for global
     examples_per_domain: int = 100000
     should_validate: bool = Field(default=True, alias="validate")
+    governance_run_id: Optional[str] = None
 
 
-async def _run_training_generation(job_id: str, team: str, examples_per_domain: int, validate: bool) -> None:
+async def _run_training_generation(
+    job_id: str,
+    team: str,
+    examples_per_domain: int,
+    validate: bool,
+    governance_run_id: Optional[str] = None,
+) -> None:
     """Background task: run training data generation and update job status."""
     import subprocess
     import shlex
@@ -1060,6 +2205,7 @@ async def _run_training_generation(job_id: str, team: str, examples_per_domain: 
     job["status"] = "running"
     job["progress"] = 0.1
     save_job(job)
+    _update_governed_run_state(governance_run_id, job_id=job_id, status="running", event_type="training_generation_started")
     await broadcast_job(job_id, {"type": "log", "message": f"Starting training generation (team={team or 'global'})..."})
 
     scripts_dir = str(Path(__file__).resolve().parent.parent.parent.parent.parent / "src" / "training" / "schema_pipeline")
@@ -1091,6 +2237,14 @@ async def _run_training_generation(job_id: str, team: str, examples_per_domain: 
             job["error"] = output[-500:] if output else "Process exited with non-zero code"
             job["progress"] = 1.0
             save_job(job)
+            _update_governed_run_state(
+                governance_run_id,
+                job_id=job_id,
+                status="failed",
+                event_type="training_generation_failed",
+                detail={"error": job["error"]},
+                completed=True,
+            )
             await broadcast_job(job_id, {"type": "error", "message": job["error"]})
             return
 
@@ -1116,6 +2270,14 @@ async def _run_training_generation(job_id: str, team: str, examples_per_domain: 
             job["error"] = output2[-500:] if output2 else "Preparation failed"
             job["progress"] = 1.0
             save_job(job)
+            _update_governed_run_state(
+                governance_run_id,
+                job_id=job_id,
+                status="failed",
+                event_type="training_generation_failed",
+                detail={"error": job["error"]},
+                completed=True,
+            )
             await broadcast_job(job_id, {"type": "error", "message": job["error"]})
             return
 
@@ -1126,6 +2288,21 @@ async def _run_training_generation(job_id: str, team: str, examples_per_domain: 
             {"phase": "prepare", "output_lines": len(output2.splitlines())},
         ]
         save_job(job)
+        if governance_run_id:
+            _append_training_artifact(
+                governance_run_id,
+                artifact_type="training_dataset",
+                artifact_ref=f"team:{team or 'global'}:train-jsonl",
+                metadata_json={"examples_per_domain": examples_per_domain, "validate": validate},
+            )
+        _update_governed_run_state(
+            governance_run_id,
+            job_id=job_id,
+            status="completed",
+            event_type="training_generation_completed",
+            detail={"history": job["history"]},
+            completed=True,
+        )
         await broadcast_job(job_id, {"type": "complete", "message": "Training data generation complete."})
 
     except Exception as exc:
@@ -1133,32 +2310,77 @@ async def _run_training_generation(job_id: str, team: str, examples_per_domain: 
         job["error"] = str(exc)
         job["progress"] = 1.0
         save_job(job)
+        _update_governed_run_state(
+            governance_run_id,
+            job_id=job_id,
+            status="failed",
+            event_type="training_generation_failed",
+            detail={"error": str(exc)},
+            completed=True,
+        )
         await broadcast_job(job_id, {"type": "error", "message": str(exc)})
 
 
 @app.post("/jobs/training", status_code=201)
 async def start_training_generation(body: TrainingGenerationRequest, background_tasks: BackgroundTasks):
     """Trigger background training data generation for a team context."""
+    governance_detail = _resolve_governance_run_detail(
+        workflow_type="pipeline",
+        governance_run_id=body.governance_run_id,
+        team=body.team,
+        requested_by=body.team or "system",
+        run_name=f"training-generation-{(body.team or 'global').replace(':', '-')}",
+        dataset_ref=f"team:{body.team or 'global'}",
+        config_json={
+            "team": body.team,
+            "examples_per_domain": body.examples_per_domain,
+            "validate": body.should_validate,
+            "dataset_ref": f"team:{body.team or 'global'}",
+        },
+    )
+    _enforce_launchable_governance(
+        governance_detail,
+        message="Training data generation is blocked.",
+    )
+    governance_run_id = governance_detail["id"]
     job_id = f"train-{uuid.uuid4().hex[:8]}"
     job = {
         "id": job_id,
         "status": "pending",
         "progress": 0.0,
-        "config": {"team": body.team, "examples_per_domain": body.examples_per_domain, "validate": body.should_validate},
+        "config": {
+            "team": body.team,
+            "examples_per_domain": body.examples_per_domain,
+            "validate": body.should_validate,
+            "workflow_type": "pipeline",
+            "governance_run_id": governance_run_id,
+        },
         "error": None,
         "history": [],
         "evaluation": None,
         "deployed": False,
     }
     save_job(job)
+    _update_governed_run_state(
+        governance_run_id,
+        job_id=job_id,
+        status="submitted",
+        actor=body.team or "system",
+        event_type="training_generation_job_created",
+        detail={
+            "examples_per_domain": body.examples_per_domain,
+            "validate": body.should_validate,
+        },
+    )
     background_tasks.add_task(
         _run_training_generation,
         job_id,
         body.team,
         body.examples_per_domain,
         body.should_validate,
+        governance_run_id,
     )
-    return {"job_id": job_id, "status": "pending"}
+    return {"job_id": job_id, "status": "pending", "governance": get_store().get_governance_summary_for_job(job_id)}
 
 
 @app.get("/jobs")
@@ -1188,14 +2410,43 @@ async def delete_job(job_id: str):
 
 # --- INFERENCE & PLAYGROUND ROUTES ---
 
-@app.post("/jobs/{job_id}/deploy")
-async def deploy_job(job_id: str):
+async def _deploy_job_internal(job_id: str, governance_run_id: Optional[str] = None) -> Dict[str, Any]:
     job = get_job(job_id)
     if not job:
         raise HTTPException(status_code=404, detail="Job not found")
     if job["status"] != "completed":
         raise HTTPException(status_code=400, detail="Job must be completed to deploy")
 
+    source_run = get_store().get_training_run_for_job(job_id)
+    reusable_run = governance_run_id or (_latest_deployment_run_for_job(job_id) or {}).get("id")
+    detail = _resolve_governance_run_detail(
+        workflow_type="deployment",
+        governance_run_id=reusable_run,
+        team=(source_run or {}).get("team", "") or job.get("config", {}).get("team", ""),
+        requested_by=(source_run or {}).get("requested_by", "system"),
+        run_name=f"deployment-{job_id[:8]}",
+        model_name=(source_run or {}).get("model_name") or job.get("config", {}).get("model_name"),
+        dataset_ref=(source_run or {}).get("dataset_ref") or job.get("config", {}).get("dataset_ref"),
+        job_id=job_id,
+        config_json={
+            "job_id": job_id,
+            "source_job_id": job_id,
+            "model_name": (source_run or {}).get("model_name") or job.get("config", {}).get("model_name"),
+            "quant_format": job.get("config", {}).get("quant_format"),
+        },
+    )
+    _enforce_launchable_governance(detail, message="Deployment run is blocked.")
+    governance_run_id = detail["id"]
+    _update_governed_run_state(
+        governance_run_id,
+        job_id=job_id,
+        status="running",
+        event_type="deployment_started",
+        detail={"inference_path": f"/inference/{job_id}/chat"},
+    )
+
+    deployment_mode = "live"
+    deployment_warning: Optional[str] = None
     try:
         from transformers import pipeline
         import os
@@ -1213,8 +2464,43 @@ async def deploy_job(job_id: str):
         INFERENCE_ENGINES[job_id] = "MOCK_BACKUP_ENGINE"
         job["deployed"] = True
         save_job(job)
+        model_path = f"training/nvidia-modelopt/outputs/{job_id}/checkpoint-optimal"
+        deployment_mode = "mock_backup"
+        deployment_warning = str(e)
 
-    return {"status": "deployed", "inference_server": f"/inference/{job_id}/chat"}
+    if governance_run_id:
+        _append_training_artifact(
+            governance_run_id,
+            artifact_type="deployment_endpoint",
+            artifact_ref=f"/inference/{job_id}/chat",
+            metadata_json={"mode": deployment_mode},
+        )
+        _append_training_artifact(
+            governance_run_id,
+            artifact_type="model_checkpoint",
+            artifact_ref=model_path,
+            metadata_json={"job_id": job_id},
+        )
+        _update_governed_run_state(
+            governance_run_id,
+            job_id=job_id,
+            status="completed",
+            event_type="deployment_completed",
+            detail={"mode": deployment_mode, "warning": deployment_warning},
+            completed=True,
+        )
+
+    return {
+        "status": "deployed",
+        "mode": deployment_mode,
+        "warning": deployment_warning,
+        "inference_server": f"/inference/{job_id}/chat",
+    }
+
+
+@app.post("/jobs/{job_id}/deploy")
+async def deploy_job(job_id: str, governance_run_id: str | None = None):
+    return await _deploy_job_internal(job_id, governance_run_id=governance_run_id)
 
 # Persistent Storage Emulation
 INFERENCE_ENGINES = {}
@@ -1547,6 +2833,11 @@ async def chat_inference(job_id: str, req: ChatRequest):
 # Live WebSocket connections subscribed to pipeline log stream
 PIPELINE_WS_CONNECTIONS: set = set()
 
+
+class PipelineStartRequest(BaseModel):
+    governance_run_id: Optional[str] = None
+    job_id: Optional[str] = None
+
 async def broadcast_pipeline(message: dict) -> None:
     dead: set = set()
     for ws in PIPELINE_WS_CONNECTIONS:
@@ -1578,9 +2869,18 @@ async def pipeline_ws_endpoint(websocket: WebSocket):
     finally:
         PIPELINE_WS_CONNECTIONS.discard(websocket)
 
-async def run_pipeline_worker():
+async def run_pipeline_worker(
+    governance_run_id: Optional[str] = None,
+    job_id: Optional[str] = None,
+):
     PIPELINE_STATUS["state"] = "running"
     PIPELINE_STATUS["logs"] = ["🚀 Starting Python Data Generation Pipeline..."]
+    if job_id:
+        job = get_job(job_id) or _new_governed_job_record(job_id, {"workflow_type": "pipeline", "governance_run_id": governance_run_id})
+        job["status"] = "running"
+        job["progress"] = 0.1
+        save_job(job)
+    _update_governed_run_state(governance_run_id, job_id=job_id, status="running", event_type="pipeline_started")
     await broadcast_pipeline({"type": "init", "state": "running", "logs": PIPELINE_STATUS["logs"]})
     
     try:
@@ -1616,21 +2916,75 @@ async def run_pipeline_worker():
             final_msg = f"❌ make exited with code {process.returncode}"
             
         PIPELINE_STATUS["logs"].append(final_msg)
+        if job_id:
+            job = get_job(job_id) or _new_governed_job_record(job_id, {"workflow_type": "pipeline", "governance_run_id": governance_run_id})
+            job["status"] = "completed" if process.returncode == 0 else "failed"
+            job["progress"] = 1.0
+            if process.returncode != 0:
+                job["error"] = final_msg
+            save_job(job)
+        if process.returncode == 0 and governance_run_id:
+            _append_training_artifact(
+                governance_run_id,
+                artifact_type="pipeline_output",
+                artifact_ref="training/pipeline/output/train.jsonl",
+                metadata_json={"state": PIPELINE_STATUS["state"]},
+            )
+        _update_governed_run_state(
+            governance_run_id,
+            job_id=job_id,
+            status="completed" if process.returncode == 0 else "failed",
+            event_type="pipeline_completed" if process.returncode == 0 else "pipeline_failed",
+            detail={"message": final_msg},
+            completed=True,
+        )
         await broadcast_pipeline({"type": "done", "state": PIPELINE_STATUS["state"], "text": final_msg})
             
     except Exception as e:
         PIPELINE_STATUS["state"] = "error"
         err_msg = f"💥 Fatal Subprocess Fault: {str(e)}"
         PIPELINE_STATUS["logs"].append(err_msg)
+        if job_id:
+            job = get_job(job_id) or _new_governed_job_record(job_id, {"workflow_type": "pipeline", "governance_run_id": governance_run_id})
+            job["status"] = "failed"
+            job["progress"] = 1.0
+            job["error"] = err_msg
+            save_job(job)
+        _update_governed_run_state(
+            governance_run_id,
+            job_id=job_id,
+            status="failed",
+            event_type="pipeline_failed",
+            detail={"error": str(e)},
+            completed=True,
+        )
         await broadcast_pipeline({"type": "done", "state": "error", "text": err_msg})
 
 
 @app.post("/pipeline/start")
-async def start_pipeline(background_tasks: BackgroundTasks):
+async def start_pipeline(background_tasks: BackgroundTasks, body: Optional[PipelineStartRequest] = None):
     if PIPELINE_STATUS["state"] == "running":
         raise HTTPException(status_code=400, detail="Pipeline already in progress.")
-    background_tasks.add_task(run_pipeline_worker)
-    return {"status": "started"}
+    body = body or PipelineStartRequest()
+    job_id = body.job_id or f"pipe-{uuid.uuid4().hex[:8]}"
+    governance_detail = _resolve_governance_run_detail(
+        workflow_type="pipeline",
+        governance_run_id=body.governance_run_id,
+        requested_by="system",
+        run_name=f"pipeline-{job_id}",
+        dataset_ref="training/pipeline/output/train.jsonl",
+        job_id=job_id,
+        config_json={
+            "job_id": job_id,
+            "pipeline_mode": "make_all",
+            "dataset_ref": "training/pipeline/output/train.jsonl",
+        },
+    )
+    _enforce_launchable_governance(governance_detail, message="Pipeline run is blocked.")
+    if not get_job(job_id):
+        save_job(_new_governed_job_record(job_id, {"workflow_type": "pipeline", "governance_run_id": governance_detail["id"]}))
+    background_tasks.add_task(run_pipeline_worker, governance_detail["id"], job_id)
+    return {"status": "started", "job_id": job_id, "governance_run_id": governance_detail["id"]}
 
 @app.get("/pipeline/status")
 async def get_pipeline_status():
@@ -2010,15 +3364,18 @@ async def get_data_preview(limit: int = 50, offset: int = 0, difficulty: str = "
 
 class JobCreatePayload(BaseModel):
     config: Dict[str, Any]
+    governance_run_id: Optional[str] = None
 
-async def real_worker_task(job_id: str):
+async def real_worker_task(job_id: str, governance_run_id: Optional[str] = None):
     """Real background orchestration running natively via PyTorch subprocessing"""
     job_data = get_job(job_id)
     if not job_data:
         return
-        
+    governance_run_id = governance_run_id or job_data.get("config", {}).get("governance_run_id")
+
     job_data["status"] = "running"
     save_job(job_data)
+    _update_governed_run_state(governance_run_id, job_id=job_id, status="running", event_type="optimization_started")
     await broadcast_job(job_id, {"type": "status", "status": "running", "progress": 0})
     
     try:
@@ -2057,15 +3414,18 @@ async def real_worker_task(job_id: str):
             if process_output.startswith("{") and "loss" in process_output:
                 try:
                     metrics = json.loads(process_output)
-                    if "eval_loss" in metrics and "perplexity" in metrics:
+                    evaluation = _extract_training_evaluation(metrics)
+                    if evaluation:
                         job_data = get_job(job_id)
-                        job_data["evaluation"] = {
-                            "eval_loss": round(metrics["eval_loss"], 4),
-                            "perplexity": round(metrics["perplexity"], 2),
-                            "runtime_sec": metrics.get("runtime_sec", 0)
-                        }
+                        job_data["evaluation"] = evaluation
                         save_job(job_data)
                         log_entry["step"] = "✅ Final Evaluation Complete"
+                        _update_governed_run_state(
+                            governance_run_id,
+                            job_id=job_id,
+                            event_type="optimization_evaluation_recorded",
+                            detail={"evaluation": evaluation},
+                        )
                         # Broadcast evaluation payload for chart overlay
                         await broadcast_job(job_id, {"type": "evaluation", "data": job_data["evaluation"]})
                     elif "loss" in metrics:
@@ -2102,6 +3462,21 @@ async def real_worker_task(job_id: str):
             job_data["error"] = f"PyTorch process exited with code {process.returncode}"
             
         save_job(job_data)
+        if process.returncode == 0 and governance_run_id:
+            _append_training_artifact(
+                governance_run_id,
+                artifact_type="model_checkpoint",
+                artifact_ref=f"training/nvidia-modelopt/outputs/{job_id}/checkpoint-optimal",
+                metadata_json={"model_name": model_name, "export_format": job_data["config"].get("export_format")},
+            )
+        _update_governed_run_state(
+            governance_run_id,
+            job_id=job_id,
+            status=job_data["status"],
+            event_type="optimization_completed" if process.returncode == 0 else "optimization_failed",
+            detail={"error": job_data.get("error"), "evaluation": job_data.get("evaluation")},
+            completed=True,
+        )
         await broadcast_job(job_id, {"type": "status", "status": job_data["status"], "progress": job_data["progress"]})
 
     except Exception as e:
@@ -2110,6 +3485,14 @@ async def real_worker_task(job_id: str):
             job_data["status"] = "failed"
             job_data["error"] = str(e)
             save_job(job_data)
+            _update_governed_run_state(
+                governance_run_id,
+                job_id=job_id,
+                status="failed",
+                event_type="optimization_failed",
+                detail={"error": str(e)},
+                completed=True,
+            )
             await broadcast_job(job_id, {"type": "status", "status": "failed", "progress": 0})
 
 # ---------------------------------------------------------------------------
@@ -2162,22 +3545,48 @@ async def ingest_ocr_dataset(payload: OcrDatasetPayload) -> JSONResponse:
 
 @app.post("/jobs")
 async def create_job(payload: JobCreatePayload) -> JSONResponse:
+    config = dict(payload.config)
+    workflow_type = str(config.get("workflow_type") or "optimization")
+    governance_detail = _resolve_governance_run_detail(
+        workflow_type=workflow_type,
+        governance_run_id=payload.governance_run_id or config.get("governance_run_id"),
+        team=str(config.get("team") or ""),
+        requested_by=str(config.get("requested_by") or config.get("team") or "system"),
+        run_name=str(config.get("run_name") or f"{workflow_type}-{uuid.uuid4().hex[:6]}"),
+        model_name=config.get("model_name"),
+        dataset_ref=config.get("dataset_ref"),
+        config_json=config,
+        tag=config.get("tag"),
+    )
+    _enforce_launchable_governance(governance_detail, message="Training run is blocked.")
+    governance_run_id = governance_detail["id"]
+    config["governance_run_id"] = governance_run_id
+
     job_id = str(uuid.uuid4())
     job_record = {
         "id": job_id,
         "status": "pending",
         "progress": 0.0,
-        "config": payload.config,
+        "config": config,
         "history": [],
         "deployed": False,
         "evaluation": None,
         "error": None
     }
     save_job(job_record)
-    
-    asyncio.create_task(real_worker_task(job_id))
-    
-    return JSONResponse(content={**job_record, "created_at": _utc_now_iso()}, status_code=201)
+
+    if governance_run_id:
+        _update_governed_run_state(
+            governance_run_id,
+            job_id=job_id,
+            status="running",
+            event_type="training_run_launched",
+            detail={"job_id": job_id, "workflow_type": config.get("workflow_type", "optimization")},
+        )
+
+    asyncio.create_task(real_worker_task(job_id, governance_run_id=governance_run_id))
+
+    return JSONResponse(content=_attach_job_governance({**job_record, "created_at": _utc_now_iso()}), status_code=201)
 
 
 # Proxy logic fully removed since we are now a native orchestration server.

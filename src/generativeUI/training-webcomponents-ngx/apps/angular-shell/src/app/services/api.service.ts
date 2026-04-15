@@ -77,6 +77,15 @@ export class ApiService {
     );
   }
 
+  patch<T>(path: string, body: unknown, timeoutMs?: number): Observable<T> {
+    return this.withResilience(
+      this.http.patch<T>(`${this.base}${path}`, body, {
+        context: new HttpContext().set(REQUEST_TIMEOUT_MS, timeoutMs ?? 30_000),
+      }),
+      `${this.base}${path}`,
+    );
+  }
+
   listModels(): Observable<{ data: { id: string; object: string }[] }> {
     return this.get<{ data: { id: string; object: string }[] }>('/v1/models');
   }

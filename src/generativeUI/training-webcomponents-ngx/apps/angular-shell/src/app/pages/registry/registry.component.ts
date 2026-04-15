@@ -4,11 +4,10 @@ import {
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { HttpClient } from '@angular/common/http';
 import { RouterLink } from '@angular/router';
 import { ToastService } from '../../services/toast.service';
 import { I18nService } from '../../services/i18n.service';
-import { environment } from '../../../environments/environment';
+import { TrainingGovernanceService, type GovernanceSummary } from '../../services/training-governance.service';
 
 interface RegistryEntry {
   id: string;
@@ -20,6 +19,7 @@ interface RegistryEntry {
   deployed: boolean;
   created_at: string;
   tag?: string;
+  governance?: GovernanceSummary;
 }
 
 @Component({
@@ -85,6 +85,7 @@ interface RegistryEntry {
                 <th>{{ i18n.t('registry.model') }}</th>
                 <th>{{ i18n.t('registry.status') }}</th>
                 <th>{{ i18n.t('registry.quant') }}</th>
+                <th>Governance</th>
                 <th>{{ i18n.t('registry.eval') }}</th>
                 <th>{{ i18n.t('registry.lossFinal') }}</th>
                 <th>{{ i18n.t('registry.created') }}</th>
@@ -119,6 +120,17 @@ interface RegistryEntry {
                     @if (m.deployed) { <span class="deployed-badge">{{ i18n.t('registry.live') }}</span> }
                   </td>
                   <td><code class="text-small">{{ m.config['quant_format'] ?? '—' }}</code></td>
+                  <td class="text-small">
+                    @if (m.governance) {
+                      <div class="governance-cell">
+                        <ui5-tag [design]="riskDesign(m.governance.risk_tier)">{{ m.governance.risk_tier }}</ui5-tag>
+                        <ui5-tag [design]="stateDesign(m.governance.approval_status)">{{ m.governance.approval_status }}</ui5-tag>
+                        <ui5-tag [design]="stateDesign(m.governance.gate_status)">{{ m.governance.gate_status }}</ui5-tag>
+                      </div>
+                    } @else {
+                      <span class="text-muted">Legacy</span>
+                    }
+                  </td>
                   <td class="text-small">
                     @if (m.evaluation) {
                       <span class="eval-perplexity">PPL {{ m.evaluation.perplexity }}</span>
@@ -178,6 +190,7 @@ interface RegistryEntry {
     .tag-input { padding: 2px 6px; font-size: 0.75rem; border: 1px solid var(--sapField_BorderColor, #89919a);
       border-radius: 0.2rem; width: 90px; }
     .deployed-badge { font-size: 0.7rem; margin-inline-start: 4px; color: var(--sapPositiveColor, #2e7d32); font-weight: 600; }
+    .governance-cell { display: flex; flex-wrap: wrap; gap: 0.25rem; }
     .status-badge { padding: 2px 8px; border-radius: 1rem; font-size: 0.7rem; font-weight: 600;
       &.status-completed { background: var(--sapSuccessBackground, #e8f5e9); color: var(--sapPositiveColor, #2e7d32); }
       &.status-running { background: var(--sapInformationBackground, #e3f2fd); color: var(--sapInformativeColor, #1565c0); }
@@ -202,13 +215,14 @@ interface RegistryEntry {
   `]
 })
 export class RegistryComponent implements OnInit {
-  private readonly http = inject(HttpClient);
+  private readonly governance = inject(TrainingGovernanceService);
   private readonly toast = inject(ToastService);
   readonly i18n = inject(I18nService);
 
   readonly models = signal<RegistryEntry[]>([]);
   readonly filtered = signal<RegistryEntry[]>([]);
   readonly editingTag = signal<string | null>(null);
+  private readonly editingRunId = signal<string | null>(null);
 
   filterStatus = '';
   showDeployedOnly = false;
@@ -227,10 +241,11 @@ export class RegistryComponent implements OnInit {
 
   load() {
     this.loading = true;
-    this.http.get<RegistryEntry[]>(`${environment.apiBaseUrl}/jobs`).subscribe({
+    this.governance.listJobs().subscribe({
       next: (jobs) => {
         this.tags = JSON.parse(localStorage.getItem('model_tags') ?? '{}');
-        const enriched = jobs.map(j => ({ ...j, tag: this.tags[j.id] }));
+        const enriched = jobs.map((job) => this.normalizeEntry(job));
+        this.syncLocalTagsToRuns(enriched);
         this.models.set(enriched);
         this.loading = false;
         this.applyFilter();
@@ -249,6 +264,7 @@ export class RegistryComponent implements OnInit {
   startTag(m: RegistryEntry) {
     this.tagDraft = m.tag ?? '';
     this.editingTag.set(m.id);
+    this.editingRunId.set(m.governance?.run_id ?? null);
   }
 
   saveTag(id: string) {
@@ -256,29 +272,112 @@ export class RegistryComponent implements OnInit {
     localStorage.setItem('model_tags', JSON.stringify(this.tags));
     this.models.update(ms => ms.map(m => m.id === id ? { ...m, tag: this.tags[id] || undefined } : m));
     this.applyFilter();
+    const runId = this.editingRunId();
+    if (runId) {
+      this.governance.updateRun(runId, { tag: this.tags[id] || '' }).subscribe({
+        next: () => {},
+        error: () => this.toast.error('Failed to persist registry tag to governance storage.', this.i18n.t('common.error')),
+      });
+    }
     this.editingTag.set(null);
+    this.editingRunId.set(null);
     this.toast.success(this.i18n.t('registry.tagSaved', { tag: this.tags[id] }), this.i18n.t('registry.title'));
   }
 
-  cancelTag() { this.editingTag.set(null); }
+  cancelTag() { this.editingTag.set(null); this.editingRunId.set(null); }
 
   deploy(m: RegistryEntry) {
-    this.http.post(`${environment.apiBaseUrl}/jobs/${m.id}/deploy`, {}).subscribe({
-      next: () => {
-        this.toast.success(this.i18n.t('registry.modelDeployed', { id: m.id.slice(0, 8) }), this.i18n.t('registry.deployed'));
-        this.load();
+    this.governance.createRun({
+      workflow_type: 'deployment',
+      use_case_family: 'model_release',
+      requested_by: 'training-user',
+      team: 'training-console',
+      run_name: `Deploy ${String(m.config['model_name'] || m.id)}`,
+      model_name: String(m.config['model_name'] || ''),
+      config_json: {
+        job_id: m.id,
+        source_job_id: m.id,
       },
-      error: (e: { error?: { detail?: string } }) =>
-        this.toast.error(e?.error?.detail ?? this.i18n.t('registry.deployFailed'), this.i18n.t('common.error'))
+    }).subscribe({
+      next: (run) => {
+        this.governance.submitRun(run.id).subscribe({
+          next: () => {
+            this.governance.launchRun(run.id).subscribe({
+              next: () => {
+                this.toast.success(this.i18n.t('registry.modelDeployed', { id: m.id.slice(0, 8) }), this.i18n.t('registry.deployed'));
+                this.load();
+              },
+              error: (e: { error?: { detail?: { blocking_checks?: Array<{ detail: string }> } | string } }) => {
+                const detail = e?.error?.detail;
+                if (detail && typeof detail === 'object' && Array.isArray(detail.blocking_checks) && detail.blocking_checks.length) {
+                  this.toast.error(detail.blocking_checks.map((check) => check.detail).join(' | '), this.i18n.t('common.error'));
+                } else {
+                  this.toast.error(this.i18n.t('registry.deployFailed'), this.i18n.t('common.error'));
+                }
+              },
+            });
+          },
+          error: () => this.toast.error(this.i18n.t('registry.deployFailed'), this.i18n.t('common.error')),
+        });
+      },
+      error: () => this.toast.error(this.i18n.t('registry.deployFailed'), this.i18n.t('common.error')),
     });
   }
 
   deleteJob(id: string) {
-    this.http.delete(`${environment.apiBaseUrl}/jobs/${id}`).subscribe({
+    this.governance.deleteJob(id).subscribe({
       next: () => {
         this.toast.success(this.i18n.t('registry.jobRemoved'), this.i18n.t('common.delete'));
         this.load();
       }
+    });
+  }
+
+  private normalizeEntry(job: { id: string; status: string; progress: number; config: Record<string, unknown>; history?: Array<Record<string, unknown>>; evaluation?: RegistryEntry['evaluation'] | null; deployed?: boolean; created_at: string; governance?: GovernanceSummary; error?: string | null }): RegistryEntry {
+    return {
+      id: job.id,
+      status: job.status,
+      progress: job.progress,
+      config: job.config,
+      history: (job.history || []).map((point) => ({
+        step: Number(point['step'] || 0),
+        loss: Number(point['loss'] || 0),
+      })),
+      evaluation: job.evaluation || undefined,
+      deployed: Boolean(job.deployed),
+      created_at: job.created_at,
+      governance: job.governance,
+      tag: job.governance?.tag || this.tags[job.id],
+    };
+  }
+
+  riskDesign(risk: string): 'Positive' | 'Information' | 'Critical' | 'Negative' {
+    if (risk === 'critical') return 'Negative';
+    if (risk === 'high') return 'Critical';
+    if (risk === 'medium') return 'Information';
+    return 'Positive';
+  }
+
+  stateDesign(status: string): 'Neutral' | 'Information' | 'Positive' | 'Critical' | 'Negative' {
+    if (status === 'approved' || status === 'passed') return 'Positive';
+    if (status === 'pending' || status === 'pending_approval') return 'Critical';
+    if (status === 'blocked' || status === 'rejected' || status === 'failed') return 'Negative';
+    if (status === 'running') return 'Information';
+    return 'Neutral';
+  }
+
+  private syncLocalTagsToRuns(entries: RegistryEntry[]): void {
+    entries.forEach((entry) => {
+      const localTag = this.tags[entry.id];
+      if (!localTag || entry.tag || !entry.governance?.run_id) {
+        return;
+      }
+      this.governance.updateRun(entry.governance.run_id, { tag: localTag }).subscribe({
+        next: () => {
+          this.models.update((models) => models.map((model) => model.id === entry.id ? { ...model, tag: localTag } : model));
+        },
+        error: () => {},
+      });
     });
   }
 }
