@@ -1,0 +1,505 @@
+\documentclass[11pt,a4paper]{article}
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage[margin=2.2cm]{geometry}
+\usepackage{booktabs}
+\usepackage{longtable}
+\usepackage{tabularx}
+\usepackage{array}
+\usepackage{enumitem}
+\usepackage{hyperref}
+\usepackage{xurl}
+\usepackage{xcolor}
+\usepackage{float}
+\usepackage{fancyhdr}
+\usepackage{titlesec}
+\usepackage{multirow}
+
+\definecolor{sapblue}{HTML}{0A6ED1}
+\definecolor{sapdark}{HTML}{354A5F}
+\definecolor{sapgreen}{HTML}{107E3E}
+\definecolor{saporange}{HTML}{E9730C}
+\definecolor{sapred}{HTML}{BB0000}
+\definecolor{saplight}{HTML}{F5F6F7}
+
+\hypersetup{
+    colorlinks=true,
+    linkcolor=sapblue,
+    urlcolor=sapblue,
+    citecolor=sapblue
+}
+\urlstyle{same}
+\emergencystretch=2em
+
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\small\color{sapdark}AI Safety Approval Pack}
+\fancyhead[R]{\small\color{sapdark}SAP OSS}
+\fancyfoot[C]{\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+
+\titleformat{\section}{\Large\bfseries\color{sapdark}}{\thesection}{0.75em}{}
+\titleformat{\subsection}{\large\bfseries\color{sapdark}}{\thesubsection}{0.75em}{}
+\titleformat{\subsubsection}{\normalsize\bfseries\color{sapdark}}{\thesubsubsection}{0.75em}{}
+
+\newcolumntype{Y}{>{\raggedright\arraybackslash}X}
+\newcolumntype{P}[1]{>{\raggedright\arraybackslash}p{#1}}
+
+\title{
+    \vspace{-1cm}
+    {\LARGE\bfseries Approval Pack: Singapore-Aligned AI Safety Framework}\\[0.35cm]
+    {\Large SAP OSS Agentic, LLM, Retrieval, OCR, Training, and Governance Workflows}\\[0.4cm]
+    \rule{\textwidth}{1pt}
+}
+\author{
+    SAP OSS Committee Submission Pack\\
+    \small Derived from the supporting technical specification in \path{docs/technical-reports/06-singapore-ai-safety-framework.pdf}
+}
+\date{14 April 2026 \quad$\mid$\quad Version 1.0 Draft}
+
+\begin{document}
+\maketitle
+\thispagestyle{empty}
+\enlargethispage{3\baselineskip}
+
+% ============================================================================
+% One-page executive memo
+% ============================================================================
+\section*{Executive Memo}
+\addcontentsline{toc}{section}{Executive Memo}
+\footnotesize
+
+\textbf{To:} AI Safety Review Committee, Architecture Review Board, Information Security, Data Governance, and Operational Risk Committees\\
+\textbf{From:} SAP OSS Technical and Governance Working Draft\\
+\textbf{Subject:} Approval request for a Singapore-aligned AI safety, governance, metrics, and monitoring framework for the SAP OSS repository\\
+\textbf{Decision required:} Approve the framework design and authorise controlled implementation subject to the conditions below
+
+\vspace{0.08cm}
+\textbf{Purpose.}
+This memo requests approval for the governance design needed to bring all AI-enabled workflows in the SAP OSS repository under one measurable control regime before implementation. Approval is requested for the framework, its metrics, its committee gates, and the in-scope use-case register.
+
+\vspace{0.06cm}
+\textbf{Why approval is needed now.}
+The repository already contains multiple AI-enabled surfaces in active development, including chat, approvals, HANA-linked retrieval, OCR, memory, training, deployment, and MCP/LangChain tool orchestration. These do not yet operate under one committee-approved control model. Approval is needed now so implementation uses one shared risk taxonomy, evidence standard, and production gate model.
+
+\vspace{0.06cm}
+\textbf{Regulatory basis.}
+The framework is aligned to current Singapore guidance as of 14 April 2026, including IMDA's \emph{Model AI Governance Framework for Agentic AI}, IMDA's LLM testing starter kit, PDPC AI governance and personal-data guidance, and CSA secure-AI guidance, with the CSA agentic-AI addendum treated as supplementary consultation-stage material.
+
+\vspace{0.06cm}
+\textbf{Scope.}
+Twelve use-case families are in scope across the repository \path{src/} tree, covering chat, governance-mediated UI actions, HANA query and prompt composition, retrieval/vector operations, personal knowledge memory, OCR, data-cleaning workflows, training and model deployment, pipeline orchestration, MCP/LangChain tool use, audit/governance evidence, and local model serving.
+
+\vspace{0.06cm}
+\textbf{Recommended decision.}
+Approve the framework design with staged implementation authority, subject to the following conditions:
+\begin{enumerate}[nosep,leftmargin=0.6cm]
+    \item No in-scope use case may move to production until registered and risk-scored.
+    \item All high-risk and critical use cases must satisfy the defined critical controls and quantitative deployment gates.
+    \item A governance evidence plane must be implemented in the existing FastAPI server, audit sink, store, and governance UI before production approval is granted to agentic or model-deployment workflows.
+    \item MCP and tool-executing agent workflows must remain pilot-only until allowlists, delegated identity, and checkpoint controls are implemented.
+\end{enumerate}
+
+\vspace{0.06cm}
+\textbf{Approval requested.}
+Approve the control catalogue, metrics, and score-based gate model; approve the attached use-case register as the baseline scope for governance; approve implementation Wave 1 for the central API server, audit sink, persistence, and governance dashboard; and require re-submission for production sign-off once implementation evidence and test results exist.
+
+\vspace{0.06cm}
+\textbf{Residual risk position.}
+The design materially lowers governance risk by requiring named ownership, bounded autonomy, quantitative thresholds, durable audit traces, and incident-response hooks. The principal remaining risk before implementation is the absence of the runtime enforcement and evidence plumbing described in the supporting specification.
+\normalsize
+
+\newpage
+\tableofcontents
+\newpage
+
+% ============================================================================
+\section{Approval Summary}
+% ============================================================================
+
+\subsection{What This Pack Approves}
+
+This pack seeks committee approval for:
+
+\begin{itemize}[nosep]
+    \item the Singapore-aligned AI safety and governance framework design;
+    \item the in-scope system surfaces and use-case inventory;
+    \item the risk-scoring model, mandatory metrics, and release gates;
+    \item the implementation direction for the repository control plane; and
+    \item the conditional production posture assigned to each use case.
+\end{itemize}
+
+\subsection{What This Pack Does Not Approve}
+
+This pack does not by itself approve:
+
+\begin{itemize}[nosep]
+    \item unrestricted production use of any specific AI workflow;
+    \item legal certification or regulatory endorsement;
+    \item release of critical or high-risk use cases without evidence;
+    \item use of untrusted MCP servers or unbounded agent tool access; or
+    \item model deployment without a post-implementation review.
+\end{itemize}
+
+\subsection{Supporting Artefact}
+
+The detailed basis document is:
+
+\begin{quote}
+\path{/Users/user/Documents/sap-oss/docs/technical-reports/06-singapore-ai-safety-framework.pdf}
+\end{quote}
+
+That supporting specification contains the full source hierarchy, control catalogue, formulas, monitoring schema, lifecycle process, and implementation design referenced by this approval pack.
+
+% ============================================================================
+\section{Requested Committee Decisions}
+% ============================================================================
+
+\subsection{Primary Decisions}
+
+\begin{longtable}{P{0.12\textwidth}P{0.53\textwidth}P{0.20\textwidth}}
+\caption{Primary Committee Decisions Requested} \\
+\toprule
+\textbf{Decision ID} & \textbf{Decision} & \textbf{Requested Outcome} \\
+\midrule
+\endfirsthead
+\toprule
+\textbf{Decision ID} & \textbf{Decision} & \textbf{Requested Outcome} \\
+\midrule
+\endhead
+DEC-01 & Approve the AI safety framework design, control catalogue, and risk model as the governing baseline for in-scope SAP OSS AI workflows. & Approve \\
+DEC-02 & Approve the twelve use-case families in Annex A as the mandatory governance scope for the repository. & Approve \\
+DEC-03 & Approve implementation Wave 1 in the existing FastAPI server, store, audit sink, and governance UI. & Approve with conditions \\
+DEC-04 & Require high-risk and critical use cases to return for production approval with test evidence, metrics, and rollout controls. & Approve \\
+DEC-05 & Keep MCP tool-orchestrating workflows and model-deployment workflows under pilot-only governance until critical controls are implemented. & Approve \\
+\bottomrule
+\end{longtable}
+
+\subsection{Conditions of Approval}
+
+\begin{enumerate}[nosep]
+    \item The implementation must preserve an auditable mapping from each execution to a registered use-case ID.
+    \item The implementation must record enough runtime evidence to compute the mandatory metrics.
+    \item Any material architecture or scope expansion must trigger re-review.
+    \item Any use case involving personal data, external writes, model deployment, or open-ended tool orchestration requires explicit residual-risk owner sign-off before production.
+\end{enumerate}
+
+% ============================================================================
+\section{Approval Recommendation by Use-Case Family}
+% ============================================================================
+
+\begin{longtable}{P{0.08\textwidth}P{0.24\textwidth}P{0.12\textwidth}P{0.24\textwidth}P{0.18\textwidth}}
+\caption{Recommended Committee Posture by Use Case} \\
+\toprule
+\textbf{ID} & \textbf{Use Case} & \textbf{Initial Risk Tier} & \textbf{Recommended Committee Posture} & \textbf{Implementation Priority} \\
+\midrule
+\endfirsthead
+\toprule
+\textbf{ID} & \textbf{Use Case} & \textbf{Initial Risk Tier} & \textbf{Recommended Committee Posture} & \textbf{Implementation Priority} \\
+\midrule
+\endhead
+UC-01 & OpenAI-compatible chat and prompt-response synthesis & Medium/High & Allow implementation; production conditional on logging, routing governance, and baseline testing. & Wave 1 \\
+UC-02 & AI-generated UI actions and approval workflows & High & Allow implementation; production conditional on approval integrity and oversight auditability. & Wave 1 \\
+UC-03 & HANA query and data-product prompt composition & High & Allow implementation; production conditional on access controls, read-only guarantees, and leakage testing. & Wave 1 \\
+UC-04 & Retrieval, embeddings, and vector-store operations & High & Allow implementation; production conditional on retention, provenance, and leakage controls. & Wave 1 \\
+UC-05 & Personal knowledge and durable memory & High & Allow implementation; production conditional on user ownership, retention, and privacy safeguards. & Wave 2 \\
+UC-06 & OCR document extraction and translation & High & Allow implementation; production conditional on document sensitivity handling and output QA. & Wave 2 \\
+UC-07 & Data-cleaning workflow generation & Medium & Allow implementation; production conditional on recommendation/execution boundary and audit completeness. & Wave 2 \\
+UC-08 & Training generation, fine-tuning, and model deployment & Critical & Implementation only after framework plumbing exists; production requires full gate review. & Wave 3 \\
+UC-09 & Pipeline orchestration and batch generation & High & Allow implementation; production conditional on alerting, rollback, and operational evidence. & Wave 2 \\
+UC-10 & MCP and LangChain tool orchestration & Critical & Pilot only until allowlists, delegated identity, sandboxing, and checkpoints are in place. & Wave 3 \\
+UC-11 & Governance, approvals, notifications, and audit ingestion & High & Must be implemented early because it is the evidence plane for all other approvals. & Wave 1 \\
+UC-12 & Local/private model serving & High & Allow implementation; production conditional on runtime monitoring, model versioning, and fallback control. & Wave 2 \\
+\bottomrule
+\end{longtable}
+
+% ============================================================================
+\section{Implementation Approval Scope}
+% ============================================================================
+
+\subsection{Wave 1: Approved for Immediate Implementation}
+
+Wave 1 should establish the central governance and evidence plane:
+
+\begin{itemize}[nosep]
+    \item AI safety policy/evaluation module in the FastAPI server;
+    \item persistence for evaluations, incidents, and gate records;
+    \item governance profile and summary APIs;
+    \item audit-sink extension for completeness metrics;
+    \item governance dashboard summary in the Angular governance page;
+    \item instrumentation of the chat path, approval path, and audit path.
+\end{itemize}
+
+\subsection{Wave 2: Approved Conditionally}
+
+Wave 2 may proceed after Wave 1 interfaces exist:
+
+\begin{itemize}[nosep]
+    \item retrieval/vector operations integration;
+    \item personal knowledge and OCR monitoring integration;
+    \item data-cleaning and pipeline workflow governance;
+    \item local model-serving monitoring enhancements.
+\end{itemize}
+
+\subsection{Wave 3: Reserved for Further Review}
+
+Wave 3 requires a follow-on committee checkpoint:
+
+\begin{itemize}[nosep]
+    \item model training and deployment gates;
+    \item MCP and LangChain tool-orchestration controls;
+    \item any workflow with open-ended external write authority;
+    \item any multi-agent execution beyond bounded, approved SOPs.
+\end{itemize}
+
+% ============================================================================
+\section{Annex A: Master Use-Case Register}
+% ============================================================================
+
+\subsection{Register Columns}
+
+The master register is the authoritative governance inventory. Each registered use case must maintain:
+
+\begin{itemize}[nosep]
+    \item use-case ID;
+    \item named business and technical owner;
+    \item primary repository surfaces;
+    \item AI pattern;
+    \item data classes touched;
+    \item action authority;
+    \item autonomy level;
+    \item required checkpoints;
+    \item required metrics;
+    \item initial risk tier; and
+    \item approved implementation wave and production posture.
+\end{itemize}
+
+\subsection{Master Register}
+
+\renewcommand{\arraystretch}{1.05}
+\begin{longtable}{P{0.07\textwidth}P{0.17\textwidth}P{0.16\textwidth}P{0.12\textwidth}P{0.12\textwidth}P{0.12\textwidth}P{0.14\textwidth}}
+\caption{Master Use-Case Register} \\
+\toprule
+\textbf{ID} & \textbf{Use Case} & \textbf{Primary Surface} & \textbf{AI Pattern} & \textbf{Data Class} & \textbf{Risk Tier} & \textbf{Committee Posture} \\
+\midrule
+\endfirsthead
+\toprule
+\textbf{ID} & \textbf{Use Case} & \textbf{Primary Surface} & \textbf{AI Pattern} & \textbf{Data Class} & \textbf{Risk Tier} & \textbf{Committee Posture} \\
+\midrule
+\endhead
+UC-01 & OpenAI-compatible chat & \path{/v1/chat/completions} & LLM response synthesis & Internal / confidential by route & Medium/High & Conditional production after Wave 1 \\
+UC-02 & Governance-mediated UI actions & GenUI governance + approvals & AI-assisted action proposal and approval & Internal / business data & High & Conditional production after Wave 1 \\
+UC-03 & HANA query and prompt composition & \path{/hana/query}, data products & AI-assisted analytics and prompt composition & Confidential / enterprise data & High & Conditional production after Wave 1 \\
+UC-04 & Retrieval and vector operations & \path{rag.py} & RAG, embeddings, retrieval & Internal / confidential / personal possible & High & Conditional production after Wave 1 \\
+UC-05 & Personal knowledge memory & \path{personal_knowledge.py} & Memory, retrieval, summarisation & Personal / internal & High & Conditional production after Wave 2 \\
+UC-06 & OCR extraction and translation & OCR routes/services & Document AI extraction & Confidential / personal possible & High & Conditional production after Wave 2 \\
+UC-07 & Data-cleaning workflow generation & \path{/data-cleaning/*} & Workflow recommendation & Internal analytics & Medium & Conditional production after Wave 2 \\
+UC-08 & Training and deployment workflows & \path{/jobs/training}, deploy routes & Model/training lifecycle & Training data, model artefacts & Critical & Not for production until follow-on review \\
+UC-09 & Pipeline orchestration & \path{/pipeline/*} & Batch workflow automation & Internal operational data & High & Conditional production after Wave 2 \\
+UC-10 & MCP / LangChain tool orchestration & MCP server, HANA agent & Agentic tool use & Confidential / enterprise systems & Critical & Pilot only \\
+UC-11 & Governance and audit evidence plane & \path{/governance/*}, \path{/audit/*} & Oversight and evidence & Governance records & High & Must be implemented first \\
+UC-12 & Local/private model serving & \path{vllm-turboquant} and local inference & Private inference runtime & Model inputs may be confidential & High & Conditional production after Wave 2 \\
+\bottomrule
+\end{longtable}
+
+% ============================================================================
+\section{Annex B: Detailed Use-Case Register Cards}
+% ============================================================================
+
+\subsection{UC-01 OpenAI-Compatible Chat and Prompt-Response Synthesis}
+
+\textbf{Purpose:} Provide a common chat and completion interface for AI-assisted user interactions.\\
+\textbf{Primary surfaces:} \path{src/generativeUI/training-webcomponents-ngx/packages/api-server/src/main.py}, \path{/v1/chat/completions}.\\
+\textbf{AI pattern:} LLM generation with privacy-aware routing and native fallback.\\
+\textbf{Likely data classes:} Internal by default; may become confidential depending on prompts and routed backend.\\
+\textbf{Action authority:} Generate/read only unless combined with other flows.\\
+\textbf{Autonomy level:} Low to medium.\\
+\textbf{Mandatory controls:} DATA-01, SEC-01, MON-01, EVAL-01.\\
+\textbf{Mandatory metrics:} PAR, ADR, DLR, HER, ATC.\\
+\textbf{Recommended posture:} Approve implementation and conditional production after Wave 1 evidence.
+
+\subsection{UC-02 AI-Generated UI Actions and Approval Workflows}
+
+\textbf{Purpose:} Allow AI-assisted UI actions while enforcing user and approver oversight.\\
+\textbf{Primary surfaces:} \path{libs/genui-governance}, governance page, approval routes.\\
+\textbf{AI pattern:} Action proposal with human confirmation.\\
+\textbf{Likely data classes:} Internal operational and user context data.\\
+\textbf{Action authority:} Potential write actions behind approval gates.\\
+\textbf{Autonomy level:} Medium.\\
+\textbf{Mandatory controls:} HUM-01, HUM-02, HUM-03, MON-01.\\
+\textbf{Mandatory metrics:} HCC, OFR, ATC, MTTE.\\
+\textbf{Recommended posture:} Approve implementation; production only after checkpoint integrity and oversight auditability are evidenced.
+
+\subsection{UC-03 HANA Query and Data-Product Prompt Composition}
+
+\textbf{Purpose:} Enable governed interaction with enterprise data products and HANA-backed analytical queries.\\
+\textbf{Primary surfaces:} \path{/hana/query}, \path{data_products.py}, HANA-linked routes.\\
+\textbf{AI pattern:} Query assistance, prompt composition, product-level policy application.\\
+\textbf{Likely data classes:} Confidential enterprise data; possible personal data depending on datasets.\\
+\textbf{Action authority:} Read-only by intended design, but high sensitivity.\\
+\textbf{Autonomy level:} Low to medium.\\
+\textbf{Mandatory controls:} DATA-01, DATA-02, AGT-02, SEC-01, MON-01.\\
+\textbf{Mandatory metrics:} PAR, DLR, ATC, UAR.\\
+\textbf{Recommended posture:} Approve implementation; production conditional on leakage testing and read-only enforcement evidence.
+
+\subsection{UC-04 Retrieval, Embeddings, and Vector Operations}
+
+\textbf{Purpose:} Support document ingestion, embedding generation, vector retrieval, and translation-memory enrichment.\\
+\textbf{Primary surfaces:} \path{rag.py}, vector-store routes.\\
+\textbf{AI pattern:} Retrieval-augmented generation and vector persistence.\\
+\textbf{Likely data classes:} Internal, confidential, or personal depending on corpus.\\
+\textbf{Action authority:} Read and write to vector stores.\\
+\textbf{Autonomy level:} Medium.\\
+\textbf{Mandatory controls:} DATA-03, AGT-02, EVAL-01, MON-01.\\
+\textbf{Mandatory metrics:} TCA, DLR, ATC, SER.\\
+\textbf{Recommended posture:} Approve implementation; production conditional on retention, deletion, and provenance controls.
+
+\subsection{UC-05 Personal Knowledge and Durable Memory}
+
+\textbf{Purpose:} Maintain user-scoped knowledge stores, wiki summaries, and retrieval outputs.\\
+\textbf{Primary surfaces:} \path{personal_knowledge.py}.\\
+\textbf{AI pattern:} User memory, summarisation, retrieval.\\
+\textbf{Likely data classes:} Personal and internal data.\\
+\textbf{Action authority:} Read/write knowledge artefacts within user scope.\\
+\textbf{Autonomy level:} Medium.\\
+\textbf{Mandatory controls:} DATA-02, DATA-03, USR-01, MON-01.\\
+\textbf{Mandatory metrics:} DLR, HER, ATC, MTTE.\\
+\textbf{Recommended posture:} Approve implementation after Wave 1 plumbing; production conditional on privacy and retention evidence.
+
+\subsection{UC-06 OCR Document Extraction and Translation}
+
+\textbf{Purpose:} Extract and translate structured or semi-structured document content.\\
+\textbf{Primary surfaces:} OCR routes and OCR service modules.\\
+\textbf{AI pattern:} OCR, extraction, translation, document understanding.\\
+\textbf{Likely data classes:} Confidential and potentially personal data.\\
+\textbf{Action authority:} Read/extract only, but with high information sensitivity.\\
+\textbf{Autonomy level:} Low.\\
+\textbf{Mandatory controls:} DATA-01, DATA-02, EVAL-01, MON-01.\\
+\textbf{Mandatory metrics:} HER, DLR, ATC.\\
+\textbf{Recommended posture:} Approve implementation after Wave 1 plumbing; production conditional on sample QA and retention boundaries.
+
+\subsection{UC-07 Data-Cleaning Workflow Generation}
+
+\textbf{Purpose:} Generate checks and workflow guidance for data-cleaning and training-data preparation.\\
+\textbf{Primary surfaces:} \path{/data-cleaning/*}.\\
+\textbf{AI pattern:} Recommendation and workflow generation.\\
+\textbf{Likely data classes:} Internal analytics and dataset metadata.\\
+\textbf{Action authority:} Recommendation-focused, not direct execution by default.\\
+\textbf{Autonomy level:} Medium.\\
+\textbf{Mandatory controls:} HUM-01 where execution is added, MON-01, EVAL-01.\\
+\textbf{Mandatory metrics:} PAR, HER, ATC.\\
+\textbf{Recommended posture:} Approve implementation after Wave 1; production conditional on clear boundary between advice and execution.
+
+\subsection{UC-08 Training Generation, Fine-Tuning, and Model Deployment}
+
+\textbf{Purpose:} Produce training artefacts, run jobs, and deploy resulting models.\\
+\textbf{Primary surfaces:} training job routes, deployment routes, training modules.\\
+\textbf{AI pattern:} Model lifecycle and promotion.\\
+\textbf{Likely data classes:} Training corpora, generated artefacts, model checkpoints.\\
+\textbf{Action authority:} Create and deploy model artefacts.\\
+\textbf{Autonomy level:} High operational impact.\\
+\textbf{Mandatory controls:} GOV-03, HUM-01, MON-03, EVAL-03.\\
+\textbf{Mandatory metrics:} DRS, RRS, ATC, MTTC, SER.\\
+\textbf{Recommended posture:} Implementation only after control plane exists; production requires separate gate approval.
+
+\subsection{UC-09 Pipeline Orchestration and Batch Generation}
+
+\textbf{Purpose:} Run longer-lived batch and generation workflows.\\
+\textbf{Primary surfaces:} \path{/pipeline/*}, training and batch jobs.\\
+\textbf{AI pattern:} Operational workflow automation.\\
+\textbf{Likely data classes:} Internal operational and data-generation artefacts.\\
+\textbf{Action authority:} Process execution with downstream effects.\\
+\textbf{Autonomy level:} Medium to high.\\
+\textbf{Mandatory controls:} MON-02, MON-03, MON-01.\\
+\textbf{Mandatory metrics:} ATC, MTTE, MTTC.\\
+\textbf{Recommended posture:} Approve implementation after Wave 1; production conditional on rollback and alerting proof.
+
+\subsection{UC-10 MCP and LangChain Tool Orchestration}
+
+\textbf{Purpose:} Enable multi-step agentic tool use, HANA tool access, and MCP-mediated actions.\\
+\textbf{Primary surfaces:} \path{mcp_server/server.py}, \path{langchain_hana_agent.py}.\\
+\textbf{AI pattern:} Agentic planning and tool use.\\
+\textbf{Likely data classes:} Confidential enterprise data and tool outputs.\\
+\textbf{Action authority:} Read, and potentially write or modify through tools depending on configuration.\\
+\textbf{Autonomy level:} High to critical.\\
+\textbf{Mandatory controls:} AGT-02, AGT-03, AGT-04, HUM-01, SEC-02.\\
+\textbf{Mandatory metrics:} TCA, HCC, UAR, SER, ATC.\\
+\textbf{Recommended posture:} Pilot only until trusted-server, delegated identity, sandbox, and checkpoint controls are implemented and tested.
+
+\subsection{UC-11 Governance, Approvals, Notifications, and Audit Ingestion}
+
+\textbf{Purpose:} Serve as the evidence and oversight plane for all governed workflows.\\
+\textbf{Primary surfaces:} \path{/governance/*}, \path{/audit/*}, store audit tables.\\
+\textbf{AI pattern:} Governance and evidence rather than content generation.\\
+\textbf{Likely data classes:} Internal governance and audit records.\\
+\textbf{Action authority:} Approval, audit intake, evidence query.\\
+\textbf{Autonomy level:} Medium but systemically critical.\\
+\textbf{Mandatory controls:} MON-01, HUM-03, MON-03.\\
+\textbf{Mandatory metrics:} ATC, OFR, MTTE.\\
+\textbf{Recommended posture:} Must be approved and implemented first because all other approvals depend on it.
+
+\subsection{UC-12 Local and Private Model Serving}
+
+\textbf{Purpose:} Serve local/private models and manage private routing for confidential workloads.\\
+\textbf{Primary surfaces:} \path{src/intelligence/vllm-turboquant}, local inference paths.\\
+\textbf{AI pattern:} Private inference runtime.\\
+\textbf{Likely data classes:} Inputs may be internal or confidential.\\
+\textbf{Action authority:} Inference only, but critical for confidentiality routing and resilience.\\
+\textbf{Autonomy level:} Low to medium; high architectural importance.\\
+\textbf{Mandatory controls:} GOV-03, MON-02, MON-03, DATA-01.\\
+\textbf{Mandatory metrics:} ATC, PAR, MTTE, DLR.\\
+\textbf{Recommended posture:} Approve implementation after Wave 1; production conditional on versioning and monitoring evidence.
+
+% ============================================================================
+\section{Annex C: Approval Sign-Off Sheet}
+% ============================================================================
+
+\subsection{Committee Sign-Off Template}
+
+\begin{longtable}{P{0.28\textwidth}P{0.22\textwidth}P{0.18\textwidth}P{0.18\textwidth}}
+\caption{Sign-Off Sheet} \\
+\toprule
+\textbf{Committee / Function} & \textbf{Name} & \textbf{Decision} & \textbf{Date} \\
+\midrule
+\endfirsthead
+\toprule
+\textbf{Committee / Function} & \textbf{Name} & \textbf{Decision} & \textbf{Date} \\
+\midrule
+\endhead
+AI Safety Review & & Approve / Conditional / Reject & \\
+Architecture Review Board & & Approve / Conditional / Reject & \\
+Information Security & & Approve / Conditional / Reject & \\
+Data Governance / Privacy & & Approve / Conditional / Reject & \\
+Operational Risk & & Approve / Conditional / Reject & \\
+Business Owner & & Approve / Conditional / Reject & \\
+\bottomrule
+\end{longtable}
+
+\subsection{Residual-Risk Acceptance}
+
+\textbf{Residual-risk owner:} \rule{7cm}{0.4pt}
+
+\vspace{0.2cm}
+\textbf{Residual risks accepted subject to conditions:}
+\vspace{2.0cm}
+
+\textbf{Signature:} \rule{5cm}{0.4pt} \hfill \textbf{Date:} \rule{3cm}{0.4pt}
+
+% ============================================================================
+\section{References}
+% ============================================================================
+
+\begin{enumerate}[leftmargin=1.2cm]
+    \item Supporting specification: \path{/Users/user/Documents/sap-oss/docs/technical-reports/06-singapore-ai-safety-framework.pdf}
+    \item IMDA, \emph{Model AI Governance Framework for Agentic AI}, 22 January 2026.
+    \item IMDA, \emph{Starter Kit for Testing LLM-Based Applications for Safety and Reliability}.
+    \item PDPC, \emph{Singapore's Approach to AI Governance}, including the second edition Model AI Governance Framework.
+    \item PDPC, \emph{Advisory Guidelines on Use of Personal Data in AI Recommendation and Decision Systems}, updated 1 April 2024.
+    \item IMDA, \emph{Project Moonshot, powered by AI Verify, and AI Collaborations}, 31 May 2024.
+    \item CSA, \emph{Guidelines and Companion Guide on Securing Artificial Intelligence Systems}, 15 October 2024.
+    \item CSA, \emph{Public Consultation on Securing Agentic AI - An Addendum to the Guidelines and Companion Guide on Securing AI Systems}, 22 October 2025.
+\end{enumerate}
+
+\end{document}
