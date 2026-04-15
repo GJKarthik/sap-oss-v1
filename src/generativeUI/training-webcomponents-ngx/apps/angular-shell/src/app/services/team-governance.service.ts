@@ -113,7 +113,14 @@ export class TeamGovernanceService implements OnDestroy {
     this.pendingApprovalsSubject.next([...current, approval]);
 
     // Persist to backend
-    this.http.post(`${this.apiUrl}/approvals`, approval)
+    this.http.post(`${this.apiUrl}/approvals`, {
+      title: approval.actionName,
+      description: approval.description,
+      risk_level: approval.riskLevel,
+      requested_by: approval.requestedBy,
+      approvers: approval.requiredApprovals > 1 ? ['team-lead', 'risk-owner'] : ['team-lead'],
+      workflow_type: 'deployment',
+    })
       .pipe(takeUntil(this.destroy$), catchError(() => of(null)))
       .subscribe();
 
@@ -135,7 +142,7 @@ export class TeamGovernanceService implements OnDestroy {
     }
 
     this.pendingApprovalsSubject.next([...approvals]);
-    this.http.patch(`${this.apiUrl}/approvals/${approvalId}`, { decision, userId, reason })
+    this.http.post(`${this.apiUrl}/approvals/${approvalId}/decide`, { approver: userId, action: decision, comment: reason })
       .pipe(takeUntil(this.destroy$), catchError(() => of(null)))
       .subscribe();
   }

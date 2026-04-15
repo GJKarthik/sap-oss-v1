@@ -198,10 +198,10 @@ describe('HanaExplorerComponent', () => {
     expect(component.archLayers).toHaveLength(6);
   }));
 
-  it('should expose 3 query presets', fakeAsync(() => {
+  it('should expose governance-focused query presets', fakeAsync(() => {
     httpMock.expectOne('/api/hana/stats').flush({ available: true, pair_count: 0 });
     tick();
-    expect(component.presets).toHaveLength(3);
+    expect(component.presets).toHaveLength(7);
   }));
 
   // ── ngOnDestroy ───────────────────────────────────────────────────────────────

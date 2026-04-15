@@ -3,16 +3,15 @@ import {
   signal, inject, OnInit, OnDestroy, ViewChild, ElementRef, AfterViewChecked, NgZone, computed
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { HttpClient } from '@angular/common/http';
 import { take } from 'rxjs/operators';
 import { ToastService } from '../../services/toast.service';
 import { I18nService } from '../../services/i18n.service';
-import { environment } from '../../../environments/environment';
 import { Ui5TrainingComponentsModule } from '../../shared/ui5-training-components.module';
 import { AppStore } from '../../store/app.store';
 import { PipelineFlowComponent, FlowStage } from '../../shared/components/pipeline-flow/pipeline-flow.component';
 import { RealtimeConnectionService } from '../../services/realtime-connection.service';
 import { ConfirmationDialogComponent, type ConfirmationDialogData } from '../../shared/components/confirmation-dialog/confirmation-dialog.component';
+import { TrainingGovernanceService, type TrainingRun } from '../../services/training-governance.service';
 
 type PipelineState = 'idle' | 'running' | 'completed' | 'error';
 type StageStatus = 'idle' | 'running' | 'done' | 'error';
@@ -95,6 +94,47 @@ interface LogLine {
 
         <!-- Side: Metadata & Constraints -->
         <aside class="side-stage">
+          <ui5-card class="glass-panel slideUp" [style.--stagger]="'0.35s'">
+            <ui5-card-header slot="header" title-text="Governance Summary"></ui5-card-header>
+            <div class="p-1 display-flex flex-column gap-1">
+              @if (governanceRun(); as run) {
+                <div class="governance-grid">
+                  <div class="governance-item">
+                    <span class="label">Risk tier</span>
+                    <ui5-tag [design]="riskDesign(run.risk_tier)">{{ run.risk_tier }}</ui5-tag>
+                  </div>
+                  <div class="governance-item">
+                    <span class="label">Approval</span>
+                    <ui5-tag [design]="approvalDesign(run.approval_status)">{{ run.approval_status }}</ui5-tag>
+                  </div>
+                  <div class="governance-item">
+                    <span class="label">Gate</span>
+                    <ui5-tag [design]="gateDesign(run.gate_status)">{{ run.gate_status }}</ui5-tag>
+                  </div>
+                  <div class="governance-item">
+                    <span class="label">Run</span>
+                    <code>{{ run.id }}</code>
+                  </div>
+                  <div class="governance-item">
+                    <span class="label">Job</span>
+                    <code>{{ run.job_id || 'pending' }}</code>
+                  </div>
+                </div>
+                @if (run.blocking_checks.length) {
+                  <div class="blocking-list">
+                    @for (check of run.blocking_checks; track check.gate_key) {
+                      <div class="blocking-item">{{ check.category }}: {{ check.detail }}</div>
+                    }
+                  </div>
+                } @else {
+                  <span class="text-small opacity-6">No active blockers.</span>
+                }
+              } @else {
+                <span class="text-small opacity-6">A governance run will be created before pipeline execution starts.</span>
+              }
+            </div>
+          </ui5-card>
+
           <ui5-card class="glass-panel slideUp" [style.--stagger]="'0.4s'">
             <ui5-card-header slot="header" [attr.title-text]="i18n.t('pipeline.pipelineMetrics')"></ui5-card-header>
             <div class="p-1 display-flex flex-column gap-1">
@@ -230,6 +270,10 @@ interface LogLine {
     .mini-stat .label { font-size: 0.75rem; font-weight: 700; text-transform: uppercase; color: var(--text-secondary); letter-spacing: 0.05em; }
 
     .stages-mini-list { display: flex; flex-direction: column; gap: 0.25rem; padding: 1rem; }
+    .governance-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
+    .governance-item { display: flex; flex-direction: column; gap: 0.35rem; }
+    .blocking-list { display: flex; flex-direction: column; gap: 0.35rem; }
+    .blocking-item { font-size: 0.75rem; color: var(--sapCriticalTextColor, #8d2a0b); background: rgba(226, 96, 52, 0.08); border-radius: 10px; padding: 0.5rem 0.65rem; }
     
     .p-1 { padding: 1.5rem; }
     .display-flex { display: flex; }
@@ -240,12 +284,12 @@ interface LogLine {
   `],
 })
 export class PipelineComponent implements OnInit, OnDestroy, AfterViewChecked {
-  private readonly http = inject(HttpClient);
   private readonly toast = inject(ToastService);
   readonly i18n = inject(I18nService);
   private readonly zone = inject(NgZone);
   private readonly appStore = inject(AppStore);
   private readonly realtime = inject(RealtimeConnectionService);
+  private readonly governance = inject(TrainingGovernanceService);
 
   @ViewChild('terminalBody') private terminalBody?: ElementRef;
 
@@ -255,6 +299,7 @@ export class PipelineComponent implements OnInit, OnDestroy, AfterViewChecked {
   readonly starting = signal(false);
   readonly wsConnected = signal(false);
   readonly confirmExecutionOpen = signal(false);
+  readonly governanceRun = signal<TrainingRun | null>(null);
   readonly confirmExecutionData = computed<ConfirmationDialogData>(() => ({
     title: 'Review pipeline launch',
     message: 'Cowork mode requires explicit approval before a pipeline run starts. Confirm the launch when the plan is ready.',
@@ -421,8 +466,10 @@ export class PipelineComponent implements OnInit, OnDestroy, AfterViewChecked {
       this.appendLine((msg['text'] as string) || '');
       this.updateStagesFromState(s);
       if (s === 'completed') {
+        this.refreshGovernanceRun();
         this.toast.success((msg['text'] as string) || this.i18n.t('pipeline.finished'));
       } else if (s === 'error') {
+        this.refreshGovernanceRun();
         this.toast.error((msg['text'] as string) || this.i18n.t('pipeline.failed'));
       }
     }
@@ -494,18 +541,59 @@ export class PipelineComponent implements OnInit, OnDestroy, AfterViewChecked {
 
   launchPipeline() {
     this.starting.set(true);
-    this.http.post(`${environment.apiBaseUrl}/pipeline/start`, {}).subscribe({
-      next: () => {
-        this.appStore.setPipelineState('running');
-        this.updateStagesFromState('running');
-        this.starting.set(false);
-        this.toast.success(this.i18n.t('pipeline.started'));
+    this.governance.createRun({
+      workflow_type: 'pipeline',
+      use_case_family: 'training_data_generation',
+      requested_by: 'training-user',
+      team: 'training-console',
+      run_name: `Pipeline ${new Date().toISOString()}`,
+      dataset_ref: 'training/pipeline/output/train.jsonl',
+      config_json: {
+        validate: true,
+        examples_per_domain: 100000,
       },
-      error: () => {
-        this.starting.set(false);
-        this.toast.error(this.i18n.t('pipeline.startFailed'));
-      }
+    }).subscribe({
+      next: (run) => {
+        this.governanceRun.set(run);
+        this.governance.submitRun(run.id).subscribe({
+          next: (submittedRun) => {
+            this.governanceRun.set(submittedRun);
+            this.governance.launchRun(run.id).subscribe({
+              next: (launchedRun) => {
+                this.governanceRun.set(launchedRun);
+                this.appStore.setPipelineState('running');
+                this.updateStagesFromState('running');
+                this.starting.set(false);
+                this.toast.success(this.i18n.t('pipeline.started'));
+              },
+              error: (error) => this.handleGovernedLaunchError(error),
+            });
+          },
+          error: (error) => this.handleGovernedLaunchError(error),
+        });
+      },
+      error: (error) => this.handleGovernedLaunchError(error),
     });
+  }
+
+  private refreshGovernanceRun(): void {
+    const runId = this.governanceRun()?.id;
+    if (!runId) return;
+    this.governance.getRun(runId).subscribe({
+      next: (run) => this.governanceRun.set(run),
+      error: () => {},
+    });
+  }
+
+  private handleGovernedLaunchError(error: unknown): void {
+    const detail = (error as { error?: { detail?: { message?: string; blocking_checks?: Array<{ detail: string }> } | string } })?.error?.detail;
+    this.starting.set(false);
+    if (detail && typeof detail === 'object' && Array.isArray(detail.blocking_checks) && detail.blocking_checks.length) {
+      this.toast.error(detail.blocking_checks.map((check) => check.detail).join(' | '));
+      this.refreshGovernanceRun();
+      return;
+    }
+    this.toast.error(typeof detail === 'string' ? detail : this.i18n.t('pipeline.startFailed'));
   }
 
   stateDesign(): 'Neutral' | 'Positive' | 'Information' | 'Negative' {
@@ -516,6 +604,27 @@ export class PipelineComponent implements OnInit, OnDestroy, AfterViewChecked {
   statusIcon(status: StageStatus): string {
     const map: Record<StageStatus, string> = { idle: 'circle-task', running: 'synchronize', done: 'status-completed', error: 'status-error' };
     return map[status];
+  }
+
+  riskDesign(risk: string): 'Positive' | 'Information' | 'Critical' | 'Negative' {
+    if (risk === 'critical') return 'Negative';
+    if (risk === 'high') return 'Critical';
+    if (risk === 'medium') return 'Information';
+    return 'Positive';
+  }
+
+  approvalDesign(status: string): 'Positive' | 'Critical' | 'Negative' | 'Information' | 'Neutral' {
+    if (status === 'approved') return 'Positive';
+    if (status === 'rejected') return 'Negative';
+    if (status === 'pending') return 'Critical';
+    return 'Neutral';
+  }
+
+  gateDesign(status: string): 'Positive' | 'Critical' | 'Negative' | 'Information' | 'Neutral' {
+    if (status === 'passed') return 'Positive';
+    if (status === 'blocked') return 'Negative';
+    if (status === 'pending_approval') return 'Critical';
+    return 'Information';
   }
 
   private scrollToBottom() { try { if (this.terminalBody) this.terminalBody.nativeElement.scrollTop = this.terminalBody.nativeElement.scrollHeight; } catch { } }

@@ -97,17 +97,236 @@ async def test_data_cleaning_workflow_native(client: AsyncClient):
 
 
 @pytest.mark.anyio
-async def test_training_job_accepts_validate_alias(client: AsyncClient):
+async def test_training_job_validate_alias_creates_governance_run_when_blocked(client: AsyncClient):
+    main_module.ensure_training_governance_seed_defaults()
     response = await client.post(
         "/jobs/training",
         json={"team": "finance", "examples_per_domain": 25, "validate": False},
     )
-    assert response.status_code == 201
-    job_id = response.json()["job_id"]
+    assert response.status_code == 409
+    detail = response.json()["detail"]
+    assert detail["governance_run_id"]
+    assert any(check["gate_key"] == "validation_enabled" for check in detail["blocking_checks"])
 
-    job_response = await client.get(f"/jobs/{job_id}")
+    run_response = await client.get(f"/governance/training-runs/{detail['governance_run_id']}")
+    assert run_response.status_code == 200
+    run = run_response.json()
+    assert run["workflow_type"] == "pipeline"
+    assert run["config_json"]["validate"] is False
+    assert run["gate_status"] == "blocked"
+
+
+@pytest.mark.anyio
+async def test_training_generation_auto_creates_governance_summary_on_success(
+    client: AsyncClient,
+    monkeypatch: pytest.MonkeyPatch,
+):
+    main_module.ensure_training_governance_seed_defaults()
+
+    async def fake_run_training_generation(
+        job_id: str,
+        team: str,
+        examples_per_domain: int,
+        validate: bool,
+        governance_run_id: str | None = None,
+    ):
+        return None
+
+    monkeypatch.setattr(main_module, "_run_training_generation", fake_run_training_generation)
+
+    response = await client.post(
+        "/jobs/training",
+        json={"team": "finance", "examples_per_domain": 25, "validate": True},
+    )
+    assert response.status_code == 201
+    payload = response.json()
+    assert payload["governance"]["workflow_type"] == "pipeline"
+    assert payload["governance"]["run_id"]
+
+    job_response = await client.get(f"/jobs/{payload['job_id']}")
     assert job_response.status_code == 200
-    assert job_response.json()["config"]["validate"] is False
+    assert job_response.json()["governance"]["run_id"] == payload["governance"]["run_id"]
+
+
+@pytest.mark.anyio
+async def test_governance_policies_seeded(client: AsyncClient):
+    main_module.ensure_training_governance_seed_defaults()
+    response = await client.get("/governance/policies")
+    assert response.status_code == 200
+    data = response.json()
+    assert len(data["policies"]) >= 4
+    assert any(policy["id"] == "training-policy-deployment-approval" for policy in data["policies"])
+
+
+@pytest.mark.anyio
+async def test_governance_approval_persists_for_high_cost_optimization_run(client: AsyncClient):
+    main_module.ensure_training_governance_seed_defaults()
+    create_response = await client.post(
+        "/governance/training-runs",
+        json={
+            "workflow_type": "optimization",
+            "run_name": "Large optimization",
+            "requested_by": "reviewer@example.com",
+            "team": "platform",
+            "model_name": "meta-llama/Llama-3-8B-Instruct",
+            "config_json": {"estimated_size_gb": 16.1, "quant_format": "int8"},
+        },
+    )
+    assert create_response.status_code == 201
+    created_run = create_response.json()
+    assert created_run["approval_status"] == "pending"
+    assert created_run["approvals"]
+
+    approval_id = created_run["approvals"][0]["id"]
+    decide_response = await client.post(
+        f"/governance/approvals/{approval_id}/decide",
+        json={"approver": "risk-owner", "action": "approve", "comment": "Risk accepted"},
+    )
+    assert decide_response.status_code == 200
+    assert decide_response.json()["status"] == "pending"
+
+    second_decision = await client.post(
+        f"/governance/approvals/{approval_id}/decide",
+        json={"approver": "team-lead", "action": "approve", "comment": "Operationally approved"},
+    )
+    assert second_decision.status_code == 200
+    assert second_decision.json()["status"] == "approved"
+
+    approvals_response = await client.get("/governance/approvals", params={"status": "approved"})
+    assert approvals_response.status_code == 200
+    approvals = approvals_response.json()["approvals"]
+    assert any(approval["id"] == approval_id for approval in approvals)
+
+
+@pytest.mark.anyio
+async def test_governed_launch_links_job_and_governance_summary(
+    client: AsyncClient,
+    monkeypatch: pytest.MonkeyPatch,
+):
+    main_module.ensure_training_governance_seed_defaults()
+
+    async def fake_real_worker_task(job_id: str, governance_run_id: str | None = None):
+        return None
+
+    monkeypatch.setattr(main_module, "real_worker_task", fake_real_worker_task)
+
+    create_response = await client.post(
+        "/governance/training-runs",
+        json={
+            "workflow_type": "optimization",
+            "run_name": "Small optimization",
+            "requested_by": "operator@example.com",
+            "team": "platform",
+            "model_name": "gpt2",
+            "config_json": {"quant_format": "int8"},
+        },
+    )
+    assert create_response.status_code == 201
+    run_id = create_response.json()["id"]
+
+    submit_response = await client.post(f"/governance/training-runs/{run_id}/submit")
+    assert submit_response.status_code == 200
+
+    launch_response = await client.post(f"/governance/training-runs/{run_id}/launch")
+    assert launch_response.status_code == 200
+    launched_run = launch_response.json()
+    assert launched_run["job_id"]
+    assert launched_run["status"] == "running"
+
+    job_response = await client.get(f"/jobs/{launched_run['job_id']}")
+    assert job_response.status_code == 200
+    assert job_response.json()["governance"]["run_id"] == run_id
+    assert job_response.json()["governance"]["workflow_type"] == "optimization"
+
+
+@pytest.mark.anyio
+async def test_raw_jobs_endpoint_auto_creates_governance_run(
+    client: AsyncClient,
+    monkeypatch: pytest.MonkeyPatch,
+):
+    main_module.ensure_training_governance_seed_defaults()
+
+    async def fake_real_worker_task(job_id: str, governance_run_id: str | None = None):
+        return None
+
+    monkeypatch.setattr(main_module, "real_worker_task", fake_real_worker_task)
+
+    response = await client.post(
+        "/jobs",
+        json={"config": {"model_name": "gpt2", "quant_format": "int8"}},
+    )
+    assert response.status_code == 201
+    payload = response.json()
+    assert payload["governance"]["workflow_type"] == "optimization"
+
+    run_response = await client.get(f"/governance/training-runs/{payload['governance']['run_id']}")
+    assert run_response.status_code == 200
+    run = run_response.json()
+    assert run["job_id"] == payload["id"]
+    assert run["status"] == "running"
+
+
+@pytest.mark.anyio
+async def test_pipeline_start_auto_creates_governance_run(
+    client: AsyncClient,
+    monkeypatch: pytest.MonkeyPatch,
+):
+    main_module.ensure_training_governance_seed_defaults()
+
+    async def fake_run_pipeline_worker(
+        governance_run_id: str | None = None,
+        job_id: str | None = None,
+    ):
+        return None
+
+    monkeypatch.setattr(main_module, "run_pipeline_worker", fake_run_pipeline_worker)
+
+    response = await client.post("/pipeline/start", json={})
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["governance_run_id"]
+    assert payload["job_id"]
+
+    run_response = await client.get(f"/governance/training-runs/{payload['governance_run_id']}")
+    assert run_response.status_code == 200
+    run = run_response.json()
+    assert run["workflow_type"] == "pipeline"
+    assert run["job_id"] == payload["job_id"]
+
+    job_response = await client.get(f"/jobs/{payload['job_id']}")
+    assert job_response.status_code == 200
+    assert job_response.json()["governance"]["run_id"] == payload["governance_run_id"]
+
+
+@pytest.mark.anyio
+async def test_deploy_endpoint_auto_creates_deployment_run_when_missing(client: AsyncClient):
+    main_module.ensure_training_governance_seed_defaults()
+    job_id = f"job-{uuid.uuid4().hex[:8]}"
+    main_module.save_job(
+        {
+            "id": job_id,
+            "status": "completed",
+            "progress": 100.0,
+            "config": {"model_name": "gpt2", "quant_format": "int8"},
+            "history": [],
+            "deployed": False,
+            "evaluation": {"eval_loss": 1.2, "perplexity": 3.4, "runtime_sec": 8.5},
+            "error": None,
+        }
+    )
+
+    response = await client.post(f"/jobs/{job_id}/deploy")
+    assert response.status_code == 409
+    detail = response.json()["detail"]
+    assert detail["governance_run_id"]
+    assert any(check["gate_key"] == "required_approvals" for check in detail["blocking_checks"])
+
+    run_response = await client.get(f"/governance/training-runs/{detail['governance_run_id']}")
+    assert run_response.status_code == 200
+    run = run_response.json()
+    assert run["workflow_type"] == "deployment"
+    assert run["job_id"] == job_id
+    assert run["approval_status"] == "pending"
 
 
 @pytest.mark.anyio

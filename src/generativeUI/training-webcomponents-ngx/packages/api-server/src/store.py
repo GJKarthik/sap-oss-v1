@@ -114,6 +114,117 @@ class AuditLogRecord(Base):
     record = Column(JSON, nullable=False)
 
 
+class TrainingRunRecord(Base):
+    __tablename__ = "training_runs"
+    id = Column(String(256), primary_key=True, index=True)
+    workflow_type = Column(String(64), index=True, nullable=False)
+    use_case_family = Column(String(128), default="training")
+    team = Column(String(256), default="")
+    requested_by = Column(String(256), index=True, default="system")
+    run_name = Column(String(512), default="")
+    model_name = Column(String(512), nullable=True)
+    dataset_ref = Column(String(512), nullable=True)
+    job_id = Column(String(256), nullable=True, index=True)
+    config_json = Column(JSON, default=dict)
+    risk_tier = Column(String(32), default="medium")
+    risk_score = Column(Float, default=50.0)
+    approval_status = Column(String(32), default="not_required")
+    gate_status = Column(String(32), default="draft")
+    status = Column(String(32), default="draft")
+    tag = Column(String(128), nullable=True)
+    blocking_checks = Column(JSON, default=list)
+    created_at = Column(DateTime, default=_utc_now_naive)
+    updated_at = Column(DateTime, default=_utc_now_naive, onupdate=_utc_now_naive)
+    submitted_at = Column(DateTime, nullable=True)
+    launched_at = Column(DateTime, nullable=True)
+    completed_at = Column(DateTime, nullable=True)
+
+
+class TrainingPolicyRecord(Base):
+    __tablename__ = "training_policies"
+    id = Column(String(256), primary_key=True, index=True)
+    name = Column(String(256), nullable=False)
+    description = Column(Text, default="")
+    workflow_type = Column(String(64), nullable=True)
+    rule_type = Column(String(64), nullable=False)
+    enabled = Column(Boolean, default=True)
+    severity = Column(String(32), default="medium")
+    condition_json = Column(JSON, default=dict)
+    created_at = Column(DateTime, default=_utc_now_naive)
+    updated_at = Column(DateTime, default=_utc_now_naive, onupdate=_utc_now_naive)
+
+
+class TrainingApprovalRecord(Base):
+    __tablename__ = "training_approvals"
+    id = Column(String(256), primary_key=True, index=True)
+    run_id = Column(String(256), index=True, nullable=False)
+    workflow_type = Column(String(64), index=True, nullable=False)
+    title = Column(String(512), nullable=False)
+    description = Column(Text, default="")
+    risk_level = Column(String(32), default="medium")
+    requested_by = Column(String(256), default="system")
+    approvers = Column(JSON, default=list)
+    status = Column(String(32), default="pending")
+    created_at = Column(DateTime, default=_utc_now_naive)
+    updated_at = Column(DateTime, default=_utc_now_naive, onupdate=_utc_now_naive)
+
+
+class TrainingApprovalDecisionRecord(Base):
+    __tablename__ = "training_approval_decisions"
+    id = Column(String(256), primary_key=True, index=True)
+    approval_id = Column(String(256), index=True, nullable=False)
+    approver = Column(String(256), nullable=False)
+    action = Column(String(32), nullable=False)
+    comment = Column(Text, default="")
+    decided_at = Column(DateTime, default=_utc_now_naive)
+
+
+class TrainingGateCheckRecord(Base):
+    __tablename__ = "training_gate_checks"
+    id = Column(String(256), primary_key=True, index=True)
+    run_id = Column(String(256), index=True, nullable=False)
+    gate_key = Column(String(128), nullable=False)
+    category = Column(String(64), nullable=False)
+    status = Column(String(32), nullable=False)
+    detail = Column(Text, default="")
+    blocking = Column(Boolean, default=True)
+    current_value = Column(Float, nullable=True)
+    threshold_min = Column(Float, nullable=True)
+    threshold_max = Column(Float, nullable=True)
+    metadata_json = Column(JSON, default=dict)
+    created_at = Column(DateTime, default=_utc_now_naive)
+    updated_at = Column(DateTime, default=_utc_now_naive, onupdate=_utc_now_naive)
+
+
+class TrainingMetricSnapshotRecord(Base):
+    __tablename__ = "training_metric_snapshots"
+    id = Column(String(256), primary_key=True, index=True)
+    run_id = Column(String(256), index=True, nullable=False)
+    workflow_type = Column(String(64), index=True, nullable=False)
+    team = Column(String(256), default="")
+    metric_key = Column(String(128), index=True, nullable=False)
+    stage = Column(String(64), default="runtime")
+    value = Column(Float, nullable=False)
+    unit = Column(String(64), default="ratio")
+    numerator = Column(Float, nullable=True)
+    denominator = Column(Float, nullable=True)
+    threshold_min = Column(Float, nullable=True)
+    threshold_max = Column(Float, nullable=True)
+    passed = Column(Boolean, default=False)
+    metadata_json = Column(JSON, default=dict)
+    created_at = Column(DateTime, default=_utc_now_naive)
+
+
+class TrainingArtifactRecord(Base):
+    __tablename__ = "training_artifacts"
+    id = Column(String(256), primary_key=True, index=True)
+    run_id = Column(String(256), index=True, nullable=False)
+    artifact_type = Column(String(128), nullable=False)
+    artifact_ref = Column(Text, nullable=False)
+    metadata_json = Column(JSON, default=dict)
+    created_at = Column(DateTime, default=_utc_now_naive)
+
+
 # ---------------------------------------------------------------------------
 # Store — high-level data-access façade
 # ---------------------------------------------------------------------------
@@ -405,6 +516,470 @@ class Store:
         finally:
             db.close()
 
+    def list_audit_entries(self, *, run_id: Optional[str] = None, limit: int = 500) -> List[Dict[str, Any]]:
+        db = self.SessionLocal()
+        try:
+            rows = (
+                db.query(AuditLogRecord)
+                .order_by(AuditLogRecord.created_at.desc())
+                .limit(limit)
+                .all()
+            )
+            entries: List[Dict[str, Any]] = []
+            for row in rows:
+                record = row.record or {}
+                if run_id and record.get("run_id") != run_id:
+                    continue
+                entries.append(
+                    {
+                        "id": row.id,
+                        "user_id": row.user_id,
+                        "created_at": row.created_at.isoformat() + "Z" if row.created_at else None,
+                        "record": record,
+                    }
+                )
+            return entries
+        finally:
+            db.close()
+
+    # ---- Training governance ----------------------------------------------
+
+    def ensure_training_governance_defaults(self, policies: List[Dict[str, Any]]) -> None:
+        db = self.SessionLocal()
+        try:
+            for policy in policies:
+                row = db.query(TrainingPolicyRecord).filter(TrainingPolicyRecord.id == policy["id"]).first()
+                if not row:
+                    row = TrainingPolicyRecord(id=policy["id"])
+                    db.add(row)
+                row.name = policy["name"]
+                row.description = policy.get("description", "")
+                row.workflow_type = policy.get("workflow_type")
+                row.rule_type = policy.get("rule_type", "approval")
+                row.enabled = policy.get("enabled", True)
+                row.severity = policy.get("severity", "medium")
+                row.condition_json = policy.get("condition_json", {})
+                row.updated_at = _utc_now_naive()
+            db.commit()
+        finally:
+            db.close()
+
+    def create_training_run(self, data: Dict[str, Any]) -> Dict[str, Any]:
+        db = self.SessionLocal()
+        try:
+            row = TrainingRunRecord(
+                id=data.get("id") or str(uuid.uuid4()),
+                workflow_type=data["workflow_type"],
+                use_case_family=data.get("use_case_family", "training"),
+                team=data.get("team", ""),
+                requested_by=data.get("requested_by", "system"),
+                run_name=data.get("run_name", ""),
+                model_name=data.get("model_name"),
+                dataset_ref=data.get("dataset_ref"),
+                job_id=data.get("job_id"),
+                config_json=data.get("config_json", {}),
+                risk_tier=data.get("risk_tier", "medium"),
+                risk_score=float(data.get("risk_score", 50.0)),
+                approval_status=data.get("approval_status", "not_required"),
+                gate_status=data.get("gate_status", "draft"),
+                status=data.get("status", "draft"),
+                tag=data.get("tag"),
+                blocking_checks=data.get("blocking_checks", []),
+                submitted_at=data.get("submitted_at"),
+                launched_at=data.get("launched_at"),
+                completed_at=data.get("completed_at"),
+            )
+            db.add(row)
+            db.commit()
+            db.refresh(row)
+            return self._training_run_to_dict(row)
+        finally:
+            db.close()
+
+    def get_training_run(self, run_id: str) -> Optional[Dict[str, Any]]:
+        db = self.SessionLocal()
+        try:
+            row = db.query(TrainingRunRecord).filter(TrainingRunRecord.id == run_id).first()
+            return self._training_run_to_dict(row) if row else None
+        finally:
+            db.close()
+
+    def get_training_run_for_job(self, job_id: str) -> Optional[Dict[str, Any]]:
+        db = self.SessionLocal()
+        try:
+            row = (
+                db.query(TrainingRunRecord)
+                .filter(TrainingRunRecord.job_id == job_id)
+                .order_by(TrainingRunRecord.created_at.desc())
+                .first()
+            )
+            return self._training_run_to_dict(row) if row else None
+        finally:
+            db.close()
+
+    def list_training_runs(
+        self,
+        *,
+        workflow_type: Optional[str] = None,
+        status: Optional[str] = None,
+        risk_tier: Optional[str] = None,
+        team: Optional[str] = None,
+        requested_by: Optional[str] = None,
+    ) -> List[Dict[str, Any]]:
+        db = self.SessionLocal()
+        try:
+            query = db.query(TrainingRunRecord)
+            if workflow_type:
+                query = query.filter(TrainingRunRecord.workflow_type == workflow_type)
+            if status:
+                query = query.filter(TrainingRunRecord.status == status)
+            if risk_tier:
+                query = query.filter(TrainingRunRecord.risk_tier == risk_tier)
+            if team:
+                query = query.filter(TrainingRunRecord.team == team)
+            if requested_by:
+                query = query.filter(TrainingRunRecord.requested_by == requested_by)
+            rows = query.order_by(TrainingRunRecord.created_at.desc()).all()
+            return [self._training_run_to_dict(row) for row in rows]
+        finally:
+            db.close()
+
+    def update_training_run(self, run_id: str, updates: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+        db = self.SessionLocal()
+        try:
+            row = db.query(TrainingRunRecord).filter(TrainingRunRecord.id == run_id).first()
+            if not row:
+                return None
+            for key, value in updates.items():
+                if key == "config_json":
+                    row.config_json = value or {}
+                elif key == "blocking_checks":
+                    row.blocking_checks = value or []
+                elif hasattr(row, key):
+                    setattr(row, key, value)
+            row.updated_at = _utc_now_naive()
+            db.commit()
+            db.refresh(row)
+            return self._training_run_to_dict(row)
+        finally:
+            db.close()
+
+    def list_training_policies(self, *, workflow_type: Optional[str] = None) -> List[Dict[str, Any]]:
+        db = self.SessionLocal()
+        try:
+            query = db.query(TrainingPolicyRecord)
+            if workflow_type:
+                query = query.filter(
+                    (TrainingPolicyRecord.workflow_type == workflow_type)
+                    | (TrainingPolicyRecord.workflow_type.is_(None))
+                )
+            rows = query.order_by(TrainingPolicyRecord.name.asc()).all()
+            return [self._training_policy_to_dict(row) for row in rows]
+        finally:
+            db.close()
+
+    def update_training_policy(self, policy_id: str, updates: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+        db = self.SessionLocal()
+        try:
+            row = db.query(TrainingPolicyRecord).filter(TrainingPolicyRecord.id == policy_id).first()
+            if not row:
+                return None
+            for key, value in updates.items():
+                if key == "condition_json":
+                    row.condition_json = value or {}
+                elif hasattr(row, key):
+                    setattr(row, key, value)
+            row.updated_at = _utc_now_naive()
+            db.commit()
+            db.refresh(row)
+            return self._training_policy_to_dict(row)
+        finally:
+            db.close()
+
+    def create_training_approval(self, data: Dict[str, Any]) -> Dict[str, Any]:
+        db = self.SessionLocal()
+        try:
+            row = TrainingApprovalRecord(
+                id=data.get("id") or str(uuid.uuid4()),
+                run_id=data["run_id"],
+                workflow_type=data["workflow_type"],
+                title=data["title"],
+                description=data.get("description", ""),
+                risk_level=data.get("risk_level", "medium"),
+                requested_by=data.get("requested_by", "system"),
+                approvers=data.get("approvers", []),
+                status=data.get("status", "pending"),
+            )
+            db.add(row)
+            db.commit()
+            db.refresh(row)
+            return self._training_approval_to_dict(row, [])
+        finally:
+            db.close()
+
+    def get_training_approval(self, approval_id: str) -> Optional[Dict[str, Any]]:
+        db = self.SessionLocal()
+        try:
+            row = db.query(TrainingApprovalRecord).filter(TrainingApprovalRecord.id == approval_id).first()
+            if not row:
+                return None
+            decisions = (
+                db.query(TrainingApprovalDecisionRecord)
+                .filter(TrainingApprovalDecisionRecord.approval_id == approval_id)
+                .order_by(TrainingApprovalDecisionRecord.decided_at.asc())
+                .all()
+            )
+            return self._training_approval_to_dict(row, decisions)
+        finally:
+            db.close()
+
+    def get_training_approval_for_run(self, run_id: str) -> Optional[Dict[str, Any]]:
+        db = self.SessionLocal()
+        try:
+            row = (
+                db.query(TrainingApprovalRecord)
+                .filter(TrainingApprovalRecord.run_id == run_id)
+                .order_by(TrainingApprovalRecord.created_at.desc())
+                .first()
+            )
+            if not row:
+                return None
+            decisions = (
+                db.query(TrainingApprovalDecisionRecord)
+                .filter(TrainingApprovalDecisionRecord.approval_id == row.id)
+                .order_by(TrainingApprovalDecisionRecord.decided_at.asc())
+                .all()
+            )
+            return self._training_approval_to_dict(row, decisions)
+        finally:
+            db.close()
+
+    def list_training_approvals(
+        self,
+        *,
+        status: Optional[str] = None,
+        risk_level: Optional[str] = None,
+        workflow_type: Optional[str] = None,
+    ) -> List[Dict[str, Any]]:
+        db = self.SessionLocal()
+        try:
+            query = db.query(TrainingApprovalRecord)
+            if status:
+                query = query.filter(TrainingApprovalRecord.status == status)
+            if risk_level:
+                query = query.filter(TrainingApprovalRecord.risk_level == risk_level)
+            if workflow_type:
+                query = query.filter(TrainingApprovalRecord.workflow_type == workflow_type)
+            rows = query.order_by(TrainingApprovalRecord.created_at.desc()).all()
+            decisions = db.query(TrainingApprovalDecisionRecord).all()
+            by_approval: Dict[str, List[TrainingApprovalDecisionRecord]] = {}
+            for decision in decisions:
+                by_approval.setdefault(decision.approval_id, []).append(decision)
+            return [self._training_approval_to_dict(row, by_approval.get(row.id, [])) for row in rows]
+        finally:
+            db.close()
+
+    def add_training_approval_decision(
+        self,
+        approval_id: str,
+        *,
+        approver: str,
+        action: str,
+        comment: str = "",
+    ) -> Optional[Dict[str, Any]]:
+        db = self.SessionLocal()
+        try:
+            row = db.query(TrainingApprovalRecord).filter(TrainingApprovalRecord.id == approval_id).first()
+            if not row:
+                return None
+            decision = TrainingApprovalDecisionRecord(
+                id=str(uuid.uuid4()),
+                approval_id=approval_id,
+                approver=approver,
+                action=action,
+                comment=comment,
+            )
+            db.add(decision)
+            db.flush()
+
+            decisions = (
+                db.query(TrainingApprovalDecisionRecord)
+                .filter(TrainingApprovalDecisionRecord.approval_id == approval_id)
+                .order_by(TrainingApprovalDecisionRecord.decided_at.asc())
+                .all()
+            )
+            decided_by = {entry.approver for entry in decisions}
+            required = set(row.approvers or [])
+            if any(entry.action == "reject" for entry in decisions):
+                row.status = "rejected"
+            elif required and required.issubset(decided_by):
+                row.status = "approved"
+            else:
+                row.status = "pending"
+            row.updated_at = _utc_now_naive()
+            db.commit()
+            return self._training_approval_to_dict(row, decisions)
+        finally:
+            db.close()
+
+    def replace_training_gate_checks(self, run_id: str, checks: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+        db = self.SessionLocal()
+        try:
+            db.query(TrainingGateCheckRecord).filter(TrainingGateCheckRecord.run_id == run_id).delete()
+            for check in checks:
+                row = TrainingGateCheckRecord(
+                    id=str(uuid.uuid4()),
+                    run_id=run_id,
+                    gate_key=check["gate_key"],
+                    category=check.get("category", "control"),
+                    status=check.get("status", "pending"),
+                    detail=check.get("detail", ""),
+                    blocking=bool(check.get("blocking", True)),
+                    current_value=check.get("current_value"),
+                    threshold_min=check.get("threshold_min"),
+                    threshold_max=check.get("threshold_max"),
+                    metadata_json=check.get("metadata_json", {}),
+                )
+                db.add(row)
+            db.commit()
+            rows = (
+                db.query(TrainingGateCheckRecord)
+                .filter(TrainingGateCheckRecord.run_id == run_id)
+                .order_by(TrainingGateCheckRecord.category.asc(), TrainingGateCheckRecord.gate_key.asc())
+                .all()
+            )
+            return [self._training_gate_check_to_dict(row) for row in rows]
+        finally:
+            db.close()
+
+    def list_training_gate_checks(self, run_id: str) -> List[Dict[str, Any]]:
+        db = self.SessionLocal()
+        try:
+            rows = (
+                db.query(TrainingGateCheckRecord)
+                .filter(TrainingGateCheckRecord.run_id == run_id)
+                .order_by(TrainingGateCheckRecord.category.asc(), TrainingGateCheckRecord.gate_key.asc())
+                .all()
+            )
+            return [self._training_gate_check_to_dict(row) for row in rows]
+        finally:
+            db.close()
+
+    def replace_training_metric_snapshots(self, run_id: str, metrics: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+        db = self.SessionLocal()
+        try:
+            db.query(TrainingMetricSnapshotRecord).filter(TrainingMetricSnapshotRecord.run_id == run_id).delete()
+            for metric in metrics:
+                row = TrainingMetricSnapshotRecord(
+                    id=str(uuid.uuid4()),
+                    run_id=run_id,
+                    workflow_type=metric.get("workflow_type", "training"),
+                    team=metric.get("team", ""),
+                    metric_key=metric["metric_key"],
+                    stage=metric.get("stage", "runtime"),
+                    value=float(metric.get("value", 0.0)),
+                    unit=metric.get("unit", "ratio"),
+                    numerator=metric.get("numerator"),
+                    denominator=metric.get("denominator"),
+                    threshold_min=metric.get("threshold_min"),
+                    threshold_max=metric.get("threshold_max"),
+                    passed=bool(metric.get("passed", False)),
+                    metadata_json=metric.get("metadata_json", {}),
+                )
+                db.add(row)
+            db.commit()
+            rows = (
+                db.query(TrainingMetricSnapshotRecord)
+                .filter(TrainingMetricSnapshotRecord.run_id == run_id)
+                .order_by(TrainingMetricSnapshotRecord.metric_key.asc())
+                .all()
+            )
+            return [self._training_metric_snapshot_to_dict(row) for row in rows]
+        finally:
+            db.close()
+
+    def list_training_metric_snapshots(
+        self,
+        *,
+        run_id: Optional[str] = None,
+        workflow_type: Optional[str] = None,
+        team: Optional[str] = None,
+    ) -> List[Dict[str, Any]]:
+        db = self.SessionLocal()
+        try:
+            query = db.query(TrainingMetricSnapshotRecord)
+            if run_id:
+                query = query.filter(TrainingMetricSnapshotRecord.run_id == run_id)
+            if workflow_type:
+                query = query.filter(TrainingMetricSnapshotRecord.workflow_type == workflow_type)
+            if team:
+                query = query.filter(TrainingMetricSnapshotRecord.team == team)
+            rows = query.order_by(TrainingMetricSnapshotRecord.created_at.desc()).all()
+            return [self._training_metric_snapshot_to_dict(row) for row in rows]
+        finally:
+            db.close()
+
+    def replace_training_artifacts(self, run_id: str, artifacts: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+        db = self.SessionLocal()
+        try:
+            db.query(TrainingArtifactRecord).filter(TrainingArtifactRecord.run_id == run_id).delete()
+            for artifact in artifacts:
+                row = TrainingArtifactRecord(
+                    id=str(uuid.uuid4()),
+                    run_id=run_id,
+                    artifact_type=artifact["artifact_type"],
+                    artifact_ref=artifact["artifact_ref"],
+                    metadata_json=artifact.get("metadata_json", {}),
+                )
+                db.add(row)
+            db.commit()
+            rows = (
+                db.query(TrainingArtifactRecord)
+                .filter(TrainingArtifactRecord.run_id == run_id)
+                .order_by(TrainingArtifactRecord.created_at.asc())
+                .all()
+            )
+            return [self._training_artifact_to_dict(row) for row in rows]
+        finally:
+            db.close()
+
+    def list_training_artifacts(self, run_id: str) -> List[Dict[str, Any]]:
+        db = self.SessionLocal()
+        try:
+            rows = (
+                db.query(TrainingArtifactRecord)
+                .filter(TrainingArtifactRecord.run_id == run_id)
+                .order_by(TrainingArtifactRecord.created_at.asc())
+                .all()
+            )
+            return [self._training_artifact_to_dict(row) for row in rows]
+        finally:
+            db.close()
+
+    def get_governance_summary_for_job(self, job_id: str) -> Optional[Dict[str, Any]]:
+        run = self.get_training_run_for_job(job_id)
+        if not run:
+            return None
+        checks = self.list_training_gate_checks(run["id"])
+        blocking = [check for check in checks if check["blocking"] and check["status"] != "passed"]
+        return {
+            "run_id": run["id"],
+            "workflow_type": run["workflow_type"],
+            "tag": run.get("tag"),
+            "risk_tier": run["risk_tier"],
+            "approval_status": run["approval_status"],
+            "gate_status": run["gate_status"],
+            "blocking_checks": [
+                {
+                    "gate_key": check["gate_key"],
+                    "category": check["category"],
+                    "detail": check["detail"],
+                    "status": check["status"],
+                }
+                for check in blocking
+            ],
+        }
+
     # ---- Serializers -------------------------------------------------------
 
     @staticmethod
@@ -470,6 +1045,128 @@ class Store:
             "auth_source": u.auth_source,
             "last_login_at": u.last_login_at.isoformat() + "Z" if u.last_login_at else None,
             "created_at": u.created_at.isoformat() + "Z" if u.created_at else None,
+        }
+
+    @staticmethod
+    def _training_run_to_dict(row: TrainingRunRecord) -> Dict[str, Any]:
+        return {
+            "id": row.id,
+            "workflow_type": row.workflow_type,
+            "use_case_family": row.use_case_family,
+            "team": row.team,
+            "requested_by": row.requested_by,
+            "run_name": row.run_name,
+            "model_name": row.model_name,
+            "dataset_ref": row.dataset_ref,
+            "job_id": row.job_id,
+            "config_json": row.config_json or {},
+            "risk_tier": row.risk_tier,
+            "risk_score": row.risk_score,
+            "approval_status": row.approval_status,
+            "gate_status": row.gate_status,
+            "status": row.status,
+            "tag": row.tag,
+            "blocking_checks": row.blocking_checks or [],
+            "created_at": row.created_at.isoformat() + "Z" if row.created_at else None,
+            "updated_at": row.updated_at.isoformat() + "Z" if row.updated_at else None,
+            "submitted_at": row.submitted_at.isoformat() + "Z" if row.submitted_at else None,
+            "launched_at": row.launched_at.isoformat() + "Z" if row.launched_at else None,
+            "completed_at": row.completed_at.isoformat() + "Z" if row.completed_at else None,
+        }
+
+    @staticmethod
+    def _training_policy_to_dict(row: TrainingPolicyRecord) -> Dict[str, Any]:
+        return {
+            "id": row.id,
+            "name": row.name,
+            "description": row.description,
+            "workflow_type": row.workflow_type,
+            "rule_type": row.rule_type,
+            "enabled": row.enabled,
+            "severity": row.severity,
+            "condition_json": row.condition_json or {},
+            "created_at": row.created_at.isoformat() + "Z" if row.created_at else None,
+            "updated_at": row.updated_at.isoformat() + "Z" if row.updated_at else None,
+        }
+
+    @staticmethod
+    def _training_approval_decision_to_dict(row: TrainingApprovalDecisionRecord) -> Dict[str, Any]:
+        return {
+            "id": row.id,
+            "approval_id": row.approval_id,
+            "approver": row.approver,
+            "action": row.action,
+            "comment": row.comment,
+            "decided_at": row.decided_at.isoformat() + "Z" if row.decided_at else None,
+        }
+
+    @staticmethod
+    def _training_approval_to_dict(
+        row: TrainingApprovalRecord,
+        decisions: List[TrainingApprovalDecisionRecord],
+    ) -> Dict[str, Any]:
+        return {
+            "id": row.id,
+            "run_id": row.run_id,
+            "workflow_type": row.workflow_type,
+            "title": row.title,
+            "description": row.description,
+            "risk_level": row.risk_level,
+            "requested_by": row.requested_by,
+            "approvers": row.approvers or [],
+            "status": row.status,
+            "decisions": [Store._training_approval_decision_to_dict(decision) for decision in decisions],
+            "created_at": row.created_at.isoformat() + "Z" if row.created_at else None,
+            "updated_at": row.updated_at.isoformat() + "Z" if row.updated_at else None,
+        }
+
+    @staticmethod
+    def _training_gate_check_to_dict(row: TrainingGateCheckRecord) -> Dict[str, Any]:
+        return {
+            "id": row.id,
+            "run_id": row.run_id,
+            "gate_key": row.gate_key,
+            "category": row.category,
+            "status": row.status,
+            "detail": row.detail,
+            "blocking": row.blocking,
+            "current_value": row.current_value,
+            "threshold_min": row.threshold_min,
+            "threshold_max": row.threshold_max,
+            "metadata_json": row.metadata_json or {},
+            "created_at": row.created_at.isoformat() + "Z" if row.created_at else None,
+            "updated_at": row.updated_at.isoformat() + "Z" if row.updated_at else None,
+        }
+
+    @staticmethod
+    def _training_metric_snapshot_to_dict(row: TrainingMetricSnapshotRecord) -> Dict[str, Any]:
+        return {
+            "id": row.id,
+            "run_id": row.run_id,
+            "workflow_type": row.workflow_type,
+            "team": row.team,
+            "metric_key": row.metric_key,
+            "stage": row.stage,
+            "value": row.value,
+            "unit": row.unit,
+            "numerator": row.numerator,
+            "denominator": row.denominator,
+            "threshold_min": row.threshold_min,
+            "threshold_max": row.threshold_max,
+            "passed": row.passed,
+            "metadata_json": row.metadata_json or {},
+            "created_at": row.created_at.isoformat() + "Z" if row.created_at else None,
+        }
+
+    @staticmethod
+    def _training_artifact_to_dict(row: TrainingArtifactRecord) -> Dict[str, Any]:
+        return {
+            "id": row.id,
+            "run_id": row.run_id,
+            "artifact_type": row.artifact_type,
+            "artifact_ref": row.artifact_ref,
+            "metadata_json": row.metadata_json or {},
+            "created_at": row.created_at.isoformat() + "Z" if row.created_at else None,
         }
 
 

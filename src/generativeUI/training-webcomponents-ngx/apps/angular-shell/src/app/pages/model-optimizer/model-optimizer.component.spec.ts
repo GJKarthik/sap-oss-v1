@@ -80,16 +80,75 @@ describe('ModelOptimizerComponent', () => {
 
     component.createJob();
 
-    const req = httpMock.expectOne(r => r.url === '/api/jobs' && r.method === 'POST');
-    expect(req.request.body).toEqual({
-      config: {
+    const createReq = httpMock.expectOne(r => r.url === '/api/governance/training-runs' && r.method === 'POST');
+    expect(createReq.request.body).toEqual({
+      workflow_type: 'optimization',
+      use_case_family: 'model_optimization',
+      requested_by: 'training-user',
+      team: 'training-console',
+      run_name: 'test-model optimization',
+      model_name: 'test-model',
+      config_json: {
         model_name: 'test-model',
         quant_format: 'int8',
         export_format: 'vllm',
+        estimated_vram_gb: component.estimatedVram(),
       },
     });
+    createReq.flush({
+      id: 'run-1234',
+      workflow_type: 'optimization',
+      run_name: 'test-model optimization',
+      team: 'training-console',
+      requested_by: 'training-user',
+      config_json: {},
+      risk_tier: 'medium',
+      risk_score: 55,
+      approval_status: 'not_required',
+      gate_status: 'draft',
+      status: 'draft',
+      blocking_checks: [],
+      created_at: new Date().toISOString(),
+    });
 
-    req.flush({ id: 'job-1234', name: 'test', status: 'pending', config: { model_name: 'test-model', quant_format: 'int8', export_format: 'vllm' }, created_at: new Date().toISOString(), progress: 0 });
+    httpMock.expectOne('/api/governance/training-runs/run-1234/submit').flush({
+      id: 'run-1234',
+      workflow_type: 'optimization',
+      run_name: 'test-model optimization',
+      team: 'training-console',
+      requested_by: 'training-user',
+      config_json: {},
+      risk_tier: 'medium',
+      risk_score: 55,
+      approval_status: 'not_required',
+      gate_status: 'passed',
+      status: 'submitted',
+      blocking_checks: [],
+      created_at: new Date().toISOString(),
+    });
+
+    httpMock.expectOne('/api/governance/training-runs/run-1234/launch').flush({
+      id: 'run-1234',
+      workflow_type: 'optimization',
+      run_name: 'test-model optimization',
+      team: 'training-console',
+      requested_by: 'training-user',
+      config_json: {},
+      risk_tier: 'medium',
+      risk_score: 55,
+      approval_status: 'not_required',
+      gate_status: 'passed',
+      status: 'running',
+      blocking_checks: [],
+      created_at: new Date().toISOString(),
+      job: {
+        id: 'job-1234',
+        status: 'pending',
+        config: { model_name: 'test-model', quant_format: 'int8', export_format: 'vllm' },
+        created_at: new Date().toISOString(),
+        progress: 0,
+      },
+    });
 
     expect(mockToast.success).toHaveBeenCalled();
   });
