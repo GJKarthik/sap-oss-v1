@@ -1,0 +1,271 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://sap-oss.github.io/schema/common/base-types.schema.json",
+  "title": "SAP OSS Common Base Types",
+  "description": "Shared type definitions used across all domain schemas",
+  "version": "1.0.0",
+  "definitions": {
+    "Metadata": {
+      "type": "object",
+      "description": "Standard metadata block for all records",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier (UUID or domain-specific ID)",
+          "pattern": "^[a-zA-Z0-9_-]+$"
+        },
+        "created_at": {
+          "type": "string",
+          "format": "date-time",
+          "description": "ISO 8601 timestamp when record was created"
+        },
+        "updated_at": {
+          "type": "string",
+          "format": "date-time",
+          "description": "ISO 8601 timestamp of last update"
+        },
+        "version": {
+          "type": "string",
+          "pattern": "^\\d+\\.\\d+\\.\\d+$",
+          "description": "SemVer version of the record schema"
+        },
+        "source": {
+          "type": "string",
+          "description": "Origin system or file path"
+        }
+      },
+      "required": [
+        "id"
+      ],
+      "additionalProperties": false
+    },
+    "Currency": {
+      "type": "object",
+      "description": "Monetary amount with currency code",
+      "properties": {
+        "amount": {
+          "type": "number",
+          "description": "Numeric value (positive or negative)"
+        },
+        "currency": {
+          "type": "string",
+          "pattern": "^[A-Z]{3}$",
+          "description": "ISO 4217 currency code (e.g., USD, SAR, BHD)"
+        }
+      },
+      "required": [
+        "amount",
+        "currency"
+      ],
+      "additionalProperties": false
+    },
+    "DateRange": {
+      "type": "object",
+      "description": "Period with start and optional end date",
+      "properties": {
+        "start": {
+          "type": "string",
+          "format": "date",
+          "description": "Start date (YYYY-MM-DD)"
+        },
+        "end": {
+          "type": "string",
+          "format": "date",
+          "description": "End date (YYYY-MM-DD), null if ongoing"
+        }
+      },
+      "required": [
+        "start"
+      ],
+      "additionalProperties": false
+    },
+    "TaxIdentifier": {
+      "type": "object",
+      "description": "Tax registration number with jurisdiction",
+      "properties": {
+        "number": {
+          "type": "string",
+          "description": "Tax ID number"
+        },
+        "type": {
+          "type": "string",
+          "enum": [
+            "TIN",
+            "TRN",
+            "VAT",
+            "GST",
+            "OTHER"
+          ],
+          "description": "Tax ID type"
+        },
+        "country": {
+          "$ref": "#/definitions/CountryCode"
+        }
+      },
+      "required": [
+        "number",
+        "country"
+      ],
+      "additionalProperties": false
+    },
+    "CountryCode": {
+      "type": "string",
+      "pattern": "^[A-Z]{2}$",
+      "description": "ISO 3166-1 alpha-2 country code"
+    },
+    "LanguageCode": {
+      "type": "string",
+      "pattern": "^[a-z]{2}(-[A-Z]{2})?$",
+      "description": "ISO 639-1 language code, optionally with region (e.g., ar, ar-SA, en-US)"
+    },
+    "EntityParty": {
+      "type": "object",
+      "description": "Business entity (buyer, seller, counterparty)",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Legal entity name"
+        },
+        "tax_id": {
+          "$ref": "#/definitions/TaxIdentifier"
+        },
+        "address": {
+          "type": "string",
+          "description": "Full postal address"
+        },
+        "country": {
+          "$ref": "#/definitions/CountryCode"
+        }
+      },
+      "required": [
+        "name"
+      ],
+      "additionalProperties": false
+    },
+    "Status": {
+      "type": "string",
+      "enum": [
+        "draft",
+        "pending",
+        "in_review",
+        "approved",
+        "rejected",
+        "completed",
+        "archived"
+      ],
+      "description": "Workflow status"
+    },
+    "Confidence": {
+      "type": "number",
+      "minimum": 0.0,
+      "maximum": 1.0,
+      "description": "Confidence score between 0 and 1"
+    },
+    "FilePath": {
+      "type": "string",
+      "description": "Relative path from repository root",
+      "pattern": "^[^/].*$"
+    },
+    "SHA256Hash": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$",
+      "description": "SHA-256 hash (lowercase hex)"
+    },
+    "MoscowPriority": {
+      "type": "string",
+      "enum": [
+        "Must",
+        "Should",
+        "Could",
+        "Won't"
+      ],
+      "description": "MoSCoW prioritisation per common/moscow.yaml. Must = critical path, Should = slip-tolerable, Could = nice-to-have, Won't = out-of-scope."
+    },
+    "MilestoneId": {
+      "type": "string",
+      "pattern": "^[MSCW]\\d{2}$",
+      "description": "Roadmap milestone identifier. Must-path uses M01..M09; Should uses S01..; Could uses C01..; Won't uses W01.. Per-domain meaning in common/moscow.yaml."
+    },
+    "RequirementId": {
+      "type": "string",
+      "pattern": "^(REG|TB|AP|SIM|GAIC)-[A-Z0-9]+(-[A-Z0-9.]+)*$",
+      "description": "Cross-spec requirement ID (e.g., REG-MGF-2.1.2-002, TB-SCHEMA-001)."
+    },
+    "RoadmapReference": {
+      "type": "object",
+      "description": "Traceability block linking a record to the MoSCoW roadmap chapters. Populate when a record corresponds to or is produced by a specific milestone.",
+      "additionalProperties": false,
+      "properties": {
+        "domain": {
+          "type": "string",
+          "enum": [
+            "arabic",
+            "tb",
+            "simula",
+            "regulations"
+          ],
+          "description": "Domain whose roadmap this reference points into."
+        },
+        "milestones": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/MilestoneId"
+          },
+          "minItems": 1,
+          "description": "Milestone IDs this record participates in."
+        },
+        "priority": {
+          "$ref": "#/definitions/MoscowPriority"
+        },
+        "requirement_ids": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/RequirementId"
+          },
+          "description": "Explicit requirement IDs the record addresses."
+        },
+        "roadmap_chapter": {
+          "type": "string",
+          "pattern": "^Ch (10|11)$",
+          "description": "Which chapter of the spec contains the roadmap (Simula=Ch 10, others=Ch 11)."
+        }
+      },
+      "required": [
+        "domain",
+        "milestones",
+        "priority"
+      ]
+    },
+    "ReproducibilityManifest": {
+      "type": "object",
+      "description": "Manifest for reproducible artefacts (e.g., Simula M06 reference run). Every field is required so a record is either fully reproducible or absent.",
+      "additionalProperties": false,
+      "properties": {
+        "commit": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{7,40}$",
+          "description": "Git commit SHA that produced the artefact (short or full hex)."
+        },
+        "tag": {
+          "type": "string",
+          "description": "Git tag name for the artefact release (e.g., simula-v1.2-worked-example)."
+        },
+        "seed": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Pseudo-random seed used for non-deterministic steps (e.g., 20251115)."
+        },
+        "generated_at": {
+          "type": "string",
+          "format": "date-time",
+          "description": "When the reference run was executed."
+        }
+      },
+      "required": [
+        "commit",
+        "tag",
+        "seed"
+      ]
+    }
+  }
+}

@@ -1,0 +1,105 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://sap-oss.github.io/schema/regulations/regulation.schema.json",
+  "title": "Regulation Record",
+  "description": "Schema for regulation records in AI governance corpus (Chapter 2)",
+  "type": "object",
+  "required": [
+    "regulation_id",
+    "title",
+    "jurisdiction",
+    "source_document"
+  ],
+  "properties": {
+    "regulation_id": {
+      "type": "string",
+      "description": "Unique identifier (e.g., reg-mas-mgf-agentic-ai-v1)"
+    },
+    "title": {
+      "type": "string",
+      "description": "Regulation title"
+    },
+    "short_name": {
+      "type": "string",
+      "description": "Short reference name"
+    },
+    "jurisdiction": {
+      "type": "string",
+      "enum": [
+        "SG",
+        "UK",
+        "US",
+        "EU"
+      ],
+      "description": "Regulatory jurisdiction per docs/schema/common/enums.yaml"
+    },
+    "issuing_authority": {
+      "type": "string",
+      "description": "Authority that issued the regulation (e.g., MAS, IMDA)"
+    },
+    "effective_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Date regulation became effective"
+    },
+    "version": {
+      "type": "string",
+      "description": "Regulation version"
+    },
+    "source_document": {
+      "$ref": "#/definitions/source_document"
+    },
+    "scope": {
+      "type": "string",
+      "description": "Scope of applicability"
+    },
+    "key_themes": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Key themes covered"
+    },
+    "related_regulations": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Related regulation IDs"
+    },
+    "requirements_count": {
+      "type": "integer",
+      "description": "Number of requirements extracted"
+    },
+    "metadata": {
+      "$ref": "https://sap-oss.github.io/schema/common/base-types.schema.json#/definitions/Metadata"
+    }
+  },
+  "definitions": {
+    "source_document": {
+      "type": "object",
+      "required": [
+        "path",
+        "sha256"
+      ],
+      "properties": {
+        "path": {
+          "type": "string"
+        },
+        "sha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "page_count": {
+          "type": "integer"
+        },
+        "url": {
+          "type": "string",
+          "format": "uri"
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}

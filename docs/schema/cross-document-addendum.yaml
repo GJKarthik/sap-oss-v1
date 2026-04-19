@@ -1,0 +1,516 @@
+# Cross-Document Improvements Addendum v1.0
+# Addresses review issues from April 2026 Critical Review
+# This file contains cross-cutting specifications that apply to all domains
+
+version: "1.0.0"
+last_updated: "2026-04-18"
+addresses_review_issues:
+  - "6.1: LLM provider fallback specifications"
+  - "6.2: Testing section substance"
+  - "6.3: Human-in-the-loop interface requirements"
+  - "6.4: Schema versioning strategy"
+  - "6.5: Review document factual corrections"
+
+# =============================================================================
+# Section 6.1: LLM Provider Fallback Specifications
+# Review Issue: "All documents assume vLLM/Qwen availability. None specify fallback"
+# =============================================================================
+
+llm_provider_fallback:
+  description: |
+    Unified specification for LLM provider failover, rate limiting, and
+    availability handling across all domains.
+    
+  primary_provider:
+    name: "vLLM TurboQuant"
+    model: "Qwen/Qwen3.5-35B"
+    endpoint: "http://localhost:9180/v1"
+    deployment: "Local GPU cluster"
+    
+  availability_requirements:
+    target_uptime: "99.5%"
+    p95_latency_ms: 5000
+    p99_latency_ms: 10000
+    max_concurrent_requests: 100
+    
+  timeout_configuration:
+    connect_timeout_ms: 5000
+    read_timeout_ms: 60000
+    total_timeout_ms: 120000
+    
+  retry_strategy:
+    max_retries: 3
+    backoff:
+      type: "exponential"
+      base_delay_ms: 1000
+      max_delay_ms: 30000
+      jitter: true
+      jitter_factor: 0.1
+    retry_conditions:
+      - "HTTP 429 (Rate Limited)"
+      - "HTTP 502 (Bad Gateway)"
+      - "HTTP 503 (Service Unavailable)"
+      - "HTTP 504 (Gateway Timeout)"
+      - "Connection timeout"
+      - "Read timeout"
+    non_retry_conditions:
+      - "HTTP 400 (Bad Request)"
+      - "HTTP 401 (Unauthorized)"
+      - "HTTP 403 (Forbidden)"
+      - "HTTP 422 (Validation Error)"
+      
+  circuit_breaker:
+    enabled: true
+    failure_threshold: 5  # consecutive failures
+    reset_timeout_seconds: 60
+    half_open_requests: 3  # test requests when half-open
+    states:
+      closed: "Normal operation"
+      open: "All requests fail immediately"
+      half_open: "Test limited requests"
+      
+  rate_limiting:
+    requests_per_minute: 600
+    tokens_per_minute: 100000
+    burst_allowance: 50  # extra requests allowed in burst
+    queuing:
+      enabled: true
+      max_queue_size: 1000
+      queue_timeout_ms: 30000
+      
+  fallback_behavior:
+    when_unavailable:
+      - action: "queue_for_manual_processing"
+        description: "Add to manual processing queue"
+        applies_to: ["arabic_invoice_extraction", "tb_commentary_generation"]
+      - action: "return_partial_result"
+        description: "Return what's available without LLM enhancement"
+        applies_to: ["ocr_extraction"]
+      - action: "skip_and_log"
+        description: "Skip LLM step and log for retry"
+        applies_to: ["simula_generation"]
+        
+    manual_queue:
+      location: "HANA table LLM_MANUAL_QUEUE"
+      columns:
+        - "request_id"
+        - "domain"
+        - "request_payload (NCLOB)"
+        - "failure_reason"
+        - "queued_at"
+        - "retry_count"
+        - "status (pending|processing|completed|failed)"
+      retention_days: 30
+      alert_threshold: 100  # Alert if queue size exceeds
+      
+  cost_estimation:
+    simula_100k_examples:
+      estimated_tokens: 500_000_000
+      estimated_cost: "Internal GPU - no marginal cost"
+      estimated_duration_hours: 48
+    arabic_monthly:
+      estimated_invoices: 5000
+      estimated_tokens_per_invoice: 2000
+      total_monthly_tokens: 10_000_000
+      estimated_cost: "Internal GPU - no marginal cost"
+    tb_monthly:
+      estimated_entities: 234
+      estimated_tokens_per_entity: 5000
+      total_monthly_tokens: 1_170_000
+      estimated_cost: "Internal GPU - no marginal cost"
+
+# =============================================================================
+# Section 6.2: Testing Section Substance
+# Review Issue: "Testing sections lack substance"
+# =============================================================================
+
+testing_specifications:
+  description: |
+    Unified testing requirements and standards across all domains.
+    
+  unit_testing:
+    coverage_requirements:
+      minimum_line_coverage: 80
+      minimum_branch_coverage: 70
+      critical_path_coverage: 100
+      
+    critical_paths:
+      arabic:
+        - "Invoice field extraction"
+        - "VAT rule evaluation"
+        - "OCR confidence assessment"
+      tb:
+        - "Variance calculation"
+        - "Anomaly detection"
+        - "Commentary generation"
+      simula:
+        - "Taxonomy traversal"
+        - "Complexity scoring"
+        - "Critic evaluation"
+      regulations:
+        - "Requirement status validation"
+        - "Coverage calculation"
+        
+    frameworks:
+      python: "pytest >= 7.0"
+      typescript: "jest >= 29.0"
+      
+  integration_testing:
+    fixtures:
+      location: "tests/fixtures/"
+      checked_in: true
+      data_sanitization: "PII removed, amounts randomized"
+      
+    required_fixtures:
+      arabic:
+        - "tests/fixtures/arabic/sample_invoices.json"
+        - "tests/fixtures/arabic/ocr_outputs.json"
+        - "tests/fixtures/arabic/vat_rules.json"
+      tb:
+        - "tests/fixtures/tb/sample_tb_extract.json"
+        - "tests/fixtures/tb/sample_variances.json"
+      simula:
+        - "tests/fixtures/simula/sample_taxonomy.json"
+        - "tests/fixtures/simula/sample_training_examples.json"
+        
+    integration_suites:
+      - name: "Arabic E2E"
+        command: "pytest tests/integration/arabic/ -v"
+        expected_duration_minutes: 15
+      - name: "TB E2E"
+        command: "pytest tests/integration/tb/ -v"
+        expected_duration_minutes: 10
+      - name: "Simula Pipeline"
+        command: "pytest tests/integration/simula/ -v"
+        expected_duration_minutes: 30
+        
+  performance_benchmarks:
+    requirements:
+      arabic_invoice_extraction:
+        p95_latency_ms: 5000
+        throughput_per_hour: 100
+      tb_variance_detection:
+        p95_latency_ms: 1000
+        throughput_per_second: 10
+      simula_example_generation:
+        p95_latency_ms: 10000
+        throughput_per_hour: 500
+        
+    benchmark_suite:
+      command: "python -m pytest tests/benchmarks/ --benchmark-json=results.json"
+      ci_integration: "Run on merge to main"
+      
+  data_drift_detection:
+    monitoring:
+      metrics:
+        - name: "input_schema_violations"
+          threshold: "< 1% of records"
+          action: "Alert if exceeded"
+        - name: "extraction_confidence_distribution"
+          baseline: "Established during pilot"
+          alert_on: "Mean shift > 10%"
+        - name: "variance_distribution"
+          baseline: "Historical 24-month data"
+          alert_on: "KL divergence > 0.1"
+          
+    retraining_triggers:
+      - condition: "Performance degradation > 5%"
+        action: "Flag for model review"
+      - condition: "New document types detected > 10%"
+        action: "Expand training data"
+
+# =============================================================================
+# Section 6.3: Human-in-the-Loop Interface Requirements
+# Review Issue: "Human-in-the-loop is still a black box"
+# =============================================================================
+
+human_in_loop_specification:
+  description: |
+    Specification for human review interfaces, training, and audit trails.
+    
+  interface_requirements:
+    review_dashboard:
+      required_views:
+        - name: "Queue View"
+          purpose: "See pending items for review"
+          required_fields:
+            - "Item ID"
+            - "Priority"
+            - "Source (domain)"
+            - "Queued timestamp"
+            - "AI confidence score"
+            - "Estimated review time"
+            
+        - name: "Review View"
+          purpose: "Review individual items"
+          required_fields:
+            - "Original input (image/text)"
+            - "AI extraction/decision"
+            - "Confidence scores per field"
+            - "Suggested edits"
+            - "Accept/Edit/Reject buttons"
+            - "Comment field"
+            
+        - name: "Analytics View"
+          purpose: "Track review performance"
+          required_fields:
+            - "Daily throughput"
+            - "Average review time"
+            - "Acceptance rate"
+            - "Edit rate by field"
+            
+    accessibility:
+      wcag_level: "AA"
+      keyboard_navigation: true
+      screen_reader_compatible: true
+      
+  reviewer_training:
+    certification_requirements:
+      - domain: "arabic"
+        training_modules: ["VAT Basics", "Invoice Structure", "AI Output Review"]
+        certification_validity_months: 12
+      - domain: "tb"
+        training_modules: ["GL Basics", "Variance Analysis", "Commentary Review"]
+        certification_validity_months: 12
+        
+    competency_assessment:
+      method: "Practical test with known-answer items"
+      passing_score: 85
+      items_count: 20
+      
+  inter_rater_agreement:
+    metric: "Cohen's Kappa"
+    target: "> 0.8 (substantial agreement)"
+    measurement_frequency: "Monthly"
+    measurement_sample_size: 50
+    
+    disagreement_resolution:
+      process:
+        - "Flag for senior reviewer"
+        - "Document rationale"
+        - "Update training if systematic"
+        
+  escalation_paths:
+    by_domain:
+      arabic:
+        level_1: "GFS Analyst"
+        level_2: "Country Finance Lead"
+        level_3: "Regional Controller"
+        level_4: "CFO Office"
+      tb:
+        level_1: "GFS Analyst"
+        level_2: "Segment Lead"
+        level_3: "GFS Head"
+        
+    escalation_triggers:
+      - condition: "Amount > DOA threshold"
+        action: "Auto-escalate to level_2"
+      - condition: "AI confidence < 50%"
+        action: "Flag for level_2 review"
+      - condition: "Reviewer uncertain"
+        action: "Manual escalate option"
+        
+  review_sla:
+    by_priority:
+      critical:
+        definition: "Regulatory deadline or high-value transaction"
+        target_hours: 4
+      high:
+        definition: "Month-end close items"
+        target_hours: 24
+      normal:
+        definition: "Standard processing"
+        target_hours: 48
+      low:
+        definition: "Training data or non-urgent"
+        target_hours: 72
+        
+  audit_trail:
+    required_events:
+      - "Item queued for review"
+      - "Review started"
+      - "Field edited (before/after)"
+      - "Decision made (accept/reject)"
+      - "Escalation triggered"
+      - "Review completed"
+    retention_years: 7
+    storage: "HANA table REVIEW_AUDIT_LOG"
+
+# =============================================================================
+# Section 6.4: Schema Versioning Strategy
+# Review Issue: "No schema versioning strategy"
+# =============================================================================
+
+schema_versioning:
+  description: |
+    Strategy for versioning schemas and ensuring backward compatibility.
+    
+  versioning_scheme:
+    format: "MAJOR.MINOR.PATCH"
+    rules:
+      major:
+        definition: "Breaking changes - incompatible with previous versions"
+        examples:
+          - "Removing required field"
+          - "Changing field type"
+          - "Renaming required field"
+      minor:
+        definition: "Backward compatible additions"
+        examples:
+          - "Adding optional field"
+          - "Adding new enum value"
+          - "Expanding validation range"
+      patch:
+        definition: "Documentation or metadata changes"
+        examples:
+          - "Fixing description typo"
+          - "Adding examples"
+          
+  schema_metadata:
+    required_fields:
+      - "$id": "Unique schema identifier with version"
+      - "version": "Semantic version string"
+      - "deprecated": "Boolean - if schema is deprecated"
+      - "deprecation_date": "Date when deprecation announced"
+      - "removal_date": "Date when schema will be removed"
+      
+  backward_compatibility:
+    policy: |
+      Minor and patch versions MUST be backward compatible.
+      Major versions MAY break compatibility but require migration support.
+      
+    migration_support:
+      deprecation_notice_months: 6
+      migration_guide_required: true
+      migration_script_required: true
+      parallel_support_months: 3
+      
+  deployment_strategy:
+    blue_green:
+      description: "Deploy new schema version alongside old"
+      process:
+        - "Deploy new version to 'green' environment"
+        - "Run validation against historical data"
+        - "Gradual traffic shift (10% → 50% → 100%)"
+        - "Monitor for errors"
+        - "Rollback if error rate > 1%"
+        
+    data_migration:
+      for_stateful_stores:
+        - store: "HANA tables"
+          strategy: "Add columns, don't remove until migration complete"
+        - store: "JSON files"
+          strategy: "Support both old and new formats during transition"
+          
+  versioned_endpoints:
+    url_pattern: "/api/v{MAJOR}/..."
+    header_pattern: "Accept: application/vnd.sap-oss.v{MAJOR}+json"
+    
+  changelog:
+    location: "docs/schema/CHANGELOG.md"
+    format: "Keep a Changelog (https://keepachangelog.com)"
+    sections:
+      - "Added"
+      - "Changed"
+      - "Deprecated"
+      - "Removed"
+      - "Fixed"
+      - "Security"
+
+# =============================================================================
+# Section 6.5: Review Document Factual Corrections
+# Review Issue: Address specific factual errors in the review document
+# =============================================================================
+
+factual_corrections:
+  description: |
+    Corrections to factual errors in the April 2026 Critical Review document.
+    These corrections acknowledge valid criticisms while clarifying
+    misunderstandings.
+    
+  corrections:
+    - original_claim: "Unified schema registry is vaporware"
+      section: "Simula §2.6"
+      correction:
+        status: "Addressed"
+        evidence: |
+          Schema registry now implemented with 18 schemas across 4 domains.
+          Migration status changed from 'pending' to 'complete'.
+          Validator implemented at docs/schema/validate.py.
+        files_created:
+          - "docs/schema/registry.json (updated)"
+          - "docs/schema/validate.py"
+          - "docs/schema/arabic/*.schema.json (4 files)"
+          - "docs/schema/tb/*.schema.json (5 files)"
+          - "docs/schema/simula/*.schema.json (5 files)"
+          - "docs/schema/regulations/*.schema.json (4 files)"
+          
+    - original_claim: "'fitted ML threshold' — no ML model specified"
+      section: "TB §4.4"
+      correction:
+        status: "Addressed"
+        evidence: |
+          Concrete model specified: hybrid percentile-rolling threshold.
+          See docs/tb/machine-readable/specification-addendum.yaml §3.1.
+          Uses 95th percentile of historical variances with rolling average smoothing.
+        not_ml_note: |
+          The term 'ML threshold' in the original spec was misleading.
+          The implemented approach is statistical, not machine learning.
+          This is now clearly documented as 'hybrid_percentile_rolling' approach.
+          
+    - original_claim: "OCR thresholds calibrated on 3 documents"
+      section: "Arabic §3.3"
+      correction:
+        status: "Acknowledged with remediation"
+        evidence: |
+          Review is correct - original thresholds were preliminary.
+          OCR pilot design now specified with 200 document minimum.
+          See docs/arabic/machine-readable/specification-addendum.yaml §2.1.
+        mitigation: "Thresholds marked as 'TBD pending pilot' until validated"
+        
+    - original_claim: "EUC elimination claim is false"
+      section: "TB §1.1"
+      correction:
+        status: "Acknowledged with clarification"
+        evidence: |
+          Review is correct - EUCs are transformed, not eliminated.
+          Clarification added in docs/tb/machine-readable/specification-addendum.yaml §3.4.
+          Evidence folder remains an EUC by SOX/ISAE definitions.
+        original_wording_change:
+          from: "Elimination of three EUCs"
+          to: "Transformation of three EUCs from manual to system-managed"
+          
+    - original_claim: "Worked example lacks reproducibility"
+      section: "Simula §7"
+      correction:
+        status: "Addressed"
+        evidence: |
+          Full reproducibility details added.
+          See src/training/specification-addendum.yaml §4.4.
+          Includes: command, seeds, model versions, expected outputs.
+        caveat: |
+          LLM non-determinism means exact reproduction impossible.
+          Expected variance documented: ±5% on counts, ±0.02 on metrics.
+          
+    - original_claim: "Multiple requirements marked 'partial*' but asterisk not defined"
+      section: "Regulations §7.4"
+      correction:
+        status: "Addressed"
+        evidence: |
+          Complete status legend with all markers now defined.
+          See docs/regulations/machine-readable/specification-addendum.yaml §5.4.
+          Markers: * (downgraded), † (absent), ** (upgraded)
+          
+  unaddressed_items:
+    description: |
+      Some review findings are acknowledged but not fully addressed in this iteration.
+      These require production pilots or organizational decisions beyond technical scope.
+      
+    items:
+      - finding: "Production pilots before claiming readiness"
+        status: "Acknowledged - organizational decision"
+        plan: "Pilots scheduled for Q2 2026"
+        
+      - finding: "Unify testing frameworks across all domains"
+        status: "Deferred to v2.0"
+        reason: "Requires significant refactoring; lower priority than functional fixes"

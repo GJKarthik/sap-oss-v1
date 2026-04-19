@@ -1,0 +1,305 @@
+# =============================================================================
+# MoSCoW Priorities and Per-Domain Milestone IDs
+# =============================================================================
+# Single source of truth for roadmap traceability.
+# Mirrors the "Project Roadmap" chapters added to each LaTeX spec in
+# April 2026 (TB Ch 11, Arabic AP Ch 11, Simula Ch 10, Regulations Ch 11).
+#
+# Every data record that participates in a milestone should set:
+#   roadmap:
+#     milestones: [M01, M02]
+#     priority: Must
+#     requirement_ids: [REG-MGF-2.1.2-002]
+#
+# Schema: common/base-types.schema.json#/definitions/RoadmapReference
+# =============================================================================
+
+moscow_priority:
+  description: MoSCoW prioritisation per critical-path analysis
+  values:
+    - Must      # Critical path; no release without it
+    - Should    # Important; slip tolerable but undesirable
+    - Could     # Desirable; drop without scope damage
+    - "Won't"   # Explicitly out of scope for this release line
+
+# -----------------------------------------------------------------------------
+# Arabic AP — docs/latex/specs/arabic/chapters/11-project-roadmap.tex
+# -----------------------------------------------------------------------------
+arabic_milestones:
+  description: Arabic AP invoice-processing milestones (M01 -> M09)
+  values:
+    M01:
+      ticket: AP-ENG-001
+      priority: Must
+      title: Engine v1 (SA-only, FI/SI/ZR)
+      depends_on: []
+    M02:
+      ticket: AP-ENG-002
+      priority: Must
+      title: Engine v2 (full category coverage + reverse charge)
+      depends_on: [M01]
+    M03:
+      ticket: AP-PILOT-PREP
+      priority: Must
+      title: Pilot preparation (fixtures, runbook, rollback plan)
+      depends_on: [M02]
+    M04:
+      ticket: REG-INTG-AP-001
+      priority: Must
+      title: Regulations integration (REG-MGF-2.1.2-002 flip-trigger)
+      depends_on: [M02]
+    M05:
+      ticket: AP-PILOT-001
+      priority: Must
+      title: SA pilot (shadow-mode, limited tenants)
+      depends_on: [M03, M04]
+    M06:
+      ticket: AP-BETA-001
+      priority: Must
+      title: Beta (SA full rollout)
+      depends_on: [M05]
+    M07:
+      ticket: AP-PARALLEL-001
+      priority: Must
+      title: Parallel run (AI + legacy, delta reconciliation)
+      depends_on: [M06]
+    M08:
+      ticket: AP-GA-001
+      priority: Must
+      title: SA GA
+      depends_on: [M07]
+    M09:
+      ticket: AP-BC-REFRESH
+      priority: Must
+      title: Business continuity refresh (DR drill, runbook)
+      depends_on: [M08]
+  should:
+    S01:
+      ticket: AP-EG-001
+      priority: Should
+      title: Egypt (ETA) rollout
+      depends_on: [M08]
+    S02:
+      ticket: AP-BH-001
+      priority: Should
+      title: Bahrain (NBR) rollout
+      depends_on: [M08]
+    S03:
+      ticket: AP-QA-001
+      priority: Should
+      title: Qatar (QTA) rollout (no-VAT variant)
+      depends_on: [M08]
+  could:
+    C01:
+      ticket: AP-MULTILINGUAL-001
+      priority: Could
+      title: Multilingual UI (v2.0 scope)
+      depends_on: [M08]
+    C02:
+      ticket: AP-PROMPT-TUNE-001
+      priority: Could
+      title: Prompt tuning campaign (post-GA)
+      depends_on: [M08]
+  wont:
+    W01:
+      priority: "Won't"
+      title: Non-Arabic script support (Farsi, Urdu) in v1
+    W02:
+      priority: "Won't"
+      title: Single-person review approval flow
+
+# -----------------------------------------------------------------------------
+# TB — docs/latex/specs/tb/chapters/11-project-roadmap.tex
+# -----------------------------------------------------------------------------
+tb_milestones:
+  description: Trial Balance review milestones (M01 -> M07)
+  values:
+    M01:
+      ticket: TB-SCHEMA-001
+      priority: Must
+      title: Data-schema freeze (234 entities, Chart of Accounts)
+      depends_on: []
+    M02:
+      ticket: TB-AI-001
+      priority: Must
+      title: AI pipeline (commentary draft, statistical variance detection)
+      depends_on: [M01]
+    M03:
+      ticket: TB-CTRL-001
+      priority: Must
+      title: Controls engine (DP-001 .. DP-005)
+      depends_on: [M02]
+    M04:
+      ticket: TB-DASH-001
+      priority: Must
+      title: Review dashboard
+      depends_on: [M03]
+    M05:
+      ticket: TB-PILOT-001
+      priority: Must
+      title: Pilot (HKG entities, parallel with legacy)
+      depends_on: [M04]
+    M06:
+      ticket: TB-GA-001
+      priority: Must
+      title: GA (all in-scope entities)
+      depends_on: [M05]
+    M07:
+      ticket: TB-BC-REFRESH
+      priority: Must
+      title: BC refresh + V2 trigger evaluation
+      depends_on: [M06]
+  should:
+    S01:
+      ticket: REG-INTG-TB-001
+      priority: Should
+      title: Regulations integration (audit + identity attribution)
+      depends_on: [M03]
+  could:
+    C01:
+      ticket: TB-V2-GATE
+      priority: Could
+      title: V2 feature gate (see sec:v2-trigger)
+      depends_on: [M07]
+
+# -----------------------------------------------------------------------------
+# Simula — docs/latex/specs/simula/chapters/10-project-roadmap.tex
+# -----------------------------------------------------------------------------
+simula_milestones:
+  description: Simula training-data generation milestones (M01 -> M08)
+  values:
+    M01:
+      ticket: SIM-ENG-001
+      priority: Must
+      title: Extraction pipeline (HANA-direct, schema-aware)
+      depends_on: []
+    M02:
+      ticket: SIM-TAX-001
+      priority: Must
+      title: Taxonomy engine (tree construction, leaf targeting)
+      depends_on: [M01]
+    M03:
+      ticket: SIM-GEN-001
+      priority: Must
+      title: Generation engine (vLLM TurboQuant, critic loop)
+      depends_on: [M02]
+    M04:
+      ticket: SIM-ENV-001
+      priority: Must
+      title: Environment + CLI (reproducible pipeline invocation)
+      depends_on: [M03]
+    M05:
+      ticket: SIM-HANA-001
+      priority: Must
+      title: HANA spatial policy (spatial_unknown_srid_policy)
+      depends_on: [M01]
+    M06:
+      ticket: SIM-RUN-TB
+      priority: Must
+      title: Reference run (commit b8d40a1, tag simula-v1.2-worked-example, seed 20251115)
+      depends_on: [M04, M05]
+      reproducibility:
+        commit: b8d40a1
+        tag: simula-v1.2-worked-example
+        seed: 20251115
+    M07:
+      ticket: SIM-REL-001
+      priority: Must
+      title: Release (artefact publication, downstream consumers notified)
+      depends_on: [M06]
+    M08:
+      ticket: SIM-BC-REFRESH
+      priority: Must
+      title: BC refresh (dataset regeneration cadence, HANA schema drift monitor)
+      depends_on: [M07]
+  should:
+    S01:
+      ticket: SIM-CORPUS-AP
+      priority: Should
+      title: AP corpus contribution (Arabic invoices)
+      depends_on: [M06]
+    S02:
+      ticket: SIM-CORPUS-REG
+      priority: Should
+      title: Regulations corpus contribution
+      depends_on: [M06]
+    S03:
+      ticket: SIM-CONSUMER-DOCS
+      priority: Should
+      title: Consumer documentation (schema, usage examples)
+      depends_on: [M07]
+
+# -----------------------------------------------------------------------------
+# Regulations — docs/latex/specs/regulations/chapters/11-project-roadmap.tex
+# -----------------------------------------------------------------------------
+regulations_milestones:
+  description: Regulations / AI governance milestones (M01 -> M07)
+  values:
+    M01:
+      ticket: REG-ENG-001
+      priority: Must
+      title: Agent index + MAS MGF framework
+      depends_on: []
+    M02:
+      ticket: REG-AUDIT-001
+      priority: Must
+      title: Audit service (reserve-before-action pattern)
+      depends_on: [M01]
+    M03:
+      ticket: REG-IDENT-001
+      priority: Must
+      title: Identity attribution (agent -> human chain)
+      depends_on: [M02]
+    M04:
+      ticket: REG-MON-001
+      priority: Must
+      title: Monitoring + graceful degradation (4-rung ladder, model_tier audit tag)
+      depends_on: [M02]
+    M05:
+      ticket: REG-INTG-TB-001
+      priority: Must
+      title: TB integration (first consumer)
+      depends_on: [M03, M04]
+    M06:
+      ticket: REG-GA-001
+      priority: Must
+      title: GA
+      depends_on: [M05]
+    M07:
+      ticket: REG-BC-REFRESH
+      priority: Must
+      title: BC refresh + MGF review cadence
+      depends_on: [M06]
+  should:
+    S01:
+      ticket: REG-INTG-AP-001
+      priority: Should
+      title: AP integration (flips REG-MGF-2.1.2-002 to compliant)
+      depends_on: [M06]
+      flips:
+        - requirement_id: REG-MGF-2.1.2-002
+          from_status: partial
+          to_status: compliant
+    S02:
+      ticket: REG-INTG-SIM-001
+      priority: Should
+      title: Simula integration (training-data governance)
+      depends_on: [M06]
+    S03:
+      ticket: REG-MGF-V1-1
+      priority: Should
+      title: MAS MGF v1.1 uplift (new control families)
+      depends_on: [M06]
+
+# -----------------------------------------------------------------------------
+# Status markers — extends enums.yaml#/requirement_status
+# -----------------------------------------------------------------------------
+status_markers:
+  description: Special markers on requirement_status
+  values:
+    "*":
+      meaning: Downgraded from implemented (regression tracked in status_note)
+    "**":
+      meaning: Upgraded from partial/gap (e.g., REG-MGF-2.1.2-002 after S01 flip)
+    "†":
+      meaning: Completely absent (no implementation yet)

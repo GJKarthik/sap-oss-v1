@@ -1,0 +1,155 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://sap-oss.github.io/schema/regulations/requirement.schema.json",
+  "title": "Requirement with Status",
+  "description": "Schema for regulatory requirements with implementation status (Chapter 7). Supports status-flip tracking for milestones like REG-MGF-2.1.2-002 (partial -> compliant after Arabic AP integration).",
+  "type": "object",
+  "required": ["requirement_id", "regulation_id", "description", "status"],
+  "additionalProperties": false,
+  "properties": {
+    "requirement_id": {
+      "$ref": "https://sap-oss.github.io/schema/common/base-types.schema.json#/definitions/RequirementId",
+      "description": "Unique ID (e.g., REG-MGF-2.1.2-002)."
+    },
+    "regulation_id": {
+      "type": "string",
+      "description": "Parent regulation ID"
+    },
+    "section_reference": {
+      "type": "string",
+      "description": "Source document section (e.g., 2.1.2)"
+    },
+    "description": {
+      "type": "string",
+      "description": "Requirement description"
+    },
+    "obligation_level": {
+      "type": "string",
+      "enum": ["must", "should", "may"],
+      "description": "Normative strength per docs/schema/common/enums.yaml"
+    },
+    "status": {
+      "type": "string",
+      "enum": ["implemented", "compliant", "partial", "gap", "na", "missing"],
+      "description": "Implementation status per docs/schema/common/enums.yaml. 'compliant' = implemented AND validated against current regulation version."
+    },
+    "status_note": {
+      "type": "string",
+      "description": "Note explaining status (e.g., reason for partial/missing, or the milestone that triggers a flip)"
+    },
+    "status_marker": {
+      "type": "string",
+      "enum": ["*", "**", "\u2020"],
+      "description": "Special marker: * = downgraded from implemented, ** = upgraded from partial/gap, \u2020 = completely absent. See common/moscow.yaml#/status_markers."
+    },
+    "flip_trigger": {
+      "type": "object",
+      "description": "Milestone that will flip this requirement to a target status. Used for partial requirements whose resolution is scheduled.",
+      "additionalProperties": false,
+      "properties": {
+        "domain": {
+          "type": "string",
+          "enum": ["arabic", "tb", "simula", "regulations"],
+          "description": "Domain whose milestone will trigger the flip."
+        },
+        "milestone_id": {
+          "$ref": "https://sap-oss.github.io/schema/common/base-types.schema.json#/definitions/MilestoneId",
+          "description": "Milestone ID (e.g., S01 in Regulations Ch 11 Should section)."
+        },
+        "ticket": {
+          "type": "string",
+          "description": "Ticket identifier (e.g., REG-INTG-AP-001)"
+        },
+        "from_status": {
+          "type": "string",
+          "enum": ["implemented", "compliant", "partial", "gap", "na", "missing"]
+        },
+        "to_status": {
+          "type": "string",
+          "enum": ["implemented", "compliant", "partial", "gap", "na", "missing"]
+        }
+      },
+      "required": ["domain", "milestone_id", "from_status", "to_status"]
+    },
+    "implementation": {
+      "$ref": "#/definitions/implementation_reference"
+    },
+    "verification": {
+      "$ref": "#/definitions/verification_reference"
+    },
+    "applicability": {
+      "type": "array",
+      "items": {"type": "string"},
+      "description": "Domains this applies to (e.g., ['tb', 'arabic', 'simula'])"
+    },
+    "last_reviewed": {
+      "type": "string",
+      "format": "date",
+      "description": "Date of last status review"
+    },
+    "roadmap": {
+      "$ref": "https://sap-oss.github.io/schema/common/base-types.schema.json#/definitions/RoadmapReference",
+      "description": "Roadmap traceability for this requirement"
+    },
+    "metadata": {
+      "$ref": "https://sap-oss.github.io/schema/common/base-types.schema.json#/definitions/Metadata"
+    }
+  },
+  "definitions": {
+    "implementation_reference": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "primary": {
+          "type": "string",
+          "description": "Primary implementation pointer (file path or document ref)"
+        },
+        "code_files": {
+          "type": "array",
+          "items": {"type": "string"},
+          "description": "Concrete code file paths (not document references)"
+        },
+        "spec_sections": {
+          "type": "array",
+          "items": {"type": "string"},
+          "description": "Specification section references"
+        },
+        "is_concrete": {
+          "type": "boolean",
+          "description": "Whether pointer is to actual code vs documentation"
+        }
+      }
+    },
+    "verification_reference": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "primary": {
+          "type": "string",
+          "description": "Primary verification method"
+        },
+        "test_files": {
+          "type": "array",
+          "items": {"type": "string"},
+          "description": "Test file paths"
+        },
+        "aiverify_plugin": {
+          "type": "string",
+          "description": "AI Verify plugin reference (if applicable)"
+        },
+        "moonshot_benchmark": {
+          "type": "string",
+          "description": "Moonshot benchmark reference (if applicable)"
+        },
+        "manual_process": {
+          "type": "string",
+          "description": "Manual verification process"
+        },
+        "is_automated": {
+          "type": "boolean",
+          "description": "Whether verification is automated"
+        }
+      }
+    }
+  }
+}

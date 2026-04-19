@@ -1,0 +1,146 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://sap-oss.github.io/schema/regulations/corpus.schema.json",
+  "title": "Regulations Corpus",
+  "description": "Schema for the complete regulations corpus (Chapter 3)",
+  "type": "object",
+  "required": [
+    "corpus_id",
+    "version",
+    "regulations",
+    "requirements"
+  ],
+  "properties": {
+    "corpus_id": {
+      "type": "string",
+      "description": "Unique corpus identifier"
+    },
+    "version": {
+      "type": "string",
+      "description": "Corpus version"
+    },
+    "regulations": {
+      "type": "array",
+      "items": {
+        "$ref": "regulation.schema.json"
+      },
+      "description": "Regulations in corpus"
+    },
+    "requirements": {
+      "type": "array",
+      "items": {
+        "$ref": "requirement.schema.json"
+      },
+      "description": "Requirements extracted from regulations"
+    },
+    "tools": {
+      "type": "array",
+      "items": {
+        "$ref": "conformance-tool.schema.json"
+      },
+      "description": "Conformance tools"
+    },
+    "coverage_summary": {
+      "$ref": "#/definitions/coverage_summary"
+    },
+    "status_legend": {
+      "$ref": "#/definitions/status_legend",
+      "description": "Legend for status values including special markers"
+    },
+    "metadata": {
+      "$ref": "https://sap-oss.github.io/schema/common/base-types.schema.json#/definitions/Metadata"
+    }
+  },
+  "definitions": {
+    "coverage_summary": {
+      "type": "object",
+      "properties": {
+        "total_requirements": {
+          "type": "integer"
+        },
+        "by_status": {
+          "type": "object",
+          "properties": {
+            "implemented": {
+              "type": "integer"
+            },
+            "partial": {
+              "type": "integer"
+            },
+            "gap": {
+              "type": "integer"
+            },
+            "na": {
+              "type": "integer"
+            },
+            "missing": {
+              "type": "integer"
+            }
+          },
+          "additionalProperties": false
+        },
+        "by_regulation": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "object",
+            "properties": {
+              "total": {
+                "type": "integer"
+              },
+              "covered_sections": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "uncovered_sections": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "description": "Coverage heat map per regulation (addresses review issue 5.2)"
+        }
+      },
+      "additionalProperties": false
+    },
+    "status_legend": {
+      "type": "object",
+      "description": "Legend for status values (addresses review issue 5.4)",
+      "properties": {
+        "implemented": {
+          "type": "string",
+          "default": "Fully implemented and production-validated"
+        },
+        "partial": {
+          "type": "string",
+          "default": "Code exists but not production-validated"
+        },
+        "partial_star": {
+          "type": "string",
+          "default": "* = Downgraded from 'implemented' - code exists but production validation pending"
+        },
+        "gap": {
+          "type": "string",
+          "default": "Identified gap with remediation plan"
+        },
+        "na": {
+          "type": "string",
+          "default": "Not applicable to current use cases"
+        },
+        "missing": {
+          "type": "string",
+          "default": "Requirement not addressed"
+        },
+        "missing_dagger": {
+          "type": "string",
+          "default": "† = Completely absent, no implementation exists"
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}

@@ -1,0 +1,301 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://sap-oss.github.io/schema/arabic/ocr-result.schema.json",
+  "title": "OCR Extraction Result",
+  "description": "Schema for OCR extraction results from Arabic invoice documents (Stage 2 output)",
+  "type": "object",
+  "required": [
+    "ocr_id",
+    "source_document",
+    "pages",
+    "overall_confidence",
+    "status"
+  ],
+  "properties": {
+    "ocr_id": {
+      "type": "string",
+      "description": "Unique identifier for this OCR extraction"
+    },
+    "source_document": {
+      "$ref": "#/definitions/source_reference",
+      "description": "Reference to the source document"
+    },
+    "pages": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/page_result"
+      },
+      "description": "Per-page OCR results"
+    },
+    "overall_confidence": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 100,
+      "description": "Mean confidence across all pages (percentage)"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "accepted",
+        "flagged_review",
+        "rejected"
+      ],
+      "description": "Quality gate outcome based on confidence thresholds"
+    },
+    "quality_gate": {
+      "$ref": "#/definitions/quality_gate",
+      "description": "Quality gate evaluation details"
+    },
+    "combined_text": {
+      "type": "string",
+      "description": "Combined OCR text from all pages"
+    },
+    "extracted_text_path": {
+      "type": "string",
+      "description": "Path to extracted text file (e.g., extracted-text/<slug>.txt)"
+    },
+    "language_detected": {
+      "type": "string",
+      "enum": [
+        "ar",
+        "en",
+        "ar+en"
+      ],
+      "description": "Detected document language(s)"
+    },
+    "processing_metadata": {
+      "$ref": "#/definitions/processing_metadata",
+      "description": "OCR processing details"
+    },
+    "metadata": {
+      "$ref": "https://sap-oss.github.io/schema/common/base-types.schema.json#/definitions/Metadata",
+      "description": "Record metadata"
+    }
+  },
+  "definitions": {
+    "source_reference": {
+      "type": "object",
+      "required": [
+        "path",
+        "sha256"
+      ],
+      "properties": {
+        "path": {
+          "type": "string",
+          "description": "Relative path to source document"
+        },
+        "sha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$",
+          "description": "SHA-256 hash of source document"
+        },
+        "mime_type": {
+          "type": "string",
+          "enum": [
+            "application/pdf",
+            "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            "text/plain",
+            "message/rfc822",
+            "image/png",
+            "image/jpeg",
+            "image/tiff"
+          ],
+          "description": "MIME type of source document"
+        },
+        "file_size_bytes": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "File size in bytes"
+        }
+      },
+      "additionalProperties": false
+    },
+    "page_result": {
+      "type": "object",
+      "required": [
+        "page_number",
+        "confidence",
+        "text"
+      ],
+      "properties": {
+        "page_number": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Page number (1-indexed)"
+        },
+        "confidence": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 100,
+          "description": "Mean confidence for this page (percentage)"
+        },
+        "text": {
+          "type": "string",
+          "description": "Extracted text from this page"
+        },
+        "word_count": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Number of words extracted"
+        },
+        "token_confidences": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/token_confidence"
+          },
+          "description": "Per-token confidence scores (optional, for debugging)"
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "accepted",
+            "flagged_review",
+            "rejected"
+          ],
+          "description": "Quality gate outcome for this page"
+        },
+        "image_path": {
+          "type": "string",
+          "description": "Path to rendered page image (for re-OCR at higher DPI)"
+        }
+      },
+      "additionalProperties": false
+    },
+    "token_confidence": {
+      "type": "object",
+      "properties": {
+        "text": {
+          "type": "string",
+          "description": "Token text"
+        },
+        "confidence": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 100,
+          "description": "Tesseract confidence value"
+        },
+        "bounding_box": {
+          "$ref": "#/definitions/bounding_box",
+          "description": "Token location on page"
+        }
+      },
+      "additionalProperties": false
+    },
+    "bounding_box": {
+      "type": "object",
+      "properties": {
+        "x": {
+          "type": "integer",
+          "description": "Left edge (pixels)"
+        },
+        "y": {
+          "type": "integer",
+          "description": "Top edge (pixels)"
+        },
+        "width": {
+          "type": "integer",
+          "description": "Width (pixels)"
+        },
+        "height": {
+          "type": "integer",
+          "description": "Height (pixels)"
+        }
+      },
+      "additionalProperties": false
+    },
+    "quality_gate": {
+      "type": "object",
+      "required": [
+        "threshold_reject",
+        "threshold_review",
+        "evaluation_result"
+      ],
+      "properties": {
+        "threshold_reject": {
+          "type": "number",
+          "description": "Confidence below this triggers rejection (default: 30%)"
+        },
+        "threshold_review": {
+          "type": "number",
+          "description": "Confidence below this triggers human review (default: 55%)"
+        },
+        "evaluation_result": {
+          "type": "string",
+          "enum": [
+            "pass",
+            "review",
+            "fail"
+          ],
+          "description": "Quality gate evaluation result"
+        },
+        "rejection_reason": {
+          "type": "string",
+          "enum": [
+            "ocr_low_confidence",
+            "unsupported_media",
+            "empty_content",
+            "processing_error"
+          ],
+          "description": "Reason for rejection (if applicable)"
+        },
+        "flagged_pages": {
+          "type": "array",
+          "items": {
+            "type": "integer"
+          },
+          "description": "Page numbers flagged for review"
+        },
+        "calibration_note": {
+          "type": "string",
+          "default": "Thresholds are preliminary estimates (TBD pending pilot with ≥50 docs per country)",
+          "description": "Note about threshold calibration status"
+        }
+      },
+      "additionalProperties": false
+    },
+    "processing_metadata": {
+      "type": "object",
+      "properties": {
+        "ocr_engine": {
+          "type": "string",
+          "default": "tesseract",
+          "description": "OCR engine used"
+        },
+        "ocr_version": {
+          "type": "string",
+          "description": "OCR engine version"
+        },
+        "language_model": {
+          "type": "string",
+          "default": "ara+eng",
+          "description": "Tesseract language model used"
+        },
+        "render_dpi": {
+          "type": "integer",
+          "default": 300,
+          "description": "DPI used for PDF-to-image conversion"
+        },
+        "psm_mode": {
+          "type": "integer",
+          "description": "Tesseract page segmentation mode"
+        },
+        "processing_time_ms": {
+          "type": "integer",
+          "description": "Total processing time in milliseconds"
+        },
+        "processed_at": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Processing timestamp (ISO 8601)"
+        },
+        "retry_count": {
+          "type": "integer",
+          "default": 0,
+          "description": "Number of re-OCR attempts (e.g., at higher DPI)"
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}
