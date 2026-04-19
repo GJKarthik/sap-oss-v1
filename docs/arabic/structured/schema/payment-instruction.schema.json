@@ -1,0 +1,97 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://sap-oss/docs/arabic/structured/schema/payment-instruction.schema.json",
+  "title": "Payment Instruction",
+  "description": "Vendor payment authorization memo, e.g. Qatar QCSD annual fee memo and internal payment instructions.",
+  "type": "object",
+  "required": ["id", "payer", "vendor", "invoice", "amount", "bank", "approval_chain", "source_document"],
+  "additionalProperties": false,
+  "properties": {
+    "id": { "type": "string" },
+    "schema_ref": { "type": "string", "const": "payment-instruction.schema.json" },
+    "country": { "type": "string", "enum": ["EG", "SA", "QA", "BH", "IQ", "AE", "PK"] },
+    "payer": {
+      "type": "object",
+      "required": ["business_unit"],
+      "additionalProperties": false,
+      "properties": {
+        "business_unit": { "type": "string", "enum": ["U140", "BU141", "SS_Ops"] },
+        "department": { "type": "string" },
+        "preparer_psid": { "type": "string" }
+      }
+    },
+    "vendor": {
+      "type": "object",
+      "required": ["vendor_id", "name"],
+      "additionalProperties": false,
+      "properties": {
+        "vendor_id": { "type": "string" },
+        "name": { "type": "string" },
+        "name_ar": { "type": "string" }
+      }
+    },
+    "invoice": {
+      "type": "object",
+      "required": ["number", "date"],
+      "additionalProperties": false,
+      "properties": {
+        "number": { "type": "string" },
+        "date": { "type": "string", "format": "date" },
+        "expense_nature": { "type": "string" }
+      }
+    },
+    "chart_field": {
+      "type": "string",
+      "description": "Composite GL chart string, e.g. 665011-4551-800 (account-product-operating_unit)."
+    },
+    "amount": {
+      "type": "object",
+      "required": ["currency", "value"],
+      "additionalProperties": false,
+      "properties": {
+        "currency": { "type": "string", "pattern": "^[A-Z]{3}$" },
+        "value": { "type": "number" },
+        "in_words": { "type": "string" }
+      }
+    },
+    "bank": {
+      "type": "object",
+      "required": ["account_number"],
+      "additionalProperties": false,
+      "properties": {
+        "bank_name": { "type": "string" },
+        "account_number": { "type": "string" },
+        "iban": { "type": "string" },
+        "swift": { "type": "string" }
+      }
+    },
+    "payment_method": { "type": "string", "enum": ["BANK_TRANSFER", "CHEQUE", "CASH", "EOPS_RECORDED"] },
+    "approval_chain": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["role", "psid"],
+        "additionalProperties": false,
+        "properties": {
+          "role": { "type": "string", "enum": ["CC_OWNER", "SUPPLY_CHAIN_MGR", "CFO", "CFO_DELEGATE", "MD", "POLICY_OWNER", "SENIOR_FINANCE_MGR", "FIN_MGR"] },
+          "psid": { "type": "string" },
+          "name": { "type": "string" },
+          "approved_at": { "type": "string", "format": "date-time" },
+          "note": { "type": "string" }
+        }
+      }
+    },
+    "checklist": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "approval_email": { "type": "boolean" },
+        "invoice_copy": { "type": "boolean" },
+        "supporting_documents": { "type": "boolean" },
+        "vendor_screening_valid": { "type": "boolean" },
+        "vendor_screening_timestamp": { "type": "string", "format": "date-time" }
+      }
+    },
+    "source_document": { "$ref": "invoice.schema.json#/definitions/source_document" }
+  }
+}

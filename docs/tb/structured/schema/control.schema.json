@@ -1,0 +1,48 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://sap-oss.local/schemas/tb/control.schema.json",
+  "title": "Trial Balance Control",
+  "description": "Control statement (EUC or process) governing a TB review activity.",
+  "type": "object",
+  "required": ["controlId", "controlObjective", "controlType", "frequency", "owner", "relatedStates"],
+  "additionalProperties": false,
+  "properties": {
+    "controlId": {
+      "type": "string",
+      "pattern": "^EUC-[0-9]{3}$",
+      "description": "Short identifier unique within the TB corpus."
+    },
+    "eucReference": {
+      "type": "string",
+      "pattern": "^EX/[0-9]{3}/[0-9]{7}/[0-9]{4}/[0-9]{3}$",
+      "description": "Canonical EUC reference (e.g., EX/200/1353107/0001/000)."
+    },
+    "controlObjective": {"type": "string"},
+    "controlType": {"type": "string", "enum": ["preventive", "detective", "corrective"]},
+    "frequency": {"type": "string", "enum": ["daily", "weekly", "monthly", "quarterly", "annually"]},
+    "timing": {
+      "type": "string",
+      "description": "Month-end-relative phase (e.g., M-3, M-2 to M+5, M+5)."
+    },
+    "owner": {"type": "string"},
+    "evidenceLocation": {"type": "string"},
+    "relatedStates": {
+      "type": "array",
+      "items": {"type": "string"},
+      "minItems": 1,
+      "description": "Workflow state IDs to which this control applies."
+    },
+    "description": {"type": "string"},
+    "workflowRef": {"type": "string"},
+    "source_document": {
+      "type": "object",
+      "required": ["path"],
+      "properties": {
+        "path": {"type": "string"},
+        "page": {"type": "integer", "minimum": 1},
+        "sha256": {"type": "string"}
+      },
+      "additionalProperties": false
+    }
+  }
+}

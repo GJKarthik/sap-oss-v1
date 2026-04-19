@@ -1,0 +1,88 @@
+{
+  "toolId": "aiverify",
+  "name": "AI Verify",
+  "publisher": "AI Verify Foundation / IMDA Singapore",
+  "version": "2.0",
+  "vendoredPath": "docs/regulations/aiverify-main",
+  "kind": "testing-framework",
+  "license": "Apache-2.0",
+  "upstreamUrl": "https://aiverifyfoundation.sg/what-is-ai-verify/",
+  "appliesToRegulations": ["mas-mgf-agentic-ai-v1"],
+  "plugins": [
+    {
+      "pluginId": "aiverify.stock.process-checklist",
+      "path": "docs/regulations/aiverify-main/stock-plugins/aiverify.stock.process-checklist",
+      "purpose": "11-principle process-checklist questionnaire aligned with the AI Verify testing framework.",
+      "algorithmType": "process",
+      "inputs": ["reviewer responses (markdown/JSON)"],
+      "outputs": ["checklist JSON", "MDX widget"]
+    },
+    {
+      "pluginId": "aiverify.stock.fairness-metrics-toolbox-for-classification",
+      "path": "docs/regulations/aiverify-main/stock-plugins/aiverify.stock.fairness-metrics-toolbox-for-classification",
+      "purpose": "Subgroup fairness metrics for supervised classification models.",
+      "algorithmType": "fairness",
+      "inputs": ["tabular dataset with protected attributes", "classifier predictions"],
+      "outputs": ["disparity table", "fairness summary"]
+    },
+    {
+      "pluginId": "aiverify.stock.fairness-metrics-toolbox-for-regression",
+      "path": "docs/regulations/aiverify-main/stock-plugins/aiverify.stock.fairness-metrics-toolbox-for-regression",
+      "purpose": "Regression-specific fairness analysis.",
+      "algorithmType": "fairness"
+    },
+    {
+      "pluginId": "aiverify.stock.robustness-toolbox",
+      "path": "docs/regulations/aiverify-main/stock-plugins/aiverify.stock.robustness-toolbox",
+      "purpose": "Perturbation-based robustness assessment.",
+      "algorithmType": "robustness"
+    },
+    {
+      "pluginId": "aiverify.stock.image-corruption-toolbox",
+      "path": "docs/regulations/aiverify-main/stock-plugins/aiverify.stock.image-corruption-toolbox",
+      "purpose": "Computer-vision corruption robustness evaluation.",
+      "algorithmType": "robustness"
+    },
+    {
+      "pluginId": "aiverify.stock.shap-toolbox",
+      "path": "docs/regulations/aiverify-main/stock-plugins/aiverify.stock.shap-toolbox",
+      "purpose": "SHAP-based feature attribution and explanations.",
+      "algorithmType": "explainability"
+    },
+    {
+      "pluginId": "aiverify.stock.partial-dependence-plot",
+      "path": "docs/regulations/aiverify-main/stock-plugins/aiverify.stock.partial-dependence-plot",
+      "purpose": "Partial-dependence plots for feature effect analysis.",
+      "algorithmType": "explainability"
+    },
+    {
+      "pluginId": "aiverify.stock.accumulated-local-effect",
+      "path": "docs/regulations/aiverify-main/stock-plugins/aiverify.stock.accumulated-local-effect",
+      "purpose": "Accumulated local-effect explanations.",
+      "algorithmType": "explainability"
+    },
+    {
+      "pluginId": "aiverify.stock.veritas",
+      "path": "docs/regulations/aiverify-main/stock-plugins/aiverify.stock.veritas",
+      "purpose": "Financial-services fairness testing per MAS Veritas.",
+      "algorithmType": "financial"
+    },
+    {
+      "pluginId": "aiverify.stock.reports",
+      "path": "docs/regulations/aiverify-main/stock-plugins/aiverify.stock.reports",
+      "purpose": "Report and widget rendering for the AI Verify portal.",
+      "algorithmType": "report"
+    },
+    {
+      "pluginId": "aiverify.stock.decorators",
+      "path": "docs/regulations/aiverify-main/stock-plugins/aiverify.stock.decorators",
+      "purpose": "Common decorators and shared UI primitives.",
+      "algorithmType": "other"
+    }
+  ],
+  "integrationPoints": [
+    {"kind": "python-api", "description": "aiverify-test-engine Python package for running algorithms."},
+    {"kind": "docker", "description": "aiverify-apigw and portal shipped as container images."},
+    {"kind": "cli", "description": "Test engine worker invocable via CLI from stock-plugin algorithm directories."}
+  ]
+}

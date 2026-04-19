@@ -1,0 +1,29 @@
+{
+  "id": "po-eproc",
+  "schema_ref": "approval-workflow.schema.json",
+  "path": "PO_EPROC",
+  "description": "Standard PO invoice route via eProcurement → Tax-Q → GL, per Activity 3 of the Bahrain AP DOI.",
+  "states": [
+    { "code": "DRAFT",           "name": "Draft (PR raised in eProc)" },
+    { "code": "PO_ISSUED",       "name": "PO issued to vendor" },
+    { "code": "INVOICE_RECEIVED","name": "Vendor invoice received and attached to PO" },
+    { "code": "TAX_Q_REVIEW",    "name": "Finance assigns POP and VAT category in Tax-Q" },
+    { "code": "POSTED",          "name": "Posted to PSAP / PSGL" },
+    { "code": "PAID",            "name": "Paid via eBBS", "terminal": true },
+    { "code": "REJECTED",        "name": "Rejected — returned to requester", "terminal": true }
+  ],
+  "transitions": [
+    { "from": "DRAFT",           "to": "PO_ISSUED",        "trigger": "PR approved",           "required_role": "CC_OWNER" },
+    { "from": "PO_ISSUED",       "to": "INVOICE_RECEIVED", "trigger": "Vendor invoice upload" },
+    { "from": "INVOICE_RECEIVED","to": "TAX_Q_REVIEW",     "trigger": "AP routes to Tax-Q" },
+    { "from": "TAX_Q_REVIEW",    "to": "POSTED",           "trigger": "VAT + POP assigned",     "required_role": "FIN_MGR",
+      "preconditions": ["VAT category in {FI,SI,ZR,EX,RC,TCN,UR,CBR,OS,OTHER}", "FCY revalued at central bank rate"] },
+    { "from": "POSTED",          "to": "PAID",             "trigger": "APU releases payment",   "preconditions": ["Amount within DOA per GDAM"] },
+    { "from": "INVOICE_RECEIVED","to": "REJECTED",         "trigger": "Missing approvals / mismatch" }
+  ],
+  "delegation_of_authority": [
+    { "max_amount_currency": "BHD", "max_amount": 10000,    "required_role": "CC_OWNER" },
+    { "max_amount_currency": "BHD", "max_amount": 100000,   "required_role": "SUPPLY_CHAIN_MGR" },
+    { "max_amount_currency": "BHD", "max_amount": 1000000,  "required_role": "CFO" }
+  ]
+}

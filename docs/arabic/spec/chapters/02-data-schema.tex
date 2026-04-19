@@ -1,0 +1,223 @@
+\chapter{Canonical data schema}\label{ch:schema}
+
+\section{Layout of \texttt{structured/}}
+
+The machine-readable corpus is organised as in \cref{tab:layout}.
+All records validate against a JSON Schema Draft~07 file under
+\corpus\texttt{structured/schema/}. The
+\corpus\texttt{structured/validate.py} script walks the tree, resolves
+\texttt{\$ref} entries via a local registry (so offline validation
+succeeds), and exits non-zero on any failure; it is the authoritative
+acceptance gate for this chapter.
+
+\begin{table}[htbp]
+\centering
+\caption{Directory layout under \corpus\texttt{structured/}.}
+\label{tab:layout}
+\small
+\begin{tabularx}{\linewidth}{@{}l X@{}}
+\toprule
+\textbf{Path} & \textbf{Contents} \\ \midrule
+\texttt{schema/invoice.schema.json}            & Canonical invoice / assessment record. \\
+\texttt{schema/vat-checklist.schema.json}      & Regulator checklist (KSA 11-point; extensible). \\
+\texttt{schema/payment-instruction.schema.json}& Vendor payment memo. \\
+\texttt{schema/approval-workflow.schema.json}  & Declarative state machine. \\
+\texttt{schema/doi-policy.schema.json}         & DOI with activities and controls. \\
+\texttt{invoices/*.json}                       & Invoice records (EG ETA ×2; SA ZATCA ×1). \\
+\texttt{payment-instructions/*.json}           & Qatar QCSD/EDAA records. \\
+\texttt{vat-checklists/*.json}                 & Saudi OTP/VAT Q3 2025. \\
+\texttt{policies/*.json}                       & Bahrain AP DOI. \\
+\texttt{workflows/*.json}                      & PO-eProc, manual-one-off, manual-recurring, VAT payment. \\
+\texttt{enums.yaml}                            & Controlled vocabulary. \\
+\texttt{corpus.json}                           & Flat index of every source $\leftrightarrow$ text $\leftrightarrow$ record link. \\
+\texttt{validate.py}                           & Offline validator. \\ \bottomrule
+\end{tabularx}
+\end{table}
+
+\section{Invoice record}
+
+The invoice record is the central object shared by ingestion (\cref{ch:ai}),
+the VAT engine (\cref{ch:vat}), and the approval engine
+(\cref{ch:ap}). \Cref{tab:invoice-fields} enumerates the top-level
+fields; \cref{lst:invoice-example} is a worked example taken verbatim
+from \corpus\path{structured/invoices/eg-eta-3CPJR5CQ4PNNN9A4XHBB370K10.json}.
+
+\begin{table}[htbp]
+\centering
+\caption{Top-level fields of \texttt{invoice.schema.json}.}
+\label{tab:invoice-fields}
+\small
+\begin{tabularx}{\linewidth}{@{}l l c X@{}}
+\toprule
+\textbf{Field} & \textbf{Type} & \textbf{Req.} & \textbf{Notes} \\ \midrule
+\texttt{id}               & string & \checkmark & Filename stem under \texttt{invoices/}. \\
+\texttt{metadata}         & object & \checkmark & Country, authority, dates, language, status. \\
+\texttt{seller}           & party  & \checkmark & Includes Arabic name, English name, \texttt{tax\_id\_type}. \\
+\texttt{buyer}            & party  & \checkmark & Same shape as seller. \\
+\texttt{line\_items[]}    & array  & --         & At least one of \texttt{description}, \texttt{description\_ar}, \texttt{description\_en}. \\
+\texttt{totals}           & object & \checkmark & \texttt{currency}, \texttt{gross} required. \\
+\texttt{tax\_period}      & object & --         & Populated for periodic assessments (ZATCA). \\
+\texttt{signature}        & object & --         & Kind $\in$ \{\textsc{seal}, \textsc{wet\_ink}, \textsc{digital}, \textsc{system\_generated}\}. \\
+\texttt{source\_document} & object & \checkmark & \texttt{path}, \texttt{sha256}, \texttt{ocr\_text\_path}. \\
+\texttt{notes[]}          & array  & --         & Free-form analyst notes. \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\begin{figure}[htbp]
+\begin{lstlisting}[language=jsonx,caption={Full invoice record for the
+Egypt ETA seal invoice (\texttt{eg-eta-3CPJR5CQ4PNNN9A4XHBB370K10}).
+Arabic strings are UTF-8; the LaTeX engine renders them RTL.},
+label=lst:invoice-example]
+{
+  "id": "eg-eta-3CPJR5CQ4PNNN9A4XHBB370K10",
+  "schema_ref": "invoice.schema.json",
+  "metadata": {
+    "country": "EG",
+    "tax_authority": "ETA",
+    "document_kind": "E_INVOICE",
+    "electronic_id": "3CPJR5CQ4PNNN9A4XHBB370K10",
+    "issue_date": "2025-07-15",
+    "submission_date": "2025-07-15T16:10:00+00:00",
+    "language": "ar",
+    "status": "VALID"
+  },
+  "seller": {
+    "name_ar": "محمد شريف شرف الدين",
+    "tax_id": "438212282",
+    "tax_id_type": "ETA_TRN",
+    "activity_code": "1811"
+  },
+  "buyer": {
+    "name_ar": "بنك ستاندرد تشارترد",
+    "tax_id": "670307459",
+    "tax_id_type": "ETA_TRN"
+  },
+  "line_items": [{
+    "description_ar": "ختم ترودات دائرى 42 مللى سريلة",
+    "description_en": "Circular Trodat seal 42mm, series",
+    "quantity": 1, "unit_of_measure": "EA",
+    "unit_price": 580000.00, "line_total": 580000.00
+  }],
+  "totals": {
+    "currency": "EGP",
+    "net": 580000.00, "vat_amount": 81200.00,
+    "vat_rate_percent": 14, "vat_category": "FI",
+    "gross": 661200.00
+  },
+  "source_document": {
+    "path": "docs/arabic/source/3CPJR5CQ4PNNN9A4XHBB370K10.pdf",
+    "sha256": "2b9126...4b2c0",
+    "ocr_text_path": "docs/arabic/extracted-text/eg-eta-3CPJR...txt"
+  }
+}
+\end{lstlisting}
+\end{figure}
+
+Invoice \textsc{electronic\_id} for ETA must match the regex in
+\corpus\texttt{structured/enums.yaml}
+(\verb|^[0-9A-Z]{26}$|); the ZATCA assessment number is a decimal prefix
+matching the taxpayer's \textsc{zatca\_tdn}. The \texttt{status} enum is
+\{\textsc{valid}, \textsc{invalid}, \textsc{pending}, \textsc{cancelled}\};
+ZATCA assessments are always \textsc{valid} on arrival.
+
+\section{VAT compliance checklist}
+
+The KSA OTP/VAT checklist is encoded as an ordered array of items
+(\cref{tab:checklist-fields}). Each item records the regulator's
+question, the analyst's verdict (\textsc{y}/\textsc{n}/\textsc{na}), and
+the extracted value. The authoritative list is the eleven points in the
+Saudi Q3 2025 checklist; NBR (Bahrain) maintains an analogous set drawn
+from Activity~3 of the DOI.
+
+\begin{table}[htbp]
+\centering
+\caption{Fields of a VAT checklist record.}
+\label{tab:checklist-fields}
+\small
+\begin{tabularx}{\linewidth}{@{}l l c X@{}}
+\toprule
+\textbf{Field} & \textbf{Type} & \textbf{Req.} & \textbf{Notes} \\ \midrule
+\texttt{period}                 & object & \checkmark & \texttt{start}, \texttt{end}, \texttt{label}. \\
+\texttt{checklist[]}            & array  & \checkmark & Items indexed 1\dots$n$; each has \texttt{result} $\in$ \{Y,N,NA\}. \\
+\texttt{gl\_coding}             & object & \checkmark & Chart fields (account/product/dept/OU/class). \\
+\texttt{supplier}               & object & \checkmark & \texttt{supplier\_type} $\in$ \{\textsc{government}, \textsc{vendor}, \textsc{employee}, \textsc{inter\_bu}\}. \\
+\texttt{tax\_type\_classification} & string & \checkmark & VAT category enum. \\
+\texttt{withholding\_tax}       & object & --         & Rate and amount if applicable. \\
+\texttt{psid}                   & string & --         & Preparer PSID. \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\begin{figure}[htbp]
+\begin{lstlisting}[language=jsonx,caption={Excerpt from
+\texttt{structured/vat-checklists/sa-otp-vat-q3-2025.json}
+showing items 1--5 of the KSA 11-point checklist.},label=lst:checklist-excerpt]
+"checklist": [
+  {"n": 1, "label": "Invoice in Arabic language",                   "result": "Y"},
+  {"n": 2, "label": "Addressed to Standard Chartered Capital",      "result": "Y"},
+  {"n": 3, "label": "Date of issue",                                "result": "Y", "value": "2025-10-30"},
+  {"n": 4, "label": "Sequential number",                            "result": "Y", "value": "3003093648253002"},
+  {"n": 5, "label": "Tax Identification Number (15-digit)",         "result": "NA",
+     "regulation": "Supplier is ZATCA itself -- government body"}
+],
+\end{lstlisting}
+\end{figure}
+
+\section{Payment instruction}
+
+Derived from the Qatar QCSD instruction. The approval chain is an array
+of typed signatories; each entry carries PSID, role, and approval
+timestamp --- giving a tamper-evident audit trail once hashed.
+The \texttt{chart\_field} is stored as a dash-separated composite
+string (e.g.\ \texttt{665011-4551-800} = account-product-operating\_unit)
+because this is the convention used by the source memos.
+
+\section{Approval workflow}
+
+Each workflow record is a deterministic state machine. States are nodes;
+transitions are edges tagged with a trigger and, where relevant, a
+\texttt{required\_role} and a list of \texttt{preconditions}. The
+\texttt{delegation\_of\_authority} array gates roles by LCY threshold and
+is consulted by the approval engine before any transition out of a
+``$x$-approved'' state. Four workflow instances are shipped in the corpus:
+
+\begin{itemize}
+  \item \texttt{po-eproc} --- PO / eProcurement path (DOI Activity~3);
+  \item \texttt{manual-one-off} --- one-off manual payment (DOI Activity~5);
+  \item \texttt{manual-recurring} --- recurring manual with dispensation (DOI Activity~5);
+  \item \texttt{vat-payment} --- authority-counterparty (e.g.\ ZATCA) path.
+\end{itemize}
+
+\section{DOI policy}
+
+The Bahrain Accounts Payable DOI is represented as a
+\texttt{doi-policy} record whose \texttt{activities[]} array preserves
+the original numbering (1--7) and whose \texttt{controls[]} array gives
+each control an ID, description, pointer back to the activity, and the
+risk it mitigates. This is what the approval engine consults to decide
+\emph{which} workflow instance applies to a given invoice.
+
+\section{Enumerations}
+
+The file \corpus\texttt{structured/enums.yaml} is the single source of
+truth for controlled vocabulary used across the corpus: country codes,
+tax-authority codes and portal URLs, VAT category codes,
+\texttt{tax\_id\_type} regexes, business-unit codes, approval-role
+codes, payment methods, and the five AI-session phase codes. Any new
+enum value must be added to \texttt{enums.yaml} \emph{before} being
+used in a schema or record; \texttt{validate.py} enforces this.
+
+\section{Provenance}
+
+Each record stores the SHA-256 of its source document in
+\texttt{source\_document.sha256}. Reproducing the corpus from the
+originals is therefore a single command:
+\begin{lstlisting}[language=bash,basicstyle=\ttfamily\small]
+find docs/arabic/source -type f -print0 \
+  | xargs -0 shasum -a 256 \
+  | diff - <(jq -r '.items[] | select(.sha256) | "\(.sha256)  \(.source_path)"' \
+              docs/arabic/structured/corpus.json | sed 's|docs/arabic/source/||')
+\end{lstlisting}
+A clean diff proves the corpus is unaltered since the last
+specification snapshot.

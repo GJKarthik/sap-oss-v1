@@ -1,0 +1,47 @@
+{
+  "requirements": [
+    {
+      "requirementId": "REG-AGENTIDX-3.6-001",
+      "source": {
+        "regulationId": "ai-agent-index-2025",
+        "section": "3.6",
+        "quote": "most developers share little information about safety, evaluations, and societal impacts."
+      },
+      "normativeText": "Publish for each deployed agent: risk assessment summary, evaluation results, and known limitations (mirroring the Agent Index safety category).",
+      "category": "transparency",
+      "obligation": "should",
+      "lifecyclePhase": "deployment",
+      "implementation": [
+        {"kind": "doc", "path": "docs/regulations/spec/chapters/04-agent-index.tex"},
+        {"kind": "doc", "path": "docs/tb/spec/chapters/06-controls-and-testing.tex", "anchor": "ch:controls"}
+      ],
+      "verification": [
+        {"kind": "aiverify-plugin", "plugin": "aiverify.stock.process-checklist"},
+        {"kind": "aiverify-plugin", "plugin": "aiverify.stock.reports"}
+      ],
+      "status": "partial",
+      "priority": "medium"
+    },
+    {
+      "requirementId": "REG-AGENTIDX-3.3-001",
+      "source": {
+        "regulationId": "ai-agent-index-2025",
+        "section": "3.3",
+        "quote": "Autonomy and control"
+      },
+      "normativeText": "Document the agent's autonomy level (from \"operator\" to \"recommender\") and map each state transition to that level.",
+      "category": "transparency",
+      "obligation": "should",
+      "lifecyclePhase": "design",
+      "implementation": [
+        {"kind": "doc", "path": "docs/tb/structured/workflows/tb-review-glo.json", "field": "states"},
+        {"kind": "doc", "path": "docs/tb/spec/chapters/05-workflow.tex",          "anchor": "ch:workflow"}
+      ],
+      "verification": [
+        {"kind": "manual-review", "note": "Autonomy-level annotation on every task state."}
+      ],
+      "status": "partial",
+      "priority": "low"
+    }
+  ]
+}

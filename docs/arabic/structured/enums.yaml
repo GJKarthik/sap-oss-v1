@@ -1,0 +1,193 @@
+# Controlled vocabulary for docs/arabic/structured/*.json records.
+# Any enum value referenced by a schema MUST appear here exactly.
+# Source: Bahrain AP DOI, Saudi OTP/VAT checklist, Egypt ETA invoices,
+# Qatar payment instruction, Manoj Hemath Kumar email thread.
+
+countries:
+  - code: EG
+    name_en: Egypt
+    name_ar: جمهورية مصر العربية
+    currency: EGP
+    tax_authority: ETA
+  - code: SA
+    name_en: Saudi Arabia
+    name_ar: المملكة العربية السعودية
+    currency: SAR
+    tax_authority: ZATCA
+  - code: QA
+    name_en: Qatar
+    name_ar: دولة قطر
+    currency: QAR
+    tax_authority: QTA
+  - code: BH
+    name_en: Bahrain
+    name_ar: مملكة البحرين
+    currency: BHD
+    tax_authority: NBR
+  - code: IQ
+    name_en: Iraq
+    name_ar: جمهورية العراق
+    currency: IQD
+    tax_authority: IQ_GCT
+  - code: AE
+    name_en: United Arab Emirates
+    name_ar: الإمارات العربية المتحدة
+    currency: AED
+    tax_authority: FTA
+  - code: PK
+    name_en: Pakistan
+    name_ar: باكستان
+    currency: PKR
+    tax_authority: FBR
+
+tax_authorities:
+  ETA:
+    name_en: Egyptian Tax Authority
+    name_ar: مصلحة الضرائب المصرية
+    portal: https://invoicing.eta.gov.eg
+    scheme: e-invoice
+    electronic_id_regex: "^[0-9A-Z]{26}$"
+  ZATCA:
+    name_en: Zakat, Tax and Customs Authority
+    name_ar: هيئة الزكاة والضريبة والجمارك
+    portal: https://zatca.gov.sa
+    scheme: e-invoice + periodic return
+    hotline: "19993"
+    payer_code: "020"
+  NBR:
+    name_en: National Bureau for Revenue (Bahrain)
+    name_ar: الجهاز الوطني للإيرادات
+    portal: https://www.nbr.gov.bh
+    scheme: VAT
+  QTA:
+    name_en: Qatar Tax Authority (GTA)
+    portal: https://gta.gov.qa
+    scheme: none-for-period
+  FTA:
+    name_en: UAE Federal Tax Authority
+    portal: https://tax.gov.ae
+
+vat_categories:
+  - code: FI
+    name: Full Tax Invoice
+    description: Fully compliant tax invoice per country regulation; default path.
+  - code: SI
+    name: Simplified Tax Invoice
+    description: Issued for low-value transactions (e.g. Bahrain < BHD 500).
+  - code: ZR
+    name: Zero Rated
+    description: Supply subject to VAT at 0% (transport, food, healthcare, education, construction, oil/gas).
+  - code: EX
+    name: Exempt
+    description: Supply exempt from VAT (real estate, financial services).
+  - code: RC
+    name: Reverse Charge
+    description: Buyer accounts for VAT on overseas supplies.
+  - code: TCN
+    name: Tax Credit Note
+    description: Correction/credit against a prior tax invoice.
+  - code: UR
+    name: Unregistered Vendor
+    description: Vendor is not VAT-registered.
+  - code: CBR
+    name: Cross Border Recharge (Inter-BU)
+    description: Inter-business-unit transfer handled by GBS APU CBR team.
+  - code: OS
+    name: Out of Scope
+    description: Pre-VAT-regime vouchers, MPV vouchers, etc.
+  - code: OTHER
+    name: Other
+    description: Utility bills (EWA) and miscellaneous items that do not fit above.
+
+tax_id_types:
+  - code: ETA_TRN
+    description: Egypt ETA Tax Registration Number (9-digit numeric).
+    regex: "^[0-9]{9}$"
+  - code: ZATCA_TIN
+    description: Saudi Arabia Tax Identification Number (15-digit numeric).
+    regex: "^[0-9]{15}$"
+  - code: ZATCA_TDN
+    description: ZATCA Taxpayer Distinctive Number (10-digit prefix of TIN).
+    regex: "^[0-9]{10}$"
+  - code: NBR_TRN
+    description: Bahrain NBR VAT registration number.
+    regex: "^[0-9]{15}$"
+
+business_units:
+  - code: U140
+    name: DBU (Domestic Business Unit)
+    country: BH
+  - code: BU141
+    name: Standard Chartered Capital (Qatar ops)
+    country: QA
+  - code: SS_Ops
+    name: Securities Services Operations
+    country: QA
+
+approval_roles:
+  - code: CC_OWNER
+    name: Cost Centre Owner
+  - code: SUPPLY_CHAIN_MGR
+    name: Country Supply Chain Manager
+  - code: CFO
+    name: Country CFO
+  - code: CFO_DELEGATE
+    name: CFO Delegate
+  - code: MD
+    name: Managing Director
+  - code: POLICY_OWNER
+    name: Policy Owner (for dispensations)
+  - code: SENIOR_FINANCE_MGR
+    name: Senior Finance Manager
+  - code: FIN_MGR
+    name: Finance Manager
+
+invoice_status:
+  - VALID
+  - INVALID
+  - PENDING
+  - CANCELLED
+
+payment_methods:
+  - BANK_TRANSFER
+  - CHEQUE
+  - CASH
+  - EOPS_RECORDED
+
+systems:
+  - code: eProc
+    name: eProcurement
+  - code: TnE
+    name: Travel & Expense
+  - code: SODA
+    name: Self-service Ordering
+  - code: Tax-Q
+    name: Tax-Q processing queue
+  - code: eOPS
+    name: Operations logging system
+    url: https://eopsvip05.hk.standardchartered.com:9443/eopssec/
+  - code: PSAP
+    name: PeopleSoft Accounts Payable
+  - code: PSGL
+    name: PeopleSoft General Ledger
+  - code: eBBS
+    name: Electronic Branch Banking System
+  - code: GDAM
+    name: Group Delegated Authority Matrix
+
+ai_session_phases:
+  - code: UNDERSTAND
+    name: Session 1 — Understand
+    goal: Map problem, define user journey, pick target.
+  - code: SKETCH
+    name: Session 2 — Sketch
+    goal: Develop detailed solution design.
+  - code: DECIDE
+    name: Session 3 — Decide
+    goal: Critique approaches, select best path.
+  - code: PROTOTYPE
+    name: Session 4 — Prototype
+    goal: Build practical system for use case.
+  - code: TEST
+    name: Session 5 — Testing
+    goal: Test with minimum 5 stakeholders, gather feedback.

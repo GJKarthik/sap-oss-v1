@@ -1,0 +1,969 @@
+From: "Hemath Kumar, Manoj" <Manoj.HemathKumar@sc.com>
+To: "Tareef, Shaikha" <Shaikha.Tareef@sc.com>
+Cc: "Prabhakaran, Kameswaran" <Kameswaran.Prabhakaran@sc.com>
+Date: Sun, 23 Nov 2025 17:02:41 +0000
+Subject: FW: AI | Arabic Invoice, Peer analysis, & Translation upcoming sessions
+
+[part depth=0 ct=multipart/mixed]
+[part depth=1 ct=multipart/alternative]
+[part depth=2 ct=text/plain]
+INTERNAL
+
+
+
+Hi Shaikha,
+
+
+
+Following the request below, there was a requirement to share sample Arabic invoices as an initial step from the AI solutioning team. The sample invoices for Egypt, Qatar and Saudi Arabia (both Branch and Capital) have been shared, and it has been confirmed that no Arabic invoices are applicable for Bahrain and Iraq.
+
+
+
+Regarding Arabic financials and other submissions, we will initiate discussion with Rizwan and take it forward. Thanks!
+
+
+
+Regards,
+
+
+
+Manoj H
+
+
+
+From: Rizvi, Rizwan <Rizwan.Rizvi@sc.com>
+Sent: Saturday, November 22, 2025 8:26 AM
+To: Korayem, Ahmed <Ahmed.Korayem@sc.com>; Elkilany, Yomna Mohamed <YomnaMohamed.Elkilany@sc.com>; Tanveer, Fuzail <Fuzail.Tanveer@sc.com>; Ali1, Wasiq <Wasiq.Ali1@sc.com>; Akhtar, Asad <Asad.Akhtar@sc.com>; Hussain, AliabdulKarim <AliabdulKarim.Hussain@sc.com>; Anwer, Arsalan <Arsalan.Anwer@sc.com>; Merchant, Muhammed <Muhammed.Merchant@sc.com>; Salim, Dalia Dalia.Salim@sc.com<mailto:Dalia.Salim@sc.com>; Ahmed, Ishtiyaq Ishtiyaq.Ahmed@sc.com<mailto:Ishtiyaq.Ahmed@sc.com>; Jose, Rejis V Rejisv.Jose@sc.com<mailto:Rejisv.Jose@sc.com>; Fekry, Ahmed Mohamed AhmedMohamed.Fekry@sc.com<mailto:AhmedMohamed.Fekry@sc.com>; Raheem, Murtadha Murtadha.Raheem@sc.com<mailto:Murtadha.Raheem@sc.com>; Al Dohan, Hawazen Hawazen.AlDohan@sc.com<mailto:Hawazen.AlDohan@sc.com>; Alkanhal, Ady Ady.Alkanhal@sc.com<mailto:Ady.Alkanhal@sc.com>; Prabhakaran, Kameswaran Kameswaran.Prabhakaran@sc.com<mailto:Kameswaran.Prabhakaran@sc.com>; Redla, Sai Venkata Ramana <SaiVenkataRamana.Redla@sc.com>
+Cc: Tareef, Shaikha <Shaikha.Tareef@sc.com>; Shariff, Asad Ali <Asad-Ali.Shariff@sc.com>; Mahmood1, Kashif <Kashif.Mahmood1@sc.com>; Alam, Syed Ejaz <Syed-Ejaz.Alam@sc.com>; Hussain, Tahir <Tahir.Hussain@sc.com>; Turrell, Craig <Craig.Turrell@sc.com>; Elhamzawy, Aly <Aly.Elhamzawy@sc.com>; Gupta, NaveenKumar <NaveenKumar.Gupta@sc.com>; Hemath Kumar, Manoj <Manoj.HemathKumar@sc.com>; Sunku, Sudharsan <Sudharsan.Sunku@sc.com>
+Subject: AI | Arabic Invoice, Peer analysis, & Translation upcoming sessions
+
+
+
+INTERNAL
+
+
+
+PLEASE READ
+
+Dear all,
+
+
+
+Ref earlier catch up with Craig on AI capabilities and solutioning translation of invoices from Arabic, peer analysis and Arabic translation. We are now organizing multiple sessions for each capability covering understanding of local process, specific Arabic translation and learn how to use peer analysis tool.
+
+
+
+For countries facing challenge of invoices in Arabic, your participation is the key for developers to understand the process followed, the important fields and the appropriate translation which could vary from country to country, i.e. SA & EG in particular. Further, another focus session is planned for peer / competitor analysis tool, mandatory for UAE, PK & BH. Let me know if any one else is interested, so that I can include in invite.
+
+
+
+1st session planned on Monday.
+
+Mandatory participation:
+
+Country
+
+Participants
+
+CFO
+
+Remarks
+
+Saudi-SAMA
+
+@Tanveer, Fuzail<mailto:Fuzail.Tanveer@sc.com>
+
+@Al Dohan, Hawazen<mailto:Hawazen.AlDohan@sc.com>
+
+
+
+Saudi-CMA
+
+@Ali1, Wasiq<mailto:Wasiq.Ali1@sc.com>
+
+@Alkanhal, Ady<mailto:Ady.Alkanhal@sc.com>
+
+
+
+Egypt
+
+@Elkilany, Yomna Mohamed<mailto:YomnaMohamed.Elkilany@sc.com> @Korayem, Ahmed<mailto:Ahmed.Korayem@sc.com>
+
+@Fekry, Ahmed Mohamed<mailto:AhmedMohamed.Fekry@sc.com>
+
+
+
+Qatar
+
+@Akhtar, Asad<mailto:Asad.Akhtar@sc.com>
+
+@Gupta, NaveenKumar<mailto:NaveenKumar.Gupta@sc.com>
+
+Naveen, I presumed Qatar gets all invoices in English as per our earlier connect. If not the case then pls join AP-AI Conversion of invoices in Arabic to English
+
+Iraq
+
+@Raheem, Murtadha<mailto:Murtadha.Raheem@sc.com>
+
+@Salim, Dalia<mailto:Dalia.Salim@sc.com>
+
+Dalia, I presumed Iraq gets all invoices in English as per our earlier connect. If not the case then pls join AP-AI Conversion of invoices in Arabic to English
+
+
+
+Multiple engagement and sessions, duration ranging between 30 to 60 minutes:
+
+
+
+*       Learning and understanding of local process
+*       Training
+*       Checking the conversion, learning, adapting, improving the agents
+*       Adaption of services
+
+
+
+Session 1 - Understand: Map : define the problem, map the user journey, pick a target
+
+Session 2 - Sketch: Sketch our detailed solution
+
+Session 3 - Decide: Critique approaches and choose best idea/path to a solution we will try and deploy
+
+Session 4 - Prototype: Build a practical system to meet the use case scope
+
+Session 5: Testing: Start to test the AI app with a minimum of 5 people able to provide feedback
+
+
+
+@Ahmed, Ishtiyaq<mailto:Ishtiyaq.Ahmed@sc.com>, will be including you as well in session covering invoice translation and processing. There could be an opportunity to translate and send for processing directly, minimising multiple scans and save some processing time.
+
+
+
+@Jose, Rejis V<mailto:Rejisv.Jose@sc.com> FYI too pls.
+
+
+
+Appreciate your time and support to lead the AI adaption in MEP, finding opportunities, creating efficiencies.
+
+
+
+See you there.
+
+
+
+Thanks
+
+Riz
+[part depth=2 ct=text/html]
+INTERNAL Hi Shaikha, &nbsp; Following the request below, there was a requirement to share sample Arabic invoices as an initial step from the AI solutioning team. The sample invoices for Egypt, Qatar and Saudi Arabia (both Branch and Capital) have been shared, and it has been confirmed that no Arabic invoices are applicable for Bahrain and Iraq. &nbsp; Regarding Arabic financials and other submissions, we will initiate discussion with Rizwan and take it forward. Thanks! &nbsp; Regards, &nbsp; Manoj H &nbsp; From: Rizvi, Rizwan &lt;Rizwan.Rizvi@sc.com&gt; Sent: Saturday, November 22, 2025 8:26 AM To: Korayem, Ahmed &lt;Ahmed.Korayem@sc.com&gt;; Elkilany, Yomna Mohamed &lt;YomnaMohamed.Elkilany@sc.com&gt;; Tanveer, Fuzail &lt;Fuzail.Tanveer@sc.com&gt;; Ali1, Wasiq &lt;Wasiq.Ali1@sc.com&gt;; Akhtar, Asad &lt;Asad.Akhtar@sc.com&gt;; Hussain, AliabdulKarim &lt;AliabdulKarim.Hussain@sc.com&gt;; Anwer, Arsalan &lt;Arsalan.Anwer@sc.com&gt;; Merchant, Muhammed &lt;Muhammed.Merchant@sc.com&gt;; Salim, Dalia Dalia.Salim@sc.com ; Ahmed, Ishtiyaq Ishtiyaq.Ahmed@sc.com ; Jose, Rejis V Rejisv.Jose@sc.com ; Fekry, Ahmed Mohamed AhmedMohamed.Fekry@sc.com ; Raheem, Murtadha Murtadha.Raheem@sc.com ; Al Dohan, Hawazen Hawazen.AlDohan@sc.com ; Alkanhal, Ady Ady.Alkanhal@sc.com ; Prabhakaran, Kameswaran Kameswaran.Prabhakaran@sc.com ; Redla, Sai Venkata Ramana &lt;SaiVenkataRamana.Redla@sc.com&gt; Cc: Tareef, Shaikha &lt;Shaikha.Tareef@sc.com&gt;; Shariff, Asad Ali &lt;Asad-Ali.Shariff@sc.com&gt;; Mahmood1, Kashif &lt;Kashif.Mahmood1@sc.com&gt;; Alam, Syed Ejaz &lt;Syed-Ejaz.Alam@sc.com&gt;; Hussain, Tahir &lt;Tahir.Hussain@sc.com&gt;; Turrell, Craig &lt;Craig.Turrell@sc.com&gt;; Elhamzawy, Aly &lt;Aly.Elhamzawy@sc.com&gt;; Gupta, NaveenKumar &lt;NaveenKumar.Gupta@sc.com&gt;; Hemath Kumar, Manoj &lt;Manoj.HemathKumar@sc.com&gt;; Sunku, Sudharsan &lt;Sudharsan.Sunku@sc.com&gt; Subject: AI | Arabic Invoice, Peer analysis, &amp; Translation upcoming sessions &nbsp; INTERNAL &nbsp; PLEASE READ Dear all, &nbsp; Ref earlier catch up with Craig on AI capabilities and solutioning translation of invoices from Arabic, peer analysis and Arabic translation. We are now organizing multiple sessions for each capability covering understanding of local process, specific Arabic translation and learn how to use peer analysis tool. &nbsp; For countries facing challenge of invoices in Arabic, your participation is the key for developers to understand the process followed, the important fields and the appropriate translation which could vary from country to country, i.e. SA &amp; EG in particular. Further, another focus session is planned for peer / competitor analysis tool, mandatory for UAE, PK &amp; BH. Let me know if any one else is interested, so that I can include in invite. &nbsp; 1 st session planned on Monday. Mandatory participation: Country Participants CFO Remarks Saudi-SAMA @Tanveer, Fuzail @Al Dohan, Hawazen &nbsp; Saudi-CMA @Ali1, Wasiq @Alkanhal, Ady &nbsp; Egypt @Elkilany, Yomna Mohamed @Korayem, Ahmed @Fekry, Ahmed Mohamed &nbsp; Qatar @Akhtar, Asad @Gupta, NaveenKumar Naveen, I presumed Qatar gets all invoices in English as per our earlier connect. If not the case then pls join AP-AI Conversion of invoices in Arabic to English Iraq @Raheem, Murtadha @Salim, Dalia Dalia, I presumed Iraq gets all invoices in English as per our earlier connect. If not the case then pls join AP-AI Conversion of invoices in Arabic to English &nbsp; Multiple engagement and sessions, duration ranging between 30 to 60 minutes: &nbsp; Learning and understanding of local process Training Checking the conversion, learning, adapting, improving the agents Adaption of services &nbsp; Session 1 - Understand: Map : define the problem, map the user journey, pick a target Session 2 &nbsp;- Sketch: Sketch our detailed solution&nbsp; Session 3 &nbsp;- Decide: Critique approaches and choose best idea/path to a solution we will try and deploy Session 4 &nbsp;- Prototype: Build a practical&nbsp;system to meet the use case scope Session 5 : Testing: Start to test the AI app with a minimum of 5 people able to provide feedback&nbsp; &nbsp; @Ahmed, Ishtiyaq , will be including you as well in session covering invoice translation and processing. There could be an opportunity to translate and send for processing directly, minimising multiple scans and save some processing time. &nbsp; @Jose, Rejis V FYI too pls. &nbsp; Appreciate your time and support to lead the AI adaption in MEP, finding opportunities, creating efficiencies. &nbsp; See you there. &nbsp; Thanks Riz
+[part depth=1 ct=message/rfc822]
+[part depth=2 ct=multipart/alternative]
+[part depth=3 ct=text/plain]
+Hi Rizwan,
+
+
+
+Confirm for Iraq all invoices in English.
+
+
+
+
+
+Best Regards...
+
+_________________________________
+
+Dalia Salim
+
+Financial Controller
+
+
+
+M  (+964) 7812770111
+
+Ext. 1 964 88130
+
+
+
+Standard Chartered Bank
+
+Baghdad - Iraq
+
+
+
+Email:  Dalia.salim@sc.com<https://clicktime.symantec.com/3J2qGGhb9NejEbkDWLgoZSb7Vc?u=http%3A%2F%2Fsecure-web.cisco.com%2F1osDGBYGAfTPlp_wQJqj0sjZsZzklKsqFg-gZNMQb9_uqkM5jRLUaIIPPkRt1Q9UDly94dUHFJMsNKgIBSFpPcUg3RRF5nWmBrrU-llHZ48G-cmEx1ZDO3NBl9ESNYLjGjpl7DxBjb4l7N_nueZ_XsO6gnqwQsquXVZeYyh3cLDnTfdHuAC6JqNrsorgQJY8iMcBlL9c6fGvIOZZuU_KBcqfhkZ9lmf5FTI8TveiFVc4g_F6GZv9klQEpmxQtOkQZ9noNsyt1dCsz35_fT-joxHvmeNcgCSoNrEtBzjXi68qNMuyXwtswzJ5wxKryjwh5r25gtPegWCLRuKxkY8r9RrERryzZwuipOYNgYeKf8vUsRfLfqXvUyE2HAg4QY6iLxblxuO-VQrCGo3-xX0LfUFJsy5fjZipasFbqDIiVv7TwT90ZeDi9EhzdV7OGs0RDrkGOXCH2gqp_EO6kXQLEjpCNh5TKbpfJuhMfPzOe4E77GOUHhIAQFkjW7D5D-xRoOzos3mWqwb19dutV6WczFw%2Fhttp%253A%252F%252Fwww.standardchartered.com%252F>
+
+Website: www.sc.com/iq/<http://www.sc.com/iq/>
+
+____________________________________
+
+Please consider the environment before printing this email
+
+
+
+
+
+
+
+From: Rizvi, Rizwan <Rizwan.Rizvi@sc.com>
+Sent: Saturday, November 22, 2025 8:26 AM
+To: Korayem, Ahmed <Ahmed.Korayem@sc.com>; Elkilany, Yomna Mohamed <YomnaMohamed.Elkilany@sc.com>; Tanveer, Fuzail <Fuzail.Tanveer@sc.com>; Ali1, Wasiq <Wasiq.Ali1@sc.com>; Akhtar, Asad <Asad.Akhtar@sc.com>; Hussain, AliabdulKarim <AliabdulKarim.Hussain@sc.com>; Anwer, Arsalan <Arsalan.Anwer@sc.com>; Merchant, Muhammed <Muhammed.Merchant@sc.com>; Salim, Dalia <Dalia.Salim@sc.com>; Ahmed, Ishtiyaq <Ishtiyaq.Ahmed@sc.com>; Jose, Rejis V <Rejisv.Jose@sc.com>; Fekry, Ahmed Mohamed <AhmedMohamed.Fekry@sc.com>; Raheem, Murtadha <Murtadha.Raheem@sc.com>; Al Dohan, Hawazen <Hawazen.AlDohan@sc.com>; Alkanhal, Ady <Ady.Alkanhal@sc.com>; Prabhakaran, Kameswaran <Kameswaran.Prabhakaran@sc.com>; Redla, Sai Venkata Ramana <SaiVenkataRamana.Redla@sc.com>
+Cc: Tareef, Shaikha <Shaikha.Tareef@sc.com>; Shariff, Asad Ali <Asad-Ali.Shariff@sc.com>; Mahmood1, Kashif <Kashif.Mahmood1@sc.com>; Alam, Syed Ejaz <Syed-Ejaz.Alam@sc.com>; Hussain, Tahir <Tahir.Hussain@sc.com>; Turrell, Craig <Craig.Turrell@sc.com>; Elhamzawy, Aly <Aly.Elhamzawy@sc.com>; Gupta, NaveenKumar <NaveenKumar.Gupta@sc.com>; Hemath Kumar, Manoj <Manoj.HemathKumar@sc.com>; Sunku, Sudharsan <Sudharsan.Sunku@sc.com>
+Subject: AI | Arabic Invoice, Peer analysis, & Translation upcoming sessions
+
+
+
+INTERNAL
+
+
+
+PLEASE READ
+
+Dear all,
+
+
+
+Ref earlier catch up with Craig on AI capabilities and solutioning translation of invoices from Arabic, peer analysis and Arabic translation. We are now organizing multiple sessions for each capability covering understanding of local process, specific Arabic translation and learn how to use peer analysis tool.
+
+
+
+For countries facing challenge of invoices in Arabic, your participation is the key for developers to understand the process followed, the important fields and the appropriate translation which could vary from country to country, i.e. SA & EG in particular. Further, another focus session is planned for peer / competitor analysis tool, mandatory for UAE, PK & BH. Let me know if any one else is interested, so that I can include in invite.
+
+
+
+1st session planned on Monday.
+
+Mandatory participation:
+
+Country
+
+Participants
+
+CFO
+
+Remarks
+
+Saudi-SAMA
+
+@Tanveer, Fuzail<mailto:Fuzail.Tanveer@sc.com>
+
+@Al Dohan, Hawazen<mailto:Hawazen.AlDohan@sc.com>
+
+
+
+Saudi-CMA
+
+@Ali1, Wasiq<mailto:Wasiq.Ali1@sc.com>
+
+@Alkanhal, Ady<mailto:Ady.Alkanhal@sc.com>
+
+
+
+Egypt
+
+@Elkilany, Yomna Mohamed<mailto:YomnaMohamed.Elkilany@sc.com> @Korayem, Ahmed<mailto:Ahmed.Korayem@sc.com>
+
+@Fekry, Ahmed Mohamed<mailto:AhmedMohamed.Fekry@sc.com>
+
+
+
+Qatar
+
+@Akhtar, Asad<mailto:Asad.Akhtar@sc.com>
+
+@Gupta, NaveenKumar<mailto:NaveenKumar.Gupta@sc.com>
+
+Naveen, I presumed Qatar gets all invoices in English as per our earlier connect. If not the case then pls join AP-AI Conversion of invoices in Arabic to English
+
+Iraq
+
+@Raheem, Murtadha<mailto:Murtadha.Raheem@sc.com>
+
+@Salim, Dalia<mailto:Dalia.Salim@sc.com>
+
+Dalia, I presumed Iraq gets all invoices in English as per our earlier connect. If not the case then pls join AP-AI Conversion of invoices in Arabic to English
+
+
+
+Multiple engagement and sessions, duration ranging between 30 to 60 minutes:
+
+
+
+*       Learning and understanding of local process
+*       Training
+*       Checking the conversion, learning, adapting, improving the agents
+*       Adaption of services
+
+
+
+Session 1 - Understand: Map : define the problem, map the user journey, pick a target
+
+Session 2 - Sketch: Sketch our detailed solution
+
+Session 3 - Decide: Critique approaches and choose best idea/path to a solution we will try and deploy
+
+Session 4 - Prototype: Build a practical system to meet the use case scope
+
+Session 5: Testing: Start to test the AI app with a minimum of 5 people able to provide feedback
+
+
+
+@Ahmed, Ishtiyaq<mailto:Ishtiyaq.Ahmed@sc.com>, will be including you as well in session covering invoice translation and processing. There could be an opportunity to translate and send for processing directly, minimising multiple scans and save some processing time.
+
+
+
+@Jose, Rejis V<mailto:Rejisv.Jose@sc.com> FYI too pls.
+
+
+
+Appreciate your time and support to lead the AI adaption in MEP, finding opportunities, creating efficiencies.
+
+
+
+See you there.
+
+
+
+Thanks
+
+Riz
+[part depth=3 ct=text/html]
+Hi Rizwan, &nbsp; Confirm for Iraq all invoices in English. &nbsp; &nbsp; Best Regards&#8230; _________________________________ Dalia Salim Financial Controller &nbsp; M&nbsp; (+964) 7812770111 Ext . 1 964 88130 &nbsp; Standard Chartered Bank Baghdad - Iraq &nbsp; Email : &nbsp; Dalia.salim@sc.com Website : &nbsp; www.sc.com/iq/ ____________________________________ Please consider the environment before printing this email &nbsp; &nbsp; &nbsp; From: Rizvi, Rizwan &lt;Rizwan.Rizvi@sc.com&gt; Sent: Saturday, November 22, 2025 8:26 AM To: Korayem, Ahmed &lt;Ahmed.Korayem@sc.com&gt;; Elkilany, Yomna Mohamed &lt;YomnaMohamed.Elkilany@sc.com&gt;; Tanveer, Fuzail &lt;Fuzail.Tanveer@sc.com&gt;; Ali1, Wasiq &lt;Wasiq.Ali1@sc.com&gt;; Akhtar, Asad &lt;Asad.Akhtar@sc.com&gt;; Hussain, AliabdulKarim &lt;AliabdulKarim.Hussain@sc.com&gt;; Anwer, Arsalan &lt;Arsalan.Anwer@sc.com&gt;; Merchant, Muhammed &lt;Muhammed.Merchant@sc.com&gt;; Salim, Dalia &lt;Dalia.Salim@sc.com&gt;; Ahmed, Ishtiyaq &lt;Ishtiyaq.Ahmed@sc.com&gt;; Jose, Rejis V &lt;Rejisv.Jose@sc.com&gt;; Fekry, Ahmed Mohamed &lt;AhmedMohamed.Fekry@sc.com&gt;; Raheem, Murtadha &lt;Murtadha.Raheem@sc.com&gt;; Al Dohan, Hawazen &lt;Hawazen.AlDohan@sc.com&gt;; Alkanhal, Ady &lt;Ady.Alkanhal@sc.com&gt;; Prabhakaran, Kameswaran &lt;Kameswaran.Prabhakaran@sc.com&gt;; Redla, Sai Venkata Ramana &lt;SaiVenkataRamana.Redla@sc.com&gt; Cc: Tareef, Shaikha &lt;Shaikha.Tareef@sc.com&gt;; Shariff, Asad Ali &lt;Asad-Ali.Shariff@sc.com&gt;; Mahmood1, Kashif &lt;Kashif.Mahmood1@sc.com&gt;; Alam, Syed Ejaz &lt;Syed-Ejaz.Alam@sc.com&gt;; Hussain, Tahir &lt;Tahir.Hussain@sc.com&gt;; Turrell, Craig &lt;Craig.Turrell@sc.com&gt;; Elhamzawy, Aly &lt;Aly.Elhamzawy@sc.com&gt;; Gupta, NaveenKumar &lt;NaveenKumar.Gupta@sc.com&gt;; Hemath Kumar, Manoj &lt;Manoj.HemathKumar@sc.com&gt;; Sunku, Sudharsan &lt;Sudharsan.Sunku@sc.com&gt; Subject: AI | Arabic Invoice, Peer analysis, &amp; Translation upcoming sessions &nbsp; INTERNAL &nbsp; PLEASE READ Dear all, &nbsp; Ref earlier catch up with Craig on AI capabilities and solutioning translation of invoices from Arabic, peer analysis and Arabic translation. We are now organizing multiple sessions for each capability covering understanding of local process, specific Arabic translation and learn how to use peer analysis tool. &nbsp; For countries facing challenge of invoices in Arabic, your participation is the key for developers to understand the process followed, the important fields and the appropriate translation which could vary from country to country, i.e. SA &amp; EG in particular. Further, another focus session is planned for peer / competitor analysis tool, mandatory for UAE, PK &amp; BH. Let me know if any one else is interested, so that I can include in invite. &nbsp; 1 st session planned on Monday. Mandatory participation: Country Participants CFO Remarks Saudi-SAMA @Tanveer, Fuzail @Al Dohan, Hawazen &nbsp; Saudi-CMA @Ali1, Wasiq @Alkanhal, Ady &nbsp; Egypt @Elkilany, Yomna Mohamed @Korayem, Ahmed @Fekry, Ahmed Mohamed &nbsp; Qatar @Akhtar, Asad @Gupta, NaveenKumar Naveen, I presumed Qatar gets all invoices in English as per our earlier connect. If not the case then pls join AP-AI Conversion of invoices in Arabic to English Iraq @Raheem, Murtadha @Salim, Dalia Dalia, I presumed Iraq gets all invoices in English as per our earlier connect. If not the case then pls join AP-AI Conversion of invoices in Arabic to English &nbsp; Multiple engagement and sessions, duration ranging between 30 to 60 minutes: &nbsp; Learning and understanding of local process Training Checking the conversion, learning, adapting, improving the agents Adaption of services &nbsp; Session 1 - Understand: Map : define the problem, map the user journey, pick a target Session 2 &nbsp;- Sketch: Sketch our detailed solution&nbsp; Session 3 &nbsp;- Decide: Critique approaches and choose best idea/path to a solution we will try and deploy Session 4 &nbsp;- Prototype: Build a practical&nbsp;system to meet the use case scope Session 5 : Testing: Start to test the AI app with a minimum of 5 people able to provide feedback&nbsp; &nbsp; @Ahmed, Ishtiyaq , will be including you as well in session covering invoice translation and processing. There could be an opportunity to translate and send for processing directly, minimising multiple scans and save some processing time. &nbsp; @Jose, Rejis V FYI too pls. &nbsp; Appreciate your time and support to lead the AI adaption in MEP, finding opportunities, creating efficiencies. &nbsp; See you there. &nbsp; Thanks Riz
+[part depth=1 ct=message/rfc822]
+[part depth=2 ct=multipart/mixed]
+[part depth=3 ct=multipart/alternative]
+[part depth=4 ct=text/plain]
+INTERNAL
+
+
+
+Hi Rizwan,
+
+
+
+Upon rechecking with stakeholders we noted 1 sample for an Arabic invoice in Qatar. We might have one or two more samples which are still awaited. We will join the AP-AI Conversion of invoices in Arabic to English.
+
+
+
+Regards,
+
+Asad
+
+
+
+From: Gupta, NaveenKumar <NaveenKumar.Gupta@sc.com>
+Sent: Sunday, November 23, 2025 1:01 PM
+To: Akhtar, Asad <Asad.Akhtar@sc.com>
+Subject: FW: AI | Arabic Invoice, Peer analysis, & Translation upcoming sessions
+
+
+
+INTERNAL
+
+
+
+FYA
+
+
+
+Regards
+
+Navin
+
+
+
+From: Prabhakaran, Kameswaran <Kameswaran.Prabhakaran@sc.com<mailto:Kameswaran.Prabhakaran@sc.com>>
+Sent: Saturday, November 22, 2025 1:26 PM
+To: Fekry, Ahmed Mohamed <AhmedMohamed.Fekry@sc.com<mailto:AhmedMohamed.Fekry@sc.com>>; Salim, Dalia <Dalia.Salim@sc.com<mailto:Dalia.Salim@sc.com>>; Hussain, AliabdulKarim <AliabdulKarim.Hussain@sc.com<mailto:AliabdulKarim.Hussain@sc.com>>; Redla, Sai Venkata Ramana <SaiVenkataRamana.Redla@sc.com<mailto:SaiVenkataRamana.Redla@sc.com>>; Gupta, NaveenKumar <NaveenKumar.Gupta@sc.com<mailto:NaveenKumar.Gupta@sc.com>>
+Cc: Hemath Kumar, Manoj <Manoj.HemathKumar@sc.com<mailto:Manoj.HemathKumar@sc.com>>
+Subject: FW: AI | Arabic Invoice, Peer analysis, & Translation upcoming sessions
+
+
+
+INTERNAL
+
+
+
+Dear all,
+
+
+
+As discussed in our cluster call, please share the relevant samples directly to Rizwan and while sending please cc Manoj /Sudharsan copied in that email.
+
+
+
+Please target to send it before tomorrow EoD.
+
+
+
+Regards
+
+Kameswaran.
+
+From: Rizvi, Rizwan <Rizwan.Rizvi@sc.com<mailto:Rizwan.Rizvi@sc.com>>
+Sent: Saturday, November 22, 2025 8:26 AM
+To: Korayem, Ahmed <Ahmed.Korayem@sc.com<mailto:Ahmed.Korayem@sc.com>>; Elkilany, Yomna Mohamed <YomnaMohamed.Elkilany@sc.com<mailto:YomnaMohamed.Elkilany@sc.com>>; Tanveer, Fuzail <Fuzail.Tanveer@sc.com<mailto:Fuzail.Tanveer@sc.com>>; Ali1, Wasiq <Wasiq.Ali1@sc.com<mailto:Wasiq.Ali1@sc.com>>; Akhtar, Asad <Asad.Akhtar@sc.com<mailto:Asad.Akhtar@sc.com>>; Hussain, AliabdulKarim <AliabdulKarim.Hussain@sc.com<mailto:AliabdulKarim.Hussain@sc.com>>; Anwer, Arsalan <Arsalan.Anwer@sc.com<mailto:Arsalan.Anwer@sc.com>>; Merchant, Muhammed <Muhammed.Merchant@sc.com<mailto:Muhammed.Merchant@sc.com>>; Salim, Dalia <Dalia.Salim@sc.com<mailto:Dalia.Salim@sc.com>>; Ahmed, Ishtiyaq <Ishtiyaq.Ahmed@sc.com<mailto:Ishtiyaq.Ahmed@sc.com>>; Jose, Rejis V <Rejisv.Jose@sc.com<mailto:Rejisv.Jose@sc.com>>; Fekry, Ahmed Mohamed <AhmedMohamed.Fekry@sc.com<mailto:AhmedMohamed.Fekry@sc.com>>; Raheem, Murtadha <Murtadha.Raheem@sc.com<mailto:Murtadha.Raheem@sc.com>>; Al Dohan, Hawazen <Hawazen.AlDohan@sc.com<mailto:Hawazen.AlDohan@sc.com>>; Alkanhal, Ady <Ady.Alkanhal@sc.com<mailto:Ady.Alkanhal@sc.com>>; Prabhakaran, Kameswaran <Kameswaran.Prabhakaran@sc.com<mailto:Kameswaran.Prabhakaran@sc.com>>; Redla, Sai Venkata Ramana <SaiVenkataRamana.Redla@sc.com<mailto:SaiVenkataRamana.Redla@sc.com>>
+Cc: Tareef, Shaikha <Shaikha.Tareef@sc.com<mailto:Shaikha.Tareef@sc.com>>; Shariff, Asad Ali <Asad-Ali.Shariff@sc.com<mailto:Asad-Ali.Shariff@sc.com>>; Mahmood1, Kashif <Kashif.Mahmood1@sc.com<mailto:Kashif.Mahmood1@sc.com>>; Alam, Syed Ejaz <Syed-Ejaz.Alam@sc.com<mailto:Syed-Ejaz.Alam@sc.com>>; Hussain, Tahir <Tahir.Hussain@sc.com<mailto:Tahir.Hussain@sc.com>>; Turrell, Craig <Craig.Turrell@sc.com<mailto:Craig.Turrell@sc.com>>; Elhamzawy, Aly <Aly.Elhamzawy@sc.com<mailto:Aly.Elhamzawy@sc.com>>; Gupta, NaveenKumar <NaveenKumar.Gupta@sc.com<mailto:NaveenKumar.Gupta@sc.com>>; Hemath Kumar, Manoj <Manoj.HemathKumar@sc.com<mailto:Manoj.HemathKumar@sc.com>>; Sunku, Sudharsan <Sudharsan.Sunku@sc.com<mailto:Sudharsan.Sunku@sc.com>>
+Subject: AI | Arabic Invoice, Peer analysis, & Translation upcoming sessions
+
+
+
+INTERNAL
+
+
+
+PLEASE READ
+
+Dear all,
+
+
+
+Ref earlier catch up with Craig on AI capabilities and solutioning translation of invoices from Arabic, peer analysis and Arabic translation. We are now organizing multiple sessions for each capability covering understanding of local process, specific Arabic translation and learn how to use peer analysis tool.
+
+
+
+For countries facing challenge of invoices in Arabic, your participation is the key for developers to understand the process followed, the important fields and the appropriate translation which could vary from country to country, i.e. SA & EG in particular. Further, another focus session is planned for peer / competitor analysis tool, mandatory for UAE, PK & BH. Let me know if any one else is interested, so that I can include in invite.
+
+
+
+1st session planned on Monday.
+
+Mandatory participation:
+
+Country
+
+Participants
+
+CFO
+
+Remarks
+
+Saudi-SAMA
+
+@Tanveer, Fuzail<mailto:Fuzail.Tanveer@sc.com>
+
+@Al Dohan, Hawazen<mailto:Hawazen.AlDohan@sc.com>
+
+
+
+Saudi-CMA
+
+@Ali1, Wasiq<mailto:Wasiq.Ali1@sc.com>
+
+@Alkanhal, Ady<mailto:Ady.Alkanhal@sc.com>
+
+
+
+Egypt
+
+@Elkilany, Yomna Mohamed<mailto:YomnaMohamed.Elkilany@sc.com> @Korayem, Ahmed<mailto:Ahmed.Korayem@sc.com>
+
+@Fekry, Ahmed Mohamed<mailto:AhmedMohamed.Fekry@sc.com>
+
+
+
+Qatar
+
+@Akhtar, Asad<mailto:Asad.Akhtar@sc.com>
+
+@Gupta, NaveenKumar<mailto:NaveenKumar.Gupta@sc.com>
+
+Naveen, I presumed Qatar gets all invoices in English as per our earlier connect. If not the case then pls join AP-AI Conversion of invoices in Arabic to English
+
+Iraq
+
+@Raheem, Murtadha<mailto:Murtadha.Raheem@sc.com>
+
+@Salim, Dalia<mailto:Dalia.Salim@sc.com>
+
+Dalia, I presumed Iraq gets all invoices in English as per our earlier connect. If not the case then pls join AP-AI Conversion of invoices in Arabic to English
+
+
+
+Multiple engagement and sessions, duration ranging between 30 to 60 minutes:
+
+
+
+*       Learning and understanding of local process
+*       Training
+*       Checking the conversion, learning, adapting, improving the agents
+*       Adaption of services
+
+
+
+Session 1 - Understand: Map : define the problem, map the user journey, pick a target
+
+Session 2 - Sketch: Sketch our detailed solution
+
+Session 3 - Decide: Critique approaches and choose best idea/path to a solution we will try and deploy
+
+Session 4 - Prototype: Build a practical system to meet the use case scope
+
+Session 5: Testing: Start to test the AI app with a minimum of 5 people able to provide feedback
+
+
+
+@Ahmed, Ishtiyaq<mailto:Ishtiyaq.Ahmed@sc.com>, will be including you as well in session covering invoice translation and processing. There could be an opportunity to translate and send for processing directly, minimising multiple scans and save some processing time.
+
+
+
+@Jose, Rejis V<mailto:Rejisv.Jose@sc.com> FYI too pls.
+
+
+
+Appreciate your time and support to lead the AI adaption in MEP, finding opportunities, creating efficiencies.
+
+
+
+See you there.
+
+
+
+Thanks
+
+Riz
+[part depth=4 ct=text/html]
+INTERNAL Hi Rizwan, &nbsp; Upon rechecking with stakeholders we noted 1 sample for an Arabic invoice in Qatar. We might have one or two more samples which are still awaited. We will join the AP-AI Conversion of invoices in Arabic to English. &nbsp; Regards, Asad &nbsp; From: Gupta, NaveenKumar &lt;NaveenKumar.Gupta@sc.com&gt; Sent: Sunday, November 23, 2025 1:01 PM To: Akhtar, Asad &lt;Asad.Akhtar@sc.com&gt; Subject: FW: AI | Arabic Invoice, Peer analysis, &amp; Translation upcoming sessions &nbsp; INTERNAL &nbsp; FYA &nbsp; Regards Navin &nbsp; From: Prabhakaran, Kameswaran &lt; Kameswaran.Prabhakaran@sc.com &gt; Sent: Saturday, November 22, 2025 1:26 PM To: Fekry, Ahmed Mohamed &lt; AhmedMohamed.Fekry@sc.com &gt;; Salim, Dalia &lt; Dalia.Salim@sc.com &gt;; Hussain, AliabdulKarim &lt; AliabdulKarim.Hussain@sc.com &gt;; Redla, Sai Venkata Ramana &lt; SaiVenkataRamana.Redla@sc.com &gt;; Gupta, NaveenKumar &lt; NaveenKumar.Gupta@sc.com &gt; Cc: Hemath Kumar, Manoj &lt; Manoj.HemathKumar@sc.com &gt; Subject: FW: AI | Arabic Invoice, Peer analysis, &amp; Translation upcoming sessions &nbsp; INTERNAL &nbsp; Dear all, &nbsp; As discussed in our cluster call, please share the relevant samples directly to Rizwan and while sending please cc Manoj /Sudharsan copied in that email. &nbsp; Please target to send it before tomorrow EoD. &nbsp; Regards Kameswaran. From: Rizvi, Rizwan &lt; Rizwan.Rizvi@sc.com &gt; Sent: Saturday, November 22, 2025 8:26 AM To: Korayem, Ahmed &lt; Ahmed.Korayem@sc.com &gt;; Elkilany, Yomna Mohamed &lt; YomnaMohamed.Elkilany@sc.com &gt;; Tanveer, Fuzail &lt; Fuzail.Tanveer@sc.com &gt;; Ali1, Wasiq &lt; Wasiq.Ali1@sc.com &gt;; Akhtar, Asad &lt; Asad.Akhtar@sc.com &gt;; Hussain, AliabdulKarim &lt; AliabdulKarim.Hussain@sc.com &gt;; Anwer, Arsalan &lt; Arsalan.Anwer@sc.com &gt;; Merchant, Muhammed &lt; Muhammed.Merchant@sc.com &gt;; Salim, Dalia &lt; Dalia.Salim@sc.com &gt;; Ahmed, Ishtiyaq &lt; Ishtiyaq.Ahmed@sc.com &gt;; Jose, Rejis V &lt; Rejisv.Jose@sc.com &gt;; Fekry, Ahmed Mohamed &lt; AhmedMohamed.Fekry@sc.com &gt;; Raheem, Murtadha &lt; Murtadha.Raheem@sc.com &gt;; Al Dohan, Hawazen &lt; Hawazen.AlDohan@sc.com &gt;; Alkanhal, Ady &lt; Ady.Alkanhal@sc.com &gt;; Prabhakaran, Kameswaran &lt; Kameswaran.Prabhakaran@sc.com &gt;; Redla, Sai Venkata Ramana &lt; SaiVenkataRamana.Redla@sc.com &gt; Cc: Tareef, Shaikha &lt; Shaikha.Tareef@sc.com &gt;; Shariff, Asad Ali &lt; Asad-Ali.Shariff@sc.com &gt;; Mahmood1, Kashif &lt; Kashif.Mahmood1@sc.com &gt;; Alam, Syed Ejaz &lt; Syed-Ejaz.Alam@sc.com &gt;; Hussain, Tahir &lt; Tahir.Hussain@sc.com &gt;; Turrell, Craig &lt; Craig.Turrell@sc.com &gt;; Elhamzawy, Aly &lt; Aly.Elhamzawy@sc.com &gt;; Gupta, NaveenKumar &lt; NaveenKumar.Gupta@sc.com &gt;; Hemath Kumar, Manoj &lt; Manoj.HemathKumar@sc.com &gt;; Sunku, Sudharsan &lt; Sudharsan.Sunku@sc.com &gt; Subject: AI | Arabic Invoice, Peer analysis, &amp; Translation upcoming sessions &nbsp; INTERNAL &nbsp; PLEASE READ Dear all, &nbsp; Ref earlier catch up with Craig on AI capabilities and solutioning translation of invoices from Arabic, peer analysis and Arabic translation. We are now organizing multiple sessions for each capability covering understanding of local process, specific Arabic translation and learn how to use peer analysis tool. &nbsp; For countries facing challenge of invoices in Arabic, your participation is the key for developers to understand the process followed, the important fields and the appropriate translation which could vary from country to country, i.e. SA &amp; EG in particular. Further, another focus session is planned for peer / competitor analysis tool, mandatory for UAE, PK &amp; BH. Let me know if any one else is interested, so that I can include in invite. &nbsp; 1 st session planned on Monday. Mandatory participation: Country Participants CFO Remarks Saudi-SAMA @Tanveer, Fuzail @Al Dohan, Hawazen &nbsp; Saudi-CMA @Ali1, Wasiq @Alkanhal, Ady &nbsp; Egypt @Elkilany, Yomna Mohamed @Korayem, Ahmed @Fekry, Ahmed Mohamed &nbsp; Qatar @Akhtar, Asad @Gupta, NaveenKumar Naveen, I presumed Qatar gets all invoices in English as per our earlier connect. If not the case then pls join AP-AI Conversion of invoices in Arabic to English Iraq @Raheem, Murtadha @Salim, Dalia Dalia, I presumed Iraq gets all invoices in English as per our earlier connect. If not the case then pls join AP-AI Conversion of invoices in Arabic to English &nbsp; Multiple engagement and sessions, duration ranging between 30 to 60 minutes: &nbsp; Learning and understanding of local process Training Checking the conversion, learning, adapting, improving the agents Adaption of services &nbsp; Session 1 - Understand: Map : define the problem, map the user journey, pick a target Session 2 &nbsp;- Sketch: Sketch our detailed solution&nbsp; Session 3 &nbsp;- Decide: Critique approaches and choose best idea/path to a solution we will try and deploy Session 4 &nbsp;- Prototype: Build a practical&nbsp;system to meet the use case scope Session 5 : Testing: Start to test the AI app with a minimum of 5 people able to provide feedback&nbsp; &nbsp; @Ahmed, Ishtiyaq , will be including you as well in session covering invoice translation and processing. There could be an opportunity to translate and send for processing directly, minimising multiple scans and save some processing time. &nbsp; @Jose, Rejis V FYI too pls. &nbsp; Appreciate your time and support to lead the AI adaption in MEP, finding opportunities, creating efficiencies. &nbsp; See you there. &nbsp; Thanks Riz
+[part depth=3 ct=application/pdf filename='EDAA Annual Fee Invoice 2025.pdf']
+[part depth=1 ct=message/rfc822]
+[part depth=2 ct=multipart/mixed]
+[part depth=3 ct=multipart/alternative]
+[part depth=4 ct=text/plain]
+INTERNAL
+
+
+
+Hi Rizwan and Manoj,
+
+
+
+Hope you are doing well.
+
+
+
+As requested, please find attached.
+
+
+
+Best regards,
+
+Wasiq Ali ACCA
+
+
+
+
+
+
+
+From: Prabhakaran, Kameswaran <Kameswaran.Prabhakaran@sc.com>
+Sent: Sunday, November 23, 2025 12:22 PM
+To: Fekry, Ahmed Mohamed <AhmedMohamed.Fekry@sc.com>; Al Dohan, Hawazen <Hawazen.AlDohan@sc.com>; Tanveer, Fuzail <Fuzail.Tanveer@sc.com>; Alkanhal, Ady <Ady.Alkanhal@sc.com>; Ali1, Wasiq <Wasiq.Ali1@sc.com>
+Cc: Rizvi, Rizwan <Rizwan.Rizvi@sc.com>; Hemath Kumar, Manoj <Manoj.HemathKumar@sc.com>
+Subject: RE: AI | Arabic Invoice, Peer analysis, & Translation upcoming sessions
+Importance: High
+
+
+
+INTERNAL
+
+
+
+Dear all,
+
+
+
+Please send sample Arabic invoice for your respective countries immediately to Rizwan and Maonj (cc me)
+
+
+
+Regards
+
+Kameswaran.
+
+From: Prabhakaran, Kameswaran
+Sent: Saturday, November 22, 2025 1:26 PM
+To: Fekry, Ahmed Mohamed <AhmedMohamed.Fekry@sc.com<mailto:AhmedMohamed.Fekry@sc.com>>; Salim, Dalia <Dalia.Salim@sc.com<mailto:Dalia.Salim@sc.com>>; Hussain, AliabdulKarim <AliabdulKarim.Hussain@sc.com<mailto:AliabdulKarim.Hussain@sc.com>>; Redla, Sai Venkata Ramana <SaiVenkataRamana.Redla@sc.com<mailto:SaiVenkataRamana.Redla@sc.com>>; Gupta, NaveenKumar <NaveenKumar.Gupta@sc.com<mailto:NaveenKumar.Gupta@sc.com>>
+Cc: Hemath Kumar, Manoj <Manoj.HemathKumar@sc.com<mailto:Manoj.HemathKumar@sc.com>>
+Subject: FW: AI | Arabic Invoice, Peer analysis, & Translation upcoming sessions
+
+
+
+Dear all,
+
+
+
+As discussed in our cluster call, please share the relevant samples directly to Rizwan and while sending please cc Manoj /Sudharsan copied in that email.
+
+
+
+Please target to send it before tomorrow EoD.
+
+
+
+Regards
+
+Kameswaran.
+
+From: Rizvi, Rizwan <Rizwan.Rizvi@sc.com<mailto:Rizwan.Rizvi@sc.com>>
+Sent: Saturday, November 22, 2025 8:26 AM
+To: Korayem, Ahmed <Ahmed.Korayem@sc.com<mailto:Ahmed.Korayem@sc.com>>; Elkilany, Yomna Mohamed <YomnaMohamed.Elkilany@sc.com<mailto:YomnaMohamed.Elkilany@sc.com>>; Tanveer, Fuzail <Fuzail.Tanveer@sc.com<mailto:Fuzail.Tanveer@sc.com>>; Ali1, Wasiq <Wasiq.Ali1@sc.com<mailto:Wasiq.Ali1@sc.com>>; Akhtar, Asad <Asad.Akhtar@sc.com<mailto:Asad.Akhtar@sc.com>>; Hussain, AliabdulKarim <AliabdulKarim.Hussain@sc.com<mailto:AliabdulKarim.Hussain@sc.com>>; Anwer, Arsalan <Arsalan.Anwer@sc.com<mailto:Arsalan.Anwer@sc.com>>; Merchant, Muhammed <Muhammed.Merchant@sc.com<mailto:Muhammed.Merchant@sc.com>>; Salim, Dalia <Dalia.Salim@sc.com<mailto:Dalia.Salim@sc.com>>; Ahmed, Ishtiyaq <Ishtiyaq.Ahmed@sc.com<mailto:Ishtiyaq.Ahmed@sc.com>>; Jose, Rejis V <Rejisv.Jose@sc.com<mailto:Rejisv.Jose@sc.com>>; Fekry, Ahmed Mohamed <AhmedMohamed.Fekry@sc.com<mailto:AhmedMohamed.Fekry@sc.com>>; Raheem, Murtadha <Murtadha.Raheem@sc.com<mailto:Murtadha.Raheem@sc.com>>; Al Dohan, Hawazen <Hawazen.AlDohan@sc.com<mailto:Hawazen.AlDohan@sc.com>>; Alkanhal, Ady <Ady.Alkanhal@sc.com<mailto:Ady.Alkanhal@sc.com>>; Prabhakaran, Kameswaran <Kameswaran.Prabhakaran@sc.com<mailto:Kameswaran.Prabhakaran@sc.com>>; Redla, Sai Venkata Ramana <SaiVenkataRamana.Redla@sc.com<mailto:SaiVenkataRamana.Redla@sc.com>>
+Cc: Tareef, Shaikha <Shaikha.Tareef@sc.com<mailto:Shaikha.Tareef@sc.com>>; Shariff, Asad Ali <Asad-Ali.Shariff@sc.com<mailto:Asad-Ali.Shariff@sc.com>>; Mahmood1, Kashif <Kashif.Mahmood1@sc.com<mailto:Kashif.Mahmood1@sc.com>>; Alam, Syed Ejaz <Syed-Ejaz.Alam@sc.com<mailto:Syed-Ejaz.Alam@sc.com>>; Hussain, Tahir <Tahir.Hussain@sc.com<mailto:Tahir.Hussain@sc.com>>; Turrell, Craig <Craig.Turrell@sc.com<mailto:Craig.Turrell@sc.com>>; Elhamzawy, Aly <Aly.Elhamzawy@sc.com<mailto:Aly.Elhamzawy@sc.com>>; Gupta, NaveenKumar <NaveenKumar.Gupta@sc.com<mailto:NaveenKumar.Gupta@sc.com>>; Hemath Kumar, Manoj <Manoj.HemathKumar@sc.com<mailto:Manoj.HemathKumar@sc.com>>; Sunku, Sudharsan <Sudharsan.Sunku@sc.com<mailto:Sudharsan.Sunku@sc.com>>
+Subject: AI | Arabic Invoice, Peer analysis, & Translation upcoming sessions
+
+
+
+INTERNAL
+
+
+
+PLEASE READ
+
+Dear all,
+
+
+
+Ref earlier catch up with Craig on AI capabilities and solutioning translation of invoices from Arabic, peer analysis and Arabic translation. We are now organizing multiple sessions for each capability covering understanding of local process, specific Arabic translation and learn how to use peer analysis tool.
+
+
+
+For countries facing challenge of invoices in Arabic, your participation is the key for developers to understand the process followed, the important fields and the appropriate translation which could vary from country to country, i.e. SA & EG in particular. Further, another focus session is planned for peer / competitor analysis tool, mandatory for UAE, PK & BH. Let me know if any one else is interested, so that I can include in invite.
+
+
+
+1st session planned on Monday.
+
+Mandatory participation:
+
+Country
+
+Participants
+
+CFO
+
+Remarks
+
+Saudi-SAMA
+
+@Tanveer, Fuzail<mailto:Fuzail.Tanveer@sc.com>
+
+@Al Dohan, Hawazen<mailto:Hawazen.AlDohan@sc.com>
+
+
+
+Saudi-CMA
+
+@Ali1, Wasiq<mailto:Wasiq.Ali1@sc.com>
+
+@Alkanhal, Ady<mailto:Ady.Alkanhal@sc.com>
+
+
+
+Egypt
+
+@Elkilany, Yomna Mohamed<mailto:YomnaMohamed.Elkilany@sc.com> @Korayem, Ahmed<mailto:Ahmed.Korayem@sc.com>
+
+@Fekry, Ahmed Mohamed<mailto:AhmedMohamed.Fekry@sc.com>
+
+
+
+Qatar
+
+@Akhtar, Asad<mailto:Asad.Akhtar@sc.com>
+
+@Gupta, NaveenKumar<mailto:NaveenKumar.Gupta@sc.com>
+
+Naveen, I presumed Qatar gets all invoices in English as per our earlier connect. If not the case then pls join AP-AI Conversion of invoices in Arabic to English
+
+Iraq
+
+@Raheem, Murtadha<mailto:Murtadha.Raheem@sc.com>
+
+@Salim, Dalia<mailto:Dalia.Salim@sc.com>
+
+Dalia, I presumed Iraq gets all invoices in English as per our earlier connect. If not the case then pls join AP-AI Conversion of invoices in Arabic to English
+
+
+
+Multiple engagement and sessions, duration ranging between 30 to 60 minutes:
+
+
+
+*       Learning and understanding of local process
+*       Training
+*       Checking the conversion, learning, adapting, improving the agents
+*       Adaption of services
+
+
+
+Session 1 - Understand: Map : define the problem, map the user journey, pick a target
+
+Session 2 - Sketch: Sketch our detailed solution
+
+Session 3 - Decide: Critique approaches and choose best idea/path to a solution we will try and deploy
+
+Session 4 - Prototype: Build a practical system to meet the use case scope
+
+Session 5: Testing: Start to test the AI app with a minimum of 5 people able to provide feedback
+
+
+
+@Ahmed, Ishtiyaq<mailto:Ishtiyaq.Ahmed@sc.com>, will be including you as well in session covering invoice translation and processing. There could be an opportunity to translate and send for processing directly, minimising multiple scans and save some processing time.
+
+
+
+@Jose, Rejis V<mailto:Rejisv.Jose@sc.com> FYI too pls.
+
+
+
+Appreciate your time and support to lead the AI adaption in MEP, finding opportunities, creating efficiencies.
+
+
+
+See you there.
+
+
+
+Thanks
+
+Riz
+[part depth=4 ct=text/html]
+INTERNAL Hi Rizwan and Manoj, &nbsp; Hope you are doing well. &nbsp; As requested, please find attached. &nbsp; Best regards, Wasiq Ali ACCA &nbsp; &nbsp; &nbsp; From: Prabhakaran, Kameswaran &lt;Kameswaran.Prabhakaran@sc.com&gt; Sent: Sunday, November 23, 2025 12:22 PM To: Fekry, Ahmed Mohamed &lt;AhmedMohamed.Fekry@sc.com&gt;; Al Dohan, Hawazen &lt;Hawazen.AlDohan@sc.com&gt;; Tanveer, Fuzail &lt;Fuzail.Tanveer@sc.com&gt;; Alkanhal, Ady &lt;Ady.Alkanhal@sc.com&gt;; Ali1, Wasiq &lt;Wasiq.Ali1@sc.com&gt; Cc: Rizvi, Rizwan &lt;Rizwan.Rizvi@sc.com&gt;; Hemath Kumar, Manoj &lt;Manoj.HemathKumar@sc.com&gt; Subject: RE: AI | Arabic Invoice, Peer analysis, &amp; Translation upcoming sessions Importance: High &nbsp; INTERNAL &nbsp; Dear all, &nbsp; Please send sample Arabic invoice for your respective countries immediately to Rizwan and Maonj (cc me) &nbsp; Regards Kameswaran. From: Prabhakaran, Kameswaran Sent: Saturday, November 22, 2025 1:26 PM To: Fekry, Ahmed Mohamed &lt; AhmedMohamed.Fekry@sc.com &gt;; Salim, Dalia &lt; Dalia.Salim@sc.com &gt;; Hussain, AliabdulKarim &lt; AliabdulKarim.Hussain@sc.com &gt;; Redla, Sai Venkata Ramana &lt; SaiVenkataRamana.Redla@sc.com &gt;; Gupta, NaveenKumar &lt; NaveenKumar.Gupta@sc.com &gt; Cc: Hemath Kumar, Manoj &lt; Manoj.HemathKumar@sc.com &gt; Subject: FW: AI | Arabic Invoice, Peer analysis, &amp; Translation upcoming sessions &nbsp; Dear all, &nbsp; As discussed in our cluster call, please share the relevant samples directly to Rizwan and while sending please cc Manoj /Sudharsan copied in that email. &nbsp; Please target to send it before tomorrow EoD. &nbsp; Regards Kameswaran. From: Rizvi, Rizwan &lt; Rizwan.Rizvi@sc.com &gt; Sent: Saturday, November 22, 2025 8:26 AM To: Korayem, Ahmed &lt; Ahmed.Korayem@sc.com &gt;; Elkilany, Yomna Mohamed &lt; YomnaMohamed.Elkilany@sc.com &gt;; Tanveer, Fuzail &lt; Fuzail.Tanveer@sc.com &gt;; Ali1, Wasiq &lt; Wasiq.Ali1@sc.com &gt;; Akhtar, Asad &lt; Asad.Akhtar@sc.com &gt;; Hussain, AliabdulKarim &lt; AliabdulKarim.Hussain@sc.com &gt;; Anwer, Arsalan &lt; Arsalan.Anwer@sc.com &gt;; Merchant, Muhammed &lt; Muhammed.Merchant@sc.com &gt;; Salim, Dalia &lt; Dalia.Salim@sc.com &gt;; Ahmed, Ishtiyaq &lt; Ishtiyaq.Ahmed@sc.com &gt;; Jose, Rejis V &lt; Rejisv.Jose@sc.com &gt;; Fekry, Ahmed Mohamed &lt; AhmedMohamed.Fekry@sc.com &gt;; Raheem, Murtadha &lt; Murtadha.Raheem@sc.com &gt;; Al Dohan, Hawazen &lt; Hawazen.AlDohan@sc.com &gt;; Alkanhal, Ady &lt; Ady.Alkanhal@sc.com &gt;; Prabhakaran, Kameswaran &lt; Kameswaran.Prabhakaran@sc.com &gt;; Redla, Sai Venkata Ramana &lt; SaiVenkataRamana.Redla@sc.com &gt; Cc: Tareef, Shaikha &lt; Shaikha.Tareef@sc.com &gt;; Shariff, Asad Ali &lt; Asad-Ali.Shariff@sc.com &gt;; Mahmood1, Kashif &lt; Kashif.Mahmood1@sc.com &gt;; Alam, Syed Ejaz &lt; Syed-Ejaz.Alam@sc.com &gt;; Hussain, Tahir &lt; Tahir.Hussain@sc.com &gt;; Turrell, Craig &lt; Craig.Turrell@sc.com &gt;; Elhamzawy, Aly &lt; Aly.Elhamzawy@sc.com &gt;; Gupta, NaveenKumar &lt; NaveenKumar.Gupta@sc.com &gt;; Hemath Kumar, Manoj &lt; Manoj.HemathKumar@sc.com &gt;; Sunku, Sudharsan &lt; Sudharsan.Sunku@sc.com &gt; Subject: AI | Arabic Invoice, Peer analysis, &amp; Translation upcoming sessions &nbsp; INTERNAL &nbsp; PLEASE READ Dear all, &nbsp; Ref earlier catch up with Craig on AI capabilities and solutioning translation of invoices from Arabic, peer analysis and Arabic translation. We are now organizing multiple sessions for each capability covering understanding of local process, specific Arabic translation and learn how to use peer analysis tool. &nbsp; For countries facing challenge of invoices in Arabic, your participation is the key for developers to understand the process followed, the important fields and the appropriate translation which could vary from country to country, i.e. SA &amp; EG in particular. Further, another focus session is planned for peer / competitor analysis tool, mandatory for UAE, PK &amp; BH. Let me know if any one else is interested, so that I can include in invite. &nbsp; 1 st session planned on Monday. Mandatory participation: Country Participants CFO Remarks Saudi-SAMA @Tanveer, Fuzail @Al Dohan, Hawazen &nbsp; Saudi-CMA @Ali1, Wasiq @Alkanhal, Ady &nbsp; Egypt @Elkilany, Yomna Mohamed @Korayem, Ahmed @Fekry, Ahmed Mohamed &nbsp; Qatar @Akhtar, Asad @Gupta, NaveenKumar Naveen, I presumed Qatar gets all invoices in English as per our earlier connect. If not the case then pls join AP-AI Conversion of invoices in Arabic to English Iraq @Raheem, Murtadha @Salim, Dalia Dalia, I presumed Iraq gets all invoices in English as per our earlier connect. If not the case then pls join AP-AI Conversion of invoices in Arabic to English &nbsp; Multiple engagement and sessions, duration ranging between 30 to 60 minutes: &nbsp; Learning and understanding of local process Training Checking the conversion, learning, adapting, improving the agents Adaption of services &nbsp; Session 1 - Understand: Map : define the problem, map the user journey, pick a target Session 2 &nbsp;- Sketch: Sketch our detailed solution&nbsp; Session 3 &nbsp;- Decide: Critique approaches and choose best idea/path to a solution we will try and deploy Session 4 &nbsp;- Prototype: Build a practical&nbsp;system to meet the use case scope Session 5 : Testing: Start to test the AI app with a minimum of 5 people able to provide feedback&nbsp; &nbsp; @Ahmed, Ishtiyaq , will be including you as well in session covering invoice translation and processing. There could be an opportunity to translate and send for processing directly, minimising multiple scans and save some processing time. &nbsp; @Jose, Rejis V FYI too pls. &nbsp; Appreciate your time and support to lead the AI adaption in MEP, finding opportunities, creating efficiencies. &nbsp; See you there. &nbsp; Thanks Riz
+[part depth=3 ct=application/pdf filename='RUHR004008054.pdf']
+[part depth=3 ct=application/pdf filename='25006903.pdf']
+[part depth=3 ct=application/pdf filename='Inv 22767.pdf']
+[part depth=3 ct=application/pdf filename='1002408.pdf']
+[part depth=3 ct=application/pdf filename='INV000651188.pdf']
+[part depth=1 ct=message/rfc822]
+[part depth=2 ct=multipart/mixed]
+[part depth=3 ct=multipart/alternative]
+[part depth=4 ct=text/plain]
+INTERNAL
+
+
+
+Hi Rizwan.
+
+We would also be interested in the competitive analysis.
+
+
+
+Please find a sample for 2023 Citi Financials in Arabic (latest published ), (Please note their model is CIB only, like SCB Egypt - All other banks operating in EG are CIB, Retail and we can share at a later stage.
+
+
+
+Regards,
+
+Ahmed
+
+
+
+From: Prabhakaran, Kameswaran <Kameswaran.Prabhakaran@sc.com>
+Sent: Sunday, November 23, 2025 11:22 AM
+To: Fekry, Ahmed Mohamed <AhmedMohamed.Fekry@sc.com>; Al Dohan, Hawazen <Hawazen.AlDohan@sc.com>; Tanveer, Fuzail <Fuzail.Tanveer@sc.com>; Alkanhal, Ady <Ady.Alkanhal@sc.com>; Ali1, Wasiq <Wasiq.Ali1@sc.com>
+Cc: Rizvi, Rizwan <Rizwan.Rizvi@sc.com>; Hemath Kumar, Manoj <Manoj.HemathKumar@sc.com>
+Subject: RE: AI | Arabic Invoice, Peer analysis, & Translation upcoming sessions
+Importance: High
+
+
+
+INTERNAL
+
+
+
+Dear all,
+
+
+
+Please send sample Arabic invoice for your respective countries immediately to Rizwan and Maonj (cc me)
+
+
+
+Regards
+
+Kameswaran.
+
+From: Prabhakaran, Kameswaran
+Sent: Saturday, November 22, 2025 1:26 PM
+To: Fekry, Ahmed Mohamed <AhmedMohamed.Fekry@sc.com<mailto:AhmedMohamed.Fekry@sc.com>>; Salim, Dalia <Dalia.Salim@sc.com<mailto:Dalia.Salim@sc.com>>; Hussain, AliabdulKarim <AliabdulKarim.Hussain@sc.com<mailto:AliabdulKarim.Hussain@sc.com>>; Redla, Sai Venkata Ramana <SaiVenkataRamana.Redla@sc.com<mailto:SaiVenkataRamana.Redla@sc.com>>; Gupta, NaveenKumar <NaveenKumar.Gupta@sc.com<mailto:NaveenKumar.Gupta@sc.com>>
+Cc: Hemath Kumar, Manoj <Manoj.HemathKumar@sc.com<mailto:Manoj.HemathKumar@sc.com>>
+Subject: FW: AI | Arabic Invoice, Peer analysis, & Translation upcoming sessions
+
+
+
+Dear all,
+
+
+
+As discussed in our cluster call, please share the relevant samples directly to Rizwan and while sending please cc Manoj /Sudharsan copied in that email.
+
+
+
+Please target to send it before tomorrow EoD.
+
+
+
+Regards
+
+Kameswaran.
+
+From: Rizvi, Rizwan <Rizwan.Rizvi@sc.com<mailto:Rizwan.Rizvi@sc.com>>
+Sent: Saturday, November 22, 2025 8:26 AM
+To: Korayem, Ahmed <Ahmed.Korayem@sc.com<mailto:Ahmed.Korayem@sc.com>>; Elkilany, Yomna Mohamed <YomnaMohamed.Elkilany@sc.com<mailto:YomnaMohamed.Elkilany@sc.com>>; Tanveer, Fuzail <Fuzail.Tanveer@sc.com<mailto:Fuzail.Tanveer@sc.com>>; Ali1, Wasiq <Wasiq.Ali1@sc.com<mailto:Wasiq.Ali1@sc.com>>; Akhtar, Asad <Asad.Akhtar@sc.com<mailto:Asad.Akhtar@sc.com>>; Hussain, AliabdulKarim <AliabdulKarim.Hussain@sc.com<mailto:AliabdulKarim.Hussain@sc.com>>; Anwer, Arsalan <Arsalan.Anwer@sc.com<mailto:Arsalan.Anwer@sc.com>>; Merchant, Muhammed <Muhammed.Merchant@sc.com<mailto:Muhammed.Merchant@sc.com>>; Salim, Dalia <Dalia.Salim@sc.com<mailto:Dalia.Salim@sc.com>>; Ahmed, Ishtiyaq <Ishtiyaq.Ahmed@sc.com<mailto:Ishtiyaq.Ahmed@sc.com>>; Jose, Rejis V <Rejisv.Jose@sc.com<mailto:Rejisv.Jose@sc.com>>; Fekry, Ahmed Mohamed <AhmedMohamed.Fekry@sc.com<mailto:AhmedMohamed.Fekry@sc.com>>; Raheem, Murtadha <Murtadha.Raheem@sc.com<mailto:Murtadha.Raheem@sc.com>>; Al Dohan, Hawazen <Hawazen.AlDohan@sc.com<mailto:Hawazen.AlDohan@sc.com>>; Alkanhal, Ady <Ady.Alkanhal@sc.com<mailto:Ady.Alkanhal@sc.com>>; Prabhakaran, Kameswaran <Kameswaran.Prabhakaran@sc.com<mailto:Kameswaran.Prabhakaran@sc.com>>; Redla, Sai Venkata Ramana <SaiVenkataRamana.Redla@sc.com<mailto:SaiVenkataRamana.Redla@sc.com>>
+Cc: Tareef, Shaikha <Shaikha.Tareef@sc.com<mailto:Shaikha.Tareef@sc.com>>; Shariff, Asad Ali <Asad-Ali.Shariff@sc.com<mailto:Asad-Ali.Shariff@sc.com>>; Mahmood1, Kashif <Kashif.Mahmood1@sc.com<mailto:Kashif.Mahmood1@sc.com>>; Alam, Syed Ejaz <Syed-Ejaz.Alam@sc.com<mailto:Syed-Ejaz.Alam@sc.com>>; Hussain, Tahir <Tahir.Hussain@sc.com<mailto:Tahir.Hussain@sc.com>>; Turrell, Craig <Craig.Turrell@sc.com<mailto:Craig.Turrell@sc.com>>; Elhamzawy, Aly <Aly.Elhamzawy@sc.com<mailto:Aly.Elhamzawy@sc.com>>; Gupta, NaveenKumar <NaveenKumar.Gupta@sc.com<mailto:NaveenKumar.Gupta@sc.com>>; Hemath Kumar, Manoj <Manoj.HemathKumar@sc.com<mailto:Manoj.HemathKumar@sc.com>>; Sunku, Sudharsan <Sudharsan.Sunku@sc.com<mailto:Sudharsan.Sunku@sc.com>>
+Subject: AI | Arabic Invoice, Peer analysis, & Translation upcoming sessions
+
+
+
+INTERNAL
+
+
+
+PLEASE READ
+
+Dear all,
+
+
+
+Ref earlier catch up with Craig on AI capabilities and solutioning translation of invoices from Arabic, peer analysis and Arabic translation. We are now organizing multiple sessions for each capability covering understanding of local process, specific Arabic translation and learn how to use peer analysis tool.
+
+
+
+For countries facing challenge of invoices in Arabic, your participation is the key for developers to understand the process followed, the important fields and the appropriate translation which could vary from country to country, i.e. SA & EG in particular. Further, another focus session is planned for peer / competitor analysis tool, mandatory for UAE, PK & BH. Let me know if any one else is interested, so that I can include in invite.
+
+
+
+1st session planned on Monday.
+
+Mandatory participation:
+
+Country
+
+Participants
+
+CFO
+
+Remarks
+
+Saudi-SAMA
+
+@Tanveer, Fuzail<mailto:Fuzail.Tanveer@sc.com>
+
+@Al Dohan, Hawazen<mailto:Hawazen.AlDohan@sc.com>
+
+
+
+Saudi-CMA
+
+@Ali1, Wasiq<mailto:Wasiq.Ali1@sc.com>
+
+@Alkanhal, Ady<mailto:Ady.Alkanhal@sc.com>
+
+
+
+Egypt
+
+@Elkilany, Yomna Mohamed<mailto:YomnaMohamed.Elkilany@sc.com> @Korayem, Ahmed<mailto:Ahmed.Korayem@sc.com>
+
+@Fekry, Ahmed Mohamed<mailto:AhmedMohamed.Fekry@sc.com>
+
+
+
+Qatar
+
+@Akhtar, Asad<mailto:Asad.Akhtar@sc.com>
+
+@Gupta, NaveenKumar<mailto:NaveenKumar.Gupta@sc.com>
+
+Naveen, I presumed Qatar gets all invoices in English as per our earlier connect. If not the case then pls join AP-AI Conversion of invoices in Arabic to English
+
+Iraq
+
+@Raheem, Murtadha<mailto:Murtadha.Raheem@sc.com>
+
+@Salim, Dalia<mailto:Dalia.Salim@sc.com>
+
+Dalia, I presumed Iraq gets all invoices in English as per our earlier connect. If not the case then pls join AP-AI Conversion of invoices in Arabic to English
+
+
+
+Multiple engagement and sessions, duration ranging between 30 to 60 minutes:
+
+
+
+*       Learning and understanding of local process
+*       Training
+*       Checking the conversion, learning, adapting, improving the agents
+*       Adaption of services
+
+
+
+Session 1 - Understand: Map : define the problem, map the user journey, pick a target
+
+Session 2 - Sketch: Sketch our detailed solution
+
+Session 3 - Decide: Critique approaches and choose best idea/path to a solution we will try and deploy
+
+Session 4 - Prototype: Build a practical system to meet the use case scope
+
+Session 5: Testing: Start to test the AI app with a minimum of 5 people able to provide feedback
+
+
+
+@Ahmed, Ishtiyaq<mailto:Ishtiyaq.Ahmed@sc.com>, will be including you as well in session covering invoice translation and processing. There could be an opportunity to translate and send for processing directly, minimising multiple scans and save some processing time.
+
+
+
+@Jose, Rejis V<mailto:Rejisv.Jose@sc.com> FYI too pls.
+
+
+
+Appreciate your time and support to lead the AI adaption in MEP, finding opportunities, creating efficiencies.
+
+
+
+See you there.
+
+
+
+Thanks
+
+Riz
+[part depth=4 ct=text/html]
+INTERNAL Hi Rizwan. We would also be interested in the competitive analysis. &nbsp; Please find a sample for 2023 Citi Financials in Arabic (latest published ), (Please note their model is CIB only, like SCB Egypt &#8211; All other banks operating in EG are CIB, Retail and we can share at a later stage. &nbsp; Regards, Ahmed &nbsp; From: Prabhakaran, Kameswaran &lt;Kameswaran.Prabhakaran@sc.com&gt; Sent: Sunday, November 23, 2025 11:22 AM To: Fekry, Ahmed Mohamed &lt;AhmedMohamed.Fekry@sc.com&gt;; Al Dohan, Hawazen &lt;Hawazen.AlDohan@sc.com&gt;; Tanveer, Fuzail &lt;Fuzail.Tanveer@sc.com&gt;; Alkanhal, Ady &lt;Ady.Alkanhal@sc.com&gt;; Ali1, Wasiq &lt;Wasiq.Ali1@sc.com&gt; Cc: Rizvi, Rizwan &lt;Rizwan.Rizvi@sc.com&gt;; Hemath Kumar, Manoj &lt;Manoj.HemathKumar@sc.com&gt; Subject: RE: AI | Arabic Invoice, Peer analysis, &amp; Translation upcoming sessions Importance: High &nbsp; INTERNAL &nbsp; Dear all, &nbsp; Please send sample Arabic invoice for your respective countries immediately to Rizwan and Maonj (cc me) &nbsp; Regards Kameswaran. From: Prabhakaran, Kameswaran Sent: Saturday, November 22, 2025 1:26 PM To: Fekry, Ahmed Mohamed &lt; AhmedMohamed.Fekry@sc.com &gt;; Salim, Dalia &lt; Dalia.Salim@sc.com &gt;; Hussain, AliabdulKarim &lt; AliabdulKarim.Hussain@sc.com &gt;; Redla, Sai Venkata Ramana &lt; SaiVenkataRamana.Redla@sc.com &gt;; Gupta, NaveenKumar &lt; NaveenKumar.Gupta@sc.com &gt; Cc: Hemath Kumar, Manoj &lt; Manoj.HemathKumar@sc.com &gt; Subject: FW: AI | Arabic Invoice, Peer analysis, &amp; Translation upcoming sessions &nbsp; Dear all, &nbsp; As discussed in our cluster call, please share the relevant samples directly to Rizwan and while sending please cc Manoj /Sudharsan copied in that email. &nbsp; Please target to send it before tomorrow EoD. &nbsp; Regards Kameswaran. From: Rizvi, Rizwan &lt; Rizwan.Rizvi@sc.com &gt; Sent: Saturday, November 22, 2025 8:26 AM To: Korayem, Ahmed &lt; Ahmed.Korayem@sc.com &gt;; Elkilany, Yomna Mohamed &lt; YomnaMohamed.Elkilany@sc.com &gt;; Tanveer, Fuzail &lt; Fuzail.Tanveer@sc.com &gt;; Ali1, Wasiq &lt; Wasiq.Ali1@sc.com &gt;; Akhtar, Asad &lt; Asad.Akhtar@sc.com &gt;; Hussain, AliabdulKarim &lt; AliabdulKarim.Hussain@sc.com &gt;; Anwer, Arsalan &lt; Arsalan.Anwer@sc.com &gt;; Merchant, Muhammed &lt; Muhammed.Merchant@sc.com &gt;; Salim, Dalia &lt; Dalia.Salim@sc.com &gt;; Ahmed, Ishtiyaq &lt; Ishtiyaq.Ahmed@sc.com &gt;; Jose, Rejis V &lt; Rejisv.Jose@sc.com &gt;; Fekry, Ahmed Mohamed &lt; AhmedMohamed.Fekry@sc.com &gt;; Raheem, Murtadha &lt; Murtadha.Raheem@sc.com &gt;; Al Dohan, Hawazen &lt; Hawazen.AlDohan@sc.com &gt;; Alkanhal, Ady &lt; Ady.Alkanhal@sc.com &gt;; Prabhakaran, Kameswaran &lt; Kameswaran.Prabhakaran@sc.com &gt;; Redla, Sai Venkata Ramana &lt; SaiVenkataRamana.Redla@sc.com &gt; Cc: Tareef, Shaikha &lt; Shaikha.Tareef@sc.com &gt;; Shariff, Asad Ali &lt; Asad-Ali.Shariff@sc.com &gt;; Mahmood1, Kashif &lt; Kashif.Mahmood1@sc.com &gt;; Alam, Syed Ejaz &lt; Syed-Ejaz.Alam@sc.com &gt;; Hussain, Tahir &lt; Tahir.Hussain@sc.com &gt;; Turrell, Craig &lt; Craig.Turrell@sc.com &gt;; Elhamzawy, Aly &lt; Aly.Elhamzawy@sc.com &gt;; Gupta, NaveenKumar &lt; NaveenKumar.Gupta@sc.com &gt;; Hemath Kumar, Manoj &lt; Manoj.HemathKumar@sc.com &gt;; Sunku, Sudharsan &lt; Sudharsan.Sunku@sc.com &gt; Subject: AI | Arabic Invoice, Peer analysis, &amp; Translation upcoming sessions &nbsp; INTERNAL &nbsp; PLEASE READ Dear all, &nbsp; Ref earlier catch up with Craig on AI capabilities and solutioning translation of invoices from Arabic, peer analysis and Arabic translation. We are now organizing multiple sessions for each capability covering understanding of local process, specific Arabic translation and learn how to use peer analysis tool. &nbsp; For countries facing challenge of invoices in Arabic, your participation is the key for developers to understand the process followed, the important fields and the appropriate translation which could vary from country to country, i.e. SA &amp; EG in particular. Further, another focus session is planned for peer / competitor analysis tool, mandatory for UAE, PK &amp; BH. Let me know if any one else is interested, so that I can include in invite. &nbsp; 1 st session planned on Monday. Mandatory participation: Country Participants CFO Remarks Saudi-SAMA @Tanveer, Fuzail @Al Dohan, Hawazen &nbsp; Saudi-CMA @Ali1, Wasiq @Alkanhal, Ady &nbsp; Egypt @Elkilany, Yomna Mohamed @Korayem, Ahmed @Fekry, Ahmed Mohamed &nbsp; Qatar @Akhtar, Asad @Gupta, NaveenKumar Naveen, I presumed Qatar gets all invoices in English as per our earlier connect. If not the case then pls join AP-AI Conversion of invoices in Arabic to English Iraq @Raheem, Murtadha @Salim, Dalia Dalia, I presumed Iraq gets all invoices in English as per our earlier connect. If not the case then pls join AP-AI Conversion of invoices in Arabic to English &nbsp; Multiple engagement and sessions, duration ranging between 30 to 60 minutes: &nbsp; Learning and understanding of local process Training Checking the conversion, learning, adapting, improving the agents Adaption of services &nbsp; Session 1 - Understand: Map : define the problem, map the user journey, pick a target Session 2 &nbsp;- Sketch: Sketch our detailed solution&nbsp; Session 3 &nbsp;- Decide: Critique approaches and choose best idea/path to a solution we will try and deploy Session 4 &nbsp;- Prototype: Build a practical&nbsp;system to meet the use case scope Session 5 : Testing: Start to test the AI app with a minimum of 5 people able to provide feedback&nbsp; &nbsp; @Ahmed, Ishtiyaq , will be including you as well in session covering invoice translation and processing. There could be an opportunity to translate and send for processing directly, minimising multiple scans and save some processing time. &nbsp; @Jose, Rejis V FYI too pls. &nbsp; Appreciate your time and support to lead the AI adaption in MEP, finding opportunities, creating efficiencies. &nbsp; See you there. &nbsp; Thanks Riz
+[part depth=3 ct=application/pdf filename='2023_Financial_Statements.pdf']
+[part depth=1 ct=message/rfc822]
+[part depth=2 ct=multipart/mixed]
+[part depth=3 ct=multipart/alternative]
+[part depth=4 ct=text/plain]
+INTERNAL
+
+
+
+Hi Manoj
+
+
+
+PFA
+
+
+
+
+
+Thanks
+
+Yomna
+[part depth=4 ct=text/html]
+INTERNAL Hi Manoj &nbsp; PFA &nbsp; &nbsp; Thanks Yomna &nbsp;
+[part depth=3 ct=application/pdf filename='3CPJR5CQ4PNNN9A4XHBB370K10.pdf']
+[part depth=3 ct=application/pdf filename='B1STE8RHNWZY9TYEXDS6WSZJ10.pdf']
+[part depth=1 ct=message/rfc822]
+[part depth=2 ct=multipart/mixed]
+[part depth=3 ct=multipart/alternative]
+[part depth=4 ct=text/plain]
+INTERNAL
+[part depth=4 ct=text/html]
+INTERNAL &nbsp;
+[part depth=3 ct=application/pdf filename='00003170.pdf']
+[part depth=3 ct=application/pdf filename='00003212.pdf']
+[part depth=3 ct=application/pdf filename='00003207.pdf']
+[part depth=3 ct=application/pdf filename='00003203.pdf']
+[part depth=3 ct=application/pdf filename='00003197.pdf']

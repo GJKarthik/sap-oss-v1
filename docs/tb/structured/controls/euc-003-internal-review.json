@@ -1,0 +1,16 @@
+{
+  "controlId": "EUC-003",
+  "eucReference": "EX/200/1579702/0002/000",
+  "controlObjective": "Internal review and approval of TB summary",
+  "controlType": "detective",
+  "frequency": "monthly",
+  "timing": "M+5",
+  "owner": "Head of Africa GFS",
+  "evidenceLocation": "Shared Drive",
+  "relatedStates": ["REVIEW_INCORPORATE"],
+  "description": "Senior review of variance summary before FORTM pack submission.",
+  "workflowRef": "tb-review-glo",
+  "source_document": {
+    "path": "docs/tb/source/Operation of Month End Close Controls  - Trial Balance Review - GLO (1).pdf"
+  }
+}

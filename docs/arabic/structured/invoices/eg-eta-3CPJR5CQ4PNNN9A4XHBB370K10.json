@@ -1,0 +1,67 @@
+{
+  "id": "eg-eta-3CPJR5CQ4PNNN9A4XHBB370K10",
+  "schema_ref": "invoice.schema.json",
+  "metadata": {
+    "country": "EG",
+    "tax_authority": "ETA",
+    "document_kind": "E_INVOICE",
+    "electronic_id": "3CPJR5CQ4PNNN9A4XHBB370K10",
+    "issue_date": "2025-07-15",
+    "submission_date": "2025-07-15T16:10:00+00:00",
+    "language": "ar",
+    "status": "VALID",
+    "internal_reference": "743"
+  },
+  "seller": {
+    "name_ar": "محمد شريف شرف الدين",
+    "name_en": "Mohamed Sharif Sharaf El Din",
+    "tax_id": "438212282",
+    "tax_id_type": "ETA_TRN",
+    "activity_code": "1811",
+    "address_ar": "ش زكريا عبدالعزيز المهندسين",
+    "address_en": "Agouza, Giza, EG"
+  },
+  "buyer": {
+    "name_ar": "بنك ستاندرد تشارترد",
+    "name_en": "Standard Chartered Bank",
+    "tax_id": "670307459",
+    "tax_id_type": "ETA_TRN",
+    "address_ar": "كايرو فستيفال سيتي المقام علي ق 12 بي 30 ايه القاهرة",
+    "address_en": "Cairo Festival City, Q12 B30A, Cairo, EG"
+  },
+  "line_items": [
+    {
+      "description_ar": "ختم ترودات دائرى 42 مللى سريلة",
+      "description_en": "Circular Trodat seal 42mm, series",
+      "item_code": "EG-438212282-0101214642s",
+      "quantity": 1,
+      "unit_of_measure": "EA",
+      "unit_price": 580000.00,
+      "line_total": 580000.00,
+      "line_discount": 0
+    }
+  ],
+  "totals": {
+    "currency": "EGP",
+    "net": 580000.00,
+    "discount_total": 0,
+    "vat_amount": 81200.00,
+    "vat_rate_percent": 14,
+    "vat_category": "FI",
+    "gross": 661200.00
+  },
+  "signature": {
+    "name": "Laser Art",
+    "kind": "SEAL"
+  },
+  "source_document": {
+    "path": "docs/arabic/source/3CPJR5CQ4PNNN9A4XHBB370K10.pdf",
+    "sha256": "2b912687fa94013eda3dda20f93d289ae275d2ac31c76b1542fc9d7f1234b2c0",
+    "ocr_text_path": "docs/arabic/extracted-text/eg-eta-3CPJR5CQ4PNNN9A4XHBB370K10.txt",
+    "page": 1
+  },
+  "notes": [
+    "Issued via the Egyptian Tax Authority (ETA) e-invoice portal; taxpayer bound by the portal's terms and conditions.",
+    "VAT at standard Egyptian rate of 14%."
+  ]
+}

@@ -1,0 +1,58 @@
+{
+  "regulationId": "mas-mgf-agentic-ai-v1",
+  "title": "Model AI Governance Framework for Agentic AI",
+  "shortName": "MAS MGF (Agentic AI) v1.0",
+  "publisher": {
+    "name": "Infocomm Media Development Authority / AI Verify Foundation",
+    "jurisdiction": "SG",
+    "agency": "IMDA / AIVF"
+  },
+  "version": "1.0",
+  "publicationDate": "2026-01-22",
+  "type": "framework",
+  "normativity": "recommended",
+  "scope": {
+    "appliesTo": [
+      "Organisations deploying agentic AI whether in-house or via third-party agentic solutions",
+      "AI agents built on SLM/LLM/MLLM language models"
+    ],
+    "outOfScope": [
+      "Deterministic rule-based agents",
+      "Non-language-model neural agents"
+    ]
+  },
+  "sections": [
+    {"sectionId": "1",     "title": "Introduction to Agentic AI", "page": 3},
+    {"sectionId": "1.1",   "title": "What is Agentic AI?", "page": 3, "parent": "1"},
+    {"sectionId": "1.1.1", "title": "Core components of an agent", "page": 3, "parent": "1.1", "summary": "Model, instructions, planning and reasoning, tools, memory."},
+    {"sectionId": "1.1.2", "title": "Multi-agent setups", "page": 4, "parent": "1.1"},
+    {"sectionId": "1.1.3", "title": "How agent design affects the limits and capabilities of each agent", "page": 4, "parent": "1.1"},
+    {"sectionId": "1.2",   "title": "Risks of Agentic AI", "page": 6, "parent": "1"},
+    {"sectionId": "1.2.1", "title": "Sources of risk", "page": 6, "parent": "1.2"},
+    {"sectionId": "1.2.2", "title": "Types of risk", "page": 7, "parent": "1.2"},
+    {"sectionId": "2",     "title": "Model AI Governance Framework for Agentic AI", "page": 8},
+    {"sectionId": "2.1",   "title": "Assess and bound the risks upfront", "page": 9, "parent": "2", "summary": "Pillar 1: understand risks, bound capabilities by design."},
+    {"sectionId": "2.1.1", "title": "Determine suitable use cases for agent deployment", "page": 9, "parent": "2.1"},
+    {"sectionId": "2.1.2", "title": "Bound risks through design by defining agents limits and permissions", "page": 11, "parent": "2.1"},
+    {"sectionId": "2.2",   "title": "Make humans meaningfully accountable", "page": 13, "parent": "2", "summary": "Pillar 2: clear responsibility allocation and meaningful oversight."},
+    {"sectionId": "2.2.1", "title": "Clear allocation of responsibilities within and outside the organisation", "page": 13, "parent": "2.2"},
+    {"sectionId": "2.2.2", "title": "Design for meaningful human oversight", "page": 16, "parent": "2.2"},
+    {"sectionId": "2.3",   "title": "Implement technical controls and processes", "page": 18, "parent": "2", "summary": "Pillar 3: technical measures across the agent lifecycle."},
+    {"sectionId": "2.3.1", "title": "During design and development, use technical controls", "page": 18, "parent": "2.3"},
+    {"sectionId": "2.3.2", "title": "Before deploying, test agents", "page": 19, "parent": "2.3"},
+    {"sectionId": "2.3.3", "title": "When deploying, continuously monitor and test", "page": 20, "parent": "2.3"},
+    {"sectionId": "2.4",   "title": "Enable end-user responsibility", "page": 22, "parent": "2", "summary": "Pillar 4: inform and train end-users."},
+    {"sectionId": "2.4.1", "title": "Different users, different needs", "page": 22, "parent": "2.4"},
+    {"sectionId": "2.4.2", "title": "Users who interact with agents", "page": 23, "parent": "2.4"},
+    {"sectionId": "2.4.3", "title": "Users who integrate agents into their work processes", "page": 23, "parent": "2.4"},
+    {"sectionId": "A",     "title": "Annex A: Further resources", "page": 25},
+    {"sectionId": "B",     "title": "Annex B: Call for feedback and case studies", "page": 27}
+  ],
+  "sourceDocument": {
+    "path": "docs/regulations/source/mgf-for-agentic-ai.pdf",
+    "pages": 29,
+    "sha256": "b84c8c94f6392cf2be474cfd6e07f7af213874fa10ac26ebd5249f6df4aeef7b",
+    "textPath": "docs/regulations/extracted-text/mgf-for-agentic-ai.txt"
+  },
+  "tags": ["agentic-ai", "governance", "singapore", "imda", "aivf", "lifecycle"]
+}

@@ -1,0 +1,96 @@
+# =============================================================================
+# TB corpus enumerations
+# Referenced across schemas, structured records, and the LaTeX spec
+# =============================================================================
+
+control_type:
+  - preventive
+  - detective
+  - corrective
+
+control_frequency:
+  - daily
+  - weekly
+  - monthly
+  - quarterly
+  - annually
+
+workflow_state_type:
+  - start_event
+  - end_event
+  - task
+  - gateway_exclusive
+  - gateway_parallel
+  - intermediate_event
+
+decision_operator:
+  - equals
+  - not_equals
+  - exceeds_threshold
+  - within_threshold
+  - in_set
+  - boolean
+
+effort_level:
+  - low
+  - medium
+  - high
+  - very high
+
+ai_priority:
+  - low
+  - medium
+  - high
+  - critical
+
+risk_severity:
+  - L
+  - M
+  - H
+
+kpi_measure_type:
+  - threshold
+  - duration
+  - percentage
+  - effort
+  - count
+  - ratio
+
+glossary_category:
+  - balance_sheet
+  - income_statement
+  - general
+  - regulatory
+
+data_security_class:
+  - public
+  - internal
+  - confidential
+  - restricted
+
+month_end_phase:
+  - M-3
+  - M-2
+  - M-1
+  - M+1
+  - M+2
+  - M+3
+  - M+4
+  - M+5
+  - M+6
+  - M+7
+
+systems_of_record:
+  - PSGL            # Primary Subledger/General Ledger
+  - S4              # SAP S/4HANA
+  - SC Bridge       # TB extraction interface
+  - MS Excel        # EUC working files
+  - MS Outlook      # Commentary request channel
+  - Shared Drive    # Evidence location
+
+participant_type:
+  - human
+  - group
+  - system
+
+euc_reference_pattern: "^EX/[0-9]{3}/[0-9]{7}/[0-9]{4}/[0-9]{3}$"

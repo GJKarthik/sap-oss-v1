@@ -1,0 +1,97 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://sap-oss.local/schemas/tb/workflow.schema.json",
+  "title": "Trial Balance Workflow",
+  "description": "State-machine definition for a TB review workflow, with data objects and participants.",
+  "type": "object",
+  "required": ["workflowId", "version", "title", "states"],
+  "additionalProperties": false,
+  "properties": {
+    "workflowId": {"type": "string"},
+    "version": {"type": "string"},
+    "title": {"type": "string"},
+    "processOwner": {"type": "string"},
+    "lastChanged": {"type": "string", "format": "date-time"},
+    "scope": {"type": "string"},
+    "sourceFiles": {"type": "array", "items": {"type": "string"}},
+    "timeline": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["phase", "timing", "description"],
+        "additionalProperties": false,
+        "properties": {
+          "phase": {"type": "string"},
+          "timing": {"type": "string"},
+          "description": {"type": "string"}
+        }
+      }
+    },
+    "states": {
+      "type": "array",
+      "minItems": 2,
+      "items": {
+        "type": "object",
+        "required": ["stateId", "type", "name"],
+        "additionalProperties": false,
+        "properties": {
+          "stateId": {"type": "string"},
+          "type": {
+            "type": "string",
+            "enum": ["start_event", "end_event", "task", "gateway_exclusive", "gateway_parallel", "intermediate_event"]
+          },
+          "name": {"type": "string"},
+          "timing": {"type": "string"},
+          "description": {"type": "string"},
+          "systems": {"type": "array", "items": {"type": "string"}},
+          "participant": {"type": "string"},
+          "inputs": {"type": "array", "items": {"type": "string"}},
+          "outputs": {"type": "array", "items": {"type": "string"}},
+          "eucRef": {"type": "string"},
+          "transitions": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["target"],
+              "additionalProperties": false,
+              "properties": {
+                "target": {"type": "string"},
+                "condition": {"type": "string"}
+              }
+            }
+          }
+        }
+      }
+    },
+    "dataObjects": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["objectId", "name", "type"],
+        "additionalProperties": false,
+        "properties": {
+          "objectId": {"type": "string"},
+          "name": {"type": "string"},
+          "type": {"type": "string"},
+          "eucRef": {"type": "string"},
+          "description": {"type": "string"}
+        }
+      }
+    },
+    "participants": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["participantId", "name", "type", "role"],
+        "additionalProperties": false,
+        "properties": {
+          "participantId": {"type": "string"},
+          "name": {"type": "string"},
+          "type": {"type": "string", "enum": ["human", "group", "system"]},
+          "role": {"type": "string"},
+          "description": {"type": "string"}
+        }
+      }
+    }
+  }
+}

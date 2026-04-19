@@ -1,0 +1,35 @@
+{
+  "id": "manual-one-off",
+  "schema_ref": "approval-workflow.schema.json",
+  "path": "MANUAL_ONE_OFF",
+  "description": "One-off manual payment path per Activity 5 of the Bahrain AP DOI. Requires MD + CFO and evidence that the expenditure is non-recurring.",
+  "states": [
+    { "code": "DRAFT",            "name": "Memo drafted by requester" },
+    { "code": "CC_APPROVED",      "name": "Cost centre owner approved" },
+    { "code": "SUPPLY_APPROVED",  "name": "Country supply chain manager approved" },
+    { "code": "MD_APPROVED",      "name": "MD approved" },
+    { "code": "CFO_APPROVED",     "name": "CFO approved" },
+    { "code": "SCREENED",         "name": "Vendor screening valid (<48h)" },
+    { "code": "PAID",             "name": "Paid via eBBS", "terminal": true },
+    { "code": "REJECTED",         "name": "Rejected", "terminal": true }
+  ],
+  "transitions": [
+    { "from": "DRAFT",          "to": "CC_APPROVED",     "trigger": "CC owner signs",  "required_role": "CC_OWNER" },
+    { "from": "CC_APPROVED",    "to": "SUPPLY_APPROVED", "trigger": "Supply chain signs", "required_role": "SUPPLY_CHAIN_MGR" },
+    { "from": "SUPPLY_APPROVED","to": "MD_APPROVED",     "trigger": "MD signs",        "required_role": "MD" },
+    { "from": "MD_APPROVED",    "to": "CFO_APPROVED",    "trigger": "CFO signs",       "required_role": "CFO" },
+    { "from": "CFO_APPROVED",   "to": "SCREENED",        "trigger": "Vendor screening refreshed within 48h",
+      "preconditions": ["vendor_screening_timestamp within 48h of now"] },
+    { "from": "SCREENED",       "to": "PAID",            "trigger": "Payment executed",
+      "preconditions": ["Evidence of one-off nature filed", "Account coding present in approval doc"] },
+    { "from": "DRAFT",          "to": "REJECTED",        "trigger": "Policy violation" }
+  ],
+  "delegation_of_authority": [
+    { "max_amount_currency": "BHD", "max_amount": 500,      "required_role": "SUPPLY_CHAIN_MGR" },
+    { "max_amount_currency": "BHD", "max_amount": 50000,    "required_role": "CFO" },
+    { "max_amount_currency": "BHD", "max_amount": 1000000,  "required_role": "MD" }
+  ],
+  "exceptions": [
+    { "rule": "GSAM legal/professional fees", "handling": "Not covered by GDAM approval limits; routed via GSAM-specific approver." }
+  ]
+}

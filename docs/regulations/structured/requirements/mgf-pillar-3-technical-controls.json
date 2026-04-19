@@ -1,0 +1,124 @@
+{
+  "requirements": [
+    {
+      "requirementId": "REG-MGF-2.3.1-001",
+      "source": {
+        "regulationId": "mas-mgf-agentic-ai-v1",
+        "section": "2.3.1",
+        "page": 18,
+        "quote": "...incorporate technical controls for new agentic components such as planning, tools and still-maturing protocols, to address increased risks from these new attack surfaces."
+      },
+      "normativeText": "Agent planning, tool-use, and inter-agent protocol layers must each carry dedicated technical controls (input validation, schema enforcement, rate limits).",
+      "category": "technical_controls",
+      "obligation": "must",
+      "lifecyclePhase": "development",
+      "implementation": [
+        {"kind": "code",   "path": "src/intelligence/ai-core-pal/agent/aicore_pal_agent.py",      "symbol": "aicore_pal_agent"},
+        {"kind": "code",   "path": "src/intelligence/ai-core-pal/mcp_server/btp_pal_mcp_server.py","symbol": "btp_pal_mcp_server"},
+        {"kind": "schema", "path": "docs/tb/structured/schema/decision-point.schema.json"}
+      ],
+      "verification": [
+        {"kind": "test",          "path": "src/intelligence/ai-core-pal/tests/test_mcp_server.py"},
+        {"kind": "moonshot-test", "testId": "adversarial_prompts"}
+      ],
+      "status": "partial",
+      "priority": "high"
+    },
+    {
+      "requirementId": "REG-MGF-2.3.2-001",
+      "source": {
+        "regulationId": "mas-mgf-agentic-ai-v1",
+        "section": "2.3.2",
+        "page": 19,
+        "quote": "Before deployment, organisations should test agents for baseline safety and reliability, including new dimensions such as overall execution accuracy, policy adherence, and tool use."
+      },
+      "normativeText": "Pre-deployment test suite must cover: (a) execution accuracy, (b) policy adherence, (c) correct tool selection, (d) refusal behaviours.",
+      "category": "evaluation",
+      "obligation": "must",
+      "lifecyclePhase": "pre_deployment",
+      "implementation": [
+        {"kind": "code", "path": "src/intelligence/ai-core-pal/tests/test_pal_algorithms.py"},
+        {"kind": "code", "path": "src/intelligence/ai-core-pal/tests/test_mcp_server.py"}
+      ],
+      "verification": [
+        {"kind": "moonshot-test",   "testId": "hallucination"},
+        {"kind": "moonshot-test",   "testId": "undesirable_content"},
+        {"kind": "moonshot-test",   "testId": "adversarial_prompts"},
+        {"kind": "aiverify-plugin", "plugin": "aiverify.stock.robustness-toolbox"}
+      ],
+      "status": "partial",
+      "priority": "critical"
+    },
+    {
+      "requirementId": "REG-MGF-2.3.2-002",
+      "source": {
+        "regulationId": "mas-mgf-agentic-ai-v1",
+        "section": "2.3.2",
+        "page": 19,
+        "quote": "New testing approaches will be needed to evaluate agents."
+      },
+      "normativeText": "Adopt agent-specific evaluations (trajectory-level, tool-call accuracy) in addition to per-turn LLM metrics.",
+      "category": "evaluation",
+      "obligation": "should",
+      "lifecyclePhase": "pre_deployment",
+      "implementation": [
+        {"kind": "code", "path": "src/intelligence/ai-core-pal/evaluation/trajectory_evaluator.py", "symbol": "TrajectoryEvaluator", "note": "Scores tool-call correctness, policy adherence, and goal progression per trajectory."},
+        {"kind": "code", "path": "src/intelligence/ai-core-pal/evaluation/__init__.py"}
+      ],
+      "verification": [
+        {"kind": "test",          "path": "src/intelligence/ai-core-pal/tests/test_trajectory_evaluator.py"},
+        {"kind": "moonshot-test", "testId": "adversarial_prompts", "note": "Red-team prompts complement trajectory-level checks."}
+      ],
+      "status": "implemented",
+      "priority": "medium"
+    },
+    {
+      "requirementId": "REG-MGF-2.3.3-001",
+      "source": {
+        "regulationId": "mas-mgf-agentic-ai-v1",
+        "section": "2.3.3",
+        "page": 20,
+        "quote": "During and after deployment... gradually roll out agents alongside continuous monitoring after deployment."
+      },
+      "normativeText": "Deployment must follow a documented staged rollout with canary/guard-rail metrics and a rollback path.",
+      "category": "technical_controls",
+      "obligation": "should",
+      "lifecyclePhase": "deployment",
+      "implementation": [
+        {"kind": "code", "path": "src/intelligence/ai-core-pal/scripts/deploy_to_aicore.sh"},
+        {"kind": "doc",  "path": "src/intelligence/ai-core-pal/README.md"}
+      ],
+      "verification": [
+        {"kind": "process-checklist", "checklistItem": "Canary metrics dashboard live before promotion."},
+        {"kind": "manual-review",      "note": "Deployment sign-off recorded in change-management system."}
+      ],
+      "status": "partial",
+      "priority": "high"
+    },
+    {
+      "requirementId": "REG-MGF-2.3.3-002",
+      "source": {
+        "regulationId": "mas-mgf-agentic-ai-v1",
+        "section": "2.3.3",
+        "page": 21,
+        "quote": "...continuously monitor and test."
+      },
+      "normativeText": "Agents in production must be continuously monitored with alerting on policy violations, drift, and tool-use anomalies.",
+      "category": "technical_controls",
+      "obligation": "must",
+      "lifecyclePhase": "post_deployment",
+      "implementation": [
+        {"kind": "code", "path": "src/intelligence/ai-core-pal/monitoring/drift_monitor.py", "symbol": "DriftMonitor", "note": "Override-rate, review-duration, and hallucination-rate drift signals with ok/warn/critical alerting."},
+        {"kind": "code", "path": "src/intelligence/ai-core-pal/monitoring/__init__.py"},
+        {"kind": "code", "path": "src/intelligence/ocr/metrics.py", "note": "Reusable metrics pattern (OCR service)."}
+      ],
+      "verification": [
+        {"kind": "test",            "path": "src/intelligence/ai-core-pal/tests/test_drift_monitor.py"},
+        {"kind": "aiverify-plugin", "plugin": "aiverify.stock.robustness-toolbox"},
+        {"kind": "moonshot-test",   "testId": "hallucination", "note": "Run on a schedule in CI."}
+      ],
+      "status": "implemented",
+      "priority": "high"
+    }
+  ]
+}

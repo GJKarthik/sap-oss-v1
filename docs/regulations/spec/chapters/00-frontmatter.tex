@@ -1,0 +1,59 @@
+% =============================================================================
+% Frontmatter --- abstract, document purpose, audience
+% =============================================================================
+
+\chapter*{Document status and purpose}
+\addcontentsline{toc}{chapter}{Document status and purpose}
+
+This specification formalises the regulations, frameworks, and conformance
+tooling relevant to agentic AI deployments in the SAP OSS finance stack. Its
+three goals are:
+
+\begin{enumerate}
+  \item \textbf{Make the regulations machine-readable.} Every source document
+        in \corpus{source/} is accompanied by structured JSON records under
+        \corpus{structured/} that capture sections, normative requirements,
+        and observational claims.
+  \item \textbf{Bind each requirement to evidence in the repository.} The
+        requirement schema carries an \texttt{implementation[]} array of file
+        paths, configuration fields, and documentation anchors, plus a
+        \texttt{verification[]} array pointing to AI Verify plugins, Moonshot
+        benchmark IDs, or repository tests. A local validator
+        (\corpus{structured/validate.py}) fails when any of these paths no
+        longer resolve.
+  \item \textbf{Give reviewers a single printable reference.} This document
+        cross-links the corpus records, the two vendored conformance
+        frameworks, and the code they exercise, so that governance reviews,
+        internal audit, and external assessors can read one PDF instead of
+        navigating three directory trees.
+\end{enumerate}
+
+\paragraph{In scope.} The Monetary Authority of Singapore (MAS) / AI Verify
+Foundation \emph{Model AI Governance Framework for Agentic AI} v1.0 (22 Jan
+2026); the multi-institution \emph{2025 AI Agent Index}; the Ju \& Aral field
+experiment \emph{Collaborating with AI Agents} (arXiv 2503.18238v3, Feb 2026);
+and the two vendored open-source conformance tools
+\tool{aiverify} (v2.0) and \tool{moonshot-cicd} (v1.1.0).
+
+\paragraph{Out of scope.} Binding legislation (EU AI Act, US executive
+orders); sector-specific prudential rules (Basel, Solvency); deterministic
+non-LLM agent platforms. Those are tracked separately and may be added as
+additional regulation records without changing the schema.
+
+\paragraph{Audience.} AI governance leads, internal audit, model risk, and
+technical reviewers responsible for evidencing conformance for agentic
+deployments that use the SAP AI Core / PAL / BTP stack captured in
+\corpus{../tb/} and \corpus{../arabic/}.
+
+\paragraph{Relationship to other corpora.} This corpus is a peer of
+\corpus{../arabic/} (Arabic invoice processing) and \corpus{../tb/} (trial
+balance review). Where requirements apply to those workloads, the
+\texttt{implementation[]} field points back to their structured records or
+spec chapters.
+
+\vspace{1em}
+\noindent\textcolor{reggrey}{\small This is a living document. Re-running
+\tool{python3 docs/regulations/structured/validate.py} checks schema
+conformance and verifies that every code path, plugin, and test id
+referenced from the requirement records still exists.}
+\clearpage

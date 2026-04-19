@@ -1,0 +1,22 @@
+{
+  "id": "vat-payment",
+  "schema_ref": "approval-workflow.schema.json",
+  "path": "VAT_PAYMENT",
+  "description": "Path used when the counterparty is a tax authority (e.g. ZATCA assessment). Mirrors the KSA OTP VAT checklist and posts to GL via reverse-charge treatment.",
+  "states": [
+    { "code": "ASSESSMENT_RECEIVED", "name": "Assessment / return-generated invoice received" },
+    { "code": "CHECKLIST_VALIDATED", "name": "VAT compliance checklist validated (11 items)" },
+    { "code": "CFO_APPROVED",        "name": "CFO approved payment" },
+    { "code": "PAID",                "name": "Payment to tax authority executed" },
+    { "code": "POSTED",              "name": "Posted to GL as reverse-charge / government payment", "terminal": true }
+  ],
+  "transitions": [
+    { "from": "ASSESSMENT_RECEIVED", "to": "CHECKLIST_VALIDATED", "trigger": "11-point checklist all Y/NA", "required_role": "FIN_MGR" },
+    { "from": "CHECKLIST_VALIDATED", "to": "CFO_APPROVED",        "trigger": "CFO approves payment",        "required_role": "CFO" },
+    { "from": "CFO_APPROVED",        "to": "PAID",                "trigger": "Payment executed via bank",    "preconditions": ["Due date not passed"] },
+    { "from": "PAID",                "to": "POSTED",              "trigger": "GL posting with RC treatment" }
+  ],
+  "delegation_of_authority": [
+    { "max_amount_currency": "SAR", "max_amount": 10000000, "required_role": "CFO" }
+  ]
+}

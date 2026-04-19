@@ -1,0 +1,161 @@
+\chapter{Overview and Scope}\label{ch:overview}
+
+\section{Problem statement}
+
+Month-end Trial Balance review at SCB is currently executed as a
+spreadsheet-driven process. For each of the 234 Legal Entities (LEs)
+in the Group, a GFS Analyst rolls the prior month working file
+forward, downloads the PSGL master account extract, runs variance
+calculations in an EUC-governed Excel workbook, chases country
+stakeholders for commentary, tracks unposted journals, and hands a
+signed-off summary to the Head of Africa GFS for inclusion in the
+monthly FORTM pack. The cycle runs from \texttt{M-3} (preparation) to
+\texttt{M+7} (cycle close), with the critical review phase compressed
+into \texttt{M-2} through \texttt{M+5}.
+
+Three problems follow from the current model:
+
+\begin{enumerate}
+  \item \textbf{Effort.} The process consumes 20--25 FTEs at roughly
+        four hours/day during the active review window --- an
+        establishment the business case identifies as the largest
+        single automation candidate in the close calendar.
+  \item \textbf{Control surface.} Three EUC references govern the
+        process (\path{EX/200/1353107/0001/000}, variance file
+        \path{EX/200/1579702/0001/000}, and review control
+        \path{EX/200/1579702/0002/000}). EUCs carry recurring
+        evidencing burden and are misaligned with the UK ACG ambition
+        to eliminate end-user spreadsheets.
+  \item \textbf{Latency.} The monthly batch cadence rules out daily
+        monitoring; anomalies surface at month-end rather than when
+        they arise.
+\end{enumerate}
+
+\section{In-scope workstreams}
+
+This specification covers the three workstreams confirmed with the
+business sponsor:
+
+\begin{description}
+  \item[A. Canonical corpus.] A machine-readable representation of
+        every artefact under review --- the 28-state BPMN workflow,
+        five decision points, three EUC controls, six KPIs, eight
+        process steps, and the domain glossary --- normalised to JSON
+        and validated against Draft-07 schemas.
+  \item[B. AI augmentation.] An on-premise pipeline hosted on the
+        \texttt{vllm-only} policy (\texttt{data-product.routing = vllm-only})
+        that ingests the PSGL / S/4 extract, applies ML-based anomaly
+        detection at caption, segment, and LE levels, drafts commentary
+        using historical patterns, and emits the FORTM narrative.
+  \item[C. Workflow and approval engine.] A formalisation of the seven
+        DOI activities and the gateway logic that decides when
+        material variances require commentary, when journals must be
+        posted, when further investigation is needed, and whether the
+        entry-confirmation deadline at \texttt{M+4} has been honoured.
+\end{description}
+
+\section{Out-of-scope}
+
+The following are referenced but not specified:
+
+\begin{itemize}
+  \item Country IFRS reporting --- handled by local Finance teams.
+  \item BSS Risk Assessment --- sibling process with its own business
+        case. Its source document is retained in the corpus for
+        terminology reuse only.
+  \item SAP / PeopleSoft integration detail --- the AI layer reads
+        data through the same \texttt{SC Bridge} interface as the
+        manual process; interface engineering is a separate document.
+  \item Country expansion beyond the Hong Kong (HK) pilot --- the
+        HKG\_TB and HKG\_PL workbooks are the source of truth for the
+        initial rollout; LE coverage extends to all 234 entities in
+        phase~4 onward.
+\end{itemize}
+
+\section{Stakeholders}
+
+\Cref{tab:stakeholders} enumerates the stakeholders named in the
+business case and the DOI.
+
+\begin{table}[htbp]
+\caption{Stakeholders and responsibilities.}\label{tab:stakeholders}
+\centering
+\small
+\begin{tabularx}{\linewidth}{@{}llX@{}}
+\toprule
+\textbf{Role} & \textbf{Named} & \textbf{Responsibilities} \\ \midrule
+Process Owner             & Modi, Piyush & BPMN ownership; workflow changes \\
+Head of Africa GFS        & ---          & Internal review; FORTM sign-off \\
+GFS Analyst               & ---          & Primary executor; variance file owner \\
+Country Stakeholders      & group        & Commentaries; \texttt{M+4} entry confirmation \\
+GCFO Teams                & ---          & Consume narrative; decision-making \\
+Group Team                & ---          & FORTM recipient; further review \\
+AI Architect              & ---          & PSGL + S/4 compatibility \\
+PPE / AI Architect        & ---          & SAP integration assessment \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\section{Timeline}
+
+The process obeys a fixed month-end-relative timeline
+(\cref{tab:timeline}). All state transitions in \cref{ch:workflow}
+carry a \texttt{timing} field that maps to one of these phases.
+
+\begin{table}[htbp]
+\caption{Month-end-relative timeline phases.}\label{tab:timeline}
+\centering
+\small
+\begin{tabularx}{\linewidth}{@{}llX@{}}
+\toprule
+\textbf{Phase} & \textbf{Timing} & \textbf{Activities} \\ \midrule
+Preparation & M-3        & Roll forward; PSGL download; master refresh; parameter set \\
+Extraction  & M-3 to M+5 & SC Bridge extract into the variance file (\texttt{EUC-002}) \\
+Analysis    & M-2 to M+5 & Variance calc; commentary; investigation; risk \\
+Review      & M+5        & Internal review (\texttt{EUC-003}); FORTM submission \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\section{Context diagram}
+
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}[
+  node distance=8mm and 10mm,
+  box/.style={draw,rounded corners=2pt,minimum height=9mm,minimum width=26mm,
+              align=center,font=\small},
+  sys/.style={box,fill=tbblue!15,draw=tbblue!60},
+  ppl/.style={box,fill=tbgreen!15,draw=tbgreen!60},
+  outp/.style={box,fill=tbamber!15,draw=tbamber!60},
+  arr/.style={-{Latex[length=2mm]},thick}
+]
+  \node[sys] (psgl)   {PSGL / S/4};
+  \node[sys,right=of psgl] (bridge) {SC Bridge};
+  \node[sys,right=of bridge] (xl)  {Variance file \\ \scriptsize \texttt{EUC-002}};
+  \node[ppl,below=of psgl] (gfs)   {GFS Analyst};
+  \node[ppl,below=of bridge] (cty) {Country Stakeholders};
+  \node[ppl,below=of xl]    (hd)   {Head of Africa GFS};
+  \node[outp,right=18mm of hd] (fortm) {FORTM pack \\ \scriptsize Group};
+
+  \draw[arr] (psgl)   -- (bridge);
+  \draw[arr] (bridge) -- (xl);
+  \draw[arr] (gfs)    -- (xl);
+  \draw[arr] (cty)    -- (xl) node[midway,right,font=\scriptsize]{commentary};
+  \draw[arr] (xl)     -- (hd);
+  \draw[arr] (hd)     -- (fortm);
+\end{tikzpicture}
+\caption{Context of the TB review process: three systems (blue), three
+human roles (green), and one downstream output (amber). The
+variance-analysis workbook is the primary EUC artefact.}\label{fig:context}
+\end{figure}
+
+\section{Expected benefits}
+
+\begin{itemize}
+  \item FTE savings: 5 FTEs redeployed (business-case field
+        \texttt{executiveSummary.\allowbreak fteImpact.\allowbreak expectedSavings}).
+  \item Elimination of three EUCs (Group ACG alignment).
+  \item Enablement of daily controls (from monthly batch).
+  \item Foundation for the SCB Finance LLM.
+\end{itemize}

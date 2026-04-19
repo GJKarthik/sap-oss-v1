@@ -1,0 +1,157 @@
+\chapter{Overview and scope}\label{ch:overview}
+
+\section{The problem}
+
+Standard Chartered Bank operates Accounts Payable across a heterogeneous
+regulatory and linguistic landscape. Depending on the country, an
+incoming invoice may be:
+
+\begin{itemize}
+  \item issued by a national e-invoicing portal (Egypt's ETA, with a
+        26-character \textsc{electronic\_id}; Saudi Arabia's ZATCA with
+        an analogous assessment reference);
+  \item purely Arabic (as in the two Egyptian invoices
+        \texttt{3CPJR5CQ\ldots K10.pdf} and \texttt{B1STE8RH\ldots SJ10.pdf}
+        and the Saudi VAT assessment \ar{اشعار صدور فاتورة});
+  \item bilingual (Qatar's QCSD / EDAA memo);
+  \item wholly English with pre-assigned GL coding (e.g.\ the Bahrain
+        DOI-covered PO flow).
+\end{itemize}
+
+Today the Arabic-language material is handled manually: a finance analyst
+reads the PDF, transcribes key fields into an OTP/VAT checklist (see the
+Saudi Q3 2025 checklist in \corpus\texttt{source/Saudi\ldots OTP\ldots}),
+and routes it through the DOI approval chain. The November 2025 e-mail
+thread from Manoj Hemath Kumar identifies this manual path as the target
+for AI replacement.
+
+\section{Goals}
+
+The specification targets three outcomes, each with a direct lineage to
+the sample corpus in \corpus\texttt{source/}:
+
+\begin{enumerate}
+  \item \textbf{Structured ingestion.} Every Arabic or bilingual invoice
+        becomes a record conforming to
+        \texttt{structured/schema/invoice.schema.json}
+        (\cref{ch:schema}).
+  \item \textbf{Deterministic compliance.} Every invoice is passed
+        through a rule engine that emits a VAT compliance checklist
+        conforming to \texttt{structured/schema/vat-checklist.schema.json}
+        (\cref{ch:vat}), with the rule set derived from the
+        regulator-specific controls in the corpus.
+  \item \textbf{Auditable approval.} Every payment follows one of the
+        four state machines in \corpus\texttt{structured/workflows/} and
+        meets the controls enumerated in the Bahrain DOI
+        (\cref{ch:ap,ch:controls}).
+\end{enumerate}
+
+\section{In-scope countries and counterparties}
+
+\begin{table}[htbp]
+\centering
+\caption{Countries in scope, with the controlling source document and
+         the structured records derived from it.}
+\label{tab:countries}
+\small
+\begin{tabularx}{\linewidth}{@{}l l l X@{}}
+\toprule
+\textbf{Country} & \textbf{Authority} & \textbf{Currency} &
+\textbf{Source document(s)} \\ \midrule
+Egypt (EG)  & ETA   & EGP &
+  \texttt{3CPJR5CQ\ldots K10.pdf},\newline\texttt{B1STE8RH\ldots SJ10.pdf} \\
+Saudi Arabia (SA) & ZATCA & SAR &
+  \ar{اشعار صدور فاتورة} (005).pdf, \newline Saudi OTP/VAT Q3'25 checklist \\
+Qatar (QA)  & QTA   & QAR &
+  EDAA Annual Fee 2025, \newline QCSD payment instruction \\
+Bahrain (BH) & NBR  & BHD &
+  Accounts Payable DOI \\
+Iraq (IQ), UAE, PK & various & --- &
+  \emph{Planned}; referenced in the initiative e-mail but formally
+  out of scope until at least five sample invoices per jurisdiction
+  are added to \texttt{source/} \\ \bottomrule
+\end{tabularx}
+\end{table}
+
+\section{System context}
+
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}[
+  node distance=9mm and 13mm,
+  box/.style={draw,rounded corners,minimum width=26mm,minimum height=9mm,
+              align=center,font=\small},
+  ext/.style={box,fill=blue!6},
+  sys/.style={box,fill=green!7},
+  ai/.style={box,fill=orange!10},
+  ap/.style={box,fill=violet!8},
+  arr/.style={-{Latex[length=2.2mm]},thick}
+]
+\node[ext] (eta)   {ETA portal\\(Egypt)};
+\node[ext,right=of eta] (zatca) {ZATCA portal\\(Saudi Arabia)};
+\node[ext,right=of zatca] (vendor) {Vendor PDFs\\e-mail/scan};
+
+\node[ai,below=12mm of zatca] (ai) {Arabic-invoice\\AI pipeline\\(Ch.~\ref{ch:ai})};
+
+\node[sys,below=of ai,xshift=-28mm] (vat) {VAT engine\\(Ch.~\ref{ch:vat})};
+\node[sys,below=of ai,xshift= 28mm] (wf)  {Approval engine\\(Ch.~\ref{ch:ap})};
+
+\node[ap,below=14mm of vat,xshift=28mm] (gl) {GL posting\\(out of scope)};
+
+\draw[arr] (eta)    -- (ai);
+\draw[arr] (zatca)  -- (ai);
+\draw[arr] (vendor) -- (ai);
+\draw[arr] (ai)     -- (vat);
+\draw[arr] (ai)     -- (wf);
+\draw[arr] (vat)    -- (gl);
+\draw[arr] (wf)     -- (gl);
+\end{tikzpicture}
+\caption{System context. Regulator portals (blue) and vendor PDFs feed
+         the AI pipeline (orange), which emits canonical records to
+         the deterministic VAT and approval engines (green). Downstream
+         posting to GL is out of scope.}
+\label{fig:context}
+\end{figure}
+
+\section{Out of scope}
+
+The following are \emph{explicitly} out of scope for this document:
+
+\begin{itemize}
+  \item Integration contracts with PeopleSoft PSAP/PSGL, eBBS, eOPS, and
+        Tax-Q. These are covered by a separate interface specification.
+  \item Vendor master-data on-boarding and the 48-hour screening service
+        itself; this document assumes a screening result is available as
+        a boolean precondition.
+  \item The encrypted template
+        \texttt{Business Instruction Template - V1.0 (002) (1).xlsm} and the
+        duplicate \texttt{EDAA\ldots[65].pdf}; neither is referenced by
+        any structured record.
+  \item Peer/competitor analysis across jurisdictions, which the e-mail
+        thread itself identifies as a separate initiative.
+\end{itemize}
+
+\section{Five-session engagement model}
+
+Per the e-mail, every country instance of this system follows a
+five-session agile discovery cadence
+(\Cref{tab:sessions}); the AI pipeline of \cref{ch:ai} is designed to
+advance with that cadence.
+
+\begin{table}[htbp]
+\centering
+\caption{Five-session engagement model (codified in
+         \corpus\texttt{structured/enums.yaml}).}
+\label{tab:sessions}
+\small
+\begin{tabularx}{\linewidth}{@{}l l X@{}}
+\toprule
+\textbf{Code} & \textbf{Name} & \textbf{Goal} \\ \midrule
+\textsc{understand} & Session~1 & Map problem, define user journey, pick target. \\
+\textsc{sketch}     & Session~2 & Develop detailed solution design. \\
+\textsc{decide}     & Session~3 & Critique approaches, select best path. \\
+\textsc{prototype}  & Session~4 & Build practical system for use case. \\
+\textsc{test}       & Session~5 & Test with $\geq$5 stakeholders, gather feedback. \\
+\bottomrule
+\end{tabularx}
+\end{table}

@@ -1,0 +1,10 @@
+{
+  "kpis": [
+    {"kpiId": "TB-KPI-001", "name": "Variance Materiality Threshold", "description": "Threshold for flagging material variances.", "measureType": "threshold", "unit": "currency", "currentBaseline": "Country-specific, defined in Excel parameters"},
+    {"kpiId": "TB-KPI-002", "name": "TB Review Cycle Time", "description": "Days from period close to FORTM pack submission.", "measureType": "duration", "unit": "working_days", "currentBaseline": "M+1 to M+7 (7 working days)", "target": "Reduce by enabling daily controls"},
+    {"kpiId": "TB-KPI-003", "name": "Commentary Coverage Rate", "description": "Percentage of material variances with adequate commentary.", "measureType": "percentage", "unit": "percent", "target": 100},
+    {"kpiId": "TB-KPI-004", "name": "FTE Effort", "description": "Total FTE-hours spent on TB review.", "measureType": "effort", "unit": "FTE", "currentBaseline": "20-25 FTEs, ~4 hrs/day", "target": "15-20 FTEs (5 FTE savings)"},
+    {"kpiId": "TB-KPI-005", "name": "Unexplained Variance Rate", "description": "Percentage of variances without explanation at submission.", "measureType": "percentage", "unit": "percent", "target": 0},
+    {"kpiId": "TB-KPI-006", "name": "EUC Control Compliance", "description": "Compliance rate with EUC controls.", "measureType": "percentage", "unit": "percent", "target": 100}
+  ]
+}

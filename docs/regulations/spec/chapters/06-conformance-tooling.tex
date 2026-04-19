@@ -1,0 +1,204 @@
+% =============================================================================
+% Chapter 6 --- Conformance tooling: AI Verify + Moonshot CI/CD
+% =============================================================================
+\chapter{Conformance tooling}
+\label{ch:tooling}
+
+\section{Two complementary tools}
+
+Both tools are published by the AI Verify Foundation / IMDA Singapore
+under Apache-2.0 and vendored into the repository. They target
+different phases of the lifecycle:
+
+\begin{figure}[h]
+\centering
+\begin{tikzpicture}[
+  every node/.style={font=\small},
+  phase/.style={draw=reggrey,rounded corners=1pt,inner sep=4pt,minimum height=8mm,align=center,fill=reggrey!10},
+  av/.style={draw=regblue,very thick,rounded corners=1pt,inner sep=4pt,minimum height=9mm,align=center,fill=regblue!10,minimum width=26mm},
+  ms/.style={draw=reggreen,very thick,rounded corners=1pt,inner sep=4pt,minimum height=9mm,align=center,fill=reggreen!10,minimum width=26mm},
+  arr/.style={-Latex,thick,draw=reggrey!60}
+]
+\node[phase] (design)   at (0,0)   {Design};
+\node[phase,right=4mm of design]   (dev)      {Development};
+\node[phase,right=4mm of dev]      (pre)      {Pre-deploy};
+\node[phase,right=4mm of pre]      (deploy)   {Deploy};
+\node[phase,right=4mm of deploy]   (post)     {Post-deploy};
+
+\node[av,above=5mm of $(pre)!0.5!(deploy)$]   (av)  {\textbf{AI Verify}\\ \tiny plugins + portal};
+\node[ms,below=5mm of $(pre)!0.5!(post)$]     (ms)  {\textbf{Moonshot}\\ \tiny CI/CD runner};
+
+\draw[arr,draw=regblue] (design) -- ++(0,0.9) -| (av);
+\draw[arr,draw=regblue] (av) -| (dev);
+\draw[arr,draw=regblue] (av) -| (pre);
+\draw[arr,draw=regblue] (av) -| (deploy);
+\draw[arr,draw=reggreen] (ms) -| (pre);
+\draw[arr,draw=reggreen] (ms) -| (deploy);
+\draw[arr,draw=reggreen] (ms) -| (post);
+\end{tikzpicture}
+\caption{Conformance-tool coverage across the lifecycle. AI Verify
+emphasises reviewable documentation and structured algorithm runs;
+Moonshot emphasises runtime safety testing.}
+\label{fig:tool-coverage}
+\end{figure}
+
+\section{AI Verify 2.0}
+
+\subsection*{Summary}
+
+AI Verify is an IMDA-backed testing framework that has been
+re-architected for v2.0 into a modular monorepo. Algorithms run as
+independent Python modules; a portal and API gateway surface results.
+Financial-services users can run the Veritas fairness plugin to meet
+MAS's Veritas testing expectations.
+
+\subsection*{Stock plugin inventory}
+
+\begin{table}[h]
+\centering
+\small
+\begin{tabularx}{\textwidth}{p{5.4cm}p{2.4cm}X}
+\toprule
+\textbf{Plugin ID} & \textbf{Type} & \textbf{Purpose} \\
+\midrule
+aiverify.stock.process-checklist & process &
+  11-principle process checklist aligned with the AI Verify testing framework. \\
+aiverify.stock.fairness-metrics-toolbox-for-classification & fairness &
+  Subgroup fairness metrics for supervised classification. \\
+aiverify.stock.fairness-metrics-toolbox-for-regression & fairness &
+  Regression-specific fairness analysis. \\
+aiverify.stock.robustness-toolbox & robustness &
+  Perturbation-based robustness assessment. \\
+aiverify.stock.image-corruption-toolbox & robustness &
+  Computer-vision corruption robustness. \\
+aiverify.stock.shap-toolbox & explainability &
+  SHAP feature attribution. \\
+aiverify.stock.partial-dependence-plot & explainability &
+  Partial-dependence plots for feature effect. \\
+aiverify.stock.accumulated-local-effect & explainability &
+  Accumulated local-effect explanations. \\
+aiverify.stock.veritas & financial &
+  MAS Veritas fairness testing for financial services. \\
+aiverify.stock.reports & report &
+  Report and widget rendering for the portal. \\
+aiverify.stock.decorators & other &
+  Shared UI primitives and decorators. \\
+\bottomrule
+\end{tabularx}
+\caption{The eleven stock plugins shipped with \tool{aiverify-main/}.}
+\label{tab:av-plugins}
+\end{table}
+
+\subsection*{Integration surface}
+
+\begin{itemize}
+  \item \textbf{python-api}: the \texttt{aiverify-test-engine} package
+        exposes an algorithm-runner API.
+  \item \textbf{docker}: \texttt{aiverify-apigw} and the portal ship as
+        container images.
+  \item \textbf{cli}: each stock plugin is individually runnable from
+        its algorithm directory.
+\end{itemize}
+
+\section{Moonshot CI/CD 1.1.0}
+
+\subsection*{Summary}
+
+Moonshot is a lean, modular safety-testing tool for LLM applications. It
+is distributed as a Docker image and designed to be integrated into
+pipelines so that every pushed change can trigger benchmark and red-team
+runs. A single \texttt{moonshot run} command drives any combination of
+configured benchmarks and attacks.
+
+\subsection*{Benchmark categories}
+
+\begin{table}[h]
+\centering
+\small
+\begin{tabularx}{\textwidth}{p{3.2cm}p{3.6cm}X}
+\toprule
+\textbf{Benchmark ID} & \textbf{Category} & \textbf{Purpose} \\
+\midrule
+hallucination & hallucination & Detect fabricated or unsupported statements. \\
+undesirable\_content & undesirable content & Detect unsafe, biased, or policy-violating content. \\
+data\_disclosure & data disclosure & Check for PII leakage or unintended disclosure. \\
+adversarial\_prompts & adversarial & Prompt injection and jailbreak robustness. \\
+\bottomrule
+\end{tabularx}
+\caption{The four benchmark categories aligned with the IMDA LLM Starter
+Kit for Safety Testing.}
+\label{tab:ms-benchmarks}
+\end{table}
+
+\subsection*{Architecture}
+
+\begin{figure}[h]
+\centering
+\begin{tikzpicture}[
+  every node/.style={font=\small},
+  box/.style={draw=reggrey,rounded corners=1pt,inner sep=4pt,minimum height=8mm,align=center,fill=white},
+  adpt/.style={box,fill=reggreen!10},
+  dom/.style={box,fill=regblue!10},
+  ent/.style={box,fill=regamber!10},
+  arr/.style={-Latex,thick,draw=reggrey!60}
+]
+\node[ent] (cli)        {\tool{moonshot run}\\ \tiny entrypoint};
+\node[dom,right=8mm of cli] (tm) {\textbf{task\_manager}\\ \tiny benchmark / red-team};
+\node[dom,right=8mm of tm] (bm)  {\textbf{benchmark\_task}\\ \tiny orchestrator};
+
+\node[adpt,below=5mm of cli] (conn) {adapter:\\ connector};
+\node[adpt,right=4mm of conn]     (prompt) {adapter:\\ prompt\_processor};
+\node[adpt,right=4mm of prompt]   (metric) {adapter:\\ metric};
+\node[adpt,right=4mm of metric]   (store)  {adapter:\\ storage\_provider};
+
+\draw[arr] (cli) -- (tm);
+\draw[arr] (tm) -- (bm);
+\draw[arr] (bm) -| (conn);
+\draw[arr] (bm) -| (prompt);
+\draw[arr] (bm) -| (metric);
+\draw[arr] (bm) -| (store);
+\end{tikzpicture}
+\caption{Moonshot CI/CD module layout (\protect\path{src/entrypoints}, \protect\path{src/domain}, \protect\path{src/adapters}).}
+\label{fig:ms-arch}
+\end{figure}
+
+\section{Binding to requirement records}
+
+Table~\ref{tab:verify-matrix} shows how this corpus's 20 requirement
+records bind to plugins and benchmarks. Where a requirement has
+verification \texttt{kind: "aiverify-plugin"} or
+\texttt{kind: "moonshot-test"}, the plugin slug or benchmark id must
+match one declared in the tool record; \corpus{structured/validate.py}
+fails otherwise.
+
+\begin{table}[h]
+\centering
+\footnotesize
+\begin{tabularx}{\textwidth}{p{3.6cm}p{5.6cm}X}
+\toprule
+\textbf{Tool / ID} & \textbf{Referenced from} & \textbf{Purpose} \\
+\midrule
+aiverify.stock.process-checklist &
+  REG-MGF-2.1.1-001, REG-MGF-2.2.1-001, REG-MGF-2.4.2-001, REG-AGENTIDX-3.6-001 &
+  Checklist evidence for governance reviews. \\
+aiverify.stock.robustness-toolbox &
+  REG-MGF-2.3.2-001, REG-MGF-2.3.3-002 &
+  Perturbation robustness. \\
+aiverify.stock.reports &
+  REG-AGENTIDX-3.6-001 &
+  Widget + report rendering. \\
+moonshot hallucination &
+  REG-MGF-2.3.2-001, REG-MGF-2.3.3-002 &
+  Fabrication checks in CI. \\
+moonshot undesirable\_content &
+  REG-MGF-2.3.2-001 &
+  Policy adherence. \\
+moonshot adversarial\_prompts &
+  REG-MGF-2.1.2-001, REG-MGF-2.3.1-001, REG-MGF-2.3.2-001, REG-MGF-2.3.2-002 &
+  Red-team / jailbreak attempts. \\
+\bottomrule
+\end{tabularx}
+\caption{Verification matrix (tool/ID $\to$ requirement records).}
+\label{tab:verify-matrix}
+\end{table}
+\clearpage

@@ -1,0 +1,642 @@
+Accounts Payable
+
+Country Finance Bahrain
+
+Departmental Operating Instruction (DOI)
+
+Accounts Payable
+
+Process Description 3
+
+Product 3
+
+Reference Number 3
+
+Background 3
+
+Objective 3
+
+Impacted Units 3
+
+Ownership 3
+
+Remarks 3
+
+Effective From 3
+
+Risk of Non-Compliance 3
+
+Executive Summary for Approvers 3
+
+Detailed Process 3
+
+Control Check Points for ensuring compliance: 10
+
+Details of reports, if any pertaining to the process: 10
+
+Exception Handling and Escalation: 10
+
+Record Retention: 10
+
+Quality Assurance Checks: 10
+
+Performed By: 10
+
+Prepared by: 11
+
+Reviewed by: 11
+
+Approved by: 11
+
+Revision History 11
+
+Distribution List: 12
+
++---------------------------------+-----------------------------------------------------+
+| Process Description             | In country accounts payable process                 |
++---------------------------------+-----------------------------------------------------+
+| Product                         | Vendor’s invoices payments, Cross Border Recharges  |
+|                                 | (CBR) and manual payments                           |
++---------------------------------+-----------------------------------------------------+
+| Reference Number                |                                                     |
++---------------------------------+-----------------------------------------------------+
+| Background                      | To document the payment process’s                   |
++---------------------------------+-----------------------------------------------------+
+| Objective                       | To ensure that expenditures goes through the bank’s |
+|                                 | proper channels for processing (e-Proc, T&E & SODA) |
+|                                 | in line with the Group Business Expenditure         |
+|                                 | Standard, and to improve control over spends and    |
+|                                 | provide a better audit trail.                       |
++---------------------------------+-----------------------------------------------------+
+| Impacted Units                  | Domestic Business Unit (DBU)                        |
++---------------------------------+-----------------------------------------------------+
+| Ownership                       | Country Finance – Accounts Payable Team             |
++---------------------------------+-----------------------------------------------------+
+| Remarks                         |                                                     |
++---------------------------------+-----------------------------------------------------+
+| Effective From                  | May 2014 (Reviewed Annually or if there are changes |
+|                                 | to the group expenditure and travel policy and      |
+|                                 | procedures)                                         |
++---------------------------------+-----------------------------------------------------+
+| Risk of Non-Compliance          | Fraud and bribery risk, duplicate payments,         |
+|                                 | compliance with the Group Delegated Authorities     |
++---------------------------------+-----------------------------------------------------+
+| Executive Summary for Approvers | This document details the payment process. This     |
+|                                 | also contains key controls to observe in ensuring   |
+|                                 | the accuracy and quality of the process.            |
++---------------------------------+-----------------------------------------------------+
+
+Detailed Process
+
++-----+-------------------------------------------------------------------+-----------+----------------+
+| S.  | Activity                                                          | Timelines | Responsibility |
+| No. |                                                                   |           |                |
++:===:+:==================================================================+===========+================+
+| 1   | Introductions                                                     |           | Country        |
+|     |                                                                   |           | Finance        |
+|     | The purpose of this DOI is to provide guidance on how to process  |           |                |
+|     | third parties’ payments (vendor’s payments and CBR’s).            |           |                |
+|     |                                                                   |           |                |
+|     | Payments should be in line with the requirements of the Group     |           |                |
+|     | Business Expenditure Standard.                                    |           |                |
++-----+-------------------------------------------------------------------+-----------+----------------+
+| 2   | Groups Mandated Systems                                           |           | Country        |
+|     |                                                                   |           | Finance /      |
+|     | As per Group Business Expenditure Standard, Group standard        |           | payment        |
+|     | systems are mandatory where available.                            |           | requester      |
+|     |                                                                   |           |                |
+|     | The Group’s mandatory processes and systems (where available)     |           |                |
+|     | include: eProcurement, International Mobility (“IM”) / HR and     |           |                |
+|     | SODA.                                                             |           |                |
+|     |                                                                   |           |                |
+|     | Any payments that do not follow the standard invoice payment      |           |                |
+|     | process are considered manual payments. Manual payments are not   |           |                |
+|     | allowed unless exceptional circumstances prevent payment through  |           |                |
+|     | the standard process. A rigorous approval process is in place and |           |                |
+|     | must be completed before any such payments are made. Please refer |           |                |
+|     | to section 5 in this document.                                    |           |                |
+|     |                                                                   |           |                |
+|     | Invoices that do not go through the Purchase Order (PO) route are |           |                |
+|     | processed as a manual invoice. Any such payments should be on     |           |                |
+|     | exceptional basis only and require approval from the country CFO  |           |                |
+|     | or his delegates, as well as country supply chain manger.         |           |                |
+|     | However, the payment should be processed centrally through        |           |                |
+|     | Accounts Payable Unites Team (APU) in GBS (Bangalore/Chennai).    |           |                |
+|     | Please refer to section 4 in this document.                       |           |                |
++-----+-------------------------------------------------------------------+-----------+----------------+
+| 3   | PO invoices                                                       |           | Country        |
+|     |                                                                   |           | Finance /      |
+|     | Invoices for DBU (U140), are raised in eProcurement and submitted |           | payment        |
+|     | directly to AP team for processing. The invoice should be scanned |           | requester      |
+|     | by the vendor to AP team for processing and it should have the PO |           |                |
+|     | number.                                                           |           |                |
+|     |                                                                   |           |                |
+|     | Once the invoice interfaced in the system it will come to country |           |                |
+|     | finance queue in the Tax-Q system. Finance needs to provide the   |           |                |
+|     | following:                                                        |           |                |
+|     |                                                                   |           |                |
+|     | 1.  Provide the Purpose of payment (POP). Refer Annexure 2.       |           |                |
+|     |                                                                   |           |                |
+|     | 2.  Classify the invoices into one of the following VAT           |           |                |
+|     |     categories:                                                   |           |                |
+|     |                                                                   |           |                |
+|     | - Full Tax Invoice: those are the compliant VAT invoices issued   |           |                |
+|     |   by a taxable person in line with National Bureau of Revenue     |           |                |
+|     |   (NBR) guideline. Below are the basic requirements need to be    |           |                |
+|     |   checked:                                                        |           |                |
+|     |                                                                   |           |                |
+|     | 1.  The label “Tax Invoice”                                       |           |                |
+|     |                                                                   |           |                |
+|     | 2.  Name, address (as registered with NBR), and Tax Registration  |           |                |
+|     |     Number (TRN) of the supplier.                                 |           |                |
+|     |                                                                   |           |                |
+|     | 3.  Name and address (as registered with NBR) of the customer,    |           |                |
+|     |     i.e. SCB Bahrain.                                             |           |                |
+|     |                                                                   |           |                |
+|     | 4.  Date and sequential tax invoice number.                       |           |                |
+|     |                                                                   |           |                |
+|     | 5.  Description, quantity, value, unit price and date of supply.  |           |                |
+|     |                                                                   |           |                |
+|     | 6.  Value of discounts (if any), and the net value.               |           |                |
+|     |                                                                   |           |                |
+|     | 7.  The VAT rate and amount of VAT due.                           |           |                |
+|     |                                                                   |           |                |
+|     | 8.  Total amount due, inclusive of VAT.                           |           |                |
+|     |                                                                   |           |                |
+|     | 9.  Exchange rate applied (in case of foreign currency invoices). |           |                |
+|     |                                                                   |           |                |
+|     | 10. Where a transaction is exempt from VAT, it should be clearly  |           |                |
+|     |     stated.                                                       |           |                |
+|     |                                                                   |           |                |
+|     | 11. Where the profit margin scheme is used, a reference that VAT  |           |                |
+|     |     has been charged based on the profit margin mechanism.        |           |                |
+|     |                                                                   |           |                |
+|     | Below is a tax invoice example as per NBR requirements.           |           |                |
+|     |                                                                   |           |                |
+|     | []                                                                |           |                |
+|     |                                                                   |           |                |
+|     | - Simplified Tax Invoice: those are the invoices which are issued |           |                |
+|     |   by a taxable person and don’t have the following:               |           |                |
+|     |                                                                   |           |                |
+|     | 1.  The label “Tax Invoice”                                       |           |                |
+|     |                                                                   |           |                |
+|     | 2.  Name and address (as registered with NBR) of the customer,    |           |                |
+|     |     i.e. SCB Bahrain.                                             |           |                |
+|     |                                                                   |           |                |
+|     | 3.  Sequential tax invoice number                                 |           |                |
+|     |                                                                   |           |                |
+|     | 4.  Quantity, value, unit price and date of supply.               |           |                |
+|     |                                                                   |           |                |
+|     | 5.  Value of discounts (if any), and the net value.               |           |                |
+|     |                                                                   |           |                |
+|     | 6.  Exchange rate applied (in case of foreign currency invoices). |           |                |
+|     |                                                                   |           |                |
+|     | 7.  Where a transaction is exempt from VAT, it should be clearly  |           |                |
+|     |     stated.                                                       |           |                |
+|     |                                                                   |           |                |
+|     |   Note: simplified tax invoice is only acceptable where the       |           |                |
+|     |   consideration of the supply does not exceed BHD 500 (inclusive  |           |                |
+|     |   of VAT).                                                        |           |                |
+|     |                                                                   |           |                |
+|     | - Unregistered Vendor Purchases: those are the invoices issued    |           |                |
+|     |   any vendor/government authorities which are not registered with |           |                |
+|     |   NBR as taxable person.                                          |           |                |
+|     |                                                                   |           |                |
+|     | - Zero Rated Purchases: those are the invoices issued by a        |           |                |
+|     |   taxable person, where the supply is taxable at the rate of 0%,  |           |                |
+|     |   this include the following:                                     |           |                |
+|     |                                                                   |           |                |
+|     | 1.  Domestic and International transportation                     |           |                |
+|     |                                                                   |           |                |
+|     | 2.  Basic food items                                              |           |                |
+|     |                                                                   |           |                |
+|     | 3.  Healthcare services, Medicines and medical equipment          |           |                |
+|     |                                                                   |           |                |
+|     | 4.  Educational services                                          |           |                |
+|     |                                                                   |           |                |
+|     | 5.  Construction services for new buildings                       |           |                |
+|     |                                                                   |           |                |
+|     | 6.  Domestic oil and gas                                          |           |                |
+|     |                                                                   |           |                |
+|     | Note: the invoice should meet the tax invoice requirements        |           |                |
+|     | mentioned above, although the supply is zero rated.               |           |                |
+|     |                                                                   |           |                |
+|     | - Exempt Purchases: those are the invoices issued by a taxable    |           |                |
+|     |   person where the supply is VAT exempt supplies. This include    |           |                |
+|     |   the following:                                                  |           |                |
+|     |                                                                   |           |                |
+|     | 1.  Real estate supplies                                          |           |                |
+|     |                                                                   |           |                |
+|     | 2.  Financial services                                            |           |                |
+|     |                                                                   |           |                |
+|     | - Tax Credit Note: those are the credit notes issued by a taxable |           |                |
+|     |   person with vat amount.                                         |           |                |
+|     |                                                                   |           |                |
+|     | - Reverse Charge Invoice: those are the invoices issued by an     |           |                |
+|     |   oversees supplies where the supplies is taxable by nature. The  |           |                |
+|     |   VAT amount should be calculated and written on the invoice by   |           |                |
+|     |   country finance.                                                |           |                |
+|     |                                                                   |           |                |
+|     | VAT amount should be calculated in FCY (in case of foreign        |           |                |
+|     | currency invoices) and in LCY using the central bank exchange     |           |                |
+|     | rate as of the invoice date.                                      |           |                |
+|     |                                                                   |           |                |
+|     | - GCC Tax Invoice: The supplier should be based out of GCC        |           |                |
+|     |   states. (Currently not in use).                                 |           |                |
+|     |                                                                   |           |                |
+|     | - Inter Business Unit Transfers: this is for interbranch          |           |                |
+|     |   transactions (CBRs).                                            |           |                |
+|     |                                                                   |           |                |
+|     | - Out of Scope: this will be mainly for the following:            |           |                |
+|     |                                                                   |           |                |
+|     | 1.  Invoices where the supply is provided before 1^(st) Jan 2019. |           |                |
+|     |                                                                   |           |                |
+|     | 2.  Multi purposes voucher (MPV). As per section 4.6 of NBR       |           |                |
+|     |     guideline, the issue of an MPV and each subsequent transfer   |           |                |
+|     |     of that MPV for consideration is not a supply falling within  |           |                |
+|     |     the scope of VAT.                                             |           |                |
+|     |                                                                   |           |                |
+|     | - Other: currently only Electricity and Water Authority (EWA)     |           |                |
+|     |   bills are marked as Other, as EWA is registered as a taxable    |           |                |
+|     |   person but VAT is not being charged yet.                        |           |                |
++-----+-------------------------------------------------------------------+-----------+----------------+
+| 4   | Manual invoices (non e-proc invoices)                             |           | Country        |
+|     |                                                                   |           | Finance /      |
+|     | Invoices that do not go through the PO route are processed as a   |           | payment        |
+|     | manual invoice.                                                   |           | requester      |
+|     |                                                                   |           |                |
+|     | In order to process any manual invoice, the requester needs to:   |           |                |
+|     |                                                                   |           |                |
+|     | - Provide an Invoice                                              |           |                |
+|     |                                                                   |           |                |
+|     | - Prepare the non e-proc memo which needs to be approved by the   |           |                |
+|     |   cost centre owner, country supply chain manager and the CFO or  |           |                |
+|     |   his delegate                                                    |           |                |
+|     |                                                                   |           |                |
+|     | Please refer Annexure 1 for the memo.                             |           |                |
+|     |                                                                   |           |                |
+|     | - Scan the non e-proc memo along with the invoice to BH,          |           |                |
+|     |   APUeInvoice for processing.                                     |           |                |
+|     |                                                                   |           |                |
+|     | Control checks:                                                   |           |                |
+|     |                                                                   |           |                |
+|     | 1.  Ensure that all manual invoices are approved by the cost      |           |                |
+|     |     centre owner, country supply chain manager and the CFO or his |           |                |
+|     |     delegates.                                                    |           |                |
+|     |                                                                   |           |                |
+|     | 2.  Ensure that the payment is made to the vendor as appearing in |           |                |
+|     |     the invoice. Unless a clear instruction received from the     |           |                |
+|     |     vendor states something else.                                 |           |                |
+|     |                                                                   |           |                |
+|     | 3.  Ensure that the invoice amount is within the approver DOA     |           |                |
+|     |     limit as per GDAM. The only exception to this is GSAM legal   |           |                |
+|     |     and professional fees, which are not covered by GDAM.         |           |                |
+|     |                                                                   |           |                |
+|     | This exception was confirmed by the “Group Corporate              |           |                |
+|     | Secretariat”.                                                     |           |                |
++-----+-------------------------------------------------------------------+-----------+----------------+
+| 5   | In country payments:                                              |           | Country        |
+|     |                                                                   |           | Finance /      |
+|     | In country payments are considered as Manual payments and would   |           | payment        |
+|     | be either One-off manual payments or Recurring manual payments.   |           | requester      |
+|     |                                                                   |           |                |
+|     | Manual payments                                                   |           |                |
+|     |                                                                   |           |                |
+|     | Manual Payments are defined as those items not paid via the       |           |                |
+|     | standard invoice payment process and where implemented, not paid  |           |                |
+|     | via PeopleSoft Accounts Payable (PSAP).                           |           |                |
+|     |                                                                   |           |                |
+|     | In order to process any manual payment, the requester needs to:   |           |                |
+|     |                                                                   |           |                |
+|     | - Provide an Invoice                                              |           |                |
+|     |                                                                   |           |                |
+|     | - Provide the non e-proc memo which needs to be approved by the   |           |                |
+|     |   cost centre owner, country supply chain manager and the CFO or  |           |                |
+|     |   his delegate.                                                   |           |                |
+|     |                                                                   |           |                |
+|     | - Since this is an in-country payment, you need to prepare an OTT |           |                |
+|     |   form for telex transfer (Annexure 3) and take the approved      |           |                |
+|     |   documents to Operations to print a cheque.                      |           |                |
+|     |                                                                   |           |                |
+|     | Manual payments are classified to either One-off Manual Payments  |           |                |
+|     | or Recurring Manual payments.                                     |           |                |
+|     |                                                                   |           |                |
+|     | One-off manual payments                                           |           |                |
+|     |                                                                   |           |                |
+|     | The following documents/approvals are required for the one-off    |           |                |
+|     | payments.                                                         |           |                |
+|     |                                                                   |           |                |
+|     | - Evidence in the form of a statement of the nature of the        |           |                |
+|     |   expense to support that the request is a one-off payment, and   |           |                |
+|     |   not a recurring obligation                                      |           |                |
+|     |                                                                   |           |                |
+|     | - Supplier number of the Vendor in PSAP vendor if applicable,     |           |                |
+|     |   else Screening confirmation to be attached, noting that the     |           |                |
+|     |   screening results are valid for 48 hours.                       |           |                |
+|     |                                                                   |           |                |
+|     | - Obtain approval from a Managing Director (MD) of the requesting |           |                |
+|     |   Business function (or CEO if no there is on MD in country)      |           |                |
+|     |                                                                   |           |                |
+|     | - Obtain CFO approval                                             |           |                |
+|     |                                                                   |           |                |
+|     | - Approval document must indicate the account that needs to be    |           |                |
+|     |   debited                                                         |           |                |
+|     |                                                                   |           |                |
+|     | Recurring manual payments                                         |           |                |
+|     |                                                                   |           |                |
+|     | All recurring manual payments regardless of value or method of    |           |                |
+|     | payment are considered manual payments.                           |           |                |
+|     |                                                                   |           |                |
+|     | Such recurring manual payments are only permitted where a written |           |                |
+|     | dispensation approved by the policy owner is held by the          |           |                |
+|     | department that originates such payments.                         |           |                |
+|     |                                                                   |           |                |
+|     | Except for MD (or CEO) approval, all the requirements mentioned   |           |                |
+|     | above under one-off manual payments need to be met. Additionally, |           |                |
+|     | a dispensation must be in place for the recurring manual          |           |                |
+|     | payments.                                                         |           |                |
+|     |                                                                   |           |                |
+|     | After any manual payment, you need to:                            |           |                |
+|     |                                                                   |           |                |
+|     | - Record the manual payment in eOPS                               |           |                |
+|     |                                                                   |           |                |
+|     | https://eopsvip05.hk.standardchartered.com:9443/eopssec/index.jsp |           |                |
+|     |                                                                   |           |                |
+|     | Note: on a quarterly basis the CFO log need to be retrieved from  |           |                |
+|     | eOPS and approved by the CFO. This approval needs to uploaded in  |           |                |
+|     | eOPS for the quarterly manual payments CST check.                 |           |                |
+|     |                                                                   |           |                |
+|     | - Mark the invoice as PAID and send it to the APU team in GBS     |           |                |
+|     |   (Bangalore/Chennai) for recording purposes in PeopleSoft        |           |                |
+|     |   Accounts Payable and posting the entry in the GL.               |           |                |
+|     |                                                                   |           |                |
+|     | AP standard memo needs to be used. Refer Annexure 4               |           |                |
+|     |                                                                   |           |                |
+|     | Please note that all manual payments will be paid through the     |           |                |
+|     | payment suspense account.                                         |           |                |
+|     |                                                                   |           |                |
+|     | Below are the ebbs payment suspense accounts:                     |           |                |
+|     |                                                                   |           |                |
+|     |   ------------------------------                                  |           |                |
+|     |   BU    CCY      Ebbs Account No                                  |           |                |
+|     |   ----- -------- ---------------                                  |           |                |
+|     |   DBU   BHD      09-0906743-50                                    |           |                |
+|     |                                                                   |           |                |
+|     |   DBU   USD      09-0906743-50                                    |           |                |
+|     |   ------------------------------                                  |           |                |
+|     |                                                                   |           |                |
+|     | Since AP team will be posting the GL entry, the below entry needs |           |                |
+|     | to be posted in ebbs by country to clear the Payment Suspense     |           |                |
+|     | Account.                                                          |           |                |
+|     |                                                                   |           |                |
+|     | []                                                                |           |                |
+|     |                                                                   |           |                |
+|     | Control checks:                                                   |           |                |
+|     |                                                                   |           |                |
+|     | - Ensure that all manual payments are approved by the cost centre |           |                |
+|     |   owner and the CFO or his delegates.                             |           |                |
+|     |                                                                   |           |                |
+|     | - Ensure that dispensation is in place for all recurring          |           |                |
+|     |   payments.                                                       |           |                |
+|     |                                                                   |           |                |
+|     | - Ensure that the vendor is on-boarded. Or screening is performed |           |                |
+|     |   if not on-boarded.                                              |           |                |
+|     |                                                                   |           |                |
+|     | - Ensure that the payment is executed within 48 hours of the      |           |                |
+|     |   screening result.                                               |           |                |
+|     |                                                                   |           |                |
+|     | - Ensure that the payment is made to the vendor as appearing in   |           |                |
+|     |   the invoice. Unless a clear instruction received from the       |           |                |
+|     |   vendor states something else.                                   |           |                |
+|     |                                                                   |           |                |
+|     | - Ensure that the invoice amount is within the approver limit as  |           |                |
+|     |   per GDAM. The only exception to this is GSAM legal and          |           |                |
+|     |   professional fees, and Tax/VAT payments which are not covered   |           |                |
+|     |   by GDAM.                                                        |           |                |
+|     |                                                                   |           |                |
+|     | This exception was confirmed by the “Group Corporate              |           |                |
+|     | Secretariat”.                                                     |           |                |
++-----+-------------------------------------------------------------------+-----------+----------------+
+| 6   | Cross Border Recharges (CBR)                                      |           | Country        |
+|     |                                                                   |           | Finance        |
+|     | The CBR payments are managed centrally in GBS) Bangalore /        |           |                |
+|     | Chennai) by APU CBR team.                                         |           |                |
++-----+-------------------------------------------------------------------+-----------+----------------+
+| 7   | Clearing payment suspense account                                 |           | Country        |
+|     |                                                                   |           | Finance        |
+|     | As mentioned above, payment suspense account should be mainly     |           |                |
+|     | used for all in-country vendor payments. Please note that there   |           |                |
+|     | might be other transactions hit the payment suspense account      |           |                |
+|     | also, for example CBR funds received, income from The Benefit     |           |                |
+|     | Company, UK VAT refund … etc.                                     |           |                |
+|     |                                                                   |           |                |
+|     | Please follow the following process to clear the balance in the   |           |                |
+|     | GL:                                                               |           |                |
+|     |                                                                   |           |                |
+|     | 1.  Take an extract of the PSGL account number 140-288843-800 for |           |                |
+|     |     the period required. And reconcile it to the trial balance    |           |                |
+|     |     account (YTD balance of 288843)                               |           |                |
+|     |                                                                   |           |                |
+|     | 2.  Extract a transaction archival from the eBBS for the payment  |           |                |
+|     |     suspense account (BHD/USD 09-0906743-50) for the period       |           |                |
+|     |     required.                                                     |           |                |
+|     |                                                                   |           |                |
+|     | 3.  Then check and compare if the same amounts are showing in     |           |                |
+|     |     both the extracts                                             |           |                |
+|     |                                                                   |           |                |
+|     | 4.  If the amounts are the same in both extracts, then a PSGL     |           |                |
+|     |     entry need to be posted to move the balances from payment     |           |                |
+|     |     suspense to the respective cost centres and GL account.       |           |                |
+|     |                                                                   |           |                |
+|     | All items in the payment suspense accounts should be cleared in   |           |                |
+|     | the same month and any aged items should be escalated as per the  |           |                |
+|     | below escalation grid:                                            |           |                |
+|     |                                                                   |           |                |
+|     | []                                                                |           |                |
+|     |                                                                   |           |                |
+|     | []                                                                |           |                |
+|     |                                                                   |           |                |
+|     | Aging of the items are calculated as follows:                     |           |                |
+|     |                                                                   |           |                |
+|     | Aging = Current Date – Vale Date – Life Span                      |           |                |
+|     |                                                                   |           |                |
+|     | Control checks:                                                   |           |                |
+|     |                                                                   |           |                |
+|     | 1.  GL extract is reconciled to the ebbs extract                  |           |                |
+|     |                                                                   |           |                |
+|     | 2.  The payments were properly approved                           |           |                |
+|     |                                                                   |           |                |
+|     | 3.  Ensure that you have the correct PSGL chart fields to clear   |           |                |
+|     |     the balances                                                  |           |                |
++-----+-------------------------------------------------------------------+-----------+----------------+
+| 9   | - Preparer: Finance Manager                                       |           | N/A            |
+|     |                                                                   |           |                |
+|     | - Covered for preparer: Finance Manager                           |           |                |
+|     |                                                                   |           |                |
+|     | - Approver : CFO                                                  |           |                |
+|     |                                                                   |           |                |
+|     | - Covered for approver: Finance Senior Manager                    |           |                |
++-----+-------------------------------------------------------------------+-----------+----------------+
+
+  ------------------- ----------------------------------
+  Annexure 1 -        []
+
+  Annexure 2 -        []
+
+  Annexure 3 -        []
+
+  Annexure 4 -        []
+
+  Annexure 5 -        
+  ------------------- ----------------------------------
+
++----------------------+-------------------+-----------------+-----------------+
+| Delegation of        | NA                                                    |
+| Authority, if any    |                                                       |
+| applicable to the    |                                                       |
+| process:             |                                                       |
++----------------------+-------------------------------------------------------+
+| Control Check Points | Control Checks:                                       |
+| for ensuring         |                                                       |
+| compliance:          | 1.  Approval from country supply chain manager (if    |
+|                      |     required) to process the non e-Procurement        |
+|                      |     payments.                                         |
+|                      |                                                       |
+|                      | 2.  Approval from the cost centre owner / line        |
+|                      |     manager. As per the latest group delegation of    |
+|                      |     authority DOA                                     |
+|                      |                                                       |
+|                      | 3.  CFO’s approval or delegate to process the non     |
+|                      |     e-Procurement payments                            |
++----------------------+-------------------------------------------------------+
+| Details of reports,  |                                                       |
+| if any pertaining to |                                                       |
+| the process:         |                                                       |
++----------------------+-------------------------------------------------------+
+| Exception Handling   | Escalation to the CFO must be undertaken if there is  |
+| and Escalation:      | any payment request which is not in line with the     |
+|                      | Group Business Expenditure Standards and when there   |
+|                      | is a doubt of fraud or bribery.                       |
++----------------------+-------------------------------------------------------+
+| Record Retention:    | Proper documentation of the invoices, the out of      |
+|                      | e-Proc memo and email approvals have to be kept on    |
+|                      | file for audit and future use purposes.               |
++----------------------+-------------------+-----------------+-----------------+
+| Quality Assurance    | All kind of       | Performed By:   | CFO or his      |
+| Checks:              | payments should   |                 | delegate.       |
+|                      | be processed in   |                 |                 |
+|                      | line with the     |                 |                 |
+|                      | group expenditure |                 |                 |
+|                      | and travel policy |                 |                 |
+|                      | and procedures.   |                 |                 |
++----------------------+-------------------+-----------------+-----------------+
+
+Prepared by:
+
+  ---------------------- ---------------------- -------------- -----------
+           NAME               DESIGNATION         SIGNATURE       DATE
+
+      Ali Abdulkarim        Finance Manager                     Nov 2025
+  ---------------------- ---------------------- -------------- -----------
+
+Reviewed by:
+
+  ---------------------- ---------------------- -------------- -----------
+           NAME               DESIGNATION         SIGNATURE       DATE
+
+    Sai Venkata Ramana   Finance Senior Manager                 Nov 2025
+          Redla                                                
+  ---------------------- ---------------------- -------------- -----------
+
+Approved by:
+
+  ---------------------- ---------------------- -------------- -----------
+           NAME               DESIGNATION         SIGNATURE       DATE
+
+    Sai Venkata Ramana   Finance Senior Manager                 Nov 2025
+          Redla                                                
+  ---------------------- ---------------------- -------------- -----------
+
+Revision History
+
+  -------------------------------------------------------------------------------
+  Version   Date     Reason                     Initiator    Approver  Comments
+  --------- -------- ------------------------- ------------ ---------- ----------
+  11        Nov 2025 Annual review                 Ali         Sai     
+                                                Abdulkarim   Venkata   
+                                                              Ramana   
+                                                              Redla    
+
+  11        Nov 2024 Annual review                 Ali         Sai     
+                                                Abdulkarim   Venkata   
+                                                              Ramana   
+                                                              Redla    
+
+  10        June     Annual review                 Ali         Sai     
+            2023                                Abdulkarim   Venkata   
+                                                              Ramana   
+                                                              Redla    
+
+  9         Oct 2021 Update the DOI with the       Ali         Sai     
+                     POP requirements and the   Abdulkarim   Venkata   
+                     new OTT form                             Ramana   
+                                                              Redla    
+
+  8         June     Annual review                 Ali         Sai     
+            2021                                Abdulkarim   Venkata   
+                                                              Ramana   
+                                                              Redla    
+
+  7         June     Annual review                 Ali         Sai     
+            2020                                Abdulkarim   Venkata   
+                                                              Ramana   
+                                                              Redla    
+
+  6         June     Annual review and             Ali         Sai     
+            2019     alignment with the         Abdulkarim   Venkata   
+                     updates on the Group                     Ramana   
+                     Business Expenditure                     Redla    
+                     Standards                                         
+
+  5         June     Annual review and             Ali         Sai     
+            2018     alignment with the         Abdulkarim   Venkata   
+                     updates on the group                     Ramana   
+                     expenditure policy and                   Redla    
+                     procedures                                        
+
+  4         June     Annual review and             Ali         Sai     
+            2017     alignment with the         Abdulkarim   Venkata   
+                     updates on the group                     Ramana   
+                     expenditure policy and                   Redla    
+                     procedures                                        
+
+  3         June     Annual review and             Ali         Sai     
+            2016     alignment with the new     Abdulkarim   Venkata   
+                     group expenditure policy                 Ramana   
+                     and procedures                           Redla    
+
+  2         May 2015 Annual review                 Ali         Sai     
+                                                Abdulkarim   Venkata   
+                                                              Ramana   
+                                                              Redla    
+
+  1         May 2014 First Draft                   Ali         Sai     
+                                                Abdulkarim   Venkata   
+                                                              Ramana   
+                                                              Redla    
+  -------------------------------------------------------------------------------
+
+Distribution List:
+
++-----+--------------------------------+-------------------------------+
+| S.  | Designation                    |                               |
+| No. |                                |                               |
++:===:+:===============================+:==============================+
+| 1   | N/A                            |                               |
++-----+--------------------------------+                               |
+| 2   |                                |                               |
++-----+--------------------------------+                               |
+| 3   |                                |                               |
++-----+--------------------------------+                               |
+| 4   |                                |                               |
++-----+--------------------------------+-------------------------------+

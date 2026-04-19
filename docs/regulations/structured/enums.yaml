@@ -1,0 +1,78 @@
+# Central enumerations for the regulations corpus.
+# Consumers: validate.py, spec LaTeX, CI.
+
+regulation_types:
+  - framework         # e.g. MAS MGF
+  - standard          # e.g. ISO/IEC 42001
+  - guideline         # non-binding guidance
+  - statute           # binding law
+  - research          # academic paper
+  - index             # comparative inventory
+  - toolkit           # software + methodology bundle
+
+normativity:
+  - mandatory
+  - recommended
+  - advisory
+  - descriptive
+
+obligation_verbs:
+  - must              # mandatory
+  - should            # strong recommendation
+  - may               # permission
+  - descriptive       # statement of fact, no normative force
+
+requirement_categories:
+  - bound_risks                 # MGF pillar 1
+  - human_accountability        # MGF pillar 2
+  - technical_controls          # MGF pillar 3
+  - end_user_responsibility     # MGF pillar 4
+  - transparency                # Agent Index findings
+  - evaluation                  # testing + metrics
+  - observation                 # empirical claim, not normative
+
+lifecycle_phases:
+  - planning
+  - design
+  - development
+  - pre_deployment
+  - deployment
+  - post_deployment
+  - decommission
+
+implementation_kinds:
+  - code
+  - config
+  - doc
+  - schema
+  - dataset
+  - none              # gap placeholder
+
+verification_kinds:
+  - aiverify-plugin
+  - moonshot-test
+  - test
+  - manual-review
+  - process-checklist
+  - external-audit
+
+statuses:
+  - implemented       # code + verification both present
+  - partial           # implementation exists, verification incomplete
+  - gap               # no implementation yet
+  - planned           # on the roadmap
+  - not_applicable    # scope exclusion
+
+jurisdictions:
+  - SG                # Singapore
+  - EU
+  - US
+  - UK
+  - international
+
+tool_kinds:
+  - testing-framework
+  - ci-cd
+  - process-checklist
+  - red-team
+  - benchmark

@@ -1,0 +1,64 @@
+{
+  "requirements": [
+    {
+      "requirementId": "REG-JU-ARAL-3-001",
+      "source": {
+        "regulationId": "ju-aral-pairit-2026",
+        "section": "3",
+        "quote": "human-AI teams produced 50% more ads per worker and higher text quality... human-human teams produced higher image quality, suggesting a jagged frontier of AI agent capability."
+      },
+      "normativeText": "Observation: human-AI teams show a jagged productivity frontier \u2014 task-specific evaluation is required; do not generalise a single productivity metric.",
+      "category": "observation",
+      "obligation": "descriptive",
+      "lifecyclePhase": "pre_deployment",
+      "implementation": [
+        {"kind": "doc", "path": "docs/regulations/spec/chapters/05-empirical-evidence.tex"}
+      ],
+      "verification": [
+        {"kind": "manual-review", "note": "Use-case evaluation runbook cites this finding when scoping metrics."}
+      ],
+      "status": "implemented",
+      "priority": "low"
+    },
+    {
+      "requirementId": "REG-JU-ARAL-5-001",
+      "source": {
+        "regulationId": "ju-aral-pairit-2026",
+        "section": "5",
+        "quote": "Human-AI teams also produced more homogeneous outputs (or diversity collapse) as their ads were more self-similar."
+      },
+      "normativeText": "Observation: diversity collapse is an empirical risk \u2014 monitoring should include an output-diversity metric where the business benefits from varied outputs.",
+      "category": "observation",
+      "obligation": "should",
+      "lifecyclePhase": "post_deployment",
+      "implementation": [
+        {"kind": "none", "note": "Diversity metric not yet applicable to TB review (single deterministic pipeline); relevant to future creative use cases."}
+      ],
+      "verification": [
+        {"kind": "manual-review", "note": "Add diversity metric when scope expands to generative outputs."}
+      ],
+      "status": "not_applicable",
+      "priority": "low"
+    },
+    {
+      "requirementId": "REG-JU-ARAL-4-001",
+      "source": {
+        "regulationId": "ju-aral-pairit-2026",
+        "section": "4",
+        "quote": "human-AI collaboration displayed more delegation, as participants delegated 17% more work to AI agents than to human partners and performed 62% fewer direct text edits when working with AI."
+      },
+      "normativeText": "Observation: high delegation rates combined with reduced direct editing correlate with automation-bias risk \u2014 oversight effectiveness measures must detect this.",
+      "category": "observation",
+      "obligation": "should",
+      "lifecyclePhase": "post_deployment",
+      "implementation": [
+        {"kind": "doc", "path": "docs/tb/structured/kpis/tb-kpis.json", "field": "kpis[]", "note": "Override-rate and review-duration KPIs serve as proxies."}
+      ],
+      "verification": [
+        {"kind": "manual-review", "note": "Review override trend quarterly."}
+      ],
+      "status": "partial",
+      "priority": "medium"
+    }
+  ]
+}

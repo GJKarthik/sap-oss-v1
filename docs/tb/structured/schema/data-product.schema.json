@@ -1,0 +1,54 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://sap-oss.local/schemas/tb/data-product.schema.json",
+  "title": "TB Data Product (ODPS 4.1 subset)",
+  "description": "Data product manifest for the TB review corpus, conformant to the ODPS 4.1 subset used across the org.",
+  "type": "object",
+  "required": ["dataProduct"],
+  "additionalProperties": false,
+  "properties": {
+    "dataProduct": {
+      "type": "object",
+      "required": ["id", "version", "name", "description", "dataSecurityClass", "domain", "owner"],
+      "additionalProperties": true,
+      "properties": {
+        "id": {"type": "string"},
+        "version": {"type": "string"},
+        "name": {"type": "string"},
+        "description": {"type": "string"},
+        "dataSecurityClass": {
+          "type": "string",
+          "enum": ["public", "internal", "confidential", "restricted"]
+        },
+        "dataGovernanceClass": {"type": "string"},
+        "domain": {"type": "string"},
+        "owner": {
+          "type": "object",
+          "required": ["name"],
+          "additionalProperties": false,
+          "properties": {
+            "name": {"type": "string"},
+            "team": {"type": "string"},
+            "contact": {"type": "string"}
+          }
+        },
+        "x-llm-policy": {
+          "type": "object",
+          "additionalProperties": true,
+          "properties": {
+            "routing": {"type": "string", "enum": ["vllm-only", "hybrid", "external-allowed"]},
+            "defaultBackend": {"type": "string"},
+            "auditLevel": {"type": "string", "enum": ["none", "partial", "full"]}
+          }
+        },
+        "x-team-access": {"type": "object"},
+        "x-country-views": {"type": "object"},
+        "x-prompting-policy": {"type": "object"},
+        "x-rag-sources": {"type": "object"},
+        "schema": {"type": "object"},
+        "relatedProducts": {"type": "array"},
+        "aiAugmentation": {"type": "object"}
+      }
+    }
+  }
+}

@@ -1,0 +1,69 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "conformance-tool.schema.json",
+  "title": "Conformance-testing tool or framework",
+  "type": "object",
+  "required": ["toolId", "name", "publisher", "vendoredPath", "version", "kind"],
+  "additionalProperties": false,
+  "properties": {
+    "toolId": {"type": "string", "pattern": "^[a-z0-9-]+$"},
+    "name": {"type": "string"},
+    "publisher": {"type": "string"},
+    "version": {"type": "string"},
+    "vendoredPath": {
+      "type": "string",
+      "description": "Path relative to repository root where the tool is vendored."
+    },
+    "kind": {
+      "type": "string",
+      "enum": ["testing-framework", "ci-cd", "process-checklist", "red-team", "benchmark"]
+    },
+    "license": {"type": "string"},
+    "upstreamUrl": {"type": "string", "format": "uri"},
+    "appliesToRegulations": {"type": "array", "items": {"type": "string"}},
+    "plugins": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["pluginId", "path", "purpose"],
+        "properties": {
+          "pluginId": {"type": "string"},
+          "path": {"type": "string"},
+          "purpose": {"type": "string"},
+          "algorithmType": {
+            "type": "string",
+            "enum": ["fairness", "robustness", "explainability", "process", "report", "financial", "other"]
+          },
+          "inputs": {"type": "array", "items": {"type": "string"}},
+          "outputs": {"type": "array", "items": {"type": "string"}}
+        }
+      }
+    },
+    "benchmarks": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["benchmarkId", "category"],
+        "properties": {
+          "benchmarkId": {"type": "string"},
+          "category": {
+            "type": "string",
+            "enum": ["hallucination", "undesirable_content", "data_disclosure", "adversarial", "accuracy", "other"]
+          },
+          "description": {"type": "string"}
+        }
+      }
+    },
+    "integrationPoints": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["kind", "description"],
+        "properties": {
+          "kind": {"type": "string", "enum": ["cli", "docker", "python-api", "s3", "gha", "gitlab-ci"]},
+          "description": {"type": "string"}
+        }
+      }
+    }
+  }
+}

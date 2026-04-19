@@ -1,0 +1,133 @@
+\chapter{References}\label{ch:references}
+
+This appendix lists every file that backs a normative statement in the
+specification. Paths are relative to the repository root. SHA-256
+hashes are taken from \corpus\texttt{structured/corpus.json} and are
+the ground truth for the provenance check of \cref{ch:schema}.
+
+\section{Source documents}
+
+\footnotesize
+\begin{longtable}{@{}p{3.4cm}p{8cm}p{3cm}@{}}
+\toprule
+\textbf{Short name} & \textbf{Path} & \textbf{SHA-256 (prefix)} \\ \midrule
+\endfirsthead
+\toprule
+\textbf{Short name} & \textbf{Path} & \textbf{SHA-256 (prefix)} \\ \midrule
+\endhead
+TB GLO control narrative & \path{docs/tb/source/Operation of Month End Close Controls  - Trial Balance Review - GLO (1).pdf} & \texttt{71a4524b9ec7\ldots} \\
+TB Business Case         & \path{docs/tb/source/Business case - Trial Balance (2).doc} & \texttt{32744df8ea13\ldots} \\
+BSS RA Business Case     & \path{docs/tb/source/Business case - BSS Risk Assessment (2).doc} & \texttt{dab433cecf59\ldots} \\
+DOI for TB Process       & \path{docs/tb/source/DOI for Trial Balance Process .docx} & \texttt{b9d52d365b6b\ldots} \\
+HKG TB Workbook (Nov'25) & \path{docs/tb/source/HKG_TB review Nov'25.xlsm} & \texttt{69f5da1f4c71\ldots} \\
+HKG PL Workbook (Nov'25) & \path{docs/tb/source/HKG_PL review Nov'25.xlsm} & \texttt{47716e8c107b\ldots} \\
+\bottomrule
+\end{longtable}
+\normalsize
+
+\section{Derived text}
+
+Extracted text for each source document lives at
+\corpus\texttt{extracted-text/}. The Word and PDF files are converted
+to Markdown; the macro-enabled workbooks produce CSV samples (one per
+book) that are sufficient to seed downstream joins without carrying
+the macro payload. Extraction uses \texttt{pandoc} for \texttt{.docx},
+\texttt{pdftotext -layout} for born-digital PDFs, and a small Python
+pipeline for the \texttt{.xlsm} sheets.
+
+\section{Structured records}
+
+All of the following are JSON records validated by
+\corpus\texttt{structured/validate.py}.
+
+\footnotesize
+\begin{longtable}{@{}p{4cm}p{10cm}@{}}
+\toprule
+\textbf{Type} & \textbf{Path} \\ \midrule
+\endhead
+Workflow          & \path{structured/workflows/tb-review-glo.json} \\
+Control           & \path{structured/controls/euc-001-tb-data-extraction.json} \\
+Control           & \path{structured/controls/euc-002-variance-analysis-file.json} \\
+Control           & \path{structured/controls/euc-003-internal-review.json} \\
+Decision point    & \path{structured/decision-points/dp-001-material-variance.json} \\
+Decision point    & \path{structured/decision-points/dp-002-journal-posting.json} \\
+Decision point    & \path{structured/decision-points/dp-003-further-investigation.json} \\
+Decision point    & \path{structured/decision-points/dp-004-entry-confirmation.json} \\
+Decision point    & \path{structured/decision-points/dp-005-unexplained-variance.json} \\
+Requirement       & \path{structured/requirements/tb-business-requirements.json} \\
+KPI collection    & \path{structured/kpis/tb-kpis.json} \\
+Glossary          & \path{structured/glossary/tb-glossary.json} \\
+Data product      & \path{structured/data-products/trial-balance-review-v1.json} \\
+Index             & \path{structured/corpus.json} \\
+Enumerations      & \path{structured/enums.yaml} \\
+\bottomrule
+\end{longtable}
+\normalsize
+
+\section{Tools}
+
+\begin{tabularx}{\linewidth}{@{}l X@{}}
+\toprule
+\textbf{Tool} & \textbf{Purpose} \\ \midrule
+\texttt{pandoc}   & \texttt{.docx} $\to$ Markdown. \\
+\texttt{pdftotext} -layout & Text extraction from the GLO control PDF. \\
+Python + \texttt{openpyxl} & Sample rows out of \texttt{.xlsm} workbooks. \\
+\texttt{jq} & Query and cross-check \texttt{corpus.json}. \\
+\texttt{jsonschema} / \texttt{referencing} (Python) & Offline schema validation with a local registry. \\
+\texttt{xelatex} / \texttt{tectonic} & Build this document. \\
+\bottomrule
+\end{tabularx}
+
+\section{Minimal corpus excerpt}
+
+The entire corpus is in-tree under \corpus. For readers without access
+to the Git repository, \cref{lst:corpus-excerpt} reproduces the first
+three items of \corpus\texttt{structured/corpus.json} verbatim.
+
+\begin{figure}[htbp]
+\begin{lstlisting}[language=jsonx,caption={First three items of
+\texttt{corpus.json}; identical SHA-256 values are reproduced in
+the table above.},label=lst:corpus-excerpt]
+{
+  "schema_version": "1.0",
+  "items": [
+    {
+      "id": "tb-glo-control-operation",
+      "type": "control_narrative",
+      "country": "GLO",
+      "language": "en",
+      "sha256": "71a4524b9ec7c6701a7137579ef6c8730eb53fcde2fe5a50515a4b870b560afc",
+      "source_path":     "docs/tb/source/Operation of Month End Close Controls ...GLO (1).pdf",
+      "text_path":       "docs/tb/extracted-text/bpmn-tb-review-glo.md",
+      "structured_path": "docs/tb/structured/workflows/tb-review-glo.json"
+    },
+    {
+      "id": "tb-business-case",
+      "type": "business_case",
+      "country": "GLO",
+      "language": "en",
+      "sha256": "32744df8ea13f12a36f6117f18874e578c627be6fbc3c48d2f73d32dcfa0c689",
+      "source_path":     "docs/tb/source/Business case - Trial Balance (2).doc",
+      "text_path":       "docs/tb/extracted-text/business-case-trial-balance.md",
+      "structured_path": "docs/tb/structured/requirements/tb-business-requirements.json"
+    },
+    {
+      "id": "bss-ra-business-case",
+      "type": "business_case",
+      "country": "GLO",
+      "language": "en",
+      "sha256": "dab433cecf598b908d070e2ebfd6f285565b7b3e1102cd2496e639dee1d0c28c",
+      "source_path": "docs/tb/source/Business case - BSS Risk Assessment (2).doc"
+    }
+  ]
+}
+\end{lstlisting}
+\end{figure}
+
+\section{Out-of-scope assets}
+
+The BSS Risk Assessment business case
+(\path{docs/tb/source/Business case - BSS Risk Assessment (2).doc})
+is kept in the corpus for terminology alignment but is out of scope
+for this specification; it is covered by a sibling business case with
+its own lifecycle.

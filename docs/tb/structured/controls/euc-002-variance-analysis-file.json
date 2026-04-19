@@ -1,0 +1,16 @@
+{
+  "controlId": "EUC-002",
+  "eucReference": "EX/200/1579702/0001/000",
+  "controlObjective": "TB Variance Analysis file integrity and calculation accuracy",
+  "controlType": "detective",
+  "frequency": "monthly",
+  "timing": "M-2 to M+5",
+  "owner": "GFS Analyst",
+  "evidenceLocation": "Shared Drive",
+  "relatedStates": ["UPDATE_TB_DETAILS", "CALCULATE_VARIANCE", "FILTER_VARIANCES"],
+  "description": "Ensures variance calculations in the Excel working file are accurate.",
+  "workflowRef": "tb-review-glo",
+  "source_document": {
+    "path": "docs/tb/source/Operation of Month End Close Controls  - Trial Balance Review - GLO (1).pdf"
+  }
+}

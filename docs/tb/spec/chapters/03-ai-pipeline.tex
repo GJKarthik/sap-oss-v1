@@ -1,0 +1,182 @@
+\chapter{AI Augmentation Pipeline}\label{ch:ai}
+
+\section{Architecture}
+
+The AI pipeline is a five-stage request-response chain, hosted on the
+internal vLLM cluster per the \texttt{vllm-only} routing policy in
+\path{docs/tb/structured/data-products/trial-balance-review-v1.json}.
+Every stage reads and writes records validated by \cref{ch:schema};
+no blob passes between stages without a schema binding.
+
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}[
+  node distance=6mm and 4mm,
+  stage/.style={draw,rounded corners=2pt,minimum height=10mm,
+                minimum width=22mm,align=center,font=\scriptsize,
+                fill=tbblue!15,draw=tbblue!60},
+  io/.style={draw,minimum height=7mm,minimum width=20mm,
+             align=center,font=\tiny\ttfamily,
+             fill=tbgreen!12,draw=tbgreen!50},
+  arr/.style={-{Latex[length=2mm]},thick}
+]
+  \node[stage] (ingest)  {1. Ingest \\ \scriptsize PSGL / S/4};
+  \node[stage,right=of ingest]  (anomaly) {2. Anomaly \\ detection};
+  \node[stage,right=of anomaly] (commentary) {3. Commentary \\ drafting};
+  \node[stage,right=of commentary] (validate) {4. Validate \\ and route};
+  \node[stage,right=of validate]  (narrative) {5. FORTM \\ narrative};
+
+  \node[io,below=of ingest]     (rec1) {TB extract};
+  \node[io,below=of anomaly]    (rec2) {Variance \\ record};
+  \node[io,below=of commentary] (rec3) {Commentary \\ draft};
+  \node[io,below=of validate]   (rec4) {Routed \\ summary};
+  \node[io,below=of narrative]  (rec5) {FORTM \\ section};
+
+  \foreach \a/\b in {ingest/anomaly,anomaly/commentary,
+                     commentary/validate,validate/narrative}
+     \draw[arr] (\a) -- (\b);
+  \foreach \s/\r in {ingest/rec1,anomaly/rec2,commentary/rec3,
+                     validate/rec4,narrative/rec5}
+     \draw[arr] (\s) -- (\r);
+\end{tikzpicture}
+\caption{Five-stage AI pipeline; each stage emits a schema-bound
+artefact.}\label{fig:ai-pipeline}
+\end{figure}
+
+\section{Stage 1: Ingestion}
+
+\begin{description}
+  \item[Input.] PSGL master account data and the SC~Bridge TB
+        extract, one per LE, keyed on the \texttt{UPDATE\_TB\_DETAILS}
+        workflow state.
+  \item[Transform.] Column normalisation against
+        \path{docs/tb/machine-readable/training-data/hkg-tb-schema.yaml}
+        (13 sheets). Bank CSV samples live in
+        \path{docs/tb/extracted-text/hkg-tb-sample.csv} and
+        \path{docs/tb/extracted-text/hkg-pl-sample.csv}.
+  \item[Acceptance.] \texttt{EUC-001} evidence rules apply: the
+        extraction must preserve debit/credit totals and every row
+        must carry a valid account number from the refreshed master.
+\end{description}
+
+\section{Stage 2: Anomaly detection}
+
+The anomaly detector performs four orthogonal checks per account
+(\cref{tab:anomalies}). Thresholds are account-category-sensitive and
+are re-fit monthly from the prior twelve months; the fitted thresholds
+are persisted to the variance file EUC as audit evidence.
+
+\begin{table}[htbp]
+\caption{Anomaly checks run per account.}\label{tab:anomalies}
+\centering
+\small
+\begin{tabularx}{\linewidth}{@{}llX@{}}
+\toprule
+\textbf{Check} & \textbf{Metric} & \textbf{Rule} \\ \midrule
+Period spike   & $|\Delta|$       & $> 3\sigma$ over prior 12 months \\
+Sign flip       & sign($v_t$)       & $\neq$ sign($v_{t-1}$) and $|v_t| > $ threshold \\
+New account     & existence         & account absent from prior-period master \\
+Stale balance   & $|\Delta|$        & $= 0$ for $\ge 3$ consecutive periods with prior activity \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+Only accounts flagged by at least one check enter Stage 3. Accounts
+below materiality (\texttt{DP-001}) are still logged for audit but
+short-circuit to Stage 4.
+
+\section{Stage 3: Commentary drafting}
+
+\paragraph{Model.} A vLLM-hosted instruction-tuned model accessed
+via the internal gateway. The system prompt is the
+\texttt{x-prompting-policy.systemPrompt} field of the data product
+record; \texttt{maxTokens = 4096}, \texttt{temperature = 0.3},
+\texttt{responseFormat = "text"}.
+
+\paragraph{Prompt structure.} Each commentary request carries:
+\begin{itemize}
+  \item The flagged variance record (account, prior, current, delta).
+  \item The three most similar historical commentaries retrieved from
+        the \texttt{TB\_REVIEW\_VECTORS} table (55 chunks, 220-word
+        chunking with 40-word overlap; see
+        \corpus\texttt{machine-readable/rag/rag\_embedding\_records.jsonl}).
+  \item The account's finance caption and segment.
+  \item Any related journal identifiers found in the GL for the period.
+\end{itemize}
+
+\paragraph{Output contract.} The draft is returned as a
+\texttt{commentary\_draft} blob that is paired with the variance
+record before leaving the stage. Human review by the GFS Analyst is
+mandatory (per DOI \texttt{REVIEW\_INCORPORATE}); the draft is a
+\emph{suggestion}, never a final artefact.
+
+\section{Stage 4: Validation and routing}
+
+The gateway logic defined in \cref{ch:workflow} is evaluated here.
+\Cref{tab:routing} maps each decision point to the record fields the
+engine reads.
+
+\begin{table}[htbp]
+\caption{Decision-point routing.}\label{tab:routing}
+\centering
+\small
+\begin{tabularx}{\linewidth}{@{}llX@{}}
+\toprule
+\textbf{DP} & \textbf{Gateway state} & \textbf{Read fields} \\ \midrule
+DP-001 & CHECK\_MATERIAL\_VARIANCES & variance\_amount, account\_category, materiality\_limit \\
+DP-002 & IS\_JOURNAL\_POSTED         & journal\_status, posting\_date \\
+DP-003 & CHECK\_FURTHER\_INVESTIGATION & investigation\_status, entry\_age\_days \\
+DP-004 & CHECK\_CONFIRMATION         & confirmation\_received, days\_to\_deadline (M+4) \\
+DP-005 & CHECK\_UNEXPLAINED          & unexplained\_variance\_count \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\section{Stage 5: FORTM narrative generation}
+
+The final stage composes the FORTM pack section. It consumes the
+routed summary plus the KPI telemetry (\cref{tab:kpis}) and emits a
+structured narrative containing: executive summary, material variance
+table, unexplained items, risk register update, and the list of
+outstanding journal postings. The narrative goes to
+\stateid{REVIEW\_INCORPORATE} for \texttt{EUC-003} sign-off before
+\stateid{SEND\_FORTM}.
+
+\section{Controls posture of the pipeline}
+
+Every stage is in-scope of the UK ACG automated-controls regime. The
+per-stage control posture is summarised in \cref{tab:ai-controls}.
+
+\begin{table}[htbp]
+\caption{Per-stage controls posture.}\label{tab:ai-controls}
+\centering
+\small
+\begin{tabularx}{\linewidth}{@{}llX@{}}
+\toprule
+\textbf{Stage} & \textbf{Control type} & \textbf{Mechanism} \\ \midrule
+Ingest        & preventive & Totals reconciliation vs PSGL source \\
+Anomaly       & detective  & Threshold log + human sampling \\
+Commentary    & detective  & Mandatory human review (DOI) \\
+Validation    & preventive & Schema + gateway enforcement \\
+FORTM         & detective  & EUC-003 senior sign-off \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\section{Evaluation harness}
+
+\begin{description}
+  \item[Golden set.] The HK Nov~2025 workbooks
+        (\corpus\texttt{source/HKG\_TB review Nov'25.xlsm} and
+        \corpus\texttt{source/HKG\_PL review Nov'25.xlsm}) serve as
+        regression data. All 234 LEs enter at phase~4 of the
+        implementation plan.
+  \item[Commentary metric.] Draft quality is scored against analyst
+        accepts in the DOI review phase; target accept-without-edit
+        $\ge$ 70\%, accept-with-edit $\ge$ 95\%.
+  \item[Anomaly metric.] Per-check precision/recall against analyst
+        flags in a held-out period.
+  \item[Cycle time.] Measured as \texttt{TB-KPI-002}; target is the
+        enablement of a daily cadence, which collapses the cycle from
+        \texttt{M+1..M+7} to a rolling one-day delay.
+\end{description}

@@ -1,0 +1,79 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://sap-oss/docs/arabic/structured/schema/approval-workflow.schema.json",
+  "title": "Approval Workflow",
+  "description": "Declarative specification of approval state machines per AP path (PO e-Proc, manual one-off, manual recurring, CBR).",
+  "type": "object",
+  "required": ["id", "path", "states", "transitions", "delegation_of_authority"],
+  "additionalProperties": false,
+  "properties": {
+    "id": { "type": "string" },
+    "schema_ref": { "type": "string", "const": "approval-workflow.schema.json" },
+    "path": {
+      "type": "string",
+      "enum": ["PO_EPROC", "MANUAL_ONE_OFF", "MANUAL_RECURRING", "CBR", "VAT_PAYMENT"]
+    },
+    "description": { "type": "string" },
+    "states": {
+      "type": "array",
+      "minItems": 2,
+      "items": {
+        "type": "object",
+        "required": ["code", "name"],
+        "additionalProperties": false,
+        "properties": {
+          "code": { "type": "string" },
+          "name": { "type": "string" },
+          "terminal": { "type": "boolean" }
+        }
+      }
+    },
+    "transitions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["from", "to", "trigger"],
+        "additionalProperties": false,
+        "properties": {
+          "from": { "type": "string" },
+          "to": { "type": "string" },
+          "trigger": { "type": "string" },
+          "required_role": {
+            "type": "string",
+            "enum": ["CC_OWNER", "SUPPLY_CHAIN_MGR", "CFO", "CFO_DELEGATE", "MD", "POLICY_OWNER", "SENIOR_FINANCE_MGR", "FIN_MGR"]
+          },
+          "preconditions": {
+            "type": "array",
+            "items": { "type": "string" }
+          }
+        }
+      }
+    },
+    "delegation_of_authority": {
+      "type": "array",
+      "description": "Amount thresholds (in LCY) that gate which approver is required.",
+      "items": {
+        "type": "object",
+        "required": ["max_amount_currency", "max_amount", "required_role"],
+        "additionalProperties": false,
+        "properties": {
+          "max_amount_currency": { "type": "string", "pattern": "^[A-Z]{3}$" },
+          "max_amount": { "type": "number" },
+          "required_role": { "type": "string" }
+        }
+      }
+    },
+    "exceptions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["rule", "handling"],
+        "additionalProperties": false,
+        "properties": {
+          "rule": { "type": "string" },
+          "handling": { "type": "string" }
+        }
+      }
+    }
+  }
+}

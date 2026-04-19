@@ -1,0 +1,43 @@
+\chapter*{Abstract}
+\addcontentsline{toc}{chapter}{Abstract}
+
+This specification defines the full implementation of Standard Chartered
+Bank's multi-country Accounts Payable (AP) capability across the
+Middle~East \& Pakistan (MEP) footprint, with particular emphasis on the
+Arabic-language invoice processing pipeline sanctioned by the AI solutioning
+team under the initiative titled \emph{Arabic Invoice, Peer analysis,~\& Translation}
+and announced by Manoj Hemath Kumar on 2025-11-23. Three orthogonal
+workstreams are specified in full:
+
+\begin{itemize}
+  \item an \textbf{Arabic-invoice AI pipeline} that ingests PDF or e-mail
+        attachments, performs bilingual OCR and schema-guided field
+        extraction, applies an Arabic$\to$English translation agent,
+        and hands a validated record to downstream AP;
+  \item a \textbf{multi-country VAT compliance engine} that enforces the
+        regulator-specific checklists of ZATCA (Saudi Arabia), ETA
+        (Egypt), NBR (Bahrain), and the Qatari counterparty conventions;
+  \item an \textbf{AP workflow and approval engine} that formalises the
+        seven activities of the Bahrain \emph{Accounts Payable Departmental
+        Operating Instruction} (DOI) as explicit state machines.
+\end{itemize}
+
+All three workstreams consume a single canonical data schema
+(\cref{ch:schema}) defined in \corpus\texttt{structured/schema/}. The
+specification intentionally \emph{excludes} the downstream SAP/PeopleSoft
+integration, which is covered by a separate interface document.
+
+\paragraph{Reading order.} \Cref{ch:overview} situates the work;
+\cref{ch:schema} defines the normalised record types; \cref{ch:ai} covers
+the AI pipeline; \cref{ch:vat} covers the VAT engine; \cref{ch:ap}
+covers the AP workflow engine; \cref{ch:controls} specifies controls,
+testing, and acceptance; \cref{ch:references} is a traceability
+appendix linking every requirement to a source document and a structured
+record in \corpus\texttt{structured/}.
+
+\paragraph{Conventions.} Arabic fragments are set with the
+\texttt{Geeza Pro} font family, for example \ar{هيئة الزكاة والضريبة والجمارك}.
+File paths are typeset in \texttt{monospace} and are relative to the
+repository root. Enum values in running text appear in \textsc{small
+caps}; they are defined authoritatively in
+\corpus\texttt{structured/enums.yaml}.

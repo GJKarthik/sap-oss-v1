@@ -1,0 +1,91 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://sap-oss/docs/arabic/structured/schema/vat-checklist.schema.json",
+  "title": "VAT Compliance Checklist",
+  "description": "Per-invoice VAT compliance checklist used by KSA OTP/VAT processing. Derived from Saudi - OTP Entry processing- VAT Q3'25.docx.",
+  "type": "object",
+  "required": ["id", "country", "period", "checklist", "gl_coding", "supplier", "tax_type_classification", "source_document"],
+  "additionalProperties": false,
+  "properties": {
+    "id": { "type": "string" },
+    "schema_ref": { "type": "string", "const": "vat-checklist.schema.json" },
+    "country": { "type": "string", "enum": ["EG", "SA", "QA", "BH", "IQ", "AE", "PK"] },
+    "period": {
+      "type": "object",
+      "required": ["start", "end", "label"],
+      "additionalProperties": false,
+      "properties": {
+        "start": { "type": "string", "format": "date" },
+        "end":   { "type": "string", "format": "date" },
+        "label": { "type": "string" }
+      }
+    },
+    "checklist": {
+      "type": "array",
+      "description": "Ordered checklist items. Each item matches one of the 11 KSA points (NBR has an analogous set for BH).",
+      "items": {
+        "type": "object",
+        "required": ["n", "label", "result"],
+        "additionalProperties": false,
+        "properties": {
+          "n": { "type": "integer", "minimum": 1 },
+          "label": { "type": "string" },
+          "result": { "type": "string", "enum": ["Y", "N", "NA"] },
+          "value": { "type": ["string", "number", "null"] },
+          "regulation": { "type": "string" }
+        }
+      }
+    },
+    "gl_coding": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "account": { "type": "string" },
+        "product": { "type": "string" },
+        "department": { "type": "string" },
+        "operating_unit": { "type": "string" },
+        "class_code": { "type": "string" },
+        "affiliate": { "type": ["string", "null"] },
+        "project_id": { "type": ["string", "null"] }
+      }
+    },
+    "supplier": {
+      "type": "object",
+      "required": ["name", "tax_id"],
+      "additionalProperties": false,
+      "properties": {
+        "name": { "type": "string" },
+        "name_ar": { "type": "string" },
+        "tax_id": { "type": "string" },
+        "tax_id_type": { "type": "string", "enum": ["ETA_TRN", "ZATCA_TIN", "ZATCA_TDN", "NBR_TRN"] },
+        "supplier_type": { "type": "string", "enum": ["GOVERNMENT", "VENDOR", "EMPLOYEE", "INTER_BU"] }
+      }
+    },
+    "tax_type_classification": {
+      "type": "string",
+      "enum": ["FI", "SI", "RC", "TCN", "ZR", "EX", "UR", "CBR", "OS", "OTHER"]
+    },
+    "amounts": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "currency": { "type": "string", "pattern": "^[A-Z]{3}$" },
+        "net": { "type": "number" },
+        "vat": { "type": "number" },
+        "gross": { "type": "number" }
+      }
+    },
+    "withholding_tax": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "applicable": { "type": "boolean" },
+        "rate_percent": { "type": "number" },
+        "amount": { "type": "number" },
+        "note": { "type": "string" }
+      }
+    },
+    "psid": { "type": "string", "description": "Preparer PSID (PeopleSoft ID)." },
+    "source_document": { "$ref": "invoice.schema.json#/definitions/source_document" }
+  }
+}

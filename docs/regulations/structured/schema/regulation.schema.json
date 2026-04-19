@@ -1,0 +1,69 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "regulation.schema.json",
+  "title": "Regulation or normative publication",
+  "type": "object",
+  "required": ["regulationId", "title", "publisher", "version", "publicationDate", "type", "sourceDocument"],
+  "additionalProperties": false,
+  "properties": {
+    "regulationId": {
+      "type": "string",
+      "pattern": "^[a-z0-9-]+$",
+      "description": "Stable slug identifier."
+    },
+    "title": {"type": "string"},
+    "shortName": {"type": "string"},
+    "publisher": {
+      "type": "object",
+      "required": ["name", "jurisdiction"],
+      "properties": {
+        "name": {"type": "string"},
+        "jurisdiction": {"type": "string", "description": "ISO 3166-1 alpha-2 or 'international'."},
+        "agency": {"type": "string"}
+      }
+    },
+    "version": {"type": "string"},
+    "publicationDate": {"type": "string", "format": "date"},
+    "type": {
+      "type": "string",
+      "enum": ["framework", "standard", "guideline", "statute", "research", "index", "toolkit"]
+    },
+    "normativity": {
+      "type": "string",
+      "enum": ["mandatory", "recommended", "advisory", "descriptive"]
+    },
+    "scope": {
+      "type": "object",
+      "properties": {
+        "appliesTo": {"type": "array", "items": {"type": "string"}},
+        "outOfScope": {"type": "array", "items": {"type": "string"}}
+      }
+    },
+    "sections": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["sectionId", "title"],
+        "properties": {
+          "sectionId": {"type": "string"},
+          "title": {"type": "string"},
+          "page": {"type": "integer", "minimum": 1},
+          "parent": {"type": "string"},
+          "summary": {"type": "string"}
+        }
+      }
+    },
+    "sourceDocument": {
+      "type": "object",
+      "required": ["path", "sha256"],
+      "properties": {
+        "path": {"type": "string"},
+        "pages": {"type": "integer", "minimum": 1},
+        "sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+        "textPath": {"type": "string"}
+      }
+    },
+    "relatedRegulations": {"type": "array", "items": {"type": "string"}},
+    "tags": {"type": "array", "items": {"type": "string"}}
+  }
+}

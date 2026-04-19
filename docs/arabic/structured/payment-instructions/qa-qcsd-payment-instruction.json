@@ -1,0 +1,65 @@
+{
+  "id": "qa-qcsd-payment-instruction",
+  "schema_ref": "payment-instruction.schema.json",
+  "country": "QA",
+  "payer": {
+    "business_unit": "BU141",
+    "department": "SS_Ops",
+    "preparer_psid": "1459020"
+  },
+  "vendor": {
+    "vendor_id": "0000000818",
+    "name": "Qatar Central Securities Depository",
+    "name_ar": "شركة قطر للإيداع المركزي"
+  },
+  "invoice": {
+    "number": "QCSD/out/780/25",
+    "date": "2025-05-07",
+    "expense_nature": "EDAA Annual Fee for the year 2025"
+  },
+  "chart_field": "665011-4551-800",
+  "amount": {
+    "currency": "QAR",
+    "value": 50000.00,
+    "in_words": "Fifty Thousand Qatari Riyals Only"
+  },
+  "bank": {
+    "bank_name": "Commercial Bank of Qatar",
+    "account_number": "4580584954001",
+    "iban": "QA73CBQA000000004580584954001",
+    "swift": "CBQAQAQA"
+  },
+  "payment_method": "BANK_TRANSFER",
+  "approval_chain": [
+    {
+      "role": "CC_OWNER",
+      "psid": "1459020",
+      "name": "Ahmed Zia Ur Rehman",
+      "note": "Manager, Financing & Securities Services; memo preparer"
+    },
+    {
+      "role": "SUPPLY_CHAIN_MGR",
+      "psid": "1294478",
+      "name": "Suhail Kabani",
+      "approved_at": "2025-05-19T08:56:00+03:00",
+      "note": "Head, Financing & Securities Services Operations — Qatar"
+    },
+    {
+      "role": "CFO_DELEGATE",
+      "psid": "1190944",
+      "name": "Naveen Kumar Gupta",
+      "approved_at": "2025-05-19T10:14:00+03:00",
+      "note": "Approved to process the memo"
+    }
+  ],
+  "checklist": {
+    "approval_email": true,
+    "invoice_copy": true,
+    "supporting_documents": false
+  },
+  "source_document": {
+    "path": "docs/arabic/source/Instruction for payment to vendor (QCSD).pdf",
+    "sha256": "39ed62690d0f16fcaffab9c04ea5d272e77d62d4d664b546285a393f1b79826e",
+    "ocr_text_path": "docs/arabic/extracted-text/qa-qcsd-payment-instruction.txt"
+  }
+}

@@ -1,0 +1,28 @@
+{
+  "id": "DP-001",
+  "name": "Material Variance Check",
+  "stateRef": "CHECK_MATERIAL_VARIANCES",
+  "timing": "M-2 to M+5",
+  "description": "Determine if filtered variances exceed materiality threshold.",
+  "inputMetric": "variance_amount",
+  "operator": "exceeds_threshold",
+  "threshold": "materiality_limit",
+  "thresholdNote": "Country-specific; defined in parameters sheet.",
+  "outcomes": [
+    {
+      "condition": "Variances Are Material",
+      "action": "seek_commentaries",
+      "description": "Request explanations from country stakeholders."
+    },
+    {
+      "condition": "Variances Not Material",
+      "action": "proceed_to_unexplained_check",
+      "description": "Skip commentary phase, check for unexplained items."
+    }
+  ],
+  "aiAugmentation": {
+    "opportunity": "Auto-classify variance materiality using ML threshold tuning.",
+    "dataNeeded": ["variance_amount", "account_category", "historical_thresholds"]
+  },
+  "workflowRef": "tb-review-glo"
+}

@@ -1,0 +1,27 @@
+{
+  "id": "DP-005",
+  "name": "Unexplained Variance Check",
+  "stateRef": "CHECK_UNEXPLAINED",
+  "timing": "M-2 to M+5",
+  "description": "Final check for variances without adequate explanation.",
+  "inputMetric": "unexplained_variance_count",
+  "operator": "exceeds_threshold",
+  "threshold": 0,
+  "outcomes": [
+    {
+      "condition": "No Unexplained Variances",
+      "action": "prepare_summary",
+      "description": "All variances explained, proceed to summary."
+    },
+    {
+      "condition": "Unexplained Variances",
+      "action": "categorize_unexplained",
+      "description": "Classify and document remaining unexplained items."
+    }
+  ],
+  "aiAugmentation": {
+    "opportunity": "Auto-generate draft commentaries for unexplained variances using LLM.",
+    "dataNeeded": ["variance_amount", "account_description", "historical_commentaries", "transaction_detail"]
+  },
+  "workflowRef": "tb-review-glo"
+}

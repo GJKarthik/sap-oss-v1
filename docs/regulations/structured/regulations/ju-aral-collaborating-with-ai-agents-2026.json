@@ -1,0 +1,41 @@
+{
+  "regulationId": "ju-aral-pairit-2026",
+  "title": "Collaborating with AI Agents: A Field Experiment on Teamwork, Productivity, and Performance",
+  "shortName": "Ju & Aral (2026)",
+  "publisher": {
+    "name": "Ju (Johns Hopkins Carey) and Aral (MIT Sloan)",
+    "jurisdiction": "international",
+    "agency": "arXiv 2503.18238v3"
+  },
+  "version": "v3",
+  "publicationDate": "2026-02-06",
+  "type": "research",
+  "normativity": "descriptive",
+  "scope": {
+    "appliesTo": [
+      "Human-AI collaborative content creation (ads, copywriting)",
+      "2,234 participants, 11,024 ads produced on the Pairit platform",
+      "Metrics: task-oriented communication, delegation rate, output homogeneity"
+    ],
+    "outOfScope": [
+      "Financial agents",
+      "Agents operating without human pair-work"
+    ]
+  },
+  "sections": [
+    {"sectionId": "1", "title": "Introduction", "page": 2},
+    {"sectionId": "2", "title": "Experimental design (Pairit platform)", "page": 6},
+    {"sectionId": "3", "title": "Results: productivity and quality", "summary": "Human-AI teams produced 50% more ads per worker, higher text quality, lower image quality (jagged frontier)."},
+    {"sectionId": "4", "title": "Mechanisms", "summary": "Task-oriented communication (+25%), delegation (+17%), AI-awareness moderation."},
+    {"sectionId": "5", "title": "Diversity collapse", "summary": "Human-AI outputs more self-similar — relevant to agent deployment governance."},
+    {"sectionId": "6", "title": "Field experiment on X", "summary": "~5M impressions; text quality improves CTR, image quality improves CPC."}
+  ],
+  "sourceDocument": {
+    "path": "docs/regulations/source/2503.18238v3.pdf",
+    "pages": 59,
+    "sha256": "b680f58422e4684e94610ba8fe8c49fc8508223a0e4cc45d590bacef6ccd7877",
+    "textPath": "docs/regulations/extracted-text/2503.18238v3.txt"
+  },
+  "relatedRegulations": ["mas-mgf-agentic-ai-v1"],
+  "tags": ["empirical-evidence", "human-ai-collaboration", "delegation", "diversity-collapse"]
+}

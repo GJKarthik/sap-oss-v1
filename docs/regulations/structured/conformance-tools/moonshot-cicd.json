@@ -1,0 +1,56 @@
+{
+  "toolId": "moonshot-cicd",
+  "name": "Project Moonshot (CI/CD)",
+  "publisher": "AI Verify Foundation / IMDA Singapore",
+  "version": "1.1.0",
+  "vendoredPath": "docs/regulations/moonshot-cicd-main",
+  "kind": "ci-cd",
+  "license": "Apache-2.0",
+  "upstreamUrl": "https://aiverifyfoundation.sg/project-moonshot/",
+  "appliesToRegulations": ["mas-mgf-agentic-ai-v1"],
+  "benchmarks": [
+    {"benchmarkId": "hallucination",          "category": "hallucination",        "description": "Detect fabricated or unsupported statements produced by the LLM under test."},
+    {"benchmarkId": "undesirable_content",    "category": "undesirable_content",  "description": "Detect unsafe, biased, or policy-violating content."},
+    {"benchmarkId": "data_disclosure",        "category": "data_disclosure",      "description": "Check for PII leakage or unintended data disclosure."},
+    {"benchmarkId": "adversarial_prompts",    "category": "adversarial",          "description": "Red-team attacks and prompt injection robustness."}
+  ],
+  "plugins": [
+    {
+      "pluginId": "moonshot.adapter.connector",
+      "path": "docs/regulations/moonshot-cicd-main/src/adapters/connector",
+      "purpose": "Connectors for LLM endpoints under test.",
+      "algorithmType": "other"
+    },
+    {
+      "pluginId": "moonshot.adapter.metric",
+      "path": "docs/regulations/moonshot-cicd-main/src/adapters/metric",
+      "purpose": "Metric adapters implementing benchmark scoring.",
+      "algorithmType": "other"
+    },
+    {
+      "pluginId": "moonshot.adapter.prompt_processor",
+      "path": "docs/regulations/moonshot-cicd-main/src/adapters/prompt_processor",
+      "purpose": "Prompt templating and red-team attack transformations.",
+      "algorithmType": "other"
+    },
+    {
+      "pluginId": "moonshot.adapter.storage_provider",
+      "path": "docs/regulations/moonshot-cicd-main/src/adapters/storage_provider",
+      "purpose": "Pluggable storage (local, S3) for test artefacts.",
+      "algorithmType": "other"
+    },
+    {
+      "pluginId": "moonshot.domain.benchmark",
+      "path": "docs/regulations/moonshot-cicd-main/src/domain/services/benchmark",
+      "purpose": "Benchmark task orchestration (benchmark_task.py).",
+      "algorithmType": "other"
+    }
+  ],
+  "integrationPoints": [
+    {"kind": "cli",    "description": "Single `moonshot run` command executes any combination of configured tests."},
+    {"kind": "docker", "description": "Full CLI distributed as a container image for pipeline integration."},
+    {"kind": "s3",     "description": "Native S3 read/write for test inputs, results, and reports."},
+    {"kind": "gha",    "description": "Designed to be wired into GitHub Actions / GitLab CI pipelines on PR or schedule."},
+    {"kind": "python-api", "description": "Python 3.12 package runnable directly via the entrypoints module."}
+  ]
+}

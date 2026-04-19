@@ -1,0 +1,34 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "corpus-index.schema.json",
+  "title": "Regulations corpus index",
+  "type": "object",
+  "required": ["schema_version", "items"],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {"type": "string"},
+    "generated": {"type": "string"},
+    "items": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "type"],
+        "additionalProperties": true,
+        "properties": {
+          "id": {"type": "string"},
+          "type": {
+            "type": "string",
+            "enum": ["regulation", "requirement", "conformance_tool", "rag_artifact"]
+          },
+          "language": {"type": "string"},
+          "jurisdiction": {"type": "string"},
+          "sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+          "source_path": {"type": "string"},
+          "text_path": {"type": "string"},
+          "structured_path": {"type": "string"},
+          "notes": {"type": "string"}
+        }
+      }
+    }
+  }
+}

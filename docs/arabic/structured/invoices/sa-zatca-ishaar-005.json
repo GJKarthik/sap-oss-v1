@@ -1,0 +1,67 @@
+{
+  "id": "sa-zatca-ishaar-005",
+  "schema_ref": "invoice.schema.json",
+  "metadata": {
+    "country": "SA",
+    "tax_authority": "ZATCA",
+    "document_kind": "VAT_ASSESSMENT",
+    "electronic_id": "3003093648253002",
+    "invoice_number": "3003093648253002",
+    "issue_date": "2025-10-30",
+    "due_date": "2025-10-31",
+    "hijri_date": "1447-05-08",
+    "language": "ar",
+    "status": "VALID",
+    "internal_reference": "100251155163637"
+  },
+  "seller": {
+    "name_ar": "هيئة الزكاة والضريبة والجمارك",
+    "name_en": "Zakat, Tax and Customs Authority (ZATCA)",
+    "tax_id": "ZATCA",
+    "tax_id_type": "ZATCA_TDN",
+    "address_ar": "المملكة العربية السعودية"
+  },
+  "buyer": {
+    "name_en": "Standard Chartered Capital (Saudi Arabia)",
+    "tax_id": "3003093648",
+    "tax_id_type": "ZATCA_TDN"
+  },
+  "line_items": [
+    {
+      "description_ar": "ضريبة القيمة المضافة — الربع الثالث 2025",
+      "description_en": "Value-Added Tax — Q3 2025 assessment",
+      "quantity": 1,
+      "unit_of_measure": "PERIOD",
+      "unit_price": 1558629.96,
+      "line_total": 1558629.96
+    }
+  ],
+  "totals": {
+    "currency": "SAR",
+    "net": 1558629.96,
+    "vat_amount": 0,
+    "vat_rate_percent": 0,
+    "vat_category": "RC",
+    "gross": 1558629.96
+  },
+  "tax_period": {
+    "start": "2025-07-01",
+    "end": "2025-09-30",
+    "label": "Q3 2025"
+  },
+  "signature": {
+    "kind": "SYSTEM_GENERATED"
+  },
+  "source_document": {
+    "path": "docs/arabic/source/اشعار صدور فاتورة (005).pdf",
+    "sha256": "cbbb3f702ad57f610a95b99cc4d72b1314e55d8e999f82af48923ab5b31c0989",
+    "ocr_text_path": "docs/arabic/extracted-text/sa-zatca-ishaar-005.txt",
+    "page": 1
+  },
+  "notes": [
+    "ZATCA payment code 020 applies to this payer.",
+    "Payable by 2025-10-31 to avoid penalties; contact hotline 19993.",
+    "Document is system-generated and requires no signature.",
+    "Treated as reverse-charge / government payment in KSA VAT processing."
+  ]
+}

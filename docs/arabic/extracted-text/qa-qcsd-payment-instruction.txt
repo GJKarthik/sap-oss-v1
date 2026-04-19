@@ -1,0 +1,141 @@
+INTERNAL  #
+
+
+
+
+                                       Instruction for payment to vendor
+
+
+Country       Global - Others              Location with GST
+
+Subject       For Payment to Vendor                     Mode of Payment            Bank Transfer
+
+Prepare PSID                      1459020               FC PSID
+
+Dept                            BU           141        Bill To        SS Ops
+
+Approver 1 PSID                             1294478 Approver 2 PSID                                    1190944
+
+
+                                            Vendor and Invoice Information
+
+Vendor ID         0000000818      Vendor Name           QATAR CENTRAL SECURITIES DEPOSITORY
+
+Invoice Number          QCSD/out/780/25                           Invoice date          07-May-2025
+
+PO # (or) chart field if Non PO        665011-4551-800                            HSN/SAC code
+
+Vendor GST                                 Currency      QAR        Payable amount                    50,000.00
+
+Amount in words         Fifty Thousand Qatari Riyals Only
+
+
+                                              Vendor Bank account detail
+
+Payee Beneficiary Name         QATAR CENTRAL SECURITIES DEPOSITORY
+
+Bank name               Commercial Bank of Qatar                      Swift number     CBQAQAQA
+
+Account number          4580584954001                                 Sort code        CBQAQAQA
+
+IBAN detail        QA73CBQA000000004580584954001                      FC code
+
+
+Nature of               EDAA Annual Fee for the year 2025
+expense/Comments
+
+                                                         Check list
+
+Approval email attached              Yes           No
+
+
+Invoice copy attached                Yes           No
+
+
+                    Supporting documents - Attach after generating PDF copy of instruction
+Rehman, Ahmed Zia Ur
+
+From:                                             Gupta, NaveenKumar
+Sent:                                             Monday, May 19, 2025 10:14 AM
+To:                                               Kabani, Suhail; Rehman, Ahmed Zia Ur
+Subject:                                          RE: EDAA Annual Fee Memo
+
+
+INTERNAL
+
+Approved to process the memo
+
+From: Kabani, Suhail <Suhail.Kabani@sc.com>
+Sent: Monday, May 19, 2025 8:56 AM
+To: Rehman, Ahmed Zia Ur <AhmedZiaur.Rehman@sc.com>; Gupta, NaveenKumar <NaveenKumar.Gupta@sc.com>
+Subject: RE: EDAA Annual Fee Memo
+
+INTERNAL
+
+
+Approved, please proceed……
+
+
+Thanks and Regards,
+_____________________________________________
+
+Suhail Kabani
+Head, Financing and Securities Services Operations - Qatar
+Standard Chartered Bank, Qatar
+Phone:      +974 44248391
+Mobile:     +974 74482924
+Fax:        +974 44248394
+Email:      Suhail.Kabani@sc.com
+Address: Level 17 Burj Doha, Al Corniche St, PO BOX 29 Doha, Qatar,
+Website: http://www.standardchartered.com
+
+____________________________________________
+
+Please consider the environment before prin ng this email
+The informa on provided in this email may have been obtained from third party sources and which have not been independently veriﬁed by SC Group. It is intended for
+general informa on purposes only. It does not cons tute investment, legal, tax or other advice. You should perform your own independent veriﬁca on, evalua on and
+analysis of such informa on and consult your own professional advisers. The SC Group does not give any representa on or warranty as to, or accept any responsibility or
+liability for, the accuracy, completeness, reliability or up-to-date nature of the informa on. The SC Group does not accept any liability for any damage or loss you may suﬀer
+from your use of or reliance on such informa on. “SC Group” means Standard Chartered Bank and each of its holding companies, subsidiaries, related corpora ons, aﬃliates,
+representa ve and branch oﬃces in any jurisdic on, and their respec ve directors, oﬃcers, employees and/or any persons connected with them
+
+
+
+
+From: Rehman, Ahmed Zia Ur <AhmedZiaur.Rehman@sc.com>
+Sent: Sunday, May 18, 2025 5:07 PM
+To: Kabani, Suhail <Suhail.Kabani@sc.com>; Gupta, NaveenKumar <NaveenKumar.Gupta@sc.com>
+Subject: EDAA Annual Fee Memo
+
+INTERNAL
+
+Dear Both,
+
+Please find the below Memo and attached invoice for your review and approval.
+
+
+                                                                                      1
+Ahmed Zia, FCCA
+Manager, Financing and Securities Services, Qatar
+Standard Chartered Bank
+Phone:   +974 44248660
+Fax:       +974 44248394
+Email:     AhmedZiaur.Rehman@sc.com
+Address: Level 17 Burj Doha, Al Corniche St, PO BOX 29 Doha, Qatar,
+Website: http://www.standardchartered.com
+
+
+____________________________________________
+Please consider the environment before printing this email
+The information provided in this email may have been obtained from third party sources and which have not been independently verified by SC
+Group. It is intended for general information purposes only. It does not constitute investment, legal, tax or other advice. You should perform your
+own independent verification, evaluation and analysis of such information and consult your own professional advisers. The SC Group does not
+give any representation or warranty as to, or accept any responsibility or liability for, the accuracy, completeness, reliability or up-to-date nature
+of the information. The SC Group does not accept any liability for any damage or loss you may suffer from your use of or reliance on such
+information. “SC Group” means Standard Chartered Bank and each of its holding companies, subsidiaries, related corporations, affiliates,
+representative and branch offices in any jurisdiction, and their respective directors, officers, employees and/or any persons connected with them.
+
+
+
+                                                                          2
+

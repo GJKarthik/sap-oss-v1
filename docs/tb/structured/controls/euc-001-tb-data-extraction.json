@@ -1,0 +1,16 @@
+{
+  "controlId": "EUC-001",
+  "eucReference": "EX/200/1353107/0001/000",
+  "controlObjective": "TB data extraction and master account file integrity",
+  "controlType": "preventive",
+  "frequency": "monthly",
+  "timing": "M-3",
+  "owner": "GFS Analyst",
+  "evidenceLocation": "Shared Drive",
+  "relatedStates": ["DOWNLOAD_PSGL", "EXTRACT_TB"],
+  "description": "Ensures PSGL master account data is correctly downloaded and loaded.",
+  "workflowRef": "tb-review-glo",
+  "source_document": {
+    "path": "docs/tb/source/Operation of Month End Close Controls  - Trial Balance Review - GLO (1).pdf"
+  }
+}

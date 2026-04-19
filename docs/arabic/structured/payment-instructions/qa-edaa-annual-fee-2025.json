@@ -1,0 +1,50 @@
+{
+  "id": "qa-edaa-annual-fee-2025",
+  "schema_ref": "payment-instruction.schema.json",
+  "country": "QA",
+  "payer": {
+    "business_unit": "BU141",
+    "department": "SS_Ops",
+    "preparer_psid": "1459020"
+  },
+  "vendor": {
+    "vendor_id": "0000000818",
+    "name": "Qatar Central Securities Depository (QCSD)",
+    "name_ar": "شركة قطر للإيداع المركزي"
+  },
+  "invoice": {
+    "number": "QCSD/out/780/25",
+    "date": "2025-05-07",
+    "expense_nature": "EDAA Annual Fee 2025 (covering corporate actions membership, Equator Terminal usage, daily Oracle report access)"
+  },
+  "chart_field": "665011-4551-800",
+  "amount": {
+    "currency": "QAR",
+    "value": 50000.00,
+    "in_words": "Fifty Thousand Qatari Riyals Only"
+  },
+  "bank": {
+    "bank_name": "Commercial Bank of Qatar",
+    "account_number": "4580584954001",
+    "iban": "QA73CBQA000000004580584954001",
+    "swift": "CBQAQAQA"
+  },
+  "payment_method": "BANK_TRANSFER",
+  "approval_chain": [
+    {
+      "role": "SUPPLY_CHAIN_MGR",
+      "psid": "1294478",
+      "name": "Suhail Kabani"
+    },
+    {
+      "role": "CFO_DELEGATE",
+      "psid": "1190944",
+      "name": "Naveen Kumar Gupta"
+    }
+  ],
+  "source_document": {
+    "path": "docs/arabic/source/EDAA Annual Fee Invoice 2025.pdf",
+    "sha256": "cf91c2a43574ab9afc02546b4c4479b5f2b1f26183605ba5e08e8433269d9716",
+    "ocr_text_path": "docs/arabic/extracted-text/qa-edaa-annual-fee-2025.txt"
+  }
+}

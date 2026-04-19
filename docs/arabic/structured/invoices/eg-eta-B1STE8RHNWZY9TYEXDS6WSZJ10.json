@@ -1,0 +1,65 @@
+{
+  "id": "eg-eta-B1STE8RHNWZY9TYEXDS6WSZJ10",
+  "schema_ref": "invoice.schema.json",
+  "metadata": {
+    "country": "EG",
+    "tax_authority": "ETA",
+    "document_kind": "E_INVOICE",
+    "electronic_id": "B1STE8RHNWZY9TYEXDS6WSZJ10",
+    "issue_date": "2025-07-10",
+    "submission_date": "2025-07-10T09:55:00+00:00",
+    "language": "ar+en",
+    "status": "VALID",
+    "internal_reference": "599429323196"
+  },
+  "seller": {
+    "name_ar": "جمعية شابتر زيرو ايجيبت",
+    "name_en": "Chapter Zero Egypt Association",
+    "tax_id": "754113647",
+    "tax_id_type": "ETA_TRN",
+    "activity_code": "8890",
+    "address_ar": "المكتبة الخضراء مشروع جولدن جيت القاهرة الجديدة، قسم التجمع الخامس",
+    "address_en": "Green Library, Golden Gate Project, 5th Settlement, New Cairo, EG"
+  },
+  "buyer": {
+    "name_ar": "بنك ستاندرد تشارترد",
+    "name_en": "Standard Chartered Bank",
+    "tax_id": "670307459",
+    "tax_id_type": "ETA_TRN",
+    "address_ar": "شياخة التجمع الخامس، قسم أول القاهرة الجديدة، كايرو فستيفال",
+    "address_en": "5th Settlement, 1st New Cairo, Cairo Festival City, EG"
+  },
+  "line_items": [
+    {
+      "description_en": "Corporate Membership fees for the Financial Year Ending 30 June 2026",
+      "item_code": "EG-754113647-CH",
+      "quantity": 1,
+      "unit_of_measure": "EA",
+      "unit_price": 10000000.00,
+      "line_total": 10000000.00,
+      "line_discount": 0
+    }
+  ],
+  "totals": {
+    "currency": "EGP",
+    "net": 10000000.00,
+    "discount_total": 0,
+    "vat_amount": 0,
+    "vat_rate_percent": 0,
+    "vat_category": "EX",
+    "gross": 10000000.00
+  },
+  "signature": {
+    "name": "جمعية شابتر زيرو ايجيبت",
+    "kind": "SEAL"
+  },
+  "source_document": {
+    "path": "docs/arabic/source/B1STE8RHNWZY9TYEXDS6WSZJ10.pdf",
+    "sha256": "18eb35671131bd4b46ddb1559305ae197532392efc2305061e7bb83beba874f3",
+    "ocr_text_path": "docs/arabic/extracted-text/eg-eta-B1STE8RHNWZY9TYEXDS6WSZJ10.txt",
+    "page": 1
+  },
+  "notes": [
+    "Zero-VAT / exempt: professional association membership (activity 8890)."
+  ]
+}

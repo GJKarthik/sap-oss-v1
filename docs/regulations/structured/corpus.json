@@ -1,0 +1,100 @@
+{
+  "schema_version": "1.0",
+  "generated": "2026-04-18",
+  "items": [
+    {
+      "id": "reg-mas-mgf-agentic-ai-v1",
+      "type": "regulation",
+      "language": "en",
+      "jurisdiction": "SG",
+      "sha256": "b84c8c94f6392cf2be474cfd6e07f7af213874fa10ac26ebd5249f6df4aeef7b",
+      "source_path": "docs/regulations/source/mgf-for-agentic-ai.pdf",
+      "text_path": "docs/regulations/extracted-text/mgf-for-agentic-ai.txt",
+      "structured_path": "docs/regulations/structured/regulations/mas-mgf-agentic-ai-v1.json",
+      "notes": "Model AI Governance Framework for Agentic AI v1.0 (22 Jan 2026)."
+    },
+    {
+      "id": "reg-ai-agent-index-2025",
+      "type": "regulation",
+      "language": "en",
+      "jurisdiction": "international",
+      "sha256": "c67a30469fd061e9054331151d56d07eef86cebd32b504390a9e78b82c0e267f",
+      "source_path": "docs/regulations/source/2025-AI-Agent-Index.pdf",
+      "text_path": "docs/regulations/extracted-text/2025-AI-Agent-Index.txt",
+      "structured_path": "docs/regulations/structured/regulations/ai-agent-index-2025.json"
+    },
+    {
+      "id": "reg-ju-aral-pairit-2026",
+      "type": "regulation",
+      "language": "en",
+      "jurisdiction": "international",
+      "sha256": "b680f58422e4684e94610ba8fe8c49fc8508223a0e4cc45d590bacef6ccd7877",
+      "source_path": "docs/regulations/source/2503.18238v3.pdf",
+      "text_path": "docs/regulations/extracted-text/2503.18238v3.txt",
+      "structured_path": "docs/regulations/structured/regulations/ju-aral-collaborating-with-ai-agents-2026.json"
+    },
+    {
+      "id": "tool-aiverify",
+      "type": "conformance_tool",
+      "language": "en",
+      "jurisdiction": "SG",
+      "structured_path": "docs/regulations/structured/conformance-tools/aiverify.json",
+      "notes": "Vendored at docs/regulations/aiverify-main."
+    },
+    {
+      "id": "tool-moonshot-cicd",
+      "type": "conformance_tool",
+      "language": "en",
+      "jurisdiction": "SG",
+      "structured_path": "docs/regulations/structured/conformance-tools/moonshot-cicd.json",
+      "notes": "Vendored at docs/regulations/moonshot-cicd-main."
+    },
+    {
+      "id": "req-mgf-pillar-1",
+      "type": "requirement",
+      "language": "en",
+      "structured_path": "docs/regulations/structured/requirements/mgf-pillar-1-bound-risks.json",
+      "notes": "MGF \u00a72.1 Assess and bound the risks upfront."
+    },
+    {
+      "id": "req-mgf-pillar-2",
+      "type": "requirement",
+      "language": "en",
+      "structured_path": "docs/regulations/structured/requirements/mgf-pillar-2-human-accountability.json",
+      "notes": "MGF \u00a72.2 Make humans meaningfully accountable."
+    },
+    {
+      "id": "req-mgf-pillar-3",
+      "type": "requirement",
+      "language": "en",
+      "structured_path": "docs/regulations/structured/requirements/mgf-pillar-3-technical-controls.json",
+      "notes": "MGF \u00a72.3 Implement technical controls and processes."
+    },
+    {
+      "id": "req-mgf-pillar-4",
+      "type": "requirement",
+      "language": "en",
+      "structured_path": "docs/regulations/structured/requirements/mgf-pillar-4-end-user-responsibility.json",
+      "notes": "MGF \u00a72.4 Enable end-user responsibility."
+    },
+    {
+      "id": "req-agent-index-transparency",
+      "type": "requirement",
+      "language": "en",
+      "structured_path": "docs/regulations/structured/requirements/agent-index-transparency.json"
+    },
+    {
+      "id": "req-ju-aral-empirical-claims",
+      "type": "requirement",
+      "language": "en",
+      "structured_path": "docs/regulations/structured/requirements/ju-aral-empirical-claims.json"
+    },
+    {
+      "id": "rag-embedding-records",
+      "type": "rag_artifact",
+      "language": "en",
+      "structured_path": "docs/regulations/rag/rag_embedding_records_manifest.json",
+      "notes": "Chunked text + embedding IDs for regulations RAG, re-upsertable into Qdrant."
+    }
+  ]
+}

@@ -1,0 +1,20 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://sap-oss.local/schemas/tb/kpi.schema.json",
+  "title": "Trial Balance KPI",
+  "description": "Key performance indicator for the TB review process.",
+  "type": "object",
+  "required": ["kpiId", "name", "description", "measureType", "unit"],
+  "additionalProperties": false,
+  "properties": {
+    "kpiId": {"type": "string", "pattern": "^TB-KPI-[0-9]{3}$"},
+    "name": {"type": "string"},
+    "description": {"type": "string"},
+    "measureType": {"type": "string", "enum": ["threshold", "duration", "percentage", "effort", "count", "ratio"]},
+    "unit": {"type": "string"},
+    "currentBaseline": {"type": ["string", "number"]},
+    "target": {"type": ["string", "number"]},
+    "relatedSteps": {"type": "array", "items": {"type": "string"}},
+    "relatedControls": {"type": "array", "items": {"type": "string"}}
+  }
+}

@@ -1,0 +1,96 @@
+{
+  "requirements": [
+    {
+      "requirementId": "REG-MGF-2.1.1-001",
+      "source": {
+        "regulationId": "mas-mgf-agentic-ai-v1",
+        "section": "2.1.1",
+        "page": 9,
+        "quote": "Determine suitable use cases for agent deployment... understanding the risks posed by the agent's actions, which depend on factors such as the scope of actions the agent can take, the reversibility of those actions, and the agent's level of autonomy."
+      },
+      "normativeText": "For every proposed agentic use case, the organisation must assess action scope, reversibility, and level of autonomy before deployment approval.",
+      "category": "bound_risks",
+      "obligation": "should",
+      "lifecyclePhase": "planning",
+      "implementation": [
+        {"kind": "doc",    "path": "docs/tb/spec/chapters/01-overview.tex",             "anchor": "ch:overview",    "note": "TB use case written up with risk framing."},
+        {"kind": "doc",    "path": "docs/tb/structured/requirements/tb-business-requirements.json", "field": "riskAssessment"},
+        {"kind": "config", "path": "docs/tb/structured/data-products/trial-balance-review-v1.json", "field": "dataSecurityClass"}
+      ],
+      "verification": [
+        {"kind": "process-checklist", "checklistItem": "Use-case risk assessment signed off by Head of Africa GFS."},
+        {"kind": "aiverify-plugin",  "plugin": "aiverify.stock.process-checklist"}
+      ],
+      "status": "partial",
+      "priority": "critical"
+    },
+    {
+      "requirementId": "REG-MGF-2.1.2-001",
+      "source": {
+        "regulationId": "mas-mgf-agentic-ai-v1",
+        "section": "2.1.2",
+        "page": 11,
+        "quote": "Bound risks through design by defining agents' limits and permissions... limiting the agent's access to tools and external systems."
+      },
+      "normativeText": "The agent must operate against an explicit allow-list of tools and external systems; broader access must be denied by default.",
+      "category": "bound_risks",
+      "obligation": "must",
+      "lifecyclePhase": "design",
+      "implementation": [
+        {"kind": "code",   "path": "src/intelligence/ai-core-pal/mcp_server/btp_pal_mcp_server.py", "symbol": "btp_pal_mcp_server", "note": "MCP server enumerates the tools the agent may invoke."},
+        {"kind": "config", "path": "src/intelligence/ai-core-pal/data_products/registry.yaml",      "note": "Registered data products the agent is permitted to read."}
+      ],
+      "verification": [
+        {"kind": "test", "path": "src/intelligence/ai-core-pal/tests/test_mcp_server.py"},
+        {"kind": "moonshot-test", "testId": "adversarial_prompts", "note": "Attempt prompt-injected tool escalation."}
+      ],
+      "status": "partial",
+      "priority": "critical"
+    },
+    {
+      "requirementId": "REG-MGF-2.1.2-002",
+      "source": {
+        "regulationId": "mas-mgf-agentic-ai-v1",
+        "section": "2.1.2",
+        "page": 11,
+        "quote": "...ensure that the agent's actions are traceable and controllable through establishing robust identity management and access controls for agents."
+      },
+      "normativeText": "Each agent action must be attributable to an identity and covered by access controls equivalent to a human principal.",
+      "category": "bound_risks",
+      "obligation": "must",
+      "lifecyclePhase": "design",
+      "implementation": [
+        {"kind": "code",   "path": "src/intelligence/ai-core-pal/agent/aicore_pal_agent.py", "symbol": "aicore_pal_agent"},
+        {"kind": "doc",    "path": "src/intelligence/ai-core-pal/README.md",                  "note": "BTP service-key-based identity."}
+      ],
+      "verification": [
+        {"kind": "test",            "path": "src/intelligence/ai-core-pal/tests/test_hana_connection.py"},
+        {"kind": "process-checklist","checklistItem": "Agent principals registered in identity provider."}
+      ],
+      "status": "partial",
+      "priority": "high"
+    },
+    {
+      "requirementId": "REG-MGF-2.1.2-003",
+      "source": {
+        "regulationId": "mas-mgf-agentic-ai-v1",
+        "section": "2.1.2",
+        "page": 12,
+        "quote": "...limit the scope of impact of their agents by designing appropriate boundaries at the planning stage..."
+      },
+      "normativeText": "Impact-limiting boundaries (e.g. read-only data access by default, dollar limits, environment segregation) must be set before deployment.",
+      "category": "bound_risks",
+      "obligation": "should",
+      "lifecyclePhase": "design",
+      "implementation": [
+        {"kind": "config", "path": "docs/tb/structured/data-products/trial-balance-review-v1.json", "field": "dataSecurityClass", "note": "Confidential: read-only TB data."},
+        {"kind": "code",   "path": "src/intelligence/ai-core-pal/agent/hana_client.py",             "symbol": "hana_client"}
+      ],
+      "verification": [
+        {"kind": "manual-review", "note": "Quarterly review of agent permission diffs."}
+      ],
+      "status": "partial",
+      "priority": "high"
+    }
+  ]
+}

@@ -1,0 +1,85 @@
+{
+  "schema_version": "1.0",
+  "generated_at": "2026-04-17",
+  "items": [
+    {
+      "id": "tb-glo-control-operation",
+      "type": "control_narrative",
+      "country": "GLO",
+      "language": "en",
+      "sha256": "71a4524b9ec7c6701a7137579ef6c8730eb53fcde2fe5a50515a4b870b560afc",
+      "source_path": "docs/tb/source/Operation of Month End Close Controls  - Trial Balance Review - GLO (1).pdf",
+      "text_path": "docs/tb/extracted-text/bpmn-tb-review-glo.md",
+      "structured_path": "docs/tb/structured/workflows/tb-review-glo.json"
+    },
+    {
+      "id": "tb-business-case",
+      "type": "business_case",
+      "country": "GLO",
+      "language": "en",
+      "sha256": "32744df8ea13f12a36f6117f18874e578c627be6fbc3c48d2f73d32dcfa0c689",
+      "source_path": "docs/tb/source/Business case - Trial Balance (2).doc",
+      "text_path": "docs/tb/extracted-text/business-case-trial-balance.md",
+      "structured_path": "docs/tb/structured/requirements/tb-business-requirements.json"
+    },
+    {
+      "id": "bss-ra-business-case",
+      "type": "business_case",
+      "country": "GLO",
+      "language": "en",
+      "sha256": "dab433cecf598b908d070e2ebfd6f285565b7b3e1102cd2496e639dee1d0c28c",
+      "source_path": "docs/tb/source/Business case - BSS Risk Assessment (2).doc",
+      "text_path": "docs/tb/extracted-text/business-case-bss-risk-assessment.md"
+    },
+    {
+      "id": "tb-doi",
+      "type": "policy",
+      "country": "GLO",
+      "language": "en",
+      "sha256": "b9d52d365b6bda931dedb356182f39458115faf84106e0b05d051f0ea67aa126",
+      "source_path": "docs/tb/source/DOI for Trial Balance Process .docx",
+      "text_path": "docs/tb/extracted-text/doi-trial-balance-process.md"
+    },
+    {
+      "id": "hkg-tb-workbook",
+      "type": "workbook",
+      "country": "HK",
+      "language": "en",
+      "sha256": "69f5da1f4c71795649fda15906e5d3f1f16312211d8fe8194e62026a21276dac",
+      "source_path": "docs/tb/source/HKG_TB review Nov'25.xlsm",
+      "text_path": "docs/tb/extracted-text/hkg-tb-sample.csv"
+    },
+    {
+      "id": "hkg-pl-workbook",
+      "type": "workbook",
+      "country": "HK",
+      "language": "en",
+      "sha256": "47716e8c107b235e924b0fb4453ac079badd30f3078cad33bfbc84075b0e9688",
+      "source_path": "docs/tb/source/HKG_PL review Nov'25.xlsm",
+      "text_path": "docs/tb/extracted-text/hkg-pl-sample.csv"
+    },
+    {
+      "id": "tb-glossary",
+      "type": "glossary",
+      "country": "GLO",
+      "language": "en",
+      "structured_path": "docs/tb/structured/glossary/tb-glossary.json"
+    },
+    {
+      "id": "tb-data-product",
+      "type": "data_product",
+      "country": "GLO",
+      "language": "en",
+      "structured_path": "docs/tb/structured/data-products/trial-balance-review-v1.json"
+    },
+    {"id": "EUC-001", "type": "control", "structured_path": "docs/tb/structured/controls/euc-001-tb-data-extraction.json"},
+    {"id": "EUC-002", "type": "control", "structured_path": "docs/tb/structured/controls/euc-002-variance-analysis-file.json"},
+    {"id": "EUC-003", "type": "control", "structured_path": "docs/tb/structured/controls/euc-003-internal-review.json"},
+    {"id": "DP-001", "type": "decision_point", "structured_path": "docs/tb/structured/decision-points/dp-001-material-variance.json"},
+    {"id": "DP-002", "type": "decision_point", "structured_path": "docs/tb/structured/decision-points/dp-002-journal-posting.json"},
+    {"id": "DP-003", "type": "decision_point", "structured_path": "docs/tb/structured/decision-points/dp-003-further-investigation.json"},
+    {"id": "DP-004", "type": "decision_point", "structured_path": "docs/tb/structured/decision-points/dp-004-entry-confirmation.json"},
+    {"id": "DP-005", "type": "decision_point", "structured_path": "docs/tb/structured/decision-points/dp-005-unexplained-variance.json"},
+    {"id": "tb-kpis", "type": "kpi_set", "structured_path": "docs/tb/structured/kpis/tb-kpis.json"}
+  ]
+}

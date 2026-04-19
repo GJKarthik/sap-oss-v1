@@ -1,0 +1,104 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "requirement.schema.json",
+  "title": "Atomic normative or observational requirement",
+  "type": "object",
+  "required": ["requirementId", "source", "normativeText", "category", "status"],
+  "additionalProperties": false,
+  "properties": {
+    "requirementId": {
+      "type": "string",
+      "pattern": "^REG-[A-Z0-9-]+-[0-9a-z.-]+-[0-9]{3}$",
+      "description": "REG-<regulation>-<section>-<seq>. Example: REG-MGF-2.1.2-001."
+    },
+    "source": {
+      "type": "object",
+      "required": ["regulationId", "section"],
+      "properties": {
+        "regulationId": {"type": "string"},
+        "section": {"type": "string"},
+        "page": {"type": "integer", "minimum": 1},
+        "quote": {"type": "string", "description": "Verbatim excerpt (may be truncated with ellipsis)."}
+      }
+    },
+    "normativeText": {
+      "type": "string",
+      "description": "Paraphrased requirement, imperative tense."
+    },
+    "category": {
+      "type": "string",
+      "enum": [
+        "bound_risks",
+        "human_accountability",
+        "technical_controls",
+        "end_user_responsibility",
+        "transparency",
+        "evaluation",
+        "observation"
+      ]
+    },
+    "obligation": {
+      "type": "string",
+      "enum": ["must", "should", "may", "descriptive"]
+    },
+    "lifecyclePhase": {
+      "type": "string",
+      "enum": ["planning", "design", "development", "pre_deployment", "deployment", "post_deployment", "decommission"]
+    },
+    "implementation": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["kind"],
+        "additionalProperties": false,
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": ["code", "config", "doc", "schema", "dataset", "none"]
+          },
+          "path": {"type": "string"},
+          "symbol": {"type": "string", "description": "Function, class, or field name within the path."},
+          "field": {"type": "string", "description": "JSON path within a config file."},
+          "anchor": {"type": "string", "description": "LaTeX label or section anchor."},
+          "note": {"type": "string"}
+        }
+      }
+    },
+    "verification": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["kind"],
+        "additionalProperties": false,
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "aiverify-plugin",
+              "moonshot-test",
+              "test",
+              "manual-review",
+              "process-checklist",
+              "external-audit"
+            ]
+          },
+          "plugin": {"type": "string", "description": "AI Verify plugin slug."},
+          "testId": {"type": "string", "description": "Moonshot test / benchmark identifier."},
+          "path": {"type": "string", "description": "Repo path for a unit/integration test."},
+          "checklistItem": {"type": "string"},
+          "note": {"type": "string"}
+        }
+      }
+    },
+    "status": {
+      "type": "string",
+      "enum": ["implemented", "partial", "gap", "planned", "not_applicable"]
+    },
+    "priority": {
+      "type": "string",
+      "enum": ["critical", "high", "medium", "low"]
+    },
+    "relatedRequirements": {"type": "array", "items": {"type": "string"}},
+    "notes": {"type": "string"}
+  }
+}

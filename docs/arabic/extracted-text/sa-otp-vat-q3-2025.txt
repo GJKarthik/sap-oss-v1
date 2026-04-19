@@ -1,0 +1,149 @@
+  SCSA Standard Chartered Capital Saudi
+
+  Year 2025
+
+1.  GL Details:
+
+Please debit
+
+  -----------------------------------------------------------------
+  Description                                Number
+  ------------------------------------------ ----------------------
+  Account                                    287961
+
+  Product                                    910
+
+  Department                                 8105
+
+  Operating Unit                             800
+
+  Class                                      98
+
+  Affiliate                                  -
+
+  Project ID                                 -
+  -----------------------------------------------------------------
+
+2.  Cost centre cost breakdown:
+
+3.  Tax Details:
+
+A.  Internal Check list to verify Tax invoice/ Tax Credit Note/ Tax
+    Debit Note is Tax Compliant as per KSA VAT regulation
+
++-------+------------------------------------------+------------------+
+| S.No. | Checklist Points                         | Tick             |
++=======+==========================================+==================+
+| 1     | Invoice in Arabic language (Y/N)         | Y                |
++-------+------------------------------------------+------------------+
+| 2     | the name and the address in the Invoice  | Y                |
+|       | should be addressed to Standard Charted  |                  |
+|       | Capital (Y/N)                            |                  |
++-------+------------------------------------------+------------------+
+| 3     | the date of issue                        | 30 October 2025  |
++-------+------------------------------------------+------------------+
+| 4     | Sequential number                        | 3003093648243001 |
++-------+------------------------------------------+------------------+
+| 5     | the Tax Identification Number (15 digit  | N/A              |
+|       | no), name and the address of the         |                  |
+|       | Supplier                                 |                  |
++-------+------------------------------------------+------------------+
+| 6     | Nature/ Description of the Goods and     | VAT Payment      |
+|       | services supplied                        |                  |
++-------+------------------------------------------+------------------+
+| 7     | the rate of Tax applied                  | 0%               |
++-------+------------------------------------------+------------------+
+| 8     | Net Amount, VAT and Gross amount, shown  | Total Amount     |
+|       | in riyals (Note if invoice is raised in  |                  |
+|       | FCY, amount should be converted in SAR   | SAR 1,558,629.95 |
+|       | using SAMA exchange rates as per date of |                  |
+|       | supply)                                  |                  |
++-------+------------------------------------------+------------------+
+| 9     | the date on which the Supply took place, | N/A              |
+|       | where this differs from the date of      |                  |
+|       | issue of the Tax Invoice                 |                  |
++-------+------------------------------------------+------------------+
+| 10    | in the case where Tax is not charged at  | N/A              |
+|       | the basic rate (5%), a narration         |                  |
+|       | explaining the Tax treatment applied to  |                  |
+|       | the supply                               |                  |
++-------+------------------------------------------+------------------+
+| 11    | Specific to Credit Note/ Debit Note      | N/A              |
+|       | only - Reference to the sequential no of |                  |
+|       | the original Tax Invoice to which credit |                  |
+|       | notes/ debit notes relates               |                  |
++-------+------------------------------------------+------------------+
+
+Note:
+
+If all bold checklist are satisfied, the invoice is “Simplified Tax
+Invoice” for local purchase
+
+If all points in checklist are satisfied, then the invoice is “Full tax
+invoice” for local purchase
+
+For any purchases outside KSA, please tag the supply as reverse charge.
+Note all foreign purchases should be supported with invoice copy.
+
+B.  Instructions to AP team
+
++-------+---------------------------+--------------------------------------+
+| S.No. | Details                   | Details to be filled by SCCSA’s      |
+|       |                           | Finance team                         |
++=======+===========================+======================================+
+| 1     | Tax Type:                 | Other miscellaneous invoices         |
+|       |                           |                                      |
+|       | FI: Full Tax Invoice/ SI: |                                      |
+|       | Simplified Tax Invoice/   |                                      |
+|       | RC: Reverse Charge/TCN:   |                                      |
+|       | Tax Credit Note           |                                      |
++-------+---------------------------+--------------------------------------+
+| 2     | PSID:                     | 2002976                              |
+|       |                           |                                      |
+|       | Default                   |                                      |
++-------+---------------------------+--------------------------------------+
+| 3     | the date of issue         | 30 October 2025                      |
++-------+---------------------------+--------------------------------------+
+| 4     | Sequential number         | 3003093648243001                     |
++-------+---------------------------+--------------------------------------+
+| 5     | Name of the Supplier      | THE GENERAL AUTHORITY OF ZAKAT GAZT  |
++-------+---------------------------+--------------------------------------+
+| 6     | Tax Identification Number | 3003093648                           |
+|       | (15 digit no)             |                                      |
++-------+---------------------------+--------------------------------------+
+| 7     | Description of the Goods  | VAT Q3’25                            |
+|       | and services supplied     |                                      |
++-------+---------------------------+--------------------------------------+
+| 8     | the rate of Tax applied   | 0%                                   |
++-------+---------------------------+--------------------------------------+
+| 9     | Net Amount (E.g. 100)     | SAR 00                               |
++-------+---------------------------+--------------------------------------+
+| 10    | Gross amount (E.g. 105)   | SAR 1,558,629.95                     |
++-------+---------------------------+--------------------------------------+
+| 11    | the amount of Tax         | SAR 00                               |
+|       | payable, shown in riyals  |                                      |
+|       | (E.g.5)                   |                                      |
++-------+---------------------------+--------------------------------------+
+
+C.  Withholding Tax Applicability (ONLY if the vendor’s location is
+    outside Saudi Arabia)
+
+  --------------------------------------------------------------------------
+  S.No.   Details                     Details to be filled by SCCSA’s
+                                      Finance team
+  ------- --------------------------- --------------------------------------
+  1       Withholding tax             NA
+          Applicability:              
+
+  2       The rate of WHT applied     NA
+          (Used Excel to calculate    
+          based on the nature of      
+          expense)                    
+
+  3       Invoice Amount (E.g. 100)   NA
+
+  4       WHT amount (E.g. 15)        NA
+
+  5       Net amount Payable (E.g.    NA
+          85)                         
+  --------------------------------------------------------------------------

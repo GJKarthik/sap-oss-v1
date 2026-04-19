@@ -1,0 +1,50 @@
+{
+  "requirements": [
+    {
+      "requirementId": "REG-MGF-2.4.2-001",
+      "source": {
+        "regulationId": "mas-mgf-agentic-ai-v1",
+        "section": "2.4.2",
+        "page": 23,
+        "quote": "...as a baseline, users should be informed of the agent's range of actions, access to data, and the user's own responsibilities."
+      },
+      "normativeText": "User-facing documentation must disclose (a) the agent's permitted actions, (b) the data it can access, (c) user obligations when reviewing its output.",
+      "category": "end_user_responsibility",
+      "obligation": "should",
+      "lifecyclePhase": "deployment",
+      "implementation": [
+        {"kind": "doc", "path": "docs/tb/spec/chapters/05-workflow.tex",            "anchor": "ch:workflow"},
+        {"kind": "doc", "path": "docs/tb/spec/chapters/06-controls-and-testing.tex","anchor": "ch:controls"},
+        {"kind": "doc", "path": "docs/tb/structured/data-products/trial-balance-review-v1.json", "field": "inputPorts"}
+      ],
+      "verification": [
+        {"kind": "manual-review",     "note": "GFS analyst onboarding checklist."},
+        {"kind": "aiverify-plugin",   "plugin": "aiverify.stock.process-checklist"}
+      ],
+      "status": "partial",
+      "priority": "medium"
+    },
+    {
+      "requirementId": "REG-MGF-2.4.3-001",
+      "source": {
+        "regulationId": "mas-mgf-agentic-ai-v1",
+        "section": "2.4.3",
+        "page": 24,
+        "quote": "Organisations should consider layering on training to equip employees with the knowledge required to manage human-agent interactions and exercise effective oversight, while maintaining their tradecraft and foundational skills."
+      },
+      "normativeText": "Employees using the agent must complete training that covers automation-bias mitigation and preservation of core tradecraft skills.",
+      "category": "end_user_responsibility",
+      "obligation": "should",
+      "lifecyclePhase": "deployment",
+      "implementation": [
+        {"kind": "doc", "path": "docs/training/agent-oversight-curriculum.md", "note": "Three-level curriculum (Awareness, Reviewer skills, Oversight depth) with explicit automation-bias self-check card."}
+      ],
+      "verification": [
+        {"kind": "aiverify-plugin",  "plugin": "aiverify.stock.process-checklist"},
+        {"kind": "process-checklist","checklistItem": "Training completion tracked in SuccessFactors LMS; monthly report to Council."}
+      ],
+      "status": "implemented",
+      "priority": "medium"
+    }
+  ]
+}

@@ -1,0 +1,30 @@
+{
+  "id": "DP-002",
+  "name": "Journal Posting Status",
+  "stateRef": "IS_JOURNAL_POSTED",
+  "timing": "M-2 to M+5",
+  "description": "Check whether related journal entries have been posted.",
+  "inputMetric": "journal_status",
+  "operator": "in_set",
+  "outcomes": [
+    {
+      "condition": "Journal Posted, No further action required",
+      "action": "proceed_to_unexplained_check"
+    },
+    {
+      "condition": "Journal Posting Required",
+      "action": "send_posting_request",
+      "description": "Email request to post journal."
+    },
+    {
+      "condition": "Journal Not Posted",
+      "action": "investigate_further",
+      "description": "Check if further investigation needed."
+    }
+  ],
+  "aiAugmentation": {
+    "opportunity": "Auto-detect unposted journals from GL data and trigger alerts.",
+    "dataNeeded": ["journal_id", "posting_status", "posting_date", "responsible_team"]
+  },
+  "workflowRef": "tb-review-glo"
+}

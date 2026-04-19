@@ -1,0 +1,30 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://sap-oss.local/schemas/tb/glossary.schema.json",
+  "title": "TB Domain Glossary",
+  "type": "object",
+  "required": ["domain", "version", "terms"],
+  "additionalProperties": false,
+  "properties": {
+    "domain": {"type": "string"},
+    "version": {"type": "string"},
+    "terms": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["term", "definition", "category"],
+        "additionalProperties": false,
+        "properties": {
+          "term": {"type": "string"},
+          "abbreviation": {"type": "string"},
+          "definition": {"type": "string"},
+          "category": {
+            "type": "string",
+            "enum": ["balance_sheet", "income_statement", "general", "regulatory"]
+          }
+        }
+      }
+    }
+  }
+}

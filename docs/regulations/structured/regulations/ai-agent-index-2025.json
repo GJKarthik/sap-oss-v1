@@ -1,0 +1,44 @@
+{
+  "regulationId": "ai-agent-index-2025",
+  "title": "The 2025 AI Agent Index",
+  "shortName": "Agent Index 2025",
+  "publisher": {
+    "name": "MIT / Cambridge / Harvard / Stanford / Concordia AI / UPenn / Hebrew University (multi-institution)",
+    "jurisdiction": "international",
+    "agency": "Academic consortium"
+  },
+  "version": "2025 edition",
+  "publicationDate": "2025-02-20",
+  "type": "index",
+  "normativity": "descriptive",
+  "scope": {
+    "appliesTo": [
+      "30 state-of-the-art agentic AI systems with publicly available information",
+      "Six documentation categories: legal, technical capabilities, autonomy & control, ecosystem interaction, evaluation, safety"
+    ],
+    "outOfScope": [
+      "Agents without publicly available documentation",
+      "Internal-only agentic systems"
+    ]
+  },
+  "sections": [
+    {"sectionId": "1",     "title": "Introduction", "page": 1},
+    {"sectionId": "2",     "title": "Methodology", "page": 3},
+    {"sectionId": "3",     "title": "The Agent Index", "page": 5, "summary": "Documentation matrix across 30 agents and 6 categories."},
+    {"sectionId": "3.1",   "title": "Legal", "parent": "3"},
+    {"sectionId": "3.2",   "title": "Technical capabilities", "parent": "3"},
+    {"sectionId": "3.3",   "title": "Autonomy and control", "parent": "3"},
+    {"sectionId": "3.4",   "title": "Ecosystem interaction", "parent": "3"},
+    {"sectionId": "3.5",   "title": "Evaluation", "parent": "3"},
+    {"sectionId": "3.6",   "title": "Safety", "parent": "3"},
+    {"sectionId": "4",     "title": "Findings and trends", "summary": "Transparency gaps on safety, evaluation, and societal impact."}
+  ],
+  "sourceDocument": {
+    "path": "docs/regulations/source/2025-AI-Agent-Index.pdf",
+    "pages": 39,
+    "sha256": "c67a30469fd061e9054331151d56d07eef86cebd32b504390a9e78b82c0e267f",
+    "textPath": "docs/regulations/extracted-text/2025-AI-Agent-Index.txt"
+  },
+  "relatedRegulations": ["mas-mgf-agentic-ai-v1"],
+  "tags": ["transparency", "agent-catalogue", "safety-documentation", "evaluation"]
+}

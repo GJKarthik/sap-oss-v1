@@ -1,0 +1,142 @@
+\chapter{References}\label{ch:references}
+
+This appendix lists every file that backs a normative statement in the
+specification. Paths are relative to the repository root. SHA-256 hashes
+are taken from \corpus\texttt{structured/corpus.json} and are the
+ground truth for the provenance check of \cref{ch:schema}.
+
+\section{Source documents}
+
+\footnotesize
+\begin{longtable}{@{}p{3.4cm}p{8cm}p{3cm}@{}}
+\toprule
+\textbf{Short name} & \textbf{Path} & \textbf{SHA-256 (prefix)} \\ \midrule
+\endfirsthead
+\toprule
+\textbf{Short name} & \textbf{Path} & \textbf{SHA-256 (prefix)} \\ \midrule
+\endhead
+EG ETA seal invoice & \path{docs/arabic/source/3CPJR5CQ4PNNN9A4XHBB370K10.pdf} & \texttt{2b912687fa94\ldots} \\
+EG ETA corp membership & \path{docs/arabic/source/B1STE8RHNWZY9TYEXDS6WSZJ10.pdf} & \texttt{18eb35671131\ldots} \\
+SA ZATCA assessment & \path{docs/arabic/source/} \ar{اشعار صدور فاتورة} (005).pdf & \texttt{cbbb3f702ad5\ldots} \\
+QA EDAA annual fee & \path{docs/arabic/source/EDAA Annual Fee Invoice 2025.pdf} & \texttt{cf91c2a43574\ldots} \\
+QA QCSD payment instr. & \path{docs/arabic/source/Instruction for payment to vendor (QCSD).pdf} & \texttt{39ed62690d0f\ldots} \\
+SA OTP VAT Q3 2025 & \path{docs/arabic/source/Saudi - OTP Entry processing- VAT Q3'25 (1).docx} & \texttt{3a6c8f37528f\ldots} \\
+BH AP DOI & \path{docs/arabic/source/Accounts Payable DOI.docx} & \texttt{128ff6792798\ldots} \\
+AI initiative e-mail & \path{docs/arabic/source/FW- AI _ Arabic Invoice...eml} & \texttt{e01ba78d5ca5\ldots} \\
+\bottomrule
+\end{longtable}
+\normalsize
+
+\section{Derived text}
+
+Every Arabic PDF has a UTF-8 OCR artefact in
+\corpus\texttt{extracted-text/}, produced with
+\texttt{pdftoppm -r 300 | tesseract -l ara+eng}. English PDFs use
+\texttt{pdftotext -layout}; Word documents use
+\texttt{pandoc -t plain}; the e-mail is decomposed by a small Python
+script driven by the standard-library \texttt{email} module.
+
+\section{Structured records}
+
+All of the following are JSON records validated by
+\corpus\texttt{structured/validate.py}.
+
+\footnotesize
+\begin{longtable}{@{}p{4cm}p{10cm}@{}}
+\toprule
+\textbf{Type} & \textbf{Path} \\ \midrule
+\endhead
+Invoice & \path{structured/invoices/eg-eta-3CPJR5CQ4PNNN9A4XHBB370K10.json} \\
+Invoice & \path{structured/invoices/eg-eta-B1STE8RHNWZY9TYEXDS6WSZJ10.json} \\
+Invoice (assessment) & \path{structured/invoices/sa-zatca-ishaar-005.json} \\
+Payment instruction & \path{structured/payment-instructions/qa-edaa-annual-fee-2025.json} \\
+Payment instruction & \path{structured/payment-instructions/qa-qcsd-payment-instruction.json} \\
+VAT checklist & \path{structured/vat-checklists/sa-otp-vat-q3-2025.json} \\
+DOI policy & \path{structured/policies/bh-accounts-payable-doi.json} \\
+Workflow & \path{structured/workflows/po-eproc.json} \\
+Workflow & \path{structured/workflows/manual-one-off.json} \\
+Workflow & \path{structured/workflows/manual-recurring.json} \\
+Workflow & \path{structured/workflows/vat-payment.json} \\
+Index & \path{structured/corpus.json} \\
+Enumerations & \path{structured/enums.yaml} \\
+\bottomrule
+\end{longtable}
+\normalsize
+
+\section{Tools}
+
+\begin{tabularx}{\linewidth}{@{}l X@{}}
+\toprule
+\textbf{Tool} & \textbf{Purpose} \\ \midrule
+\texttt{pdftoppm}    & Rasterise PDF pages to 300~dpi PNG for OCR. \\
+\texttt{tesseract}   & Bilingual OCR with \texttt{-l ara+eng}. \\
+\texttt{pdftotext}   & Direct text extraction for born-digital English PDFs. \\
+\texttt{pandoc}      & Convert \texttt{.docx} to plain text. \\
+Python \texttt{email}& Parse the \texttt{.eml} envelope and MIME parts. \\
+\texttt{jq}          & Query and cross-check \texttt{corpus.json}. \\
+\texttt{jsonschema} / \texttt{referencing} (Python) & Offline schema validation with a local registry. \\
+\texttt{xelatex} / \texttt{tectonic} & Build this document (polyglossia, bidi support). \\
+\bottomrule
+\end{tabularx}
+
+\section{Minimal corpus excerpt}
+
+The entire corpus is in-tree under \corpus; for readers without
+access to the Git repository, \cref{lst:corpus-excerpt} reproduces
+the first three items of \corpus\texttt{structured/corpus.json}
+verbatim. This is a sufficient starting point to reconstruct the
+shape of the index; the full file contains 12 items covering every
+source in \cref{tab:layout}.
+
+\begin{figure}[htbp]
+\begin{lstlisting}[language=jsonx,caption={First three items of
+\texttt{corpus.json}; identical SHA-256 values are reproduced in
+\cref{ch:references}.},label=lst:corpus-excerpt]
+{
+  "schema_version": "1.0",
+  "items": [
+    {
+      "id": "eg-eta-3CPJR5CQ4PNNN9A4XHBB370K10",
+      "type": "invoice",
+      "country": "EG",
+      "tax_authority": "ETA",
+      "sha256": "2b912687fa94...",
+      "source_path":     "docs/arabic/source/3CPJR5CQ...K10.pdf",
+      "text_path":       "docs/arabic/extracted-text/eg-eta-...K10.txt",
+      "structured_path": "docs/arabic/structured/invoices/eg-eta-...K10.json"
+    },
+    {
+      "id": "sa-zatca-ishaar-005",
+      "type": "invoice",
+      "country": "SA",
+      "tax_authority": "ZATCA",
+      "sha256": "cbbb3f702ad5...",
+      "source_path":     "docs/arabic/source/<arabic-name>.pdf",
+      "text_path":       "docs/arabic/extracted-text/sa-zatca-ishaar-005.txt",
+      "structured_path": "docs/arabic/structured/invoices/sa-zatca-ishaar-005.json"
+    },
+    {
+      "id": "qa-edaa-annual-fee-2025",
+      "type": "payment_instruction",
+      "country": "QA",
+      "tax_authority": null,
+      "sha256": "cf91c2a43574..."
+    }
+  ]
+}
+\end{lstlisting}
+\end{figure}
+
+\section{Out-of-scope assets}
+
+The following files sit in
+\corpus\texttt{source/} but are \emph{not} part of the corpus and
+are not referenced by any record:
+
+\begin{itemize}
+  \item \texttt{Business Instruction Template - V1.0 (002) (1).xlsm} ---
+        encrypted CDFV2 workbook; cannot be opened without the owner's
+        password.
+  \item \texttt{EDAA Annual Fee Invoice 2025[65].pdf} --- byte-identical
+        duplicate of \texttt{EDAA Annual Fee Invoice 2025.pdf}.
+\end{itemize}

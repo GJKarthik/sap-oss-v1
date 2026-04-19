@@ -1,0 +1,98 @@
+{
+  "requirements": [
+    {
+      "requirementId": "REG-MGF-2.2.1-001",
+      "source": {
+        "regulationId": "mas-mgf-agentic-ai-v1",
+        "section": "2.2.1",
+        "page": 13,
+        "quote": "...clearly define the responsibilities of different stakeholders, both within the organisation and with external vendors..."
+      },
+      "normativeText": "Responsibilities for each phase of the agent lifecycle must be assigned to named roles and captured in the control register.",
+      "category": "human_accountability",
+      "obligation": "must",
+      "lifecyclePhase": "planning",
+      "implementation": [
+        {"kind": "doc",    "path": "docs/tb/structured/controls/euc-001-tb-data-extraction.json",     "field": "owner"},
+        {"kind": "doc",    "path": "docs/tb/structured/controls/euc-002-variance-analysis-file.json","field": "owner"},
+        {"kind": "doc",    "path": "docs/tb/structured/controls/euc-003-internal-review.json",       "field": "owner"},
+        {"kind": "doc",    "path": "docs/tb/structured/workflows/tb-review-glo.json",              "field": "participants"}
+      ],
+      "verification": [
+        {"kind": "aiverify-plugin",   "plugin": "aiverify.stock.process-checklist"},
+        {"kind": "process-checklist", "checklistItem": "RACI matrix reviewed each quarter."}
+      ],
+      "status": "implemented",
+      "priority": "high"
+    },
+    {
+      "requirementId": "REG-MGF-2.2.1-002",
+      "source": {
+        "regulationId": "mas-mgf-agentic-ai-v1",
+        "section": "2.2.1",
+        "page": 14,
+        "quote": "...emphasising adaptive governance, so that the organisation is set up to quickly understand new developments and update its approach as the technology evolves."
+      },
+      "normativeText": "A named governance forum must review agent incidents and emerging risks on a defined cadence and hold authority to adjust permissions.",
+      "category": "human_accountability",
+      "obligation": "should",
+      "lifecyclePhase": "post_deployment",
+      "implementation": [
+        {"kind": "doc", "path": "docs/governance/gcfo-finance-ai-council.md", "note": "Ratified v1.0 charter of the GCFO Finance AI Council (GFAIC) -- federated body operating under GAISC Delegation No. 2026-04 from the enterprise-wide Group AI Safety Council (GAISC). Scope bounded to Finance-function agentic AI; binding authority within that scope; cross-function matters escalate to GAISC."},
+        {"kind": "doc", "path": "docs/tb/structured/requirements/tb-business-requirements.json", "field": "implementationPlan.phases", "note": "Governance review phase."}
+      ],
+      "verification": [
+        {"kind": "aiverify-plugin", "plugin": "aiverify.stock.process-checklist"},
+        {"kind": "manual-review", "note": "GFAIC minutes filed monthly at docs/governance/minutes/YYYY-MM-gfaic.md; redacted copy shared with GAISC within 5 BD."}
+      ],
+      "status": "implemented",
+      "priority": "high"
+    },
+    {
+      "requirementId": "REG-MGF-2.2.2-001",
+      "source": {
+        "regulationId": "mas-mgf-agentic-ai-v1",
+        "section": "2.2.2",
+        "page": 16,
+        "quote": "\"human-in-the-loop\" has to be adapted to address automation bias... defining significant checkpoints in the agentic workflow that require human approval, such as high-stakes or irreversible actions..."
+      },
+      "normativeText": "The workflow must name every checkpoint where a human must approve an agent action before it proceeds, and the checkpoint definition must cite a high-stakes or irreversible action category.",
+      "category": "human_accountability",
+      "obligation": "must",
+      "lifecyclePhase": "design",
+      "implementation": [
+        {"kind": "doc", "path": "docs/tb/structured/workflows/tb-review-glo.json",           "field": "states[type=gateway_exclusive]", "note": "DP-001..DP-005 are mapped human checkpoints."},
+        {"kind": "doc", "path": "docs/tb/structured/decision-points/dp-001-material-variance.json"},
+        {"kind": "doc", "path": "docs/tb/structured/decision-points/dp-003-further-investigation.json"},
+        {"kind": "doc", "path": "docs/tb/structured/decision-points/dp-005-unexplained-variance.json"}
+      ],
+      "verification": [
+        {"kind": "test",            "path": "src/intelligence/ai-core-pal/tests/test_pal_algorithms.py"},
+        {"kind": "process-checklist","checklistItem": "All DP states have an assigned human owner."}
+      ],
+      "status": "implemented",
+      "priority": "critical"
+    },
+    {
+      "requirementId": "REG-MGF-2.2.2-002",
+      "source": {
+        "regulationId": "mas-mgf-agentic-ai-v1",
+        "section": "2.2.2",
+        "page": 17,
+        "quote": "...regularly auditing human oversight to check that it remains effective over time."
+      },
+      "normativeText": "Effectiveness of human oversight must be measured and reported periodically (e.g. override rates, review durations) against agreed KPIs.",
+      "category": "human_accountability",
+      "obligation": "should",
+      "lifecyclePhase": "post_deployment",
+      "implementation": [
+        {"kind": "doc", "path": "docs/tb/structured/kpis/tb-kpis.json", "field": "kpis[]", "note": "TB-KPI-003/005 track review effectiveness."}
+      ],
+      "verification": [
+        {"kind": "manual-review", "note": "Quarterly KPI pack reviewed by finance leadership."}
+      ],
+      "status": "partial",
+      "priority": "medium"
+    }
+  ]
+}

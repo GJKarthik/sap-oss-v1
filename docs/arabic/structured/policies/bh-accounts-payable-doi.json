@@ -1,0 +1,120 @@
+{
+  "id": "bh-accounts-payable-doi",
+  "schema_ref": "doi-policy.schema.json",
+  "metadata": {
+    "country": "BH",
+    "division": "Country Finance — Bahrain",
+    "ownership": "Country Finance — Accounts Payable Team",
+    "effective_from": "2014-05-01",
+    "review_cadence": "Annual",
+    "impacted_business_units": ["U140"]
+  },
+  "scope": {
+    "processes": ["In-country accounts payable processing"],
+    "products": [
+      "Vendor invoice payments",
+      "Cross-Border Recharges (CBR)",
+      "Manual payments"
+    ]
+  },
+  "activities": [
+    {
+      "n": 1,
+      "name": "Introduction",
+      "description": "Define purpose of DOI and align with the Group Business Expenditure Standard.",
+      "inputs": ["Group Business Expenditure Standard"],
+      "outputs": ["Activity scope and objectives"]
+    },
+    {
+      "n": 2,
+      "name": "Group-mandated systems",
+      "description": "Mandate use of eProcurement, International Mobility/HR, and SODA for all expenditure; classify anything else as 'manual payment' (exceptional).",
+      "systems": ["eProc", "SODA", "TnE"],
+      "approvals_required": [
+        "Cost Centre Owner",
+        "Country Supply Chain Manager",
+        "CFO / CFO Delegate"
+      ]
+    },
+    {
+      "n": 3,
+      "name": "PO Invoices (e-Proc route)",
+      "description": "DBU (U140) PO invoices raised in eProcurement, submitted to AP team, processed through Tax-Q; Finance assigns Purpose of Payment (POP) and VAT categorization. FCY invoices revalued at central bank rate as of invoice date.",
+      "systems": ["eProc", "Tax-Q", "PSAP"],
+      "notes": [
+        "Exchange rate: central bank rate as of invoice date for FCY invoices.",
+        "VAT amount calculated in both FCY and LCY using official rates."
+      ]
+    },
+    {
+      "n": 4,
+      "name": "Manual Invoices (non-e-Proc)",
+      "description": "Requires invoice + non-e-Proc memo + approvals (Cost Centre Owner, Country Supply Chain Manager, CFO/delegate). Submitted via scan to BH_APUeInvoice mailbox. Exception: GSAM legal/professional fees not covered by GDAM limits.",
+      "inputs": ["Invoice", "Non-e-Proc memo", "Approvals"],
+      "systems": ["GDAM", "PSAP"],
+      "approvals_required": [
+        "Cost Centre Owner",
+        "Country Supply Chain Manager",
+        "CFO / CFO Delegate"
+      ]
+    },
+    {
+      "n": 5,
+      "name": "In-country manual payments",
+      "description": "One-off manual payments require MD + CFO approval, evidence of one-off nature, and vendor screening valid within 48 hours. Recurring manual payments additionally require a written dispensation from the policy owner and are logged in eOPS, with quarterly CFO log retrieval and approval.",
+      "systems": ["eOPS", "PSAP", "PSGL"],
+      "approvals_required": ["MD", "CFO", "POLICY_OWNER (for recurring)"],
+      "notes": [
+        "Vendor screening must be revalidated every 48 hours.",
+        "Account coding captured in approval document.",
+        "On payment, invoice marked PAID and submitted to APU team (GBS Bangalore/Chennai) for GL posting."
+      ]
+    },
+    {
+      "n": 6,
+      "name": "Cross-Border Recharges (CBR)",
+      "description": "Managed centrally by GBS APU CBR team (Bangalore/Chennai).",
+      "systems": ["PSAP"]
+    },
+    {
+      "n": 7,
+      "name": "Clearing Payment Suspense Account",
+      "description": "Monthly reconciliation of PSGL extract against eBBS extract; aging escalation grid based on item age; GL posting for cost-centre/GL distribution.",
+      "systems": ["PSGL", "eBBS"],
+      "notes": [
+        "Chart fields used include 140-288843-800 (PSGL suspense account)."
+      ]
+    }
+  ],
+  "vat_invoice_types": [
+    "Full Tax Invoice",
+    "Simplified Tax Invoice (transactions under BHD 500)",
+    "Unregistered Vendor Purchases",
+    "Zero Rated Purchases (transport, food, healthcare, education, construction, oil/gas)",
+    "Exempt Purchases (real estate, financial services)",
+    "Tax Credit Notes",
+    "Reverse Charge Invoices (overseas supplies)",
+    "GCC Tax Invoice",
+    "Inter Business Unit Transfers (CBR)",
+    "Out of Scope invoices (pre-Jan 2019, MPV vouchers)",
+    "Other (EWA utility bills)"
+  ],
+  "suspense_accounts": [
+    { "currency": "BHD", "account": "09-0906743-50", "business_unit": "U140" },
+    { "currency": "USD", "account": "09-0906743-50", "business_unit": "U140" }
+  ],
+  "controls": [
+    { "id": "C1",  "description": "All required approvals present before payment release.", "activity_ref": 4, "risk_addressed": "Fraud / unauthorized expenditure" },
+    { "id": "C2",  "description": "Vendor screening revalidated within 48 hours of payment.", "activity_ref": 5, "risk_addressed": "Sanctions and AML exposure" },
+    { "id": "C3",  "description": "Amount payable within DOA limits per GDAM.", "activity_ref": 4, "risk_addressed": "Delegated authority breach" },
+    { "id": "C4",  "description": "Dispensation in place for recurring manual payments.", "activity_ref": 5, "risk_addressed": "Policy non-compliance" },
+    { "id": "C5",  "description": "Monthly PSGL-to-eBBS reconciliation cleared within aging thresholds.", "activity_ref": 7, "risk_addressed": "Unreconciled suspense / GL integrity" },
+    { "id": "C6",  "description": "FCY invoices revalued at central bank rate on invoice date.", "activity_ref": 3, "risk_addressed": "FX misstatement" },
+    { "id": "C7",  "description": "Duplicate-payment check against existing vendor-invoice combinations.", "activity_ref": 4, "risk_addressed": "Duplicate payment" }
+  ],
+  "source_document": {
+    "path": "docs/arabic/source/Accounts Payable DOI.docx",
+    "sha256": "128ff67927980643950536b24835d70fca777ebf68ca480573becc1a3f2a4e03",
+    "ocr_text_path": "docs/arabic/extracted-text/bh-accounts-payable-doi.txt"
+  }
+}

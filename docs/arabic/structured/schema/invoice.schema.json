@@ -1,0 +1,135 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://sap-oss/docs/arabic/structured/schema/invoice.schema.json",
+  "title": "Invoice",
+  "description": "Canonical invoice / tax assessment record. Covers Egypt ETA e-invoices, ZATCA VAT assessments, and any ingested vendor invoice. Enum values are defined in docs/arabic/structured/enums.yaml.",
+  "type": "object",
+  "required": ["id", "metadata", "seller", "buyer", "totals", "source_document"],
+  "additionalProperties": false,
+  "properties": {
+    "id": {
+      "type": "string",
+      "description": "Slug used as filename stem in structured/invoices/."
+    },
+    "schema_ref": {
+      "type": "string",
+      "const": "invoice.schema.json"
+    },
+    "metadata": {
+      "type": "object",
+      "required": ["country", "tax_authority", "issue_date", "status", "language", "document_kind"],
+      "additionalProperties": false,
+      "properties": {
+        "country": { "type": "string", "enum": ["EG", "SA", "QA", "BH", "IQ", "AE", "PK"] },
+        "tax_authority": { "type": "string", "enum": ["ETA", "ZATCA", "NBR", "QTA", "FTA", "FBR", "IQ_GCT"] },
+        "document_kind": { "type": "string", "enum": ["E_INVOICE", "VAT_ASSESSMENT", "VENDOR_INVOICE", "CREDIT_NOTE"] },
+        "electronic_id": {
+          "type": "string",
+          "description": "ETA 26-char electronic identifier, ZATCA payment reference, or issuer internal number."
+        },
+        "invoice_number": { "type": "string" },
+        "issue_date": { "type": "string", "format": "date" },
+        "submission_date": { "type": "string", "format": "date-time" },
+        "due_date": { "type": "string", "format": "date" },
+        "hijri_date": { "type": "string", "description": "Islamic-calendar date when supplied (e.g. 08/05/1447)." },
+        "language": { "type": "string", "enum": ["ar", "en", "ar+en"] },
+        "status": { "type": "string", "enum": ["VALID", "INVALID", "PENDING", "CANCELLED"] },
+        "internal_reference": { "type": "string" }
+      }
+    },
+    "seller": { "$ref": "#/definitions/party" },
+    "buyer":  { "$ref": "#/definitions/party" },
+    "line_items": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["quantity", "unit_price", "line_total"],
+        "additionalProperties": false,
+        "anyOf": [
+          { "required": ["description"] },
+          { "required": ["description_ar"] },
+          { "required": ["description_en"] }
+        ],
+        "properties": {
+          "description_ar": { "type": "string" },
+          "description_en": { "type": "string" },
+          "description": { "type": "string" },
+          "item_code": { "type": "string" },
+          "quantity": { "type": "number" },
+          "unit_of_measure": { "type": "string" },
+          "unit_price": { "type": "number" },
+          "line_total": { "type": "number" },
+          "line_discount": { "type": "number" }
+        }
+      }
+    },
+    "totals": {
+      "type": "object",
+      "required": ["currency", "gross"],
+      "additionalProperties": false,
+      "properties": {
+        "currency": { "type": "string", "pattern": "^[A-Z]{3}$" },
+        "net": { "type": "number" },
+        "discount_total": { "type": "number" },
+        "vat_amount": { "type": "number" },
+        "vat_rate_percent": { "type": "number", "minimum": 0, "maximum": 30 },
+        "vat_category": {
+          "type": "string",
+          "enum": ["FI", "SI", "ZR", "EX", "RC", "TCN", "UR", "CBR", "OS", "OTHER"]
+        },
+        "gross": { "type": "number" },
+        "amount_in_words": { "type": "string" }
+      }
+    },
+    "tax_period": {
+      "type": "object",
+      "description": "Populated for periodic tax assessments (e.g. ZATCA quarterly).",
+      "additionalProperties": false,
+      "properties": {
+        "start": { "type": "string", "format": "date" },
+        "end":   { "type": "string", "format": "date" },
+        "label": { "type": "string" }
+      }
+    },
+    "signature": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "name": { "type": "string" },
+        "kind": { "type": "string", "enum": ["SEAL", "WET_INK", "DIGITAL", "SYSTEM_GENERATED"] }
+      }
+    },
+    "source_document": { "$ref": "#/definitions/source_document" },
+    "notes": { "type": "array", "items": { "type": "string" } }
+  },
+  "definitions": {
+    "party": {
+      "type": "object",
+      "required": ["tax_id"],
+      "additionalProperties": false,
+      "properties": {
+        "name_ar": { "type": "string" },
+        "name_en": { "type": "string" },
+        "tax_id": { "type": "string" },
+        "tax_id_type": {
+          "type": "string",
+          "enum": ["ETA_TRN", "ZATCA_TIN", "ZATCA_TDN", "NBR_TRN"]
+        },
+        "activity_code": { "type": "string" },
+        "address_ar": { "type": "string" },
+        "address_en": { "type": "string" }
+      }
+    },
+    "source_document": {
+      "type": "object",
+      "required": ["path"],
+      "additionalProperties": false,
+      "properties": {
+        "path": { "type": "string", "description": "Relative path from repo root to the source file." },
+        "sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+        "ocr_text_path": { "type": "string" },
+        "page": { "type": "integer", "minimum": 1 }
+      }
+    }
+  }
+}

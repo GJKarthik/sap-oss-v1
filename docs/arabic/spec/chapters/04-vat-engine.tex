@@ -1,0 +1,326 @@
+\chapter{Multi-country VAT compliance engine}\label{ch:vat}
+
+\section{Engine responsibilities}
+
+Given a validated invoice record, the VAT engine must:
+
+\begin{enumerate}
+  \item select the correct regulator and ruleset from the record's
+        \texttt{metadata.country} and \texttt{metadata.tax\_authority};
+  \item run every applicable rule, producing a
+        \texttt{vat-checklist.schema.json} record with one item per rule;
+  \item decide a final \texttt{tax\_type\_classification} (VAT category
+        code from \texttt{enums.yaml});
+  \item compute any adjustments (withholding, reverse-charge accrual);
+  \item refuse to release the record for payment unless every
+        mandatory rule emits \textsc{y} or \textsc{na}.
+\end{enumerate}
+
+Rules are declarative data, not code: the engine is a rule interpreter.
+This isolates regulation change from engineering change.
+
+\section{Rule shape}
+
+A rule is a tuple \mbox{$(c, a, p, q, r)$} where:
+\begin{itemize}
+  \item $c$ --- country (\textsc{sa}, \textsc{eg}, \textsc{bh}, \textsc{qa});
+  \item $a$ --- tax authority (\textsc{zatca}, \textsc{eta}, \textsc{nbr}, \textsc{qta});
+  \item $p$ --- a predicate over the invoice record (expressed as a JSON-Logic
+              expression or a named helper);
+  \item $q$ --- the checklist \emph{question} emitted when the rule fires
+              (human-readable string);
+  \item $r$ --- a \texttt{result} $\in$ \{\textsc{y}, \textsc{n}, \textsc{na}\}
+              computed by evaluating $p$ and optionally a secondary predicate.
+\end{itemize}
+
+The engine iterates over the ruleset for $(c,a)$ in a deterministic
+order and appends each evaluated rule as an item in the output
+\texttt{checklist[]}. The final \texttt{tax\_type\_classification} is
+chosen by a \emph{decision function} that maps the full result vector to
+a single VAT category.
+
+\section{Saudi Arabia (ZATCA)}
+
+\subsection{Rules}
+
+The eleven-point ruleset is lifted verbatim from the Q3 2025 checklist
+and is shown in \cref{tab:ksa-rules}. Each row is one rule; the
+mapping from rule to \texttt{result} is given in the predicate column.
+
+\begin{table}[htbp]
+\centering
+\caption{KSA VAT rules derived from the Q3 2025 OTP checklist.}
+\label{tab:ksa-rules}
+\footnotesize
+\begin{tabularx}{\linewidth}{@{}c l X@{}}
+\toprule
+\textbf{\#} & \textbf{Question} & \textbf{Predicate / Source} \\ \midrule
+1  & Invoice in Arabic language
+   & \texttt{metadata.language} $\in$ \{\textsc{ar}, \textsc{ar+en}\}. \\
+2  & Addressed to Standard Chartered Capital
+   & \texttt{buyer.tax\_id} equals the entity's ZATCA TIN. \\
+3  & Date of issue present
+   & \texttt{metadata.issue\_date} set and well-formed. \\
+4  & Sequential number present
+   & \texttt{metadata.electronic\_id} or \texttt{metadata.invoice\_number} set. \\
+5  & 15-digit TIN on supplier side
+   & \texttt{seller.tax\_id} matches \verb|^[0-9]{15}$|; if supplier is \textsc{government}, emit \textsc{na}. \\
+6  & Nature of goods/services present
+   & At least one \texttt{line\_items[].description*} non-empty. \\
+7  & VAT rate applied
+   & \texttt{totals.vat\_rate\_percent} set and $\in$ \{0, 5, 15\}. \\
+8  & Net amount
+   & \texttt{totals.net} set. \\
+9  & Gross amount
+   & \texttt{totals.gross} set. \\
+10 & VAT amount
+   & \texttt{totals.vat\_amount} set and equals round($\texttt{net} \cdot r / 100$). \\
+11 & Withholding tax
+   & \texttt{withholding\_tax.applicable}; \textsc{na} if supplier is KSA-resident. \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\subsection{Decision function}
+
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}[
+  node distance=7mm and 11mm,
+  d/.style={draw,diamond,aspect=2.2,align=center,font=\footnotesize,inner sep=1pt,fill=yellow!10},
+  o/.style={draw,rounded corners,minimum width=20mm,minimum height=7mm,align=center,font=\small,fill=green!10},
+  t/.style={-{Latex[length=2mm]}}
+]
+\node[d] (gov)  {\textsc{government}\\counterparty?};
+\node[o,right=of gov] (rc) {\textsc{rc}};
+\node[d,below=of gov] (zr) {rate = 0\,\%?};
+\node[o,right=of zr] (zro) {\textsc{zr}};
+\node[d,below=of zr] (fi) {rate = 15\,\%?};
+\node[o,right=of fi] (fio) {\textsc{fi}};
+\node[o,below=of fi] (oth) {\textsc{other}};
+\draw[t] (gov.east) -- node[above,font=\tiny]{yes} (rc.west);
+\draw[t] (gov.south) -- node[right,font=\tiny]{no} (zr.north);
+\draw[t] (zr.east) -- node[above,font=\tiny]{yes} (zro.west);
+\draw[t] (zr.south) -- node[right,font=\tiny]{no} (fi.north);
+\draw[t] (fi.east) -- node[above,font=\tiny]{yes} (fio.west);
+\draw[t] (fi.south) -- node[right,font=\tiny]{no} (oth.north);
+\end{tikzpicture}
+\caption{KSA decision function. The first matching branch determines
+         the emitted \texttt{tax\_type\_classification}.}
+\label{fig:ksa-decision}
+\end{figure}
+
+\begin{lstlisting}[language=bash,basicstyle=\ttfamily\small,caption={KSA
+decision logic applied to a validated invoice record.}]
+if supplier.supplier_type == GOVERNMENT
+     and tax_authority == ZATCA:
+    classification = RC         # reverse-charge / government payment
+elif totals.vat_rate_percent == 0
+     and supplier.supplier_type != GOVERNMENT:
+    classification = ZR
+elif totals.vat_rate_percent == 15:
+    classification = FI
+elif totals.vat_rate_percent in {5, 10, 7, 14, 20}:
+    # A rate that is legal in another jurisdiction but not in KSA.
+    # Never silently classify: emit HOLD + human review.
+    classification = OTHER
+    verdict       = HOLD        # consumed by the AP engine
+    reason        = "unexpected_vat_rate_for_ksa"
+else:
+    # Unknown rate (e.g. 3%, negative, null): always HOLD.
+    classification = OTHER
+    verdict       = HOLD
+    reason        = "unknown_vat_rate"
+\end{lstlisting}
+
+\subsection{Worked example}
+
+The Saudi Q3 2025 assessment (\ar{اشعار صدور فاتورة}) has
+\texttt{supplier.supplier\_type} = \textsc{government} and
+\texttt{tax\_authority} = \textsc{zatca}; the decision function
+correctly yields \texttt{tax\_type\_classification} = \textsc{rc}. All
+eleven rules fire; rules 5 and 11 are \textsc{na} because the
+counterparty is ZATCA itself and the buyer is KSA-resident. The total
+\texttt{gross} = SAR~1{,}558{,}629.96 (due 2025-10-31) is posted as a
+reverse-charge VAT payment through the \texttt{vat-payment} workflow.
+
+\section{Egypt (ETA)}
+
+\subsection{Rules}
+
+\begin{table}[htbp]
+\centering
+\caption{ETA e-invoice rules.}
+\label{tab:eta-rules}
+\footnotesize
+\begin{tabularx}{\linewidth}{@{}c l X@{}}
+\toprule
+\textbf{\#} & \textbf{Question} & \textbf{Predicate / Source} \\ \midrule
+1 & \texttt{electronic\_id} well-formed
+  & Matches \verb|^[0-9A-Z]{26}$|. \\
+2 & Seller TRN well-formed   & \texttt{seller.tax\_id} matches \verb|^[0-9]{9}$|. \\
+3 & Buyer TRN well-formed    & \texttt{buyer.tax\_id} matches \verb|^[0-9]{9}$|. \\
+4 & Activity code present    & \texttt{seller.activity\_code} set. \\
+5 & Submission within 24h of issue
+  & \texttt{submission\_date} $-$ \texttt{issue\_date} $\leq$ 24~h. \\
+6 & VAT rate consistent      & 14\% (standard) or 0\% (exempt by activity lookup). \\
+7 & Line-item subtotals      & Sum of \texttt{line\_total} equals \texttt{totals.net}. \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\subsection{Decision function}
+
+\begin{lstlisting}[language=bash,basicstyle=\ttfamily\small]
+if seller.activity_code in EXEMPT_ACTIVITIES:
+    classification = EX
+elif totals.vat_rate_percent == 14:
+    classification = FI
+elif totals.vat_rate_percent == 0:
+    classification = ZR
+else:
+    classification = OTHER
+\end{lstlisting}
+The set \texttt{EXEMPT\_ACTIVITIES} is a configured lookup. Activity
+\texttt{8890} (``Professional services'', as used by the Chapter Zero
+corporate-membership invoice) is included.
+
+\subsection{Worked examples}
+
+\paragraph{Seal invoice (\texttt{3CPJR5CQ\ldots K10}).}
+All seven rules pass; activity code \texttt{1811} is not exempt;
+\texttt{totals.vat\_rate\_percent~=~14}; the decision function yields
+\textsc{fi} (Full Tax Invoice). Gross \texttt{EGP~661{,}200} posts to
+the PO e-Proc or manual path depending on the presence of a PO
+reference.
+
+\paragraph{Corporate membership (\texttt{B1STE8RH\ldots SJ10}).}
+Activity code \texttt{8890} is in the exempt set; rule 6 still passes
+because 0\% with an exempt code is consistent; decision yields \textsc{ex}.
+No VAT accrues and the routing is \texttt{manual-one-off}.
+
+\section{Bahrain (NBR)}
+
+\subsection{Rules}
+
+Derived from Activity 3 of the Bahrain DOI
+(\corpus\path{structured/policies/bh-accounts-payable-doi.json}). The
+NBR ruleset is wider than KSA's eleven points because the DOI
+distinguishes ten VAT invoice types.
+
+\begin{table}[htbp]
+\centering
+\caption{NBR VAT invoice types recognised in Bahrain AP.
+         Each row maps to a \texttt{vat\_category} enum value.}
+\label{tab:nbr-types}
+\footnotesize
+\begin{tabularx}{\linewidth}{@{}l l X@{}}
+\toprule
+\textbf{DOI name} & \textbf{Enum} & \textbf{Selection criterion} \\ \midrule
+Full Tax Invoice                 & \textsc{fi}  & VAT-registered supplier, $\geq$ BHD 500. \\
+Simplified Tax Invoice           & \textsc{si}  & Transaction \textbf{under BHD 500}. \\
+Unregistered Vendor Purchases    & \textsc{ur}  & Supplier not VAT-registered. \\
+Zero Rated Purchases             & \textsc{zr}  & Transport, food, healthcare, education, construction, oil/gas. \\
+Exempt Purchases                 & \textsc{ex}  & Real estate, financial services. \\
+Tax Credit Notes                 & \textsc{tcn} & Negative-amount adjustment to prior invoice. \\
+Reverse Charge Invoices          & \textsc{rc}  & Overseas supplier; buyer accounts for VAT. \\
+GCC Tax Invoice                  & \textsc{fi}  & Intra-GCC supplier (handled as \textsc{fi} with a GCC flag). \\
+Inter Business Unit Transfers    & \textsc{cbr} & Routed via GBS APU CBR team. \\
+Out of Scope                     & \textsc{os}  & Pre-Jan 2019 vouchers, MPV vouchers. \\
+Other                            & \textsc{other} & EWA utility bills. \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}[
+  node distance=6mm and 9mm,
+  d/.style={draw,diamond,aspect=2.4,align=center,font=\scriptsize,inner sep=0.5pt,fill=yellow!10},
+  o/.style={draw,rounded corners,minimum width=14mm,minimum height=6mm,align=center,font=\scriptsize,fill=green!10},
+  t/.style={-{Latex[length=1.8mm]}}
+]
+\node[d] (reg)  {supplier\\VAT-reg?};
+\node[d,right=of reg] (os) {pre-2019?};
+\node[o,right=of os] (osx) {\textsc{os}};
+\node[o,below=of os] (ur) {\textsc{ur}};
+\node[d,below=of reg] (ic) {inter-BU?};
+\node[o,right=of ic] (cbr) {\textsc{cbr}};
+\node[d,below=of ic] (neg) {credit\\note?};
+\node[o,right=of neg] (tcn) {\textsc{tcn}};
+\node[d,below=of neg] (rev) {overseas?};
+\node[o,right=of rev] (rc) {\textsc{rc}};
+\node[d,below=of rev] (zrq) {ZR\\activity?};
+\node[o,right=of zrq] (zr) {\textsc{zr}};
+\node[d,below=of zrq] (exq) {exempt?};
+\node[o,right=of exq] (ex) {\textsc{ex}};
+\node[d,below=of exq] (amt) {amount\\$<$ BHD 500?};
+\node[o,right=of amt] (si) {\textsc{si}};
+\node[o,below=of amt] (fi) {\textsc{fi}};
+
+\draw[t] (reg.east) -- node[above,font=\tiny]{no} (os.west);
+\draw[t] (os.east)  -- node[above,font=\tiny]{yes} (osx.west);
+\draw[t] (os.south) -- node[right,font=\tiny]{no} (ur.north);
+\draw[t] (reg.south) -- node[right,font=\tiny]{yes} (ic.north);
+\draw[t] (ic.east) -- node[above,font=\tiny]{yes} (cbr.west);
+\draw[t] (ic.south) -- node[right,font=\tiny]{no} (neg.north);
+\draw[t] (neg.east) -- node[above,font=\tiny]{yes} (tcn.west);
+\draw[t] (neg.south) -- node[right,font=\tiny]{no} (rev.north);
+\draw[t] (rev.east) -- node[above,font=\tiny]{yes} (rc.west);
+\draw[t] (rev.south) -- node[right,font=\tiny]{no} (zrq.north);
+\draw[t] (zrq.east) -- node[above,font=\tiny]{yes} (zr.west);
+\draw[t] (zrq.south) -- node[right,font=\tiny]{no} (exq.north);
+\draw[t] (exq.east) -- node[above,font=\tiny]{yes} (ex.west);
+\draw[t] (exq.south) -- node[right,font=\tiny]{no} (amt.north);
+\draw[t] (amt.east) -- node[above,font=\tiny]{yes} (si.west);
+\draw[t] (amt.south) -- node[right,font=\tiny]{no} (fi.north);
+\end{tikzpicture}
+\caption{Bahrain NBR classification cascade. The first branch
+         whose predicate holds emits the \texttt{vat\_category} and
+         short-circuits the remaining tests.}
+\label{fig:nbr-decision}
+\end{figure}
+
+\subsection{BHD 500 threshold}
+
+The DOI fixes BHD~500 as the SI/FI threshold for Bahrain. This is stored
+in the engine configuration, not hard-coded, so that a regulator update
+can be applied by editing a single value in \texttt{enums.yaml}.
+
+\section{Qatar (QTA)}
+
+Qatar does not currently impose VAT. The engine therefore runs a single
+rule --- \emph{payment is to a valid counterparty with a QCSD-registered
+account} --- and classifies the record as \textsc{other} unless a
+future VAT regime is detected (\texttt{metadata.tax\_authority}
+$\neq$ \textsc{qta}). The
+\corpus\path{structured/payment-instructions/qa-qcsd-payment-instruction.json}
+record is the reference.
+
+\section{Withholding tax}
+
+Withholding rules are modelled as a secondary ruleset keyed on
+\emph{supplier residence}. The engine emits a
+\texttt{withholding\_tax} object with \texttt{applicable}, \texttt{rate\_percent},
+and \texttt{amount}. KSA-resident suppliers yield
+\texttt{applicable~=~false} (\textsc{na}), mirroring the Q3 2025
+checklist. Non-resident, non-GCC suppliers trigger a country-specific
+rate (e.g.\ 5\% KSA royalty, 15\% services) that must be explicitly
+configured in \texttt{enums.yaml} before the engine can emit
+\textsc{y}/\textsc{n}.
+
+\section{Engine outputs}
+
+For every invoice the engine produces:
+\begin{itemize}
+  \item a \texttt{vat-checklist} record stored at
+        \texttt{structured/vat-checklists/<slug>.json};
+  \item an updated \texttt{invoice} record with a populated
+        \texttt{totals.vat\_category};
+  \item a verdict of \textsc{release} or \textsc{hold} consumed by the
+        approval engine (\cref{ch:ap}).
+\end{itemize}
+
+A hold is produced whenever any rule resolves \textsc{n}. The engine
+must never up-grade a \textsc{hold} to \textsc{release} without a human
+recorded in the corresponding workflow transition.

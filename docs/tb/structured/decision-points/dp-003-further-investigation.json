@@ -1,0 +1,25 @@
+{
+  "id": "DP-003",
+  "name": "Further Investigation Required",
+  "stateRef": "CHECK_FURTHER_INVESTIGATION",
+  "timing": "M-2 to M+5",
+  "description": "Assess whether additional investigation is needed for unposted entries.",
+  "inputMetric": "investigation_status",
+  "operator": "boolean",
+  "outcomes": [
+    {
+      "condition": "Further Investigation Not Required",
+      "action": "proceed_to_unexplained_check"
+    },
+    {
+      "condition": "Further Investigation Required",
+      "action": "check_entries_with_team",
+      "description": "Contact responsible team for entry status."
+    }
+  ],
+  "aiAugmentation": {
+    "opportunity": "Predict investigation need based on entry age, amount, and historical patterns.",
+    "dataNeeded": ["entry_age_days", "entry_amount", "entry_type", "historical_resolution_rate"]
+  },
+  "workflowRef": "tb-review-glo"
+}

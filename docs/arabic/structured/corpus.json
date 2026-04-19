@@ -1,0 +1,113 @@
+{
+  "schema_version": "1.0",
+  "generated_at": "2026-04-17",
+  "description": "Flat index of every source document in docs/arabic/source/ with pointers to its derived text and structured records.",
+  "items": [
+    {
+      "id": "eg-eta-3CPJR5CQ4PNNN9A4XHBB370K10",
+      "type": "invoice",
+      "country": "EG",
+      "tax_authority": "ETA",
+      "language": "ar",
+      "source_path": "docs/arabic/source/3CPJR5CQ4PNNN9A4XHBB370K10.pdf",
+      "sha256": "2b912687fa94013eda3dda20f93d289ae275d2ac31c76b1542fc9d7f1234b2c0",
+      "text_path": "docs/arabic/extracted-text/eg-eta-3CPJR5CQ4PNNN9A4XHBB370K10.txt",
+      "structured_path": "docs/arabic/structured/invoices/eg-eta-3CPJR5CQ4PNNN9A4XHBB370K10.json"
+    },
+    {
+      "id": "eg-eta-B1STE8RHNWZY9TYEXDS6WSZJ10",
+      "type": "invoice",
+      "country": "EG",
+      "tax_authority": "ETA",
+      "language": "ar+en",
+      "source_path": "docs/arabic/source/B1STE8RHNWZY9TYEXDS6WSZJ10.pdf",
+      "sha256": "18eb35671131bd4b46ddb1559305ae197532392efc2305061e7bb83beba874f3",
+      "text_path": "docs/arabic/extracted-text/eg-eta-B1STE8RHNWZY9TYEXDS6WSZJ10.txt",
+      "structured_path": "docs/arabic/structured/invoices/eg-eta-B1STE8RHNWZY9TYEXDS6WSZJ10.json"
+    },
+    {
+      "id": "sa-zatca-ishaar-005",
+      "type": "invoice",
+      "country": "SA",
+      "tax_authority": "ZATCA",
+      "language": "ar",
+      "source_path": "docs/arabic/source/اشعار صدور فاتورة (005).pdf",
+      "sha256": "cbbb3f702ad57f610a95b99cc4d72b1314e55d8e999f82af48923ab5b31c0989",
+      "text_path": "docs/arabic/extracted-text/sa-zatca-ishaar-005.txt",
+      "structured_path": "docs/arabic/structured/invoices/sa-zatca-ishaar-005.json"
+    },
+    {
+      "id": "qa-edaa-annual-fee-2025",
+      "type": "payment-instruction",
+      "country": "QA",
+      "tax_authority": "QTA",
+      "language": "ar+en",
+      "source_path": "docs/arabic/source/EDAA Annual Fee Invoice 2025.pdf",
+      "sha256": "cf91c2a43574ab9afc02546b4c4479b5f2b1f26183605ba5e08e8433269d9716",
+      "text_path": "docs/arabic/extracted-text/qa-edaa-annual-fee-2025.txt",
+      "structured_path": "docs/arabic/structured/payment-instructions/qa-edaa-annual-fee-2025.json"
+    },
+    {
+      "id": "qa-qcsd-payment-instruction",
+      "type": "payment-instruction",
+      "country": "QA",
+      "tax_authority": "QTA",
+      "language": "en",
+      "source_path": "docs/arabic/source/Instruction for payment to vendor (QCSD).pdf",
+      "sha256": "39ed62690d0f16fcaffab9c04ea5d272e77d62d4d664b546285a393f1b79826e",
+      "text_path": "docs/arabic/extracted-text/qa-qcsd-payment-instruction.txt",
+      "structured_path": "docs/arabic/structured/payment-instructions/qa-qcsd-payment-instruction.json"
+    },
+    {
+      "id": "sa-otp-vat-q3-2025",
+      "type": "vat-checklist",
+      "country": "SA",
+      "tax_authority": "ZATCA",
+      "language": "en",
+      "source_path": "docs/arabic/source/Saudi - OTP Entry processing- VAT Q3'25 (1).docx",
+      "sha256": "3a6c8f37528fcf2901171a02bc28ff417626e25833da49f91d1caebab830254e",
+      "text_path": "docs/arabic/extracted-text/sa-otp-vat-q3-2025.txt",
+      "structured_path": "docs/arabic/structured/vat-checklists/sa-otp-vat-q3-2025.json"
+    },
+    {
+      "id": "bh-accounts-payable-doi",
+      "type": "policy",
+      "country": "BH",
+      "tax_authority": "NBR",
+      "language": "en",
+      "source_path": "docs/arabic/source/Accounts Payable DOI.docx",
+      "sha256": "128ff67927980643950536b24835d70fca777ebf68ca480573becc1a3f2a4e03",
+      "text_path": "docs/arabic/extracted-text/bh-accounts-payable-doi.txt",
+      "structured_path": "docs/arabic/structured/policies/bh-accounts-payable-doi.json"
+    },
+    {
+      "id": "ai-initiative-email",
+      "type": "email",
+      "country": "ME",
+      "language": "en",
+      "source_path": "docs/arabic/source/FW- AI _ Arabic Invoice, Peer analysis, & Translation upcoming sessions.eml",
+      "sha256": "e01ba78d5ca5aeddcf4471f8575fffc72878b660ad7b93329962264b25239188",
+      "text_path": "docs/arabic/extracted-text/ai-initiative-email.txt"
+    },
+    {
+      "id": "po-eproc",
+      "type": "workflow",
+      "structured_path": "docs/arabic/structured/workflows/po-eproc.json"
+    },
+    {
+      "id": "manual-one-off",
+      "type": "workflow",
+      "structured_path": "docs/arabic/structured/workflows/manual-one-off.json"
+    },
+    {
+      "id": "manual-recurring",
+      "type": "workflow",
+      "structured_path": "docs/arabic/structured/workflows/manual-recurring.json"
+    },
+    {
+      "id": "vat-payment",
+      "type": "workflow",
+      "structured_path": "docs/arabic/structured/workflows/vat-payment.json"
+    }
+  ]
+}

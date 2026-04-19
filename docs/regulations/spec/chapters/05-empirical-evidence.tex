@@ -1,0 +1,87 @@
+% =============================================================================
+% Chapter 5 --- Empirical evidence (Ju & Aral 2026)
+% =============================================================================
+\chapter{Empirical evidence: Ju \& Aral (2026)}
+\label{ch:empirical}
+
+\section{Source document}
+
+\begin{description}
+  \item[Title.] Collaborating with AI Agents: A Field Experiment on
+    Teamwork, Productivity, and Performance.
+  \item[Authors.] Harang Ju (Johns Hopkins Carey) and Sinan Aral (MIT
+    Sloan).
+  \item[Venue.] arXiv:2503.18238v3 [cs.CY], 5 February 2026.
+  \item[Pages.] 59.
+  \item[Source.] \corpus{source/2503.18238v3.pdf}
+    (sha256 \texttt{b680f584\ldots cd7877}).
+\end{description}
+
+\section{Study design}
+
+The authors built the \emph{Pairit} platform and randomly assigned 2{,}234
+participants to human-human and human-AI teams producing 11{,}024 ads
+for a think tank. Outputs were rated by humans and field-tested on X,
+which garnered roughly five million impressions. The design is --- for
+this corpus --- an unusually strong source of evidence about how
+human-agent collaboration actually affects output quality, homogeneity,
+and team dynamics.
+
+\section{Findings relevant to governance}
+
+\begin{enumerate}
+  \item \textbf{Jagged productivity frontier.} Human-AI teams produced
+        50\% more ads per worker and higher \emph{text} quality;
+        human-human teams produced higher \emph{image} quality. Different
+        sub-tasks need different evaluation metrics.
+  \item \textbf{Delegation shifts.} Participants delegated 17\% more work
+        to AI agents than to human partners and performed 62\% fewer
+        direct text edits when working with AI.
+  \item \textbf{Diversity collapse.} Human-AI outputs were more
+        self-similar. For creative or generative use cases this is a
+        first-order governance risk.
+  \item \textbf{Communication restructure.} Human-AI collaboration was
+        significantly more task-oriented (+25\% task messages, -18\%
+        interpersonal).
+  \item \textbf{AI-awareness moderation.} Participants who correctly
+        identified they were paired with AI delegated more and were more
+        task-oriented --- the effect is moderated by knowing the
+        collaborator is an agent.
+\end{enumerate}
+
+\section{Requirements extracted}
+
+\begin{table}[h]
+\centering
+\small
+\begin{tabularx}{\textwidth}{p{3.2cm}p{1.4cm}p{1.6cm}X}
+\toprule
+\textbf{Req.\ id} & \textbf{Section} & \textbf{Obligation} & \textbf{Normative text (paraphrased)} \\
+\midrule
+REG-JU-ARAL-3-001 & 3 & descriptive & Evaluate per-task; do not generalise a single productivity metric. \\
+REG-JU-ARAL-4-001 & 4 & should & High delegation + low direct-edit rate is a proxy for automation-bias risk; measure it. \\
+REG-JU-ARAL-5-001 & 5 & should & Add an output-diversity metric for creative-output use cases. \\
+\bottomrule
+\end{tabularx}
+\caption{Observational claims treated as requirements.}
+\label{tab:jural-reqs}
+\end{table}
+
+\section{Implementation in the corpus}
+
+\begin{itemize}
+  \item REG-JU-ARAL-3-001 is implemented by this chapter; it reminds
+        reviewers to look at the per-task KPIs defined in
+        \corpus{../tb/structured/kpis/tb-kpis.json} rather than a single
+        blended productivity number.
+  \item REG-JU-ARAL-4-001 maps to the override-rate and review-duration
+        KPIs in the TB corpus. When override rates fall well below
+        historical baseline and review duration drops in lockstep, that
+        is the signal to re-audit.
+  \item REG-JU-ARAL-5-001 is marked \emph{not\_applicable} for the
+        trial-balance workflow (deterministic review, single narrative
+        per legal entity). It will become applicable when the corpus
+        expands to generative use cases; we record it rather than omit it
+        so that the framework surfaces the need at that time.
+\end{itemize}
+\clearpage

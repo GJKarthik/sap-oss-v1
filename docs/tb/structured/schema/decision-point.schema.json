@@ -1,0 +1,51 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://sap-oss.local/schemas/tb/decision-point.schema.json",
+  "title": "Trial Balance Decision Point",
+  "description": "Gateway logic for a TB review decision, with enumerated outcomes and AI augmentation hints.",
+  "type": "object",
+  "required": ["id", "name", "stateRef", "description", "outcomes"],
+  "additionalProperties": false,
+  "properties": {
+    "id": {"type": "string", "pattern": "^DP-[0-9]{3}$"},
+    "name": {"type": "string"},
+    "stateRef": {
+      "type": "string",
+      "description": "Workflow stateId referencing the gateway_exclusive state."
+    },
+    "timing": {"type": "string"},
+    "deadline": {"type": "string"},
+    "description": {"type": "string"},
+    "inputMetric": {"type": "string"},
+    "operator": {
+      "type": "string",
+      "enum": ["equals", "not_equals", "exceeds_threshold", "within_threshold", "in_set", "boolean"]
+    },
+    "threshold": {"type": ["string", "number"]},
+    "thresholdNote": {"type": "string"},
+    "outcomes": {
+      "type": "array",
+      "minItems": 2,
+      "items": {
+        "type": "object",
+        "required": ["condition", "action"],
+        "additionalProperties": false,
+        "properties": {
+          "condition": {"type": "string"},
+          "action": {"type": "string"},
+          "description": {"type": "string"}
+        }
+      }
+    },
+    "aiAugmentation": {
+      "type": "object",
+      "required": ["opportunity"],
+      "additionalProperties": false,
+      "properties": {
+        "opportunity": {"type": "string"},
+        "dataNeeded": {"type": "array", "items": {"type": "string"}}
+      }
+    },
+    "workflowRef": {"type": "string"}
+  }
+}

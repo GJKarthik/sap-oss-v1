@@ -1,0 +1,90 @@
+{
+  "dataProduct": {
+    "id": "trial-balance-review-v1",
+    "version": "1.0.0",
+    "name": "Trial Balance Review Process",
+    "description": "Month-end Trial Balance review workflow for Hong Kong entity. Includes variance analysis, commentary tracking, journal posting, risk assessment, and FORTM pack preparation. Covers 234 legal entities across all segments and group.",
+    "dataSecurityClass": "confidential",
+    "dataGovernanceClass": "controls",
+    "domain": "Finance",
+    "owner": {
+      "name": "Modi, Piyush",
+      "team": "GFS Operations",
+      "contact": "Process Owner"
+    },
+    "x-llm-policy": {
+      "routing": "vllm-only",
+      "defaultBackend": "vllm",
+      "auditLevel": "full",
+      "routingRules": [
+        {"condition": "contains GL account numbers or balances", "backend": "vllm", "reason": "Financial data must stay on-premise"},
+        {"condition": "variance commentary generation", "backend": "vllm", "reason": "Uses confidential entity data"}
+      ]
+    },
+    "x-team-access": {
+      "defaultAccess": "read",
+      "countryRestrictions": [],
+      "domainRestrictions": ["finance", "controls"]
+    },
+    "x-country-views": {
+      "HK": {
+        "defaultFilters": {"entity": "HKG"},
+        "promptAppend": "This is the Hong Kong entity TB review. Use HKMA regulatory terminology where applicable. The TB and P&L review workbooks are macro-enabled Excel files with variance analysis, commentary tracking, and risk assessment sheets. The process runs on a timeline from M-3 (preparation) to M+5 (FORTM submission).",
+        "additionalGlossary": [
+          {"source": "FORTM Pack", "target": "Financial Operations Review and Tracking Monthly", "lang": "acronym"},
+          {"source": "PSGL", "target": "Primary Subledger/General Ledger", "lang": "acronym"},
+          {"source": "EUC", "target": "End User Computing", "lang": "acronym"},
+          {"source": "BSS RA", "target": "Business Support Services Risk Assessment", "lang": "acronym"},
+          {"source": "GFS", "target": "Global Financial Services", "lang": "acronym"},
+          {"source": "SC Bridge", "target": "System Bridge for TB Data Extraction", "lang": "acronym"},
+          {"source": "Fast Close", "target": "Accelerated Month-End Close Initiative", "lang": "acronym"}
+        ]
+      }
+    },
+    "x-prompting-policy": {
+      "systemPrompt": "You are a Trial Balance review assistant for the month-end close process. You help users understand variance analysis, commentary requirements, risk assessment, and FORTM pack preparation. Process timeline: M-3 (preparation) through M+5 (submission). Coverage: 234 legal entities, segment & group level.",
+      "maxTokens": 4096,
+      "temperature": 0.3,
+      "responseFormat": "text"
+    },
+    "x-rag-sources": {
+      "vectorTable": "TB_REVIEW_VECTORS",
+      "chunkSource": "docs/tb/machine-readable/rag/rag_embedding_records.jsonl",
+      "totalChunks": 55,
+      "documentTypes": ["extracted", "requirements", "process"]
+    },
+    "schema": {
+      "source": "docs/tb/machine-readable/training-data/hkg-tb-schema.yaml",
+      "type": "workbook_metadata",
+      "workbooks": [
+        {"id": "hkg-tb", "name": "HKG TB Review Nov 2025", "sourceFile": "HKG_TB review Nov'25.xlsm"},
+        {"id": "hkg-pl", "name": "HKG PL Review Nov 2025", "sourceFile": "HKG_PL review Nov'25.xlsm"}
+      ]
+    },
+    "relatedProducts": [
+      {"ref": "treasury-capital-markets-v1", "relationship": "complementary", "description": "Treasury positions with mark-to-market and RWA metrics."}
+    ],
+    "aiAugmentation": {
+      "priorityCritical": [
+        "Automated TB extraction from PSGL/S4 for all 234 LEs",
+        "ML-based variance analysis with anomaly detection",
+        "LLM-generated draft commentaries",
+        "Auto-generated FORTM pack narrative summaries"
+      ],
+      "priorityHigh": [
+        "Automated PSGL/S4 master data sync",
+        "Journal posting status auto-detection",
+        "Predictive risk scoring for overdue entries"
+      ],
+      "priorityMedium": [
+        "Template auto-generation from prior month",
+        "NLP-based unexplained variance categorization"
+      ],
+      "expectedBenefits": {
+        "fteSavings": 5,
+        "cycleTimeReduction": "Enable daily controls (from monthly batch)",
+        "controlEnhancement": "Eliminate EUCs, reduce manual process risk"
+      }
+    }
+  }
+}

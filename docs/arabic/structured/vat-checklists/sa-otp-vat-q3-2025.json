@@ -1,0 +1,56 @@
+{
+  "id": "sa-otp-vat-q3-2025",
+  "schema_ref": "vat-checklist.schema.json",
+  "country": "SA",
+  "period": {
+    "start": "2025-07-01",
+    "end": "2025-09-30",
+    "label": "Q3 2025"
+  },
+  "checklist": [
+    { "n": 1,  "label": "Invoice in Arabic language",                                       "result": "Y",  "regulation": "KSA VAT Implementing Regulation — Article 53" },
+    { "n": 2,  "label": "Addressed to Standard Chartered Capital",                          "result": "Y" },
+    { "n": 3,  "label": "Date of issue",                                                    "result": "Y",  "value": "2025-10-30" },
+    { "n": 4,  "label": "Sequential number",                                                "result": "Y",  "value": "3003093648253002" },
+    { "n": 5,  "label": "Tax Identification Number (15-digit)",                             "result": "NA", "regulation": "Supplier is ZATCA itself — government body" },
+    { "n": 6,  "label": "Nature of goods/services",                                         "result": "Y",  "value": "VAT Payment" },
+    { "n": 7,  "label": "VAT rate applied",                                                 "result": "Y",  "value": "0%" },
+    { "n": 8,  "label": "Net amount",                                                       "result": "Y",  "value": "SAR 0.00" },
+    { "n": 9,  "label": "Gross amount (total)",                                             "result": "Y",  "value": "SAR 1,558,629.95" },
+    { "n": 10, "label": "VAT amount",                                                       "result": "Y",  "value": "SAR 0.00" },
+    { "n": 11, "label": "Withholding Tax on credit/debit notes",                            "result": "NA" }
+  ],
+  "gl_coding": {
+    "account": "287961",
+    "product": "910",
+    "department": "8105",
+    "operating_unit": "800",
+    "class_code": "98",
+    "affiliate": null,
+    "project_id": null
+  },
+  "supplier": {
+    "name": "The General Authority of Zakat, Tax and Customs",
+    "name_ar": "هيئة الزكاة والضريبة والجمارك",
+    "tax_id": "3003093648",
+    "tax_id_type": "ZATCA_TDN",
+    "supplier_type": "GOVERNMENT"
+  },
+  "tax_type_classification": "OTHER",
+  "amounts": {
+    "currency": "SAR",
+    "net": 0,
+    "vat": 0,
+    "gross": 1558629.95
+  },
+  "withholding_tax": {
+    "applicable": false,
+    "note": "Vendor is resident in Saudi Arabia — WHT not applicable."
+  },
+  "psid": "2002976",
+  "source_document": {
+    "path": "docs/arabic/source/Saudi - OTP Entry processing- VAT Q3'25 (1).docx",
+    "sha256": "3a6c8f37528fcf2901171a02bc28ff417626e25833da49f91d1caebab830254e",
+    "ocr_text_path": "docs/arabic/extracted-text/sa-otp-vat-q3-2025.txt"
+  }
+}

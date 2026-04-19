@@ -1,0 +1,231 @@
+\chapter{Canonical Data Schema}\label{ch:schema}
+
+\section{Overview}
+
+Every artefact under review is represented by a JSON record validated
+against a Draft-07 JSON Schema. Six schemas are defined; collectively
+they constitute the data contract consumed by the AI pipeline
+(\cref{ch:ai}) and by the controls engine (\cref{ch:controls-engine}).
+
+\begin{table}[htbp]
+\caption{Schemas under \texttt{structured/schema/}.}\label{tab:schemas}
+\centering
+\small
+\begin{tabularx}{\linewidth}{@{}lXr@{}}
+\toprule
+\textbf{Schema} & \textbf{Validates} & \textbf{Records} \\ \midrule
+\path{control.schema.json}         & EUC and process controls            & 3 \\
+\path{decision-point.schema.json}  & Gateway logic records                & 5 \\
+\path{workflow.schema.json}        & State machine for a TB workflow      & 1 \\
+\path{requirement.schema.json}     & Business-case requirement            & 1 \\
+\path{kpi.schema.json}             & KPI definitions (collection file)    & 6 \\
+\path{glossary.schema.json}        & Domain glossary                      & 1 (28 terms) \\
+\path{data-product.schema.json}    & ODPS 4.1 data-product manifest       & 1 \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\section{Control record}\label{sec:control-schema}
+
+A \texttt{control} binds a governance reference (the EUC identifier) to
+one or more workflow states. It declares type, frequency, owner, and
+the evidence location examined at audit.
+
+\begin{table}[htbp]
+\caption{\texttt{control.schema.json} fields.}\label{tab:control-fields}
+\centering
+\small
+\begin{tabularx}{\linewidth}{@{}lllX@{}}
+\toprule
+\textbf{Field} & \textbf{Type} & \textbf{Req} & \textbf{Notes} \\ \midrule
+controlId        & string  & Y & \texttt{EUC-\textit{nnn}} \\
+eucReference     & string  & N & \texttt{EX/nnn/nnnnnnn/nnnn/nnn} pattern \\
+controlObjective & string  & Y & Plain-language objective \\
+controlType      & enum    & Y & \textsc{preventive}, \textsc{detective}, \textsc{corrective} \\
+frequency        & enum    & Y & \textsc{daily}..\textsc{annually} \\
+timing           & string  & N & \texttt{M$\pm$n} phase \\
+owner            & string  & Y & GFS role or named individual \\
+evidenceLocation & string  & N & Where audit evidence lives \\
+relatedStates    & array   & Y & Workflow \texttt{stateId}s ($\ge$1) \\
+workflowRef      & string  & N & Workflow \texttt{workflowId} \\
+source\_document & object  & N & Path, optional page and sha256 \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\begin{figure}[htbp]
+\begin{lstlisting}[language=jsonx,caption={\texttt{EUC-002} variance-file
+control record (abbreviated).},label=lst:euc-002]
+{
+  "controlId": "EUC-002",
+  "eucReference": "EX/200/1579702/0001/000",
+  "controlObjective": "TB Variance Analysis file integrity and calculation accuracy",
+  "controlType": "detective",
+  "frequency": "monthly",
+  "timing": "M-2 to M+5",
+  "owner": "GFS Analyst",
+  "evidenceLocation": "Shared Drive",
+  "relatedStates": ["UPDATE_TB_DETAILS", "CALCULATE_VARIANCE", "FILTER_VARIANCES"],
+  "description": "Ensures variance calculations in the Excel working file are accurate."
+}
+\end{lstlisting}
+\end{figure}
+
+\section{Decision-point record}\label{sec:decision-point-schema}
+
+A decision point encodes an exclusive gateway: an input metric, an
+operator, a threshold (where applicable), and an enumerated list of
+outcomes. Each outcome pairs a human-readable condition with a
+machine-actionable \texttt{action} verb. The \texttt{aiAugmentation}
+block names the substitution target for the manual judgement.
+
+\begin{figure}[htbp]
+\begin{lstlisting}[language=jsonx,caption={\texttt{DP-001} material
+variance gateway.},label=lst:dp-001]
+{
+  "id": "DP-001",
+  "name": "Material Variance Check",
+  "stateRef": "CHECK_MATERIAL_VARIANCES",
+  "inputMetric": "variance_amount",
+  "operator": "exceeds_threshold",
+  "threshold": "materiality_limit",
+  "outcomes": [
+    { "condition": "Variances Are Material",  "action": "seek_commentaries" },
+    { "condition": "Variances Not Material",  "action": "proceed_to_unexplained_check" }
+  ],
+  "aiAugmentation": {
+    "opportunity": "Auto-classify variance materiality using ML threshold tuning.",
+    "dataNeeded": ["variance_amount", "account_category", "historical_thresholds"]
+  }
+}
+\end{lstlisting}
+\end{figure}
+
+\section{Workflow record}\label{sec:workflow-schema}
+
+The workflow record declares a state machine. Valid \texttt{type}
+values are \textsc{start\_event}, \textsc{end\_event}, \textsc{task},
+\textsc{gateway\_exclusive}, \textsc{gateway\_parallel}, and
+\textsc{intermediate\_event}. Each state carries optional
+\texttt{systems}, \texttt{inputs}, \texttt{outputs}, a
+\texttt{participant}, and a list of \texttt{transitions}. A transition
+in a gateway state additionally carries a \texttt{condition} string
+that matches one of the outcome labels in the associated decision
+point.
+
+\begin{table}[htbp]
+\caption{Workflow state-machine header fields.}\label{tab:workflow-fields}
+\centering
+\small
+\begin{tabularx}{\linewidth}{@{}lllX@{}}
+\toprule
+\textbf{Field} & \textbf{Type} & \textbf{Req} & \textbf{Notes} \\ \midrule
+workflowId    & string & Y & Canonical slug (\texttt{tb-review-glo}) \\
+version       & string & Y & SemVer \\
+title         & string & Y & Long name \\
+processOwner  & string & N & Named owner \\
+timeline      & array  & N & Phase / timing / description \\
+states        & array  & Y & $\ge 2$ states, including one \textsc{start\_event} and one \textsc{end\_event} \\
+dataObjects   & array  & N & Workflow-scoped artefacts \\
+participants  & array  & N & Roles and groups \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\section{Requirement record}\label{sec:requirement-schema}
+
+The requirement record captures the business case. It is scoped by a
+status enum (\textsc{draft}, \textsc{review}, \textsc{approved},
+\textsc{rejected}, \textsc{superseded}), contains executive summary,
+scope, stakeholders, process steps (each with an \texttt{aiPriority}
+enum from \textsc{low}..\textsc{critical}), decision points, KPI
+references, control references, risk assessment, and a phased
+implementation plan. The single record populated here is
+\texttt{TB-REQ-001} in state \textsc{approved}.
+
+\section{KPI record}\label{sec:kpi-schema}
+
+KPIs are stored as a collection file at
+\corpus\texttt{structured/kpis/tb-kpis.json} containing one array
+entry per KPI (\cref{tab:kpis}). Each entry is validated against
+\path{kpi.schema.json}; the wrapper is checked by
+\path{structured/validate.py}.
+
+\begin{table}[htbp]
+\caption{The six KPIs defined for the TB process.}\label{tab:kpis}
+\centering
+\small
+\begin{tabularx}{\linewidth}{@{}llXl@{}}
+\toprule
+\textbf{KPI} & \textbf{Type} & \textbf{Description} & \textbf{Target} \\ \midrule
+TB-KPI-001 & threshold  & Variance materiality threshold       & country-specific \\
+TB-KPI-002 & duration   & TB review cycle time                 & reduce via daily controls \\
+TB-KPI-003 & percentage & Commentary coverage                  & 100 \\
+TB-KPI-004 & effort     & FTE effort                           & 15--20 FTEs \\
+TB-KPI-005 & percentage & Unexplained variance rate            & 0 \\
+TB-KPI-006 & percentage & EUC control compliance               & 100 \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\section{Glossary record}
+
+One glossary record contains 28 terms drawn verbatim from the
+business case and the DOI. Category membership
+(\textsc{balance\_sheet}, \textsc{income\_statement}, \textsc{general},
+\textsc{regulatory}) is used by the GlossaryService pair-type alias
+expansion at query time.
+
+\section{Data-product record}
+
+The data-product record is an ODPS 4.1-conformant manifest. It names
+the routing policy (\texttt{vllm-only}), the data security class
+(\textsc{confidential}), the owner, the per-country view for HK, the
+system prompt, and the RAG source wiring. Consumers read this record
+to know whether a given user request is permitted to contact external
+LLM providers --- the answer for all TB artefacts is \emph{no}.
+
+\section{Enumerations}
+
+All enumerated values used in any schema or record are listed
+authoritatively in \corpus\texttt{structured/enums.yaml}.
+\Cref{tab:enums} summarises the most frequently referenced groups.
+
+\begin{table}[htbp]
+\caption{Frequently referenced enumerations.}\label{tab:enums}
+\centering
+\small
+\begin{tabularx}{\linewidth}{@{}lX@{}}
+\toprule
+\textbf{Enum} & \textbf{Values} \\ \midrule
+control\_type        & preventive, detective, corrective \\
+workflow\_state\_type & start\_event, end\_event, task, gateway\_exclusive, gateway\_parallel, intermediate\_event \\
+decision\_operator   & equals, not\_equals, exceeds\_threshold, within\_threshold, in\_set, boolean \\
+ai\_priority         & low, medium, high, critical \\
+risk\_severity       & L, M, H \\
+kpi\_measure\_type    & threshold, duration, percentage, effort, count, ratio \\
+data\_security\_class & public, internal, confidential, restricted \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\section{Validation}
+
+A local registry-based validator is provided at
+\corpus\texttt{structured/validate.py}. It walks the record
+directories, maps each to its schema via
+\path{RECORD_DIRS}, and reports per-file results. The script is
+offline: it instantiates a \texttt{referencing.Registry} loaded from
+\corpus\texttt{structured/schema/} so no network resolution is
+attempted.
+
+\begin{lstlisting}[caption={Running the validator.},label=lst:validate]
+$ python3 docs/tb/structured/validate.py
+[ok]   controls/euc-001-tb-data-extraction.json
+[ok]   controls/euc-002-variance-analysis-file.json
+[ok]   controls/euc-003-internal-review.json
+[ok]   decision-points/dp-001-material-variance.json
+...
+[ok]   corpus.json (17 items, all paths resolved)
+13/13 records validated, corpus OK
+\end{lstlisting}

@@ -1,0 +1,26 @@
+{
+  "id": "manual-recurring",
+  "schema_ref": "approval-workflow.schema.json",
+  "path": "MANUAL_RECURRING",
+  "description": "Recurring manual payment path per Activity 5 of the Bahrain AP DOI. Requires a written dispensation from the policy owner plus quarterly CFO log review.",
+  "states": [
+    { "code": "DRAFT",              "name": "Memo drafted" },
+    { "code": "DISPENSATION_OK",    "name": "Written dispensation in place" },
+    { "code": "MD_APPROVED",        "name": "MD approved" },
+    { "code": "CFO_APPROVED",       "name": "CFO approved" },
+    { "code": "LOGGED_IN_EOPS",     "name": "Logged in eOPS" },
+    { "code": "PAID",               "name": "Paid via eBBS" },
+    { "code": "QUARTERLY_REVIEWED", "name": "Quarterly CFO review complete", "terminal": true }
+  ],
+  "transitions": [
+    { "from": "DRAFT",            "to": "DISPENSATION_OK", "trigger": "Policy owner issues written dispensation", "required_role": "POLICY_OWNER" },
+    { "from": "DISPENSATION_OK",  "to": "MD_APPROVED",     "trigger": "MD signs",  "required_role": "MD" },
+    { "from": "MD_APPROVED",      "to": "CFO_APPROVED",    "trigger": "CFO signs", "required_role": "CFO" },
+    { "from": "CFO_APPROVED",     "to": "LOGGED_IN_EOPS",  "trigger": "Record created in eOPS" },
+    { "from": "LOGGED_IN_EOPS",   "to": "PAID",            "trigger": "Payment executed" },
+    { "from": "PAID",             "to": "QUARTERLY_REVIEWED", "trigger": "Quarterly CFO log retrieval and approval", "required_role": "CFO" }
+  ],
+  "delegation_of_authority": [
+    { "max_amount_currency": "BHD", "max_amount": 1000000, "required_role": "CFO" }
+  ]
+}
