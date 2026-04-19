@@ -52,6 +52,7 @@
       "description": "Standard-deviation multipliers by account category.",
       "additionalProperties": {
         "type": "object",
+        "additionalProperties": false,
         "required": [
           "warn_sigma",
           "error_sigma"

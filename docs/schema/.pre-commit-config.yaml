@@ -1,0 +1,32 @@
+# SAP OSS Schema Registry — local pre-commit hooks
+#
+# Install:
+#   pip install pre-commit
+#   pre-commit install --config docs/schema/.pre-commit-config.yaml
+#
+# Then every commit touching docs/schema/ will run the registry + fixture
+# + roadmap checks before the commit is accepted.
+
+repos:
+  - repo: local
+    hooks:
+      - id: schema-registry-check
+        name: Schema registry check
+        entry: python3 docs/schema/validate.py --registry-check
+        language: system
+        files: '^docs/schema/.*\.(json|yaml|yml)$'
+        pass_filenames: false
+
+      - id: schema-run-fixtures
+        name: Fixture validation
+        entry: python3 docs/schema/validate.py --run-fixtures
+        language: system
+        files: '^docs/schema/(.*\.schema\.json|tests/fixtures/.*)$'
+        pass_filenames: false
+
+      - id: schema-check-roadmap
+        name: Roadmap traceability check
+        entry: python3 docs/schema/validate.py --check-roadmap
+        language: system
+        files: '^docs/schema/(common/moscow\.yaml|tests/fixtures/.*)$'
+        pass_filenames: false

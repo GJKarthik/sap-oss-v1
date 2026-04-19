@@ -1,0 +1,29 @@
+{
+  "variance_id": "VAR-HKG-2026-04-1100",
+  "extract_id": "TB-HKG-2026-04",
+  "account_code": "1100",
+  "account_name": "Cash at Bank",
+  "account_category": "ASSET",
+  "finance_caption": "Cash and cash equivalents",
+  "segment": "Corporate",
+  "legal_entity": "HKG",
+  "period": "2026-04",
+  "current_balance": 1500000.00,
+  "prior_balance": 1200000.00,
+  "variance_amount": 300000.00,
+  "variance_percent": 25.0,
+  "flags": ["PERIOD_SPIKE"],
+  "journal_status": "posted",
+  "journal_ids": ["JNL-HKG-2026-04-0517"],
+  "investigation_status": "completed",
+  "confirmation_received": true,
+  "days_to_deadline": 3,
+  "is_unexplained": false,
+  "workflow_state": "DP-002-complete",
+  "metadata": {
+    "id": "VAR-HKG-2026-04-1100",
+    "created_at": "2026-05-02T10:00:00+08:00",
+    "version": "1.2.0",
+    "source": "tb/variances/HKG/2026-04.jsonl"
+  }
+}

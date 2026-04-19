@@ -1,0 +1,44 @@
+{
+  "vendor_id": "VEN-SA-000042",
+  "name_ar": "شركة النور للتجارة المحدودة",
+  "name_en": "Al-Noor Trading Co. Ltd",
+  "tax_id": "300123456700003",
+  "commercial_registration": "1010123456",
+  "country": "SA",
+  "tax_authority": "ZATCA",
+  "supplier_type": "CORPORATE",
+  "vat_registered": true,
+  "vat_registration_date": "2018-07-01",
+  "activity_code": "7020",
+  "address": {
+    "street_ar": "شارع الملك فهد",
+    "street_en": "King Fahd Road",
+    "city_ar": "الرياض",
+    "city_en": "Riyadh",
+    "region": "Riyadh Province",
+    "postal_code": "12212",
+    "country": "SA"
+  },
+  "contact": {
+    "name": "Ahmed Al-Saud",
+    "email": "ap@alnoor.sa",
+    "phone": "+966-11-555-0123",
+    "role": "AP Manager"
+  },
+  "bank_details": {
+    "bank_name": "Al Rajhi Bank",
+    "account_number": "123456789",
+    "iban": "SA0380000000608010167519",
+    "swift_bic": "RJHISARI"
+  },
+  "payment_terms": "NET30",
+  "currency": "SAR",
+  "workflow_preference": "po-eproc",
+  "is_active": true,
+  "metadata": {
+    "id": "VEN-SA-000042",
+    "created_at": "2018-07-01T00:00:00+00:00",
+    "version": "1.2.0",
+    "source": "ap/vendors/VEN-SA-000042.json"
+  }
+}

@@ -1,0 +1,65 @@
+{
+  "extract_id": "TB-HKG-2026-04",
+  "legal_entity": "HKG",
+  "legal_entity_name": "SAP Hong Kong Ltd",
+  "period": "2026-04",
+  "period_end_date": "2026-04-30",
+  "currency": "HKD",
+  "source_system": "S4HANA",
+  "accounts": [
+    {
+      "account_code": "1100",
+      "account_name": "Cash at Bank",
+      "account_category": "ASSET",
+      "finance_caption": "Cash and cash equivalents",
+      "segment": "Corporate",
+      "department": "Treasury",
+      "debit": 1500000.00,
+      "credit": 0.00,
+      "net_balance": 1500000.00,
+      "prior_period_balance": 1200000.00,
+      "variance": 300000.00,
+      "variance_percent": 25.0,
+      "is_new_account": false,
+      "is_intercompany": false
+    },
+    {
+      "account_code": "4000",
+      "account_name": "Service Revenue",
+      "account_category": "REVENUE",
+      "finance_caption": "Revenue",
+      "segment": "Services",
+      "debit": 0.00,
+      "credit": 1500000.00,
+      "net_balance": -1500000.00,
+      "prior_period_balance": -1200000.00,
+      "variance": -300000.00,
+      "variance_percent": 25.0,
+      "is_new_account": false,
+      "is_intercompany": false
+    }
+  ],
+  "totals": {
+    "total_debits": 1500000.00,
+    "total_credits": 1500000.00,
+    "is_balanced": true,
+    "out_of_balance_amount": 0.00,
+    "account_count": 2,
+    "non_zero_account_count": 2
+  },
+  "extraction_metadata": {
+    "extracted_at": "2026-05-02T09:15:00+08:00",
+    "source_file": "HKG_TB review April'26.xlsm",
+    "source_sheet": "TB_Raw",
+    "row_count": 2,
+    "validation_status": "valid",
+    "validation_messages": []
+  },
+  "master_data_version": "2026.04",
+  "metadata": {
+    "id": "TB-HKG-2026-04",
+    "created_at": "2026-05-02T09:15:00+08:00",
+    "version": "1.2.0",
+    "source": "tb/extracts/HKG/2026-04.json"
+  }
+}

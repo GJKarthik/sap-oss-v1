@@ -37,6 +37,20 @@
     "output": {
       "$ref": "#/definitions/output_config",
       "description": "Output configuration"
+    },
+    "reproducibility": {
+      "$ref": "https://sap-oss.github.io/schema/common/base-types.schema.json#/definitions/ReproducibilityManifest",
+      "description": "Reference-run manifest (see Simula Ch 10 M06). Pins commit/tag/seed so downstream consumers can reproduce the canonical dataset."
+    },
+    "hana_spatial_policy": {
+      "type": "string",
+      "enum": ["warn", "strict", "skip"],
+      "default": "warn",
+      "description": "spatial_unknown_srid_policy (Simula Ch 10 M05). warn = log and continue (default), strict = reject record, skip = drop record silently (explicit opt-in only)."
+    },
+    "roadmap": {
+      "$ref": "https://sap-oss.github.io/schema/common/base-types.schema.json#/definitions/RoadmapReference",
+      "description": "Which roadmap milestones this config instance supports."
     }
   },
   "definitions": {

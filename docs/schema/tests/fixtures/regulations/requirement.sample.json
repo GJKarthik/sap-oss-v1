@@ -1,0 +1,53 @@
+{
+  "requirement_id": "REG-MGF-2.1.2-002",
+  "regulation_id": "reg-mas-mgf-agentic-ai-v1",
+  "section_reference": "2.1.2",
+  "description": "Financial institution shall record human-in-the-loop authorisation for every agentic action that creates or modifies a customer-facing financial obligation.",
+  "obligation_level": "must",
+  "status": "partial",
+  "status_note": "Partial: TB domain covered via REG-AUDIT-001 reservation pattern. AP domain pending Arabic AP regulations integration (flips to compliant on REG-INTG-AP-001 delivery, see Regulations Ch 11 Should S01).",
+  "status_marker": "*",
+  "flip_trigger": {
+    "domain": "regulations",
+    "milestone_id": "S01",
+    "ticket": "REG-INTG-AP-001",
+    "from_status": "partial",
+    "to_status": "compliant"
+  },
+  "implementation": {
+    "primary": "src/services/audit/reserve_agent_action.py",
+    "code_files": [
+      "src/services/audit/reserve_agent_action.py",
+      "src/services/audit/complete_agent_action.py"
+    ],
+    "spec_sections": [
+      "regulations-spec/chapters/03-mgf-framework.tex#sec:reserve-before-action",
+      "regulations-spec/chapters/11-project-roadmap.tex#M02"
+    ],
+    "is_concrete": true
+  },
+  "verification": {
+    "primary": "tests/integration/regulations/test_audit_reservation.py",
+    "test_files": [
+      "tests/integration/regulations/test_audit_reservation.py"
+    ],
+    "aiverify_plugin": "aiverify.human_oversight.v1",
+    "is_automated": true
+  },
+  "applicability": ["tb", "arabic"],
+  "last_reviewed": "2026-04-19",
+  "roadmap": {
+    "domain": "regulations",
+    "milestones": ["M02", "S01"],
+    "priority": "Must",
+    "requirement_ids": ["REG-MGF-2.1.2-002"],
+    "roadmap_chapter": "Ch 11"
+  },
+  "metadata": {
+    "id": "REG-MGF-2_1_2-002",
+    "created_at": "2026-04-01T09:00:00+00:00",
+    "updated_at": "2026-04-19T08:00:00+00:00",
+    "version": "1.2.0",
+    "source": "docs/latex/specs/regulations/chapters/07-references.tex"
+  }
+}

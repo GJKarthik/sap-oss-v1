@@ -1,0 +1,68 @@
+{
+  "taxonomy_id": "tax-trial-balance-v1",
+  "name": "trial_balance_query_taxonomy",
+  "description": "Query-type taxonomy for TB variance commentary training data.",
+  "domain": "trial_balance",
+  "schema_context": "docs/schema/tb/tb-extract.schema.json",
+  "root": {
+    "node_id": "root",
+    "name": "trial_balance_queries",
+    "node_type": "ROOT",
+    "level": 0,
+    "path": "root",
+    "children": [
+      {
+        "node_id": "by_time",
+        "name": "time_granularity",
+        "node_type": "FACTOR",
+        "level": 1,
+        "path": "root/by_time",
+        "children": [
+          {"node_id": "period", "name": "period_comparison", "node_type": "LEAF", "level": 2, "path": "root/by_time/period", "examples": ["MoM", "QoQ", "YoY"]},
+          {"node_id": "trailing", "name": "trailing_windows", "node_type": "LEAF", "level": 2, "path": "root/by_time/trailing", "examples": ["T3M", "T12M"]}
+        ]
+      },
+      {
+        "node_id": "by_flag",
+        "name": "variance_flag",
+        "node_type": "FACTOR",
+        "level": 1,
+        "path": "root/by_flag",
+        "children": [
+          {"node_id": "spike", "name": "period_spike", "node_type": "LEAF", "level": 2, "path": "root/by_flag/spike"},
+          {"node_id": "flip", "name": "sign_flip", "node_type": "LEAF", "level": 2, "path": "root/by_flag/flip"}
+        ]
+      }
+    ]
+  },
+  "statistics": {
+    "total_nodes": 7,
+    "leaf_count": 4,
+    "factor_count": 2,
+    "max_depth": 2,
+    "avg_branching_factor": 2.5,
+    "level_distribution": {"0": 1, "1": 2, "2": 4}
+  },
+  "generation_metadata": {
+    "method": "llm_generated",
+    "model": "Qwen/Qwen3.5-35B",
+    "best_of_n": 5,
+    "target_depth": 3,
+    "generated_at": "2026-04-15T12:00:00+00:00",
+    "source_factors": ["time_granularity", "variance_flag"],
+    "seed": 20251115
+  },
+  "quality_metrics": {
+    "completeness": 0.82,
+    "soundness": 0.94,
+    "expert_taxonomy_path": "tests/fixtures/simula/expert_taxonomy.json",
+    "evaluated_at": "2026-04-15T13:00:00+00:00",
+    "passed_quality_gate": true
+  },
+  "metadata": {
+    "id": "tax-trial-balance-v1",
+    "created_at": "2026-04-15T12:00:00+00:00",
+    "version": "1.2.0",
+    "source": "simula/outputs/taxonomy-tb.json"
+  }
+}

@@ -1,0 +1,86 @@
+name: Schema Validation
+
+on:
+  pull_request:
+    paths:
+      - 'docs/schema/**'
+      - '.github/workflows/schema-validation.yaml'
+  push:
+    branches:
+      - main
+    paths:
+      - 'docs/schema/**'
+
+jobs:
+  validate:
+    name: Validate unified schema registry
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+          cache-dependency-path: docs/schema/requirements.txt
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r docs/schema/requirements.txt
+
+      # --- Layer 1: every schema declared in the registry exists and is valid JSON ---
+      - name: Registry check
+        run: python3 docs/schema/validate.py --registry-check
+
+      # --- Layer 2: every schema follows SAP-OSS conventions (strict-by-default, $id, etc.) ---
+      - name: Per-schema conventions check
+        run: |
+          set -e
+          # Use `find` (not bash globstar) for portability across runners.
+          while IFS= read -r -d '' f; do
+            echo "--- $f"
+            python3 docs/schema/validate.py --validate-schema "$f"
+          done < <(find docs/schema -name '*.schema.json' -print0)
+        shell: bash
+
+      # --- Layer 3: every fixture validates against its schema ---
+      - name: Fixture validation
+        run: python3 docs/schema/validate.py --run-fixtures
+
+      # --- Layer 4: every RoadmapReference resolves against moscow.yaml ---
+      - name: Roadmap traceability check
+        run: python3 docs/schema/validate.py --check-roadmap
+
+      # --- Combined final gate (re-runs to produce consolidated JSON output) ---
+      - name: All-in-one check
+        run: python3 docs/schema/validate.py --all
+
+  lint:
+    name: Lint JSON / YAML syntax
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install jq + yamllint
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y jq yamllint
+
+      - name: jq parse all JSON schemas
+        run: |
+          set -e
+          find docs/schema -name '*.json' -print0 | xargs -0 -I{} sh -c 'jq empty "{}" && echo "ok {}"'
+
+      - name: yamllint on enums/moscow
+        run: |
+          yamllint -d '{extends: default, rules: {line-length: disable, truthy: disable, document-start: disable, indentation: {indent-sequences: consistent}}}' \
+            docs/schema/common/enums.yaml \
+            docs/schema/common/moscow.yaml \
+            docs/schema/cross-document-addendum.yaml

@@ -83,6 +83,7 @@
           "type": "object",
           "additionalProperties": {
             "type": "object",
+            "additionalProperties": false,
             "properties": {
               "total": {
                 "type": "integer"

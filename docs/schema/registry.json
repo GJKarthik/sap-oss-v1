@@ -3,9 +3,9 @@
   "$id": "https://sap-oss.github.io/schema/registry.json",
   "title": "SAP OSS Schema Registry",
   "description": "Master index of all JSON Schemas across domains",
-  "version": "1.1.0",
-  "generated": "2026-04-18",
-  "updated": "2026-04-18T10:47:00+08:00",
+  "version": "1.2.0",
+  "generated": "2026-04-19",
+  "updated": "2026-04-19T10:00:00+08:00",
 
   "domains": {
     "common": {
@@ -15,15 +15,24 @@
           "id": "base-types",
           "path": "common/base-types.schema.json",
           "title": "Common Base Types",
-          "status": "stable"
+          "status": "stable",
+          "exports": [
+            "MoscowPriority",
+            "MilestoneId",
+            "RequirementId",
+            "RoadmapReference",
+            "ReproducibilityManifest"
+          ]
         }
       ],
-      "enums": "common/enums.yaml"
+      "enums": "common/enums.yaml",
+      "moscow": "common/moscow.yaml"
     },
 
     "arabic": {
       "description": "Arabic AP Invoice Processing domain",
-      "specification": "docs/docx/specs/arabic-ap-spec.docx",
+      "specification": "docs/latex/specs/arabic/arabic-ap-spec.tex",
+      "roadmap_chapter": "Chapter 8 (MoSCoW project roadmap)",
       "schemas": [
         {
           "id": "invoice",
@@ -57,12 +66,17 @@
         "common/enums.yaml#/countries",
         "common/enums.yaml#/vat_category",
         "common/enums.yaml#/supplier_type"
+      ],
+      "fixtures": [
+        "tests/fixtures/arabic/invoice.sample.json",
+        "tests/fixtures/arabic/vendor.sample.json"
       ]
     },
 
     "tb": {
       "description": "Trial Balance Review domain",
-      "specification": "docs/docx/specs/tb-review-spec.docx",
+      "specification": "docs/latex/specs/tb/tb-review-spec.tex",
+      "roadmap_chapter": "Chapter 10 (MoSCoW project roadmap)",
       "legacy_location": "docs/tb/machine-readable/",
       "schemas": [
         {
@@ -112,12 +126,17 @@
         "common/enums.yaml#/account_category",
         "common/enums.yaml#/variance_flag",
         "common/enums.yaml#/decision_point"
+      ],
+      "fixtures": [
+        "tests/fixtures/tb/tb-extract.sample.json",
+        "tests/fixtures/tb/variance-record.sample.json"
       ]
     },
 
     "simula": {
       "description": "Simula Training Data Generation domain",
-      "specification": "docs/docx/specs/simula-training-spec.docx",
+      "specification": "docs/latex/specs/simula/simula-training-spec.tex",
+      "roadmap_chapter": "Chapter 10 (MoSCoW project roadmap)",
       "schemas": [
         {
           "id": "taxonomy",
@@ -145,7 +164,8 @@
           "path": "simula/config.schema.json",
           "title": "Pipeline Configuration",
           "status": "stable",
-          "source_spec_section": "Chapter 6"
+          "source_spec_section": "Chapter 6",
+          "includes": ["ReproducibilityManifest (M06 reference run)"]
         },
         {
           "id": "meta-prompt",
@@ -158,13 +178,19 @@
       "enums": [
         "common/enums.yaml#/taxonomy_node_type",
         "common/enums.yaml#/complexity_level",
-        "common/enums.yaml#/critic_verdict"
+        "common/enums.yaml#/critic_verdict",
+        "common/enums.yaml#/spatial_srid_policy"
+      ],
+      "fixtures": [
+        "tests/fixtures/simula/config.sample.json",
+        "tests/fixtures/simula/taxonomy.sample.json"
       ]
     },
 
     "regulations": {
       "description": "AI Governance and Compliance domain",
-      "specification": "docs/docx/specs/regulations-spec.docx",
+      "specification": "docs/latex/specs/regulations/regulations-spec.tex",
+      "roadmap_chapter": "Chapter 7 (MoSCoW project roadmap)",
       "schemas": [
         {
           "id": "regulation",
@@ -178,7 +204,8 @@
           "path": "regulations/requirement.schema.json",
           "title": "Requirement with Status",
           "status": "stable",
-          "source_spec_section": "Chapter 7"
+          "source_spec_section": "Chapter 7",
+          "includes": ["flip_trigger (partial \u2192 compliant)"]
         },
         {
           "id": "conformance-tool",
@@ -197,15 +224,21 @@
       ],
       "enums": [
         "common/enums.yaml#/requirement_status",
+        "common/enums.yaml#/requirement_status_marker",
         "common/enums.yaml#/obligation_level",
-        "common/enums.yaml#/jurisdiction"
+        "common/enums.yaml#/jurisdiction",
+        "common/enums.yaml#/moscow_priority"
+      ],
+      "fixtures": [
+        "tests/fixtures/regulations/requirement.sample.json",
+        "tests/fixtures/regulations/regulation.sample.json"
       ]
     }
   },
 
   "migration": {
     "status": "complete",
-    "completed_date": "2026-04-18",
+    "completed_date": "2026-04-19",
     "completed": [
       "Registry structure created",
       "Common base types defined",
@@ -214,7 +247,13 @@
       "TB schemas: Converted to JSON Schema",
       "Simula schemas: Extracted from spec",
       "Regulations schemas: Consolidated",
-      "Unified validator implementation"
+      "Unified validator implementation",
+      "additionalProperties: false enforced across 20 schemas",
+      "MoSCoW traceability (common/moscow.yaml + RoadmapReference) added",
+      "referencing library migration (RefResolver deprecation fix)",
+      "pytest integration suite + 8 canonical fixtures",
+      "GitHub Actions CI workflow + pre-commit hooks",
+      "CHANGELOG.md + MIGRATION.md published"
     ],
     "pending": []
   },
@@ -236,12 +275,36 @@
       "--domain <name>": "Validate specific domain",
       "--schema <name>": "Schema file within domain",
       "--file <path>": "Data file to validate",
-      "--validate-schema <path>": "Validate a schema file itself",
+      "--validate-schema <path>": "Validate a schema file itself (meta-schema check)",
+      "--run-fixtures": "Validate every tests/fixtures/**/*.sample.json against its schema",
+      "--check-roadmap": "Verify every RoadmapReference resolves against common/moscow.yaml",
+      "--all": "Run registry-check + run-fixtures + check-roadmap",
       "--json": "Output results as JSON"
     },
     "examples": [
+      "python3 docs/schema/validate.py --all",
       "python3 docs/schema/validate.py --registry-status",
-      "python3 docs/schema/validate.py --domain arabic --schema invoice.schema.json --file data.json"
+      "python3 docs/schema/validate.py --domain arabic --schema invoice.schema.json --file data.json",
+      "pytest docs/schema/tests/integration/ -v"
     ]
+  },
+
+  "guardrails": {
+    "ci_workflow": ".github/workflows/schema-validation.yaml",
+    "pre_commit_config": "docs/schema/.pre-commit-config.yaml",
+    "requirements": "docs/schema/requirements.txt"
+  },
+
+  "traceability": {
+    "moscow_source": "common/moscow.yaml",
+    "definition_source": "common/base-types.schema.json#/definitions/RoadmapReference",
+    "enforced_by": "validate.py --check-roadmap",
+    "worked_example": {
+      "requirement_id": "REG-MGF-2.1.2-002",
+      "fixture": "tests/fixtures/regulations/requirement.sample.json",
+      "status": "partial",
+      "flips_to": "compliant",
+      "flip_milestone": "arabic/S01 (REG-INTG-AP-001)"
+    }
   }
 }

@@ -1,0 +1,12 @@
+# SAP OSS Schema Registry — validator dependencies
+#
+# Usage:
+#   pip install -r docs/schema/requirements.txt
+#   python3 docs/schema/validate.py --registry-check
+#
+# Python 3.10+ required (referencing library drops 3.9).
+
+jsonschema>=4.18.0,<5.0        # Draft-07 validation + new Referencing API
+referencing>=0.30.0            # Replaces deprecated jsonschema.RefResolver
+pyyaml>=6.0                    # YAML loading for enums/moscow/fixtures
+pytest>=7.4.0                  # Integration test runner (tests/integration/)
