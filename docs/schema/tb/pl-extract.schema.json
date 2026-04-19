@@ -5,6 +5,7 @@
   "description": "Schema for Profit & Loss extract records from PSGL/SC Bridge",
   "type": "object",
   "required": ["extract_id", "legal_entity", "period", "line_items", "totals"],
+  "additionalProperties": false,
   "properties": {
     "extract_id": {
       "type": "string",
@@ -70,6 +71,7 @@
     "pl_line_item": {
       "type": "object",
       "required": ["account_code", "description", "actual_amount"],
+      "additionalProperties": false,
       "properties": {
         "account_code": {
           "type": "string",
@@ -153,6 +155,7 @@
     },
     "pl_totals": {
       "type": "object",
+      "additionalProperties": false,
       "properties": {
         "total_revenue": {
           "type": "number",
@@ -202,6 +205,7 @@
     },
     "comparative_data": {
       "type": "object",
+      "additionalProperties": false,
       "properties": {
         "prior_period": {
           "type": "string",
@@ -225,6 +229,7 @@
     },
     "extraction_metadata": {
       "type": "object",
+      "additionalProperties": false,
       "properties": {
         "extracted_at": {
           "type": "string",

@@ -3,7 +3,7 @@
   "$id": "https://sap-oss.github.io/schema/common/base-types.schema.json",
   "title": "SAP OSS Common Base Types",
   "description": "Shared type definitions used across all domain schemas",
-  "version": "1.0.0",
+  "version": "1.1.0",
   
   "definitions": {
     "Metadata": {
@@ -33,9 +33,54 @@
         "source": {
           "type": "string",
           "description": "Origin system or file path"
+        },
+        "traceability": {
+          "$ref": "#/definitions/RoadmapTraceability",
+          "description": "MoSCoW and milestone traceability (added v1.1.0)"
         }
       },
-      "required": ["id"]
+      "required": ["id"],
+      "additionalProperties": false
+    },
+    
+    "RoadmapTraceability": {
+      "type": "object",
+      "description": "MoSCoW priority and milestone traceability for requirements alignment. Added to address review gap: 'Zero MoSCoW traceability'",
+      "properties": {
+        "milestone_ids": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^M0[1-9]$",
+            "description": "Milestone ID (M01-M09)"
+          },
+          "description": "Associated milestone IDs from roadmap (see common/moscow.yaml)"
+        },
+        "requirement_ids": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^(ARA|TB|SIM|REG)-[A-Z]{2,4}-\\d+\\.\\d+(\\.\\d+)?-\\d{3}$"
+          },
+          "description": "Linked requirement IDs (e.g., REG-MGF-2.1.2-002)"
+        },
+        "moscow_priority": {
+          "type": "string",
+          "enum": ["Must", "Should", "Could", "Won't"],
+          "description": "MoSCoW priority classification"
+        },
+        "roadmap_version": {
+          "type": "string",
+          "pattern": "^\\d{4}-Q[1-4]$",
+          "description": "Roadmap version this traces to (e.g., 2026-Q2)"
+        },
+        "domain": {
+          "type": "string",
+          "enum": ["arabic", "tb", "simula", "regulations"],
+          "description": "Domain this traceability belongs to"
+        }
+      },
+      "additionalProperties": false
     },
     
     "Currency": {
@@ -52,7 +97,8 @@
           "description": "ISO 4217 currency code (e.g., USD, SAR, BHD)"
         }
       },
-      "required": ["amount", "currency"]
+      "required": ["amount", "currency"],
+      "additionalProperties": false
     },
     
     "DateRange": {
@@ -70,7 +116,8 @@
           "description": "End date (YYYY-MM-DD), null if ongoing"
         }
       },
-      "required": ["start"]
+      "required": ["start"],
+      "additionalProperties": false
     },
     
     "TaxIdentifier": {
@@ -90,7 +137,8 @@
           "$ref": "#/definitions/CountryCode"
         }
       },
-      "required": ["number", "country"]
+      "required": ["number", "country"],
+      "additionalProperties": false
     },
     
     "CountryCode": {
@@ -124,7 +172,8 @@
           "$ref": "#/definitions/CountryCode"
         }
       },
-      "required": ["name"]
+      "required": ["name"],
+      "additionalProperties": false
     },
     
     "Status": {
@@ -158,6 +207,83 @@
       "type": "string",
       "pattern": "^[a-f0-9]{64}$",
       "description": "SHA-256 hash (lowercase hex)"
+    },
+    
+    "WorkedExampleManifest": {
+      "type": "object",
+      "description": "Reproducibility manifest for worked examples (addresses Simula M06 gap)",
+      "properties": {
+        "commit_hash": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{7,40}$",
+          "description": "Git commit hash (short or full)"
+        },
+        "git_tag": {
+          "type": "string",
+          "description": "Git tag for the release"
+        },
+        "seed": {
+          "type": "integer",
+          "description": "Random seed for reproducibility"
+        },
+        "timestamp": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Generation timestamp"
+        },
+        "model_version": {
+          "type": "string",
+          "description": "Model version used for generation"
+        },
+        "expected_outputs": {
+          "type": "object",
+          "description": "Expected output metrics for validation",
+          "properties": {
+            "example_count": {
+              "type": "integer",
+              "description": "Expected number of examples"
+            },
+            "acceptance_rate": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1,
+              "description": "Expected acceptance rate"
+            },
+            "coverage_score": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1,
+              "description": "Expected taxonomy coverage"
+            },
+            "diversity_score": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1,
+              "description": "Expected diversity score"
+            }
+          },
+          "additionalProperties": false
+        },
+        "variance_tolerance": {
+          "type": "object",
+          "description": "Acceptable variance from expected outputs",
+          "properties": {
+            "count_percent": {
+              "type": "number",
+              "default": 5,
+              "description": "Acceptable count variance (±%)"
+            },
+            "metric_absolute": {
+              "type": "number",
+              "default": 0.02,
+              "description": "Acceptable metric variance (±)"
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "required": ["commit_hash", "seed"],
+      "additionalProperties": false
     }
   }
 }

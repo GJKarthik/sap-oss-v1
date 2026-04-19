@@ -5,6 +5,7 @@
   "description": "Schema for AI-generated commentary drafts from Stage 3 of TB pipeline",
   "type": "object",
   "required": ["draft_id", "variance_id", "draft_text", "generation_metadata"],
+  "additionalProperties": false,
   "properties": {
     "draft_id": {
       "type": "string",
@@ -73,6 +74,7 @@
     "draft_sections": {
       "type": "object",
       "description": "Structured commentary sections",
+      "additionalProperties": false,
       "properties": {
         "variance_summary": {
           "type": "string",
@@ -106,6 +108,7 @@
     "generation_metadata": {
       "type": "object",
       "required": ["model", "generated_at"],
+      "additionalProperties": false,
       "properties": {
         "model": {
           "type": "string",
@@ -151,6 +154,7 @@
     "rag_context": {
       "type": "object",
       "description": "RAG retrieval context per TB spec Section 3.3",
+      "additionalProperties": false,
       "properties": {
         "retrieval_source": {
           "type": "string",
@@ -177,6 +181,7 @@
     },
     "rag_chunk": {
       "type": "object",
+      "additionalProperties": false,
       "properties": {
         "chunk_id": {
           "type": "string",
@@ -209,6 +214,7 @@
     "review_details": {
       "type": "object",
       "description": "Human review details for EUC-002 compliance",
+      "additionalProperties": false,
       "properties": {
         "reviewer": {
           "type": "string",

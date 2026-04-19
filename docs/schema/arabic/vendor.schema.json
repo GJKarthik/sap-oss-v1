@@ -5,6 +5,7 @@
   "description": "Schema for vendor/supplier master records in Arabic AP processing",
   "type": "object",
   "required": ["vendor_id", "name_ar", "country", "supplier_type"],
+  "additionalProperties": false,
   "properties": {
     "vendor_id": {
       "type": "string",
@@ -93,6 +94,7 @@
   "definitions": {
     "address": {
       "type": "object",
+      "additionalProperties": false,
       "properties": {
         "street_ar": {
           "type": "string",
@@ -127,6 +129,7 @@
     },
     "contact": {
       "type": "object",
+      "additionalProperties": false,
       "properties": {
         "name": {
           "type": "string",
@@ -149,6 +152,7 @@
     },
     "bank_details": {
       "type": "object",
+      "additionalProperties": false,
       "properties": {
         "bank_name": {
           "type": "string",

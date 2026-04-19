@@ -5,6 +5,7 @@
   "description": "Schema for Arabic AP invoice records extracted via OCR and AI pipeline",
   "type": "object",
   "required": ["invoice_id", "document_kind", "seller", "buyer", "totals", "metadata"],
+  "additionalProperties": false,
   "properties": {
     "invoice_id": {
       "type": "string",
@@ -99,6 +100,7 @@
     "party": {
       "type": "object",
       "required": ["name_ar"],
+      "additionalProperties": false,
       "properties": {
         "name_ar": {
           "type": "string",
@@ -134,6 +136,7 @@
     "line_item": {
       "type": "object",
       "required": ["description_ar", "quantity", "unit_price"],
+      "additionalProperties": false,
       "properties": {
         "line_number": {
           "type": "integer",
@@ -178,6 +181,7 @@
     "totals": {
       "type": "object",
       "required": ["gross"],
+      "additionalProperties": false,
       "properties": {
         "subtotal": {
           "type": "number",
@@ -203,6 +207,7 @@
     },
     "signature": {
       "type": "object",
+      "additionalProperties": false,
       "properties": {
         "kind": {
           "type": "string",
@@ -227,6 +232,7 @@
     "source_document": {
       "type": "object",
       "required": ["path", "sha256"],
+      "additionalProperties": false,
       "properties": {
         "path": {
           "type": "string",

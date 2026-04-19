@@ -4,6 +4,7 @@
   "title": "Meta-Prompt Record",
   "description": "Schema for meta-prompts used in Simula training data generation (Chapter 5)",
   "type": "object",
+  "additionalProperties": false,
   "required": ["meta_prompt_id", "mix", "prompt_text"],
   "properties": {
     "meta_prompt_id": {
@@ -45,7 +46,8 @@
   "definitions": {
     "mix_node": {
       "type": "object",
-      "required": ["taxonomy_id", "node_path"],
+      "additionalProperties": false,
+  "required": ["taxonomy_id", "node_path"],
       "properties": {
         "taxonomy_id": {
           "type": "string",

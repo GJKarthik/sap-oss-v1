@@ -4,6 +4,7 @@
   "title": "Conformance Tool Record",
   "description": "Schema for conformance testing tools (AI Verify, Moonshot)",
   "type": "object",
+  "additionalProperties": false,
   "required": ["tool_id", "name", "tool_type"],
   "properties": {
     "tool_id": {

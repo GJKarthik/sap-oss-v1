@@ -1,0 +1,234 @@
+# =============================================================================
+# MoSCoW Priority and Milestone Traceability Enums
+# =============================================================================
+# Added April 2026 to address schema review gap:
+# "Zero MoSCoW traceability — no milestone IDs (M01–M09 per domain)"
+#
+# This file provides:
+# 1. MoSCoW priority enum aligned with LaTeX spec traceability
+# 2. Per-domain milestone IDs (M01-M09) matching roadmap
+# 3. Requirement ID patterns for cross-referencing
+# =============================================================================
+
+version: "1.0.0"
+last_updated: "2026-04-19"
+
+# -----------------------------------------------------------------------------
+# MoSCoW Priority Classification
+# -----------------------------------------------------------------------------
+# Standard MoSCoW prioritization for requirements traceability
+# Reference: LaTeX specs use these in roadmap tables
+moscow_priority:
+  description: MoSCoW prioritization for requirements
+  values:
+    - Must      # Non-negotiable for release; blocking if absent
+    - Should    # Important but not blocking; workaround possible
+    - Could     # Desirable enhancement; implement if time permits
+    - Won't     # Explicitly excluded from current scope
+
+# -----------------------------------------------------------------------------
+# Domain-Specific Milestone Identifiers
+# -----------------------------------------------------------------------------
+# Each domain has milestones M01-M09 mapped to roadmap phases
+# These align with the LaTeX spec roadmap tables
+
+milestones:
+  arabic:
+    description: Arabic AP Invoice Processing milestones
+    values:
+      M01:
+        name: "OCR Foundation"
+        description: "Azure Document Intelligence integration, Arabic text extraction"
+        target_quarter: "Q1 2026"
+      M02:
+        name: "Field Extraction"
+        description: "Invoice field extraction with confidence scoring"
+        target_quarter: "Q1 2026"
+      M03:
+        name: "VAT Rule Engine"
+        description: "Country-specific VAT classification (SA, EG, BH, QA)"
+        target_quarter: "Q2 2026"
+      M04:
+        name: "Translation Pipeline"
+        description: "Arabic-to-English translation for audit trail"
+        target_quarter: "Q2 2026"
+      M05:
+        name: "Human-in-Loop UI"
+        description: "Review dashboard for low-confidence extractions"
+        target_quarter: "Q2 2026"
+      M06:
+        name: "SAP Integration"
+        description: "S/4HANA posting integration"
+        target_quarter: "Q3 2026"
+      M07:
+        name: "Compliance Reporting"
+        description: "ZATCA/ETA compliance reports"
+        target_quarter: "Q3 2026"
+      M08:
+        name: "Performance Optimization"
+        description: "Batch processing, SLA compliance"
+        target_quarter: "Q4 2026"
+      M09:
+        name: "Production Hardening"
+        description: "Security audit, disaster recovery"
+        target_quarter: "Q4 2026"
+
+  tb:
+    description: Trial Balance Review milestones
+    values:
+      M01:
+        name: "Data Ingestion"
+        description: "TB/PL Excel extraction, HANA staging"
+        target_quarter: "Q1 2026"
+      M02:
+        name: "Variance Detection"
+        description: "Statistical anomaly detection (3σ, MAD, percentile)"
+        target_quarter: "Q1 2026"
+      M03:
+        name: "Commentary Generation"
+        description: "LLM-based commentary drafts"
+        target_quarter: "Q2 2026"
+      M04:
+        name: "Decision Points"
+        description: "DP-001 through DP-005 workflow automation"
+        target_quarter: "Q2 2026"
+      M05:
+        name: "Entity Parameters"
+        description: "234 entity materiality thresholds"
+        target_quarter: "Q2 2026"
+      M06:
+        name: "Evidence Folder"
+        description: "Automated evidence collection"
+        target_quarter: "Q3 2026"
+      M07:
+        name: "BSS Risk Integration"
+        description: "Risk assessment linkage"
+        target_quarter: "Q3 2026"
+      M08:
+        name: "Month-End Automation"
+        description: "M+4 deadline tracking, alerts"
+        target_quarter: "Q4 2026"
+      M09:
+        name: "Audit Ready"
+        description: "SOX/ISAE compliance documentation"
+        target_quarter: "Q4 2026"
+
+  simula:
+    description: Simula Training Data Generation milestones
+    values:
+      M01:
+        name: "Taxonomy Foundation"
+        description: "Hierarchical taxonomy structure"
+        target_quarter: "Q1 2026"
+      M02:
+        name: "Example Generation"
+        description: "Base example generation pipeline"
+        target_quarter: "Q1 2026"
+      M03:
+        name: "HANA Schema Registry"
+        description: "Schema metadata for generation"
+        target_quarter: "Q1 2026"
+      M04:
+        name: "Complexity Scoring"
+        description: "ELO-based difficulty ranking"
+        target_quarter: "Q2 2026"
+      M05:
+        name: "Double Critic"
+        description: "Quality filtering with dual critic"
+        target_quarter: "Q2 2026"
+      M06:
+        name: "Worked Example"
+        description: "100K example generation (commit b8d40a1, tag simula-v1.2-worked-example, seed 20251115)"
+        target_quarter: "Q2 2026"
+        manifest:
+          commit_hash: "b8d40a1"
+          git_tag: "simula-v1.2-worked-example"
+          seed: 20251115
+      M07:
+        name: "Coverage Analysis"
+        description: "Taxonomy coverage metrics"
+        target_quarter: "Q3 2026"
+      M08:
+        name: "Diversity Optimization"
+        description: "Embedding-based diversity tuning"
+        target_quarter: "Q3 2026"
+      M09:
+        name: "Production Pipeline"
+        description: "Scalable generation infrastructure"
+        target_quarter: "Q4 2026"
+
+  regulations:
+    description: AI Governance and Compliance milestones
+    values:
+      M01:
+        name: "Corpus Ingestion"
+        description: "MGF, AI Verify, Moonshot document parsing"
+        target_quarter: "Q1 2026"
+      M02:
+        name: "Requirement Extraction"
+        description: "Regulatory requirement identification"
+        target_quarter: "Q1 2026"
+      M03:
+        name: "Status Tracking"
+        description: "Implementation status per requirement"
+        target_quarter: "Q2 2026"
+      M04:
+        name: "Coverage Matrix"
+        description: "Cross-domain requirement coverage"
+        target_quarter: "Q2 2026"
+      M05:
+        name: "Conformance Tools"
+        description: "AI Verify plugin integration"
+        target_quarter: "Q2 2026"
+      M06:
+        name: "Moonshot Benchmarks"
+        description: "Red-teaming benchmark integration"
+        target_quarter: "Q3 2026"
+      M07:
+        name: "Gap Analysis"
+        description: "Automated gap identification"
+        target_quarter: "Q3 2026"
+      M08:
+        name: "Remediation Tracking"
+        description: "Gap closure workflow"
+        target_quarter: "Q4 2026"
+      M09:
+        name: "Audit Package"
+        description: "Regulator-ready documentation"
+        target_quarter: "Q4 2026"
+
+# -----------------------------------------------------------------------------
+# Requirement ID Patterns
+# -----------------------------------------------------------------------------
+# Defines the format for requirement IDs used in traceability
+requirement_id_patterns:
+  description: Regex patterns for requirement IDs by domain
+  patterns:
+    arabic:
+      pattern: "^ARA-[A-Z]{2,4}-\\d+\\.\\d+(\\.\\d+)?-\\d{3}$"
+      example: "ARA-OCR-2.1.1-001"
+      description: "Arabic domain requirement ID"
+    tb:
+      pattern: "^TB-[A-Z]{2,4}-\\d+\\.\\d+(\\.\\d+)?-\\d{3}$"
+      example: "TB-VAR-3.2.1-001"
+      description: "Trial Balance domain requirement ID"
+    simula:
+      pattern: "^SIM-[A-Z]{2,4}-\\d+\\.\\d+(\\.\\d+)?-\\d{3}$"
+      example: "SIM-TAX-4.1.1-001"
+      description: "Simula domain requirement ID"
+    regulations:
+      pattern: "^REG-[A-Z]{2,4}-\\d+\\.\\d+(\\.\\d+)?-\\d{3}$"
+      example: "REG-MGF-2.1.2-002"
+      description: "Regulations domain requirement ID"
+
+# -----------------------------------------------------------------------------
+# Roadmap Version
+# -----------------------------------------------------------------------------
+roadmap_version:
+  description: Version of the roadmap these milestones align with
+  current: "2026-Q2"
+  spec_references:
+    - "docs/latex/specs/arabic-ap-spec.tex"
+    - "docs/latex/specs/tb-review-spec.tex"
+    - "docs/latex/specs/simula-training-spec.tex"
+    - "docs/latex/specs/regulations-spec.tex"

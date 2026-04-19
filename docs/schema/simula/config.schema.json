@@ -4,6 +4,7 @@
   "title": "Pipeline Configuration",
   "description": "Schema for Simula pipeline configuration (Chapter 6)",
   "type": "object",
+  "additionalProperties": false,
   "required": ["version", "generation", "evaluation"],
   "properties": {
     "version": {
@@ -33,6 +34,10 @@
     "output": {
       "$ref": "#/definitions/output_config",
       "description": "Output configuration"
+    },
+    "worked_example_manifest": {
+      "$ref": "#/definitions/worked_example_manifest",
+      "description": "M06 worked example manifest (commit b8d40a1, tag simula-v1.2-worked-example)"
     }
   },
   "definitions": {
@@ -238,6 +243,7 @@
     },
     "output_config": {
       "type": "object",
+      "additionalProperties": false,
       "properties": {
         "directory": {
           "type": "string",
@@ -252,6 +258,59 @@
         "include_rejected": {
           "type": "boolean",
           "default": true
+        }
+      }
+    },
+    "worked_example_manifest": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Manifest for M06 worked example tracking reproducibility",
+      "properties": {
+        "git_commit": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{7,40}$",
+          "description": "Git commit hash (e.g., b8d40a1)"
+        },
+        "git_tag": {
+          "type": "string",
+          "description": "Git tag (e.g., simula-v1.2-worked-example)"
+        },
+        "seed": {
+          "type": "integer",
+          "description": "Random seed for reproducibility (e.g., 20251115)"
+        },
+        "run_date": {
+          "type": "string",
+          "format": "date",
+          "description": "Date of the worked example run"
+        },
+        "outputs": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "artifact": {
+                "type": "string",
+                "description": "Output artifact name"
+              },
+              "path": {
+                "type": "string",
+                "description": "Artifact path"
+              },
+              "checksum_sha256": {
+                "type": "string",
+                "pattern": "^[a-f0-9]{64}$",
+                "description": "SHA-256 checksum"
+              }
+            }
+          },
+          "description": "Generated output artifacts"
+        },
+        "metrics_snapshot": {
+          "type": "object",
+          "additionalProperties": true,
+          "description": "Metrics captured during worked example run"
         }
       }
     }

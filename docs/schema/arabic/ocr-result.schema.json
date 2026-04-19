@@ -5,6 +5,7 @@
   "description": "Schema for OCR extraction results from Arabic invoice documents (Stage 2 output)",
   "type": "object",
   "required": ["ocr_id", "source_document", "pages", "overall_confidence", "status"],
+  "additionalProperties": false,
   "properties": {
     "ocr_id": {
       "type": "string",
@@ -62,6 +63,7 @@
     "source_reference": {
       "type": "object",
       "required": ["path", "sha256"],
+      "additionalProperties": false,
       "properties": {
         "path": {
           "type": "string",
@@ -95,6 +97,7 @@
     "page_result": {
       "type": "object",
       "required": ["page_number", "confidence", "text"],
+      "additionalProperties": false,
       "properties": {
         "page_number": {
           "type": "integer",
@@ -136,6 +139,7 @@
     },
     "token_confidence": {
       "type": "object",
+      "additionalProperties": false,
       "properties": {
         "text": {
           "type": "string",
@@ -155,6 +159,7 @@
     },
     "bounding_box": {
       "type": "object",
+      "additionalProperties": false,
       "properties": {
         "x": {
           "type": "integer",
@@ -177,6 +182,7 @@
     "quality_gate": {
       "type": "object",
       "required": ["threshold_reject", "threshold_review", "evaluation_result"],
+      "additionalProperties": false,
       "properties": {
         "threshold_reject": {
           "type": "number",
@@ -212,6 +218,7 @@
     },
     "processing_metadata": {
       "type": "object",
+      "additionalProperties": false,
       "properties": {
         "ocr_engine": {
           "type": "string",

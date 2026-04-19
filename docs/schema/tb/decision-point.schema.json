@@ -5,6 +5,7 @@
   "description": "Schema for decision point records in TB workflow (DP-001 through DP-005)",
   "type": "object",
   "required": ["decision_id", "decision_point", "variance_id", "outcome", "evaluated_at"],
+  "additionalProperties": false,
   "properties": {
     "decision_id": {
       "type": "string",
@@ -90,6 +91,7 @@
     "dp001_material_variance": {
       "type": "object",
       "description": "DP-001: CHECK_MATERIAL_VARIANCES",
+      "additionalProperties": false,
       "properties": {
         "decision_point": {
           "const": "DP-001"
@@ -120,6 +122,7 @@
     "dp002_journal_posted": {
       "type": "object",
       "description": "DP-002: IS_JOURNAL_POSTED",
+      "additionalProperties": false,
       "properties": {
         "decision_point": {
           "const": "DP-002"
@@ -150,6 +153,7 @@
     "dp003_further_investigation": {
       "type": "object",
       "description": "DP-003: CHECK_FURTHER_INVESTIGATION",
+      "additionalProperties": false,
       "properties": {
         "decision_point": {
           "const": "DP-003"
@@ -175,6 +179,7 @@
     "dp004_confirmation": {
       "type": "object",
       "description": "DP-004: CHECK_CONFIRMATION (M+4 deadline)",
+      "additionalProperties": false,
       "properties": {
         "decision_point": {
           "const": "DP-004"
@@ -210,6 +215,7 @@
     "dp005_unexplained": {
       "type": "object",
       "description": "DP-005: CHECK_UNEXPLAINED",
+      "additionalProperties": false,
       "properties": {
         "decision_point": {
           "const": "DP-005"
@@ -237,6 +243,7 @@
     },
     "unexplained_item": {
       "type": "object",
+      "additionalProperties": false,
       "properties": {
         "variance_id": {
           "type": "string",
@@ -260,6 +267,7 @@
     "audit_trail": {
       "type": "object",
       "description": "Audit trail for decision",
+      "additionalProperties": false,
       "properties": {
         "rule_id": {
           "type": "string",

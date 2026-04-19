@@ -4,6 +4,7 @@
   "title": "Training Example",
   "description": "Schema for Simula-generated training examples (Chapter 5)",
   "type": "object",
+  "additionalProperties": false,
   "required": ["id", "question", "sql", "complexity_score", "critic_passed"],
   "properties": {
     "id": {
