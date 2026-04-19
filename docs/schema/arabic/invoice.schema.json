@@ -1,0 +1,252 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://sap-oss.github.io/schema/arabic/invoice.schema.json",
+  "title": "Arabic Invoice Record",
+  "description": "Schema for Arabic AP invoice records extracted via OCR and AI pipeline",
+  "type": "object",
+  "required": ["invoice_id", "document_kind", "seller", "buyer", "totals", "metadata"],
+  "properties": {
+    "invoice_id": {
+      "type": "string",
+      "description": "Unique identifier for the invoice record"
+    },
+    "electronic_id": {
+      "type": "string",
+      "pattern": "^[0-9A-Z]{26}$",
+      "description": "ZATCA electronic invoice ID (26 alphanumeric characters)"
+    },
+    "document_kind": {
+      "type": "string",
+      "enum": ["tax_invoice", "simplified_invoice", "credit_note", "debit_note", "vat_assessment", "proforma"],
+      "description": "Type of invoice document"
+    },
+    "invoice_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Invoice issue date (ISO 8601)"
+    },
+    "due_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Payment due date (ISO 8601)"
+    },
+    "currency": {
+      "type": "string",
+      "enum": ["SAR", "EGP", "BHD", "QAR", "USD", "EUR"],
+      "description": "Invoice currency code"
+    },
+    "seller": {
+      "$ref": "#/definitions/party",
+      "description": "Seller/supplier party details"
+    },
+    "buyer": {
+      "$ref": "#/definitions/party",
+      "description": "Buyer/customer party details"
+    },
+    "line_items": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/line_item"
+      },
+      "description": "Invoice line items"
+    },
+    "totals": {
+      "$ref": "#/definitions/totals",
+      "description": "Invoice total amounts"
+    },
+    "vat_category": {
+      "type": "string",
+      "enum": ["FI", "SI", "ZR", "EX", "RC", "UR", "TCN", "CBR", "OS", "OTHER"],
+      "description": "VAT classification category per docs/schema/common/enums.yaml"
+    },
+    "vat_rate_percent": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 100,
+      "description": "VAT rate as percentage"
+    },
+    "tax_authority": {
+      "type": "string",
+      "enum": ["ZATCA", "ETA", "NBR", "QTA"],
+      "description": "Relevant tax authority"
+    },
+    "country": {
+      "type": "string",
+      "enum": ["SA", "EG", "BH", "QA"],
+      "description": "Country code per docs/schema/common/enums.yaml"
+    },
+    "signature": {
+      "$ref": "#/definitions/signature",
+      "description": "Digital signature information"
+    },
+    "notes": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Additional notes or PO references"
+    },
+    "source_document": {
+      "$ref": "#/definitions/source_document",
+      "description": "Source document metadata"
+    },
+    "metadata": {
+      "$ref": "https://sap-oss.github.io/schema/common/base-types.schema.json#/definitions/Metadata",
+      "description": "Record metadata"
+    }
+  },
+  "definitions": {
+    "party": {
+      "type": "object",
+      "required": ["name_ar"],
+      "properties": {
+        "name_ar": {
+          "type": "string",
+          "description": "Party name in Arabic"
+        },
+        "name_en": {
+          "type": "string",
+          "description": "Party name in English (may be populated via translation)"
+        },
+        "tax_id": {
+          "type": "string",
+          "description": "Tax identification number (VAT registration)"
+        },
+        "commercial_registration": {
+          "type": "string",
+          "description": "Commercial registration number"
+        },
+        "address_ar": {
+          "type": "string",
+          "description": "Address in Arabic"
+        },
+        "address_en": {
+          "type": "string",
+          "description": "Address in English"
+        },
+        "country": {
+          "type": "string",
+          "enum": ["SA", "EG", "BH", "QA"],
+          "description": "Country code"
+        }
+      }
+    },
+    "line_item": {
+      "type": "object",
+      "required": ["description_ar", "quantity", "unit_price"],
+      "properties": {
+        "line_number": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Line item sequence number"
+        },
+        "description_ar": {
+          "type": "string",
+          "description": "Item description in Arabic"
+        },
+        "description_en": {
+          "type": "string",
+          "description": "Item description in English (may be populated via translation)"
+        },
+        "sku": {
+          "type": "string",
+          "description": "Stock keeping unit / product code"
+        },
+        "quantity": {
+          "type": "number",
+          "minimum": 0,
+          "description": "Item quantity"
+        },
+        "unit_of_measure": {
+          "type": "string",
+          "description": "Unit of measure (e.g., EA, KG, L)"
+        },
+        "unit_price": {
+          "type": "number",
+          "description": "Price per unit (excluding VAT)"
+        },
+        "vat_amount": {
+          "type": "number",
+          "description": "VAT amount for this line"
+        },
+        "line_total": {
+          "type": "number",
+          "description": "Total for this line (including VAT)"
+        }
+      }
+    },
+    "totals": {
+      "type": "object",
+      "required": ["gross"],
+      "properties": {
+        "subtotal": {
+          "type": "number",
+          "description": "Sum of line items before VAT"
+        },
+        "vat_amount": {
+          "type": "number",
+          "description": "Total VAT amount"
+        },
+        "gross": {
+          "type": "number",
+          "description": "Total invoice amount including VAT"
+        },
+        "discount": {
+          "type": "number",
+          "description": "Total discount amount"
+        },
+        "withholding_tax": {
+          "type": "number",
+          "description": "Withholding tax amount (if applicable)"
+        }
+      }
+    },
+    "signature": {
+      "type": "object",
+      "properties": {
+        "kind": {
+          "type": "string",
+          "enum": ["digital", "stamp", "handwritten", "system_generated", "none"],
+          "description": "Type of signature"
+        },
+        "signer_name": {
+          "type": "string",
+          "description": "Name of signer"
+        },
+        "signed_date": {
+          "type": "string",
+          "format": "date",
+          "description": "Date of signature"
+        },
+        "certificate_hash": {
+          "type": "string",
+          "description": "Hash of digital certificate (for ZATCA compliance)"
+        }
+      }
+    },
+    "source_document": {
+      "type": "object",
+      "required": ["path", "sha256"],
+      "properties": {
+        "path": {
+          "type": "string",
+          "description": "Relative path to source document"
+        },
+        "sha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$",
+          "description": "SHA-256 hash of source document"
+        },
+        "ocr_text_path": {
+          "type": "string",
+          "description": "Path to extracted OCR text file"
+        },
+        "format": {
+          "type": "string",
+          "enum": ["PDF", "IMAGE_SCAN", "ELECTRONIC_XML", "ELECTRONIC_JSON", "PAPER_DIGITIZED"],
+          "description": "Source document format"
+        }
+      }
+    }
+  }
+}

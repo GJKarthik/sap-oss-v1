@@ -552,6 +552,13 @@ async def test_workspace_bootstrap_and_save_follow_authenticated_identity(client
     assert bootstrap_data["identity"]["userId"] == "sap.operator@example.com"
     assert bootstrap_data["authenticated"] is True
     assert bootstrap_data["auth_source"] == "edge_header"
+    assert bootstrap_data["settings"]["backend"]["apiBaseUrl"] == "/api"
+    assert bootstrap_data["settings"]["backend"]["openAiBaseUrl"] == "/api/v1/ui5/openai"
+    assert bootstrap_data["settings"]["backend"]["mcpBaseUrl"] == "/api/v1/ui5/mcp/mcp"
+    assert bootstrap_data["settings"]["backend"]["agUiEndpoint"] == "/ag-ui/run"
+    assert bootstrap_data["settings"]["nav"]["defaultLandingPath"] == "/"
+    assert bootstrap_data["settings"]["nav"]["items"][0]["route"] == "/dashboard"
+    assert bootstrap_data["settings"]["nav"]["items"][0]["path"] == "/dashboard"
 
     save_response = await client.put(
         "/workspace",
@@ -603,6 +610,9 @@ async def test_workspace_bootstrap_and_save_follow_authenticated_identity(client
     assert reloaded_data["settings"]["identity"]["userId"] == "sap.operator@example.com"
     assert reloaded_data["settings"]["identity"]["displayName"] == "SAP Operator"
     assert reloaded_data["settings"]["identity"]["teamName"] == "Launch"
+    assert reloaded_data["settings"]["nav"]["items"][0]["route"] == "/dashboard"
+    assert reloaded_data["settings"]["nav"]["items"][0]["path"] == "/dashboard"
+    assert reloaded_data["settings"]["backend"]["openAiBaseUrl"] == "/api/v1/ui5/openai"
 
 
 @pytest.mark.anyio

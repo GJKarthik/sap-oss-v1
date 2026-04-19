@@ -1,0 +1,166 @@
+\section{Overview and Scope}
+\label{chap:overview}
+
+\subsection{The Problem}
+
+The SAP OSS training pipeline requires high-quality Text-to-SQL training data that reflects
+the actual schema structure of SAP HANA Cloud tables. The current implementation in
+\texttt{src/training/pipeline/} uses metadata from \textbf{Excel files}
+(\texttt{DATA\_DICTIONARY.xlsx}, \texttt{ESG\_DATA\_DICTIONARY.xlsx}) that were originally
+exported from HANA or defined manually.
+
+While the \texttt{HanaClient} in \texttt{src/training/pipeline/hana\_client.py} has the
+capability to query \texttt{SYS.TABLE\_COLUMNS} for live schema metadata, this HANA-direct
+extraction is \textbf{not currently integrated} into the main training data generation
+pipeline.
+
+\begin{table}[H]
+\centering
+\caption{Current vs. Target Training Data Pipeline}
+\label{tab:gap-analysis}
+\begin{tabularx}{\textwidth}{lXX}
+\toprule
+\textbf{Dimension} & \textbf{Current State} & \textbf{Target State} \\
+\midrule
+Schema Source & Static Excel/CSV files & Live HANA Cloud metadata \\
+Extraction Method & Manual export & MCP-based automated query \\
+Training Data & Template-based expansion & Reasoning-driven synthesis \\
+Diversity Control & None & Taxonomic coverage \\
+Quality Assurance & None & Double-critic filtering \\
+Complexity Control & None & Calibrated Elo scoring \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\subsection{Goals}
+
+The specification targets three outcomes:
+
+\begin{enumerate}[nosep]
+    \item \textbf{HANA-Direct Extraction.} Every training dataset is generated from live
+          schema metadata queried via the AI Core PAL MCP service.
+    \item \textbf{Taxonomic Coverage.} The conceptual space of the target domain is mapped
+          using hierarchical taxonomies, ensuring global diversity.
+    \item \textbf{Reasoning-Driven Synthesis.} Each training example is generated from
+          first principles using agentic refinement, ensuring quality, local diversity,
+          and controlled complexity.
+\end{enumerate}
+
+\subsection{In-Scope Domains}
+
+\begin{table}[H]
+\centering
+\caption{Application Domains}
+\label{tab:domains}
+\begin{tabularx}{\textwidth}{llX}
+\toprule
+\textbf{Domain} & \textbf{HANA Schema} & \textbf{Training Task} \\
+\midrule
+Arabic Document Processing & \texttt{AP\_INVOICES}, \texttt{VAT\_CHECKLISTS} & Invoice field extraction, VAT compliance \\
+Trial Balance Review & \texttt{TB\_VARIANCES}, \texttt{GL\_BALANCES} & Variance analysis, commentary generation \\
+ESG Analytics & \texttt{ESG\_METRICS}, \texttt{FINANCED\_EMISSIONS} & Scope classification, net-zero alignment \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\subsection{System Context}
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[
+    node distance=1.2cm and 2cm,
+    box/.style={rectangle, draw, rounded corners, minimum width=2.5cm, minimum height=1cm, align=center, font=\small},
+    hana/.style={box, fill=hanagreen!20, draw=hanagreen},
+    mcp/.style={box, fill=sapblue!20, draw=sapblue},
+    llm/.style={box, fill=llmpurple!20, draw=llmpurple},
+    output/.style={box, fill=sapgold!20, draw=sapgold},
+    arr/.style={-{Stealth[length=3mm]}, thick},
+]
+    % HANA Layer
+    \node[hana] (hana) {SAP HANA\\Cloud};
+    
+    % MCP Layer
+    \node[mcp, right=of hana] (mcp) {AI Core PAL\\MCP :8084};
+    
+    % Extraction
+    \node[box, right=of mcp, fill=saplight] (extract) {Schema\\Extractor};
+    
+    % Registry
+    \node[box, below=of extract, fill=saplight] (registry) {Schema\\Registry};
+    
+    % LLM
+    \node[llm, right=2.5cm of extract] (llm) {vLLM\\TurboQuant\\:9180};
+    
+    % Taxonomy
+    \node[box, below=of llm, fill=saplight] (taxonomy) {Taxonomy\\Builder};
+    
+    % Generator
+    \node[box, below=of taxonomy, fill=saplight] (generator) {Data\\Generator};
+    
+    % Output
+    \node[output, right=of generator] (output) {Training Data\\(.jsonl)};
+    
+    % Arrows
+    \draw[arr] (hana) -- node[above, font=\tiny]{SYS.TABLE\_COLUMNS} (mcp);
+    \draw[arr] (mcp) -- node[above, font=\tiny]{execute\_sql} (extract);
+    \draw[arr] (extract) -- (registry);
+    \draw[arr] (registry) -- (taxonomy);
+    \draw[arr, dashed] (llm) -- node[right, font=\tiny]{Best-of-N} (taxonomy);
+    \draw[arr] (taxonomy) -- (generator);
+    \draw[arr, dashed] (llm) -- node[right, font=\tiny]{Critic} (generator);
+    \draw[arr] (generator) -- (output);
+    
+    % Labels
+    \node[below=0.3cm of hana, font=\tiny\color{hanagreen}] {Database};
+    \node[below=0.3cm of mcp, font=\tiny\color{sapblue}] {Protocol};
+    \node[below=0.3cm of llm, font=\tiny\color{llmpurple}] {LLM Backend};
+\end{tikzpicture}
+\caption{System context. HANA Cloud (green) provides live schema metadata via the MCP
+protocol (blue). The vLLM backend (purple) powers taxonomy expansion and data generation.
+Output is JSONL training data (gold).}
+\label{fig:system-context}
+\end{figure}
+
+\subsection{Research Paper Traceability}
+
+This specification implements the Simula framework from Davidson et al. (2026),
+``Reasoning-Driven Synthetic Data Generation and Evaluation,'' published in
+Transactions on Machine Learning Research (TMLR). The following table maps
+paper sections to specification sections:
+
+\begin{table}[H]
+\centering
+\caption{Traceability: Research Paper to Implementation}
+\label{tab:traceability}
+\begin{tabularx}{\textwidth}{p{3.5cm}p{4cm}X}
+\toprule
+\textbf{Paper Reference} & \textbf{Paper Finding} & \textbf{Spec Implementation} \\
+\midrule
+Section 2.1, Figure 1 & Taxonomy-based coverage & §\ref{chap:taxonomy}, Algorithm 1 \\
+Section 2.2, Algorithm 2 & Agentic data synthesis & §\ref{chap:generator}, Algorithm 2 \\
+Section 2.3, Algorithm 3 & Calibrated complexity scoring & §\ref{chap:evaluation}.1, Elo algorithm \\
+Section 3.1, Figure 3 & Double-critic validation & §\ref{chap:generator}.5, §\ref{chap:evaluation}.4 \\
+Section 3.3, Figure 4 & Additive diversity & §\ref{chap:evaluation}.3, Diversity analyzer \\
+Section 4.3 & 83\% saturation ratio & §\ref{chap:evaluation}.5, Gap analysis \\
+Figure 7 & Complexity vs teacher strength & §\ref{chap:evaluation}.6.1, Adaptive ratio \\
+Table 2 (Appendix B) & Taxonomy quality metrics & §\ref{chap:evaluation}.6.5, Quality gate \\
+Appendix E.3 & Elo algorithm details & §\ref{chap:evaluation}.1.1, \texttt{\_update\_elo()} \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\subsection{Out of Scope}
+
+The following are \textbf{explicitly} out of scope for this document:
+
+\begin{itemize}[nosep]
+    \item Model fine-tuning and evaluation (covered by separate LoRA training specification).
+    \item Downstream inference and routing (covered by \texttt{03-prompt-routing.tex}).
+    \item Trial Balance business process (covered by \texttt{04-trial-balance-ai-specification.tex}).
+    \item Arabic invoice pipeline (covered by the Arabic AP specification).
+\end{itemize}
+
+% =============================================================================
+% CHAPTER 2: CANONICAL DATA SCHEMA
+% =============================================================================
+\newpage

@@ -1,0 +1,218 @@
+# =============================================================================
+# Consolidated Enumeration Values
+# =============================================================================
+# Single source of truth for enum values across all domain schemas.
+# Last updated: April 2026
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# Geographic / Jurisdiction
+# -----------------------------------------------------------------------------
+countries:
+  description: Supported countries with tax authorities
+  values:
+    SA:
+      name: Saudi Arabia
+      tax_authority: ZATCA
+      currency: SAR
+      vat_rates: [0, 5, 15]
+    EG:
+      name: Egypt
+      tax_authority: ETA
+      currency: EGP
+      vat_rates: [0, 14]
+    BH:
+      name: Bahrain
+      tax_authority: NBR
+      currency: BHD
+      vat_rates: [0, 10]
+    QA:
+      name: Qatar
+      tax_authority: QTA
+      currency: QAR
+      vat_rates: []  # No VAT currently
+
+tax_authorities:
+  description: Tax authority codes
+  values: [ZATCA, ETA, NBR, QTA]
+
+# -----------------------------------------------------------------------------
+# VAT / Tax Classification
+# -----------------------------------------------------------------------------
+vat_category:
+  description: VAT classification categories
+  values:
+    FI: Full Tax Invoice
+    SI: Simplified Tax Invoice
+    ZR: Zero Rated
+    EX: Exempt
+    RC: Reverse Charge
+    UR: Unregistered Vendor
+    TCN: Tax Credit Note
+    CBR: Cross-Border / Inter-BU
+    OS: Out of Scope
+    OTHER: Other / Unknown
+
+vat_thresholds:
+  description: Per-country thresholds (amount below which SI applies)
+  values:
+    BH:
+      si_fi_boundary: 500
+      currency: BHD
+    SA:
+      si_fi_boundary: 1000
+      currency: SAR
+    EG:
+      si_fi_boundary: 5000
+      currency: EGP
+
+# -----------------------------------------------------------------------------
+# Supplier / Entity Types
+# -----------------------------------------------------------------------------
+supplier_type:
+  description: Supplier classification for tax treatment
+  values:
+    - INDIVIDUAL
+    - CORPORATE
+    - GOVERNMENT
+    - NON_PROFIT
+    - FOREIGN
+
+# -----------------------------------------------------------------------------
+# Document / Invoice Types
+# -----------------------------------------------------------------------------
+invoice_type:
+  description: Type of invoice document
+  values:
+    - STANDARD
+    - CREDIT_NOTE
+    - DEBIT_NOTE
+    - PROFORMA
+    - SELF_BILLING
+
+document_format:
+  description: Source document format
+  values:
+    - PDF
+    - IMAGE_SCAN
+    - ELECTRONIC_XML
+    - ELECTRONIC_JSON
+    - PAPER_DIGITIZED
+
+language:
+  description: Document language codes
+  values:
+    - ar        # Arabic only
+    - en        # English only
+    - ar+en     # Bilingual Arabic/English
+
+# -----------------------------------------------------------------------------
+# Workflow / Status
+# -----------------------------------------------------------------------------
+workflow_status:
+  description: Workflow state machine values
+  values:
+    - DRAFT
+    - PENDING_REVIEW
+    - IN_REVIEW
+    - APPROVED
+    - REJECTED
+    - ESCALATED
+    - ON_HOLD
+    - COMPLETED
+    - ARCHIVED
+
+verdict:
+  description: AI/human decision outcome
+  values:
+    - RELEASE    # Approved for processing
+    - HOLD       # Requires human review
+    - REJECT     # Rejected permanently
+
+checklist_result:
+  description: Per-rule checklist outcomes
+  values:
+    - Y    # Yes / Pass
+    - N    # No / Fail
+    - NA   # Not Applicable
+
+# -----------------------------------------------------------------------------
+# Trial Balance Specific
+# -----------------------------------------------------------------------------
+account_category:
+  description: TB account classification
+  values:
+    - ASSET
+    - LIABILITY
+    - EQUITY
+    - REVENUE
+    - EXPENSE
+    - INTERCOMPANY
+
+variance_flag:
+  description: Anomaly detection flags
+  values:
+    - PERIOD_SPIKE
+    - SIGN_FLIP
+    - NEW_ACCOUNT
+    - STALE_BALANCE
+
+decision_point:
+  description: TB workflow decision points (DP-001 through DP-005)
+  values:
+    - DP-001  # Material variance check
+    - DP-002  # Journal posted check
+    - DP-003  # Further investigation check
+    - DP-004  # Confirmation received check
+    - DP-005  # Unexplained variance check
+
+# -----------------------------------------------------------------------------
+# Simula / Training Data Specific
+# -----------------------------------------------------------------------------
+taxonomy_node_type:
+  description: Type of taxonomy tree node
+  values:
+    - ROOT
+    - FACTOR
+    - LEAF
+
+complexity_level:
+  description: Training example complexity
+  values:
+    - EASY       # c < 0.3
+    - MEDIUM     # 0.3 <= c < 0.7
+    - HARD       # c >= 0.7
+
+critic_verdict:
+  description: Critic evaluation outcome
+  values:
+    - ACCEPT
+    - REVISE
+    - REJECT
+
+# -----------------------------------------------------------------------------
+# Regulations / Compliance Specific
+# -----------------------------------------------------------------------------
+requirement_status:
+  description: Implementation status of regulatory requirement
+  values:
+    - implemented   # Fully implemented and validated
+    - partial       # Partially implemented
+    - gap           # Not implemented
+    - na            # Not applicable
+    - missing       # Expected but absent
+
+obligation_level:
+  description: Normative strength
+  values:
+    - must          # Mandatory
+    - should        # Recommended
+    - may           # Optional
+
+jurisdiction:
+  description: Regulatory jurisdiction codes
+  values:
+    - SG    # Singapore
+    - UK    # United Kingdom
+    - US    # United States
+    - EU    # European Union

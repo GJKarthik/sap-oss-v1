@@ -162,6 +162,16 @@ def test_resolve_default_data_products_dir_handles_shallow_container_layout(tmp_
     assert resolved == container_src / "data_products"
 
 
+def test_resolve_default_data_products_dir_prefers_mounted_training_repo_data(tmp_path: Path):
+    container_src = tmp_path / "app" / "src"
+    mounted_repo_data = container_src / "training" / "data_products"
+    mounted_repo_data.mkdir(parents=True)
+
+    resolved = data_products_module._resolve_default_data_products_dir(container_src)
+
+    assert resolved == mounted_repo_data
+
+
 @pytest.mark.anyio
 async def test_list_products(client: AsyncClient, isolated_data_products_dir: Path):
     response = await client.get("/data-products/products")

@@ -1,0 +1,266 @@
+\section{Project Roadmap}\label{sec:sim-roadmap}
+
+\subsection*{Scope of this chapter}
+\addcontentsline{toc}{subsection}{Scope of this chapter}
+
+This chapter is the roadmap for the \textbf{Simula training-data
+framework} project. It is a project-level artefact, not a programme
+plan. Other SAP OSS Finance projects (Trial Balance, Arabic AP,
+Regulations) run on the same platform, workspaces, and backends, but
+each owns its own roadmap, business case, and go/no-go decision.
+Simula is a \emph{supplier} to those projects: it generates reference
+training corpora they consume, so its critical path is sequenced
+before theirs, but its sign-off is independent.
+
+\paragraph{Sequence, not dates.}
+The milestones and dependency graph below express \emph{order} and
+\emph{prerequisite} relationships, not calendar dates. This is
+deliberate. Implementation teams must know what depends on what, and
+where the schedule can absorb slippage (the Should/Could items); a
+date column would harden targets into commitments they were never
+meant to be. Dates, when set, live in the project steering packet and
+the ticketing system, not in this specification.
+
+\subsection{MoSCoW classification}\label{sec:sim-moscow}
+
+Every milestone below carries one of four priorities. The mapping is
+contractual: a milestone's priority determines what happens when it is
+dropped, de-scoped, or slips.
+
+\begin{table}[htbp]
+\centering
+\caption{MoSCoW prioritisation (shared across the four SAP OSS Finance
+projects).}
+\label{tab:sim-moscow}
+\footnotesize
+\begin{tabularx}{\linewidth}{@{}l l X@{}}
+\toprule
+\textbf{Priority} & \textbf{Meaning} & \textbf{Allowance} \\ \midrule
+\textbf{Must} (\textbf{M}) & Non-negotiable for v1.2. Without this milestone, the release does not ship. & None. Missing a Must halts the release; see the kill-switch in \cref{sec:sim-kill-switch}. \\
+\textbf{Should} (\textbf{S}) & Important but not vital. Ship without it only with sponsor sign-off; document the deviation in the business-case refresh. & May slip by one consumer project; two consecutive slips escalate to GFAIC. \\
+\textbf{Could} (\textbf{C}) & Desirable enhancement. Included if Must and Should items are on track. & May be dropped to v1.3 at project steering's discretion. \\
+\textbf{Won't} (\textbf{W}) & Explicitly out of v1.2 scope. Listed so the boundary is legible. & Not eligible for v1.2 planning at all. \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\noindent
+The critical path of this project is the chain of Must items in
+\cref{tab:sim-milestones}; the Should and Could items are where the
+schedule and scope can absorb delivery risk without a release slip.
+
+\subsection{Dependency graph}\label{sec:sim-dependency-graph}
+
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}[
+  node distance=5mm and 10mm,
+  must/.style={draw,rounded corners=2pt,align=center,font=\scriptsize,
+               fill=sapgold!20,draw=sapgold!80,
+               minimum height=7mm,minimum width=32mm},
+  should/.style={draw,rounded corners=2pt,align=center,font=\scriptsize,
+               fill=sapblue!15,draw=sapblue!60,
+               minimum height=7mm,minimum width=32mm},
+  could/.style={draw,rounded corners=2pt,align=center,font=\scriptsize,
+               fill=hanagreen!15,draw=hanagreen!60,dotted,
+               minimum height=7mm,minimum width=32mm},
+  dep/.style={-{Latex[length=2mm]},thick},
+  soft/.style={-{Latex[length=2mm]},thick,dashed}
+]
+  \node[must] (m01) {M01 SIM-ENG-001 \\ \scriptsize extraction pipeline};
+  \node[must,below=of m01] (m02) {M02 SIM-ENG-002 \\ \scriptsize taxonomy engine};
+  \node[must,below=of m02] (m03) {M03 SIM-ENG-003 \\ \scriptsize generation engine};
+  \node[must,right=14mm of m02] (m04) {M04 SIM-ENV-001 \\ \scriptsize environment CLI};
+  \node[must,right=14mm of m04] (m05) {M05 SIM-HANA-001 \\ \scriptsize spatial policy};
+  \node[must,below=of m05] (m06) {M06 SIM-RUN-TB \\ \scriptsize TB reference run};
+  \node[must,below=of m06] (m07) {M07 SIM-RELEASE-001 \\ \scriptsize v1.2 tag};
+  \node[should,right=14mm of m07] (s01) {S01 SIM-RUN-AP \\ \scriptsize AP corpus};
+  \node[should,above=of s01] (s02) {S02 SIM-RUN-REG \\ \scriptsize Reg corpus};
+  \node[could,above=of s02] (c01) {C01 SIM-V13-EXPLORE \\ \scriptsize v1.3 scope};
+
+  \draw[dep] (m01) -- (m02);
+  \draw[dep] (m02) -- (m03);
+  \draw[dep] (m03) -- (m04);
+  \draw[dep] (m04) -- (m05);
+  \draw[dep] (m05) -- (m06);
+  \draw[dep] (m06) -- (m07);
+  \draw[dep] (m07) -- (s01);
+  \draw[dep] (s01) -- (s02);
+  \draw[soft] (s02) -- (c01);
+\end{tikzpicture}
+\caption{Simula dependency graph. Amber nodes are Must (critical
+path); blue are Should (consumer-corpus allowance); dotted green are
+Could (discretionary). Solid arrows are hard prerequisites; dashed
+arrows indicate conditional starts (the target is unlocked when the
+upstream completes \emph{and} the v1.3 trigger in \cref{sec:sim-v13-trigger}
+fires).}
+\label{fig:sim-dependency-graph}
+\end{figure}
+
+\subsection{Project milestones}\label{sec:sim-milestones}
+
+\begin{table}[htbp]
+\centering
+\caption{Simula v1.2 project milestones in dependency order.
+Priority: M=Must (critical path), S=Should, C=Could, W=Won't.}
+\label{tab:sim-milestones}
+\footnotesize
+\begin{tabularx}{\linewidth}{@{}l l l l X@{}}
+\toprule
+\textbf{ID} & \textbf{Prereq} & \textbf{Pri.} & \textbf{Ticket} & \textbf{Milestone} \\ \midrule
+M01 & ---      & M & SIM-ENG-001       & Extraction pipeline passes HANA-direct fixtures in the testing chapter. \\
+M02 & M01      & M & SIM-ENG-002       & Taxonomy engine classifies reference corpus with accuracy above Beta threshold. \\
+M03 & M02      & M & SIM-ENG-003       & Generation engine produces schema-valid examples against the unified registry. \\
+M04 & M03      & M & SIM-ENV-001       & Environment CLI enables one-command reproduce of any reference run. \\
+M05 & M04      & M & SIM-HANA-001      & HANA spatial policy (\texttt{spatial\_unknown\_srid\_policy}) enforced; strict mode passes unit tests. \\
+M06 & M05      & M & SIM-RUN-TB        & Trial Balance reference run reproducible end-to-end (commit \texttt{b8d40a1}, tag \texttt{simula-v1.2-worked-example}, seed \texttt{20251115}). \\
+M07 & M06      & M & SIM-RELEASE-001   & v1.2 release tagged, archived, and the reproducibility manifest frozen. \\
+M08 & M07      & M & SIM-BC-REFRESH    & Business-case refresh (first cycle after release; then annual). \\
+S01 & M07      & S & SIM-RUN-AP        & Arabic AP training corpus generated from the same pipeline. \\
+S02 & S01      & S & SIM-RUN-REG       & Regulations monitoring corpus generated from the same pipeline. \\
+S03 & M07      & S & SIM-CONSUMER-DOC  & Consumer integration runbook published (how Trial Balance, AP, and Regulations call Simula). \\
+C01 & S02 + v1.3 trigger (\S\ref{sec:sim-v13-trigger}) & C & SIM-V13-EXPLORE & v1.3 scope kick-off (multi-tenant isolation, additional taxonomies). \\
+C02 & M07      & C & SIM-TUNE          & Quarterly prompt and classifier retraining from accept/edit telemetry. \\
+W01 & ---      & W & SIM-V12-EXTERNAL  & External (non-SAP-OSS) customer access is \emph{not} in v1.2 scope. \\
+W02 & ---      & W & SIM-V12-REALTIME  & Real-time incremental generation is \emph{not} in v1.2 scope; batch only. \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\noindent
+The Must chain (M01 $\to$ M02 $\to$ M03 $\to$ M04 $\to$ M05 $\to$ M06
+$\to$ M07 $\to$ M08) is the critical path. The Should items
+(S01--S03) are the primary \emph{schedule allowance}: consumer corpus
+generations can slip without affecting Simula v1.2 sign-off. The Could
+items are the \emph{scope allowance}: they may be cut to v1.3 without
+renegotiation.
+
+\subsection{Launch tiers and exit gates}\label{sec:sim-launch-tiers}
+
+The project walks the four-tier ladder shared across SAP OSS Finance
+projects. A tier is exited only when the named exit gate is satisfied;
+slippage requires sponsor sign-off.
+
+\begin{table}[htbp]
+\centering
+\caption{Simula launch tiers. The exit gate defines the MoSCoW items
+that must be closed to exit the tier.}
+\label{tab:sim-launch-tiers}
+\footnotesize
+\begin{tabularx}{\linewidth}{@{}l l X@{}}
+\toprule
+\textbf{Tier} & \textbf{Scope} & \textbf{Exit gate (references MoSCoW IDs)} \\ \midrule
+Alpha & Engineering only, DEV + UAT, fixture corpora only. & M01, M02, M03 closed; schema-registry validation passes on the generated examples; reproducibility confirmed on two consecutive runs. \\
+Beta  & One consumer project (Trial Balance) drawing from Simula-generated corpora. & M04, M05, M06 closed; environment CLI reproduces the TB run end-to-end; HANA spatial strict mode green; no open SEV1/SEV2. \\
+GA (limited) & Two consumer projects (TB plus Arabic AP). & M07, M08 closed; S01 closed; consumer-integration runbook (S03) exercised end-to-end; kill-switch green. \\
+Full rollout & All three current consumers (TB, AP, Regulations). & S02 closed; two quarterly reviews sustained; business-case refresh complete; multi-consumer regression suite green. \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\subsection{Kill-switch conditions}\label{sec:sim-kill-switch}
+
+The kill-switch is a pre-committed rulebook: a tripped condition enters
+the action column without further debate. GFAIC and sponsor are
+notified within 24 hours. The conditions are evaluated continuously
+(on every cycle) and do not carry dates.
+
+\begin{table}[htbp]
+\centering
+\caption{Simula kill-switch.}
+\label{tab:sim-kill-switch}
+\footnotesize
+\begin{tabularx}{\linewidth}{@{}l l X@{}}
+\toprule
+\textbf{Condition} & \textbf{Evaluation} & \textbf{Action} \\ \midrule
+Reference run non-reproducible across two consecutive seeds (output diff $>$\,0) & per release & \textbf{Halt release}; investigate non-determinism; do not ship v1.2 until reproducibility is restored. \\
+Schema-registry validation fails on $>$\,0.1\,\% of generated examples & per run & \textbf{Halt consumer delivery}; fix generation engine; re-run. \\
+HANA spatial strict mode detects unknown SRID in production path & continuous & \textbf{Quarantine run}; incident-review before releasing corpus to consumer project. \\
+Any consumer project (TB, AP, Regulations) declares red on a Simula-supplied corpus & continuous & \textbf{Pause Should items} S01--S03; remediate before next consumer wave. \\
+Shared-platform dependency in \cref{tab:sim-shared-deps} declared red by its owner project & continuous & \textbf{Pause downstream Must}; re-plan at next steering. \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\subsection{Shared-platform dependencies}\label{sec:sim-shared-deps}
+
+This project depends on three shared-platform components. Each is
+tracked here only as a dependency, not a commitment this project can
+unilaterally adjust. Sequence is expressed in terms of the Must item
+that first consumes the dependency, not in calendar time.
+
+\begin{table}[htbp]
+\centering
+\caption{Shared-platform dependencies.}
+\label{tab:sim-shared-deps}
+\footnotesize
+\begin{tabularx}{\linewidth}{@{}l l l X@{}}
+\toprule
+\textbf{Component} & \textbf{Owner} & \textbf{First consumed by} & \textbf{Impact if late} \\ \midrule
+Unified schema registry (\path{docs/schema/}) & Shared infra & M03 & Already \texttt{migration.status=complete}; no remaining risk. \\
+vLLM TurboQuant hosting (\texttt{vllm-only} policy) & Shared platform & M03 & Graceful-degradation ladder (\cref{sec:degradation-ladder} of the Regulations spec) provides fallback; batch-generation slip tolerable. \\
+HANA Cloud spatial extensions & Shared infra & M05 & No substitute; slip blocks spatial-policy certification and downstream consumer runs. \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\noindent
+Shared-platform dependencies are surfaced at monthly steering. If any
+upstream owner declares \textbf{amber} or \textbf{red} on a component
+in \cref{tab:sim-shared-deps}, the affected downstream Must milestone
+is re-planned at the following steering.
+
+\subsection{v1.3 expansion trigger}\label{sec:sim-v13-trigger}
+
+The Could item C01 (SIM-V13-EXPLORE) is unlocked only when all of the
+following are observed after two consecutive consumer corpus
+generations under v1.2:
+
+\begin{itemize}
+  \item aggregate consumer request volume for corpora outside the
+        current taxonomy exceeds 20\,\% of total Simula runs;
+  \item reproducibility and schema-validation rates sustained at or
+        above release thresholds;
+  \item business-case refresh (M08) explicitly budgets the v1.3
+        programme.
+\end{itemize}
+
+\noindent
+If any of the three conditions fails, C01 remains in the Could column
+and is re-evaluated at the next business-case refresh.
+
+\subsection{Governance and business-case cadence}\label{sec:sim-governance}
+
+\paragraph{Project governance.}
+The Simula project reports monthly to a project steering (Studio AI
+Lead, Training Data PM, Pipeline Engineer) and quarterly to the
+cross-project GFAIC. Monthly steering accepts or rejects amber/red
+signals on Must items; GFAIC reviews compliance posture and any
+cross-project dependencies (especially consumer-project risk).
+
+\paragraph{Business-case refresh (M08).}
+The business case that authorises this project is refreshed on the
+following rhythm:
+
+\begin{itemize}
+  \item \textbf{Mandatory refresh}: at the first cycle after release,
+        and annually thereafter (ticket SIM-BC-REFRESH, priority M in
+        \cref{tab:sim-milestones}). Refresh packet includes consumer
+        demand assumptions, unit economics (\cref{sec:sim-unit-economics}),
+        GPU cost realised vs.\ forecast, and a deviation statement
+        against the baseline.
+  \item \textbf{Trigger-based refresh}: any of
+        \begin{itemize}
+          \item consumer request volume changes by $\ge\,20$\,\% from
+                forecast (either direction);
+          \item per-run generation cost changes by $\ge\,30$\,\% (GPU
+                price, vLLM licensing, HANA I/O);
+          \item a consumer project's regulatory obligation expands
+                Simula's in-scope taxonomy;
+          \item any kill-switch in \cref{tab:sim-kill-switch} is
+                tripped.
+        \end{itemize}
+  \item \textbf{Owner}: Studio AI Lead. Approval routed through the
+        project steering and filed at
+        \path{docs/simula/business-case/refresh-history.yaml}.
+\end{itemize}

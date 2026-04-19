@@ -1,0 +1,205 @@
+\chapter{Testing Specification}\label{ch:testing}
+
+This chapter specifies the testing requirements for the Arabic AP invoice
+processing pipeline, including test cases, coverage targets, and CI/CD
+integration.
+
+\section{Test coverage requirements}
+
+\begin{table}[htbp]
+\centering
+\caption{Arabic AP test coverage targets.}
+\label{tab:arabic-coverage}
+\footnotesize
+\begin{tabularx}{\linewidth}{@{}l r r X@{}}
+\toprule
+\textbf{Component} & \textbf{Line \%} & \textbf{Branch \%} & \textbf{Notes} \\ \midrule
+OCR extractor & 85 & 75 & \\
+VAT rules engine & 90 & 85 & Critical path \\
+Invoice validator & 90 & 85 & Schema + business rules \\
+AP workflow engine & 80 & 70 & \\
+\textbf{Overall minimum} & \textbf{85} & \textbf{75} & Enforced in CI \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\section{Test fixtures}
+
+Fixtures are located in \texttt{tests/fixtures/arabic/}.
+
+\subsection{Invoice fixtures}
+
+\begin{table}[htbp]
+\centering
+\caption{Required invoice fixture categories.}
+\footnotesize
+\begin{tabularx}{\linewidth}{@{}l l X@{}}
+\toprule
+\textbf{Category} & \textbf{Count} & \textbf{Coverage} \\ \midrule
+Standard invoices & 20 & 5 per country (SA, EG, BH, QA) \\
+Edge cases & 15 & Missing fields, unusual formats \\
+Invalid invoices & 10 & Schema violations, invalid TINs \\
+Credit notes & 5 & Negative amounts, adjustments \\
+Multi-currency & 5 & Non-local currency invoices \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\subsection{OCR fixtures}
+
+OCR fixtures cover all confidence thresholds:
+\begin{itemize}
+  \item High quality ($>$85\%): 10 samples
+  \item Medium quality (55--85\%): 10 samples
+  \item Low quality (30--55\%): 5 samples
+  \item Very low quality ($<$30\%): 5 samples
+\end{itemize}
+
+\section{Unit test cases}
+
+\subsection{Invoice extraction}
+
+\begin{tabularx}{\linewidth}{@{}l l X@{}}
+\toprule
+\textbf{ID} & \textbf{Priority} & \textbf{Description} \\ \midrule
+AP-EXT-001 & P1 & Extract all fields from standard Saudi invoice \\
+AP-EXT-002 & P1 & Extract all fields from standard Egyptian invoice \\
+AP-EXT-003 & P1 & Extract all fields from standard Bahrain invoice \\
+AP-EXT-004 & P1 & Extract all fields from Qatar payment instruction \\
+AP-EXT-005 & P1 & Handle missing optional fields gracefully \\
+AP-EXT-006 & P2 & Handle multi-page invoice \\
+AP-EXT-007 & P2 & Handle poor quality scan ($<$55\% confidence) \\
+AP-EXT-008 & P2 & Handle Arabic-only invoice \\
+AP-EXT-009 & P2 & Handle Arabic+English bilingual invoice \\
+AP-EXT-010 & P3 & Handle unusual date formats \\
+\bottomrule
+\end{tabularx}
+
+\subsection{VAT validation}
+
+\begin{tabularx}{\linewidth}{@{}l l X@{}}
+\toprule
+\textbf{ID} & \textbf{Priority} & \textbf{Description} \\ \midrule
+AP-VAT-001 & P1 & Validate 15-digit Saudi TIN format \\
+AP-VAT-002 & P1 & Validate 9-digit Egyptian TRN format \\
+AP-VAT-003 & P1 & Calculate VAT amount matches invoice \\
+AP-VAT-004 & P1 & Apply correct VAT rate by country \\
+AP-VAT-005 & P1 & Identify reverse-charge transactions \\
+AP-VAT-006 & P2 & Handle zero-rated supplies \\
+AP-VAT-007 & P2 & Handle exempt supplies \\
+AP-VAT-008 & P2 & Apply withholding tax rules \\
+AP-VAT-009 & P3 & Handle credit notes correctly \\
+AP-VAT-010 & P3 & Handle inter-GCC transactions \\
+\bottomrule
+\end{tabularx}
+
+\section{Integration test suite}
+
+\begin{lstlisting}[basicstyle=\ttfamily\small]
+pytest tests/integration/arabic/ -v --tb=short
+\end{lstlisting}
+
+Expected duration: 15 minutes.
+
+\subsection{End-to-end scenarios}
+
+\begin{enumerate}
+  \item \textbf{Happy path}: Invoice scan $\rightarrow$ OCR $\rightarrow$ extraction
+        $\rightarrow$ VAT validation $\rightarrow$ approval workflow
+  \item \textbf{Manual review}: Low-confidence extraction triggers human review
+  \item \textbf{VAT hold}: Rule failure triggers hold and escalation
+  \item \textbf{Multi-country}: Invoices from all four countries processed correctly
+\end{enumerate}
+
+\section{Performance benchmarks}
+
+All p95 targets in Table~\ref{tab:ap-perf-targets} are measured on the
+\emph{reference hardware profile} in Section~\ref{sec:ap-perf-hardware}.
+CI enforces each target by failing the performance regression job when
+the measured p95 exceeds the target by more than 20\,\% on three
+consecutive runs on identical hardware.
+
+\begin{table}[htbp]
+\centering
+\caption{Arabic AP performance targets on reference hardware.}
+\label{tab:ap-perf-targets}
+\footnotesize
+\begin{tabularx}{\linewidth}{@{}l r r X@{}}
+\toprule
+\textbf{Operation} & \textbf{p95 Target} & \textbf{Throughput} & \textbf{Notes} \\ \midrule
+OCR extraction & 3,000 ms & 200/hr & Per page \\
+Field extraction (LLM) & 5,000 ms & 100/hr & Per invoice \\
+VAT rule evaluation & 100 ms & 1,000/sec & No external API \\
+Full pipeline E2E & 10,000 ms & 50/hr & Including all steps \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\subsection{Reference hardware profile}
+\label{sec:ap-perf-hardware}
+
+\begin{description}
+  \item[GPU.] 1$\times$ NVIDIA A100 40\,GB SXM4 \emph{or} L40S 48\,GB.
+        Shared with Simula and TB; reservation is not required for
+        single-invoice latency targets.
+  \item[OCR engine.] Tesseract 5.3.x with Arabic language pack
+        (\texttt{ara}, \texttt{ara\_old}), CPU-only. A 2-page invoice
+        at 300\,dpi is the reference document size.
+  \item[LLM.] \texttt{Qwen2.5-14B-Instruct} served via vLLM 0.6.x,
+        \texttt{max\_model\_len=8192}, 14-field extraction prompt
+        ($\sim$1,200 input tokens, $\sim$400 output tokens).
+  \item[CPU / RAM.] 8~vCPU, 32\,GB RAM host.
+  \item[Storage.] NVMe SSD; invoice PDFs streamed from object storage
+        with 2\,Gbps link.
+  \item[Network.] Co-located vLLM; RTT $<$0.5\,ms. For remote LLM
+        endpoints, add measured RTT to the field-extraction p95.
+\end{description}
+
+\noindent
+Running on consumer-grade GPUs (e.g.\ T4 15\,GB) is not supported for
+the 14B model; a fallback profile using
+\texttt{Qwen2.5-7B-Instruct} is documented in
+\path{docs/arabic/runbooks/perf-fallback.md} with correspondingly
+relaxed p95 targets (field extraction $\le$8,000\,ms).
+
+\section{Security tests}
+
+\subsection{Prompt injection}
+
+\begin{tabularx}{\linewidth}{@{}l X@{}}
+\toprule
+\textbf{Test} & \textbf{Description} \\ \midrule
+AP-SEC-001 & Malicious text in invoice description field \\
+AP-SEC-002 & JSON injection via seller name \\
+AP-SEC-003 & Unicode control characters in OCR output \\
+AP-SEC-004 & System prompt extraction attempt \\
+\bottomrule
+\end{tabularx}
+
+\section{CI/CD integration}
+
+\begin{lstlisting}[basicstyle=\ttfamily\small,caption={GitHub Actions workflow excerpt.}]
+arabic-tests:
+  runs-on: ubuntu-latest
+  steps:
+    - uses: actions/checkout@v4
+    - name: Run Arabic AP tests
+      run: |
+        pytest tests/unit/arabic/ -v --cov=src/arabic
+        pytest tests/integration/arabic/ -v
+    - name: Check coverage
+      run: |
+        coverage report --fail-under=85
+\end{lstlisting}
+
+\section{Acceptance criteria}
+
+Tests pass when:
+\begin{enumerate}
+  \item All P1 test cases pass (100\%)
+  \item P2 test cases pass ($\geq$95\%)
+  \item P3 test cases pass ($\geq$90\%)
+  \item Line coverage $\geq$85\%
+  \item Performance within targets
+  \item No critical security findings
+\end{enumerate}

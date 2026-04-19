@@ -1,0 +1,218 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://sap-oss.github.io/schema/simula/taxonomy.schema.json",
+  "title": "Taxonomy Tree Structure",
+  "description": "Schema for taxonomy trees used in Simula training data generation (Chapter 4)",
+  "type": "object",
+  "required": ["taxonomy_id", "name", "root", "metadata"],
+  "properties": {
+    "taxonomy_id": {
+      "type": "string",
+      "description": "Unique identifier for this taxonomy"
+    },
+    "name": {
+      "type": "string",
+      "description": "Taxonomy name (e.g., query_type, time_granularity)"
+    },
+    "description": {
+      "type": "string",
+      "description": "Description of what this taxonomy represents"
+    },
+    "domain": {
+      "type": "string",
+      "description": "Domain this taxonomy applies to (e.g., trial_balance, arabic_ap)"
+    },
+    "schema_context": {
+      "type": "string",
+      "description": "Reference to HANA schema this taxonomy was generated from"
+    },
+    "root": {
+      "$ref": "#/definitions/taxonomy_node",
+      "description": "Root node of the taxonomy tree"
+    },
+    "statistics": {
+      "$ref": "#/definitions/taxonomy_statistics",
+      "description": "Taxonomy statistics"
+    },
+    "generation_metadata": {
+      "$ref": "#/definitions/generation_metadata",
+      "description": "How this taxonomy was generated"
+    },
+    "quality_metrics": {
+      "$ref": "#/definitions/quality_metrics",
+      "description": "Quality metrics from evaluation"
+    },
+    "metadata": {
+      "$ref": "https://sap-oss.github.io/schema/common/base-types.schema.json#/definitions/Metadata",
+      "description": "Record metadata"
+    }
+  },
+  "definitions": {
+    "taxonomy_node": {
+      "type": "object",
+      "required": ["node_id", "name", "node_type"],
+      "properties": {
+        "node_id": {
+          "type": "string",
+          "description": "Unique node identifier within taxonomy"
+        },
+        "name": {
+          "type": "string",
+          "description": "Node name"
+        },
+        "description": {
+          "type": "string",
+          "description": "Node description"
+        },
+        "node_type": {
+          "type": "string",
+          "enum": ["ROOT", "FACTOR", "LEAF"],
+          "description": "Node type per docs/schema/common/enums.yaml"
+        },
+        "level": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Depth level in tree (0 = root)"
+        },
+        "path": {
+          "type": "string",
+          "description": "Full path from root (e.g., query_type/aggregation/sum)"
+        },
+        "children": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/taxonomy_node"
+          },
+          "description": "Child nodes"
+        },
+        "examples": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Example values or use cases"
+        },
+        "sampling_weight": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "default": 1.0,
+          "description": "Sampling weight for generation"
+        },
+        "sample_count": {
+          "type": "integer",
+          "default": 0,
+          "description": "Number of times this node has been sampled"
+        },
+        "coverage_ratio": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "description": "Coverage ratio in generated dataset"
+        }
+      }
+    },
+    "taxonomy_statistics": {
+      "type": "object",
+      "properties": {
+        "total_nodes": {
+          "type": "integer",
+          "description": "Total number of nodes"
+        },
+        "leaf_count": {
+          "type": "integer",
+          "description": "Number of leaf nodes"
+        },
+        "factor_count": {
+          "type": "integer",
+          "description": "Number of factor (intermediate) nodes"
+        },
+        "max_depth": {
+          "type": "integer",
+          "description": "Maximum tree depth"
+        },
+        "avg_branching_factor": {
+          "type": "number",
+          "description": "Average number of children per non-leaf node"
+        },
+        "level_distribution": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "integer"
+          },
+          "description": "Node count per level"
+        }
+      }
+    },
+    "generation_metadata": {
+      "type": "object",
+      "properties": {
+        "method": {
+          "type": "string",
+          "enum": ["llm_generated", "manual", "hybrid", "imported"],
+          "description": "How taxonomy was generated"
+        },
+        "model": {
+          "type": "string",
+          "description": "LLM model used (if LLM-generated)"
+        },
+        "best_of_n": {
+          "type": "integer",
+          "default": 5,
+          "description": "Best-of-N parameter for generation"
+        },
+        "target_depth": {
+          "type": "integer",
+          "description": "Target depth parameter"
+        },
+        "generated_at": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Generation timestamp"
+        },
+        "source_factors": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Factor names identified from schema"
+        },
+        "seed": {
+          "type": "integer",
+          "description": "Random seed for reproducibility"
+        }
+      }
+    },
+    "quality_metrics": {
+      "type": "object",
+      "description": "Quality metrics per Section B.1, Table 2 of Simula paper",
+      "properties": {
+        "completeness": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "description": "Completeness vs expert taxonomy (target: >70%)"
+        },
+        "soundness": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "description": "Soundness (validity) score (target: >90%)"
+        },
+        "expert_taxonomy_path": {
+          "type": "string",
+          "description": "Path to expert taxonomy used for comparison"
+        },
+        "evaluated_at": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Evaluation timestamp"
+        },
+        "passed_quality_gate": {
+          "type": "boolean",
+          "description": "Whether taxonomy passed quality gate"
+        }
+      }
+    }
+  }
+}

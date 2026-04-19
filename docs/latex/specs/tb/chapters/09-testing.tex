@@ -1,0 +1,178 @@
+\chapter{Testing Specification}\label{ch:testing}
+
+This chapter specifies the testing requirements for the Trial Balance review
+pipeline, including test cases, coverage targets, and CI/CD integration.
+
+\section{Test coverage requirements}
+
+\begin{table}[htbp]
+\centering
+\caption{Trial Balance test coverage targets.}
+\label{tab:tb-coverage}
+\footnotesize
+\begin{tabularx}{\linewidth}{@{}l r r X@{}}
+\toprule
+\textbf{Component} & \textbf{Line \%} & \textbf{Branch \%} & \textbf{Notes} \\ \midrule
+Variance calculator & 90 & 85 & Financial accuracy critical \\
+Anomaly detector & 85 & 80 & Statistical methods \\
+Materiality engine & 90 & 85 & Critical path \\
+Commentary generator & 80 & 70 & LLM-dependent \\
+\textbf{Overall minimum} & \textbf{85} & \textbf{75} & Enforced in CI \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\section{Test fixtures}
+
+Fixtures are located in \texttt{tests/fixtures/tb/}.
+
+\subsection{TB extract fixtures}
+
+\begin{table}[htbp]
+\centering
+\caption{Required TB extract fixture categories.}
+\footnotesize
+\begin{tabularx}{\linewidth}{@{}l l X@{}}
+\toprule
+\textbf{Category} & \textbf{Count} & \textbf{Coverage} \\ \midrule
+Standard TB & 10 & Various account types, normal balances \\
+Multi-entity & 5 & Inter-company, consolidation \\
+Period variations & 5 & Month-end, quarter-end, year-end \\
+Large volume & 3 & 10K, 50K, 100K accounts \\
+Anomalous & 10 & Various anomaly types \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\subsection{Variance fixtures}
+
+Each variance fixture \textbf{must} cover:
+\begin{itemize}
+  \item Normal variance (within materiality threshold)
+  \item Material variance (exceeds threshold, no anomaly)
+  \item Spike anomaly (period-over-period $>3\sigma$)
+  \item Sign flip (balance sign reversal)
+  \item New account (appearing for first time)
+  \item Stale balance (unchanged $>$6 months)
+\end{itemize}
+
+\section{Unit test cases}
+
+\subsection{Variance detection}
+
+\begin{tabularx}{\linewidth}{@{}l l X@{}}
+\toprule
+\textbf{ID} & \textbf{Priority} & \textbf{Description} \\ \midrule
+TB-VAR-001 & P1 & Calculate period-over-period variance \\
+TB-VAR-002 & P1 & Apply materiality threshold correctly \\
+TB-VAR-003 & P1 & Detect spike anomaly ($>3\sigma$) \\
+TB-VAR-004 & P1 & Detect sign flip anomaly \\
+TB-VAR-005 & P2 & Detect new account anomaly \\
+TB-VAR-006 & P2 & Detect stale balance anomaly \\
+TB-VAR-007 & P2 & Handle missing prior period data \\
+TB-VAR-008 & P3 & Handle multi-currency accounts \\
+TB-VAR-009 & P3 & Handle inter-company eliminations \\
+TB-VAR-010 & P3 & Apply MAD fallback when normality fails \\
+\bottomrule
+\end{tabularx}
+
+\subsection{Materiality threshold}
+
+\begin{tabularx}{\linewidth}{@{}l l X@{}}
+\toprule
+\textbf{ID} & \textbf{Priority} & \textbf{Description} \\ \midrule
+TB-MAT-001 & P1 & Calculate hybrid percentile threshold \\
+TB-MAT-002 & P1 & Apply rolling average smoothing \\
+TB-MAT-003 & P1 & Respect minimum threshold floor \\
+TB-MAT-004 & P2 & Handle insufficient historical data \\
+TB-MAT-005 & P2 & Apply entity-specific override \\
+\bottomrule
+\end{tabularx}
+
+\subsection{Robust statistics}
+
+\begin{tabularx}{\linewidth}{@{}l l X@{}}
+\toprule
+\textbf{ID} & \textbf{Priority} & \textbf{Description} \\ \midrule
+TB-STAT-001 & P1 & Calculate MAD correctly \\
+TB-STAT-002 & P1 & Detect non-normality via Shapiro-Wilk \\
+TB-STAT-003 & P2 & Fallback to MAD when non-normal \\
+TB-STAT-004 & P2 & IQR-based threshold calculation \\
+TB-STAT-005 & P3 & Percentile-based threshold \\
+\bottomrule
+\end{tabularx}
+
+\section{Integration test suite}
+
+\begin{lstlisting}[basicstyle=\ttfamily\small]
+pytest tests/integration/tb/ -v --tb=short
+\end{lstlisting}
+
+Expected duration: 10 minutes.
+
+\subsection{End-to-end scenarios}
+
+\begin{enumerate}
+  \item \textbf{Happy path}: TB extract $\rightarrow$ variance calculation
+        $\rightarrow$ anomaly detection $\rightarrow$ commentary generation
+  \item \textbf{Anomaly review}: Detected anomaly triggers human review queue
+  \item \textbf{Multi-entity}: Process 234 entities with correct parameters
+  \item \textbf{Historical trend}: 12-month historical analysis
+\end{enumerate}
+
+\section{Performance benchmarks}
+
+\begin{table}[htbp]
+\centering
+\caption{Trial Balance performance targets.}
+\footnotesize
+\begin{tabularx}{\linewidth}{@{}l r r X@{}}
+\toprule
+\textbf{Operation} & \textbf{p95 Target} & \textbf{Throughput} & \textbf{Notes} \\ \midrule
+Variance calculation & 1,000 ms & 10/sec & Per entity \\
+Anomaly detection & 500 ms & 100/sec & Per account \\
+Commentary generation & 5,000 ms & 50/hr & LLM-dependent \\
+Full entity review & 30,000 ms & 100/hr & All accounts \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\section{Data quality tests}
+
+\begin{tabularx}{\linewidth}{@{}l X@{}}
+\toprule
+\textbf{Test} & \textbf{Description} \\ \midrule
+TB-DQ-001 & Validate TB balances sum to zero (balanced) \\
+TB-DQ-002 & Validate account codes match chart of accounts \\
+TB-DQ-003 & Validate currency codes are valid ISO 4217 \\
+TB-DQ-004 & Validate period dates are consistent \\
+\bottomrule
+\end{tabularx}
+
+\section{CI/CD integration}
+
+\begin{lstlisting}[basicstyle=\ttfamily\small,caption={GitHub Actions workflow excerpt.}]
+tb-tests:
+  runs-on: ubuntu-latest
+  steps:
+    - uses: actions/checkout@v4
+    - name: Run TB tests
+      run: |
+        pytest tests/unit/tb/ -v --cov=src/tb
+        pytest tests/integration/tb/ -v
+    - name: Check coverage
+      run: |
+        coverage report --fail-under=85
+\end{lstlisting}
+
+\section{Acceptance criteria}
+
+Tests pass when:
+\begin{enumerate}
+  \item All P1 test cases pass (100\%)
+  \item P2 test cases pass ($\geq$95\%)
+  \item P3 test cases pass ($\geq$90\%)
+  \item Line coverage $\geq$85\%
+  \item Variance calculations accurate to 2 decimal places
+  \item All statistical methods validated against reference implementations
+\end{enumerate}

@@ -1,0 +1,153 @@
+\section{Canonical Data Schema}
+\label{chap:schema}
+
+\subsection{Layout of \texttt{src/training/pipeline/}}
+
+\begin{table}[H]
+\centering
+\caption{Pipeline Module Layout}
+\label{tab:module-layout}
+\begin{tabularx}{\textwidth}{lX}
+\toprule
+\textbf{Path} & \textbf{Purpose} \\
+\midrule
+\texttt{simula\_config.py} & Configuration dataclasses for all components \\
+\texttt{simula\_llm\_client.py} & OpenAI-compatible async LLM client \\
+\texttt{hana\_schema\_extractor.py} & HANA Cloud schema extraction via MCP \\
+\texttt{simula\_taxonomy\_builder.py} & Algorithm 1: Taxonomy generation \\
+\texttt{simula\_data\_generator.py} & Algorithm 2: Training data synthesis \\
+\texttt{schema\_registry.py} & In-memory schema registry \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\subsection{Training Example Record}
+
+Each generated training example is a JSON object with the following structure:
+
+\begin{lstlisting}[language=Python,caption={TrainingExample dataclass (simula\_data\_generator.py)}]
+@dataclass
+class TrainingExample:
+    """A single training example for Text-to-SQL."""
+    id: str                    # Unique identifier
+    question: str              # Natural language question
+    sql: str                   # Target SQL query
+    schema_context: str        # Table/column descriptions
+    taxonomy_path: list[str]   # Factor nodes used
+    complexity_score: float    # 0.0 to 1.0
+    meta_prompt: str           # The meta-prompt used
+    is_complexified: bool      # Whether complexification applied
+    critic_passed: bool        # Whether double-critic passed
+    generation_metadata: dict  # Timestamps, model, etc.
+\end{lstlisting}
+
+\subsection{Schema Registry}
+
+The \texttt{SchemaRegistry} holds table and column metadata extracted from HANA:
+
+\begin{lstlisting}[language=Python,caption={Schema registry structures (schema\_registry.py)}]
+@dataclass
+class Column:
+    name: str
+    data_type: str
+    length: int | None
+    nullable: bool
+    description: str = ""
+
+@dataclass
+class TableSchema:
+    schema_name: str
+    table_name: str
+    columns: list[Column]
+    primary_key: list[str] = field(default_factory=list)
+    description: str = ""
+\end{lstlisting}
+
+\subsection{Taxonomy Structure}
+
+Taxonomies are hierarchical trees where each node represents a factor of variation:
+
+\begin{lstlisting}[language=Python,caption={Taxonomy structures (simula\_taxonomy\_builder.py)}]
+@dataclass
+class TaxonomyNode:
+    id: str
+    name: str
+    description: str
+    level: int
+    parent_id: str | None
+    children: list["TaxonomyNode"]
+    examples: list[str]  # Sample values
+
+@dataclass
+class Factor:
+    id: str
+    name: str
+    description: str
+    taxonomy: "Taxonomy"
+
+@dataclass
+class Taxonomy:
+    id: str
+    factor: str
+    root: TaxonomyNode
+    depth: int
+    total_nodes: int
+\end{lstlisting}
+
+\subsection{Enumerations}
+
+\begin{table}[H]
+\centering
+\caption{Key Enumerations}
+\label{tab:enums}
+\begin{tabular}{lll}
+\toprule
+\textbf{Enum} & \textbf{Values} & \textbf{Description} \\
+\midrule
+\texttt{LLMProvider} & \textsc{vllm}, \textsc{openai}, \textsc{anthropic} & LLM backend type \\
+\texttt{SamplingStrategy} & \textsc{uniform}, \textsc{weighted}, \textsc{coverage} & How to sample taxonomy nodes \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Unified Schema Registry}
+
+As of 18 April 2026, all schemas in this specification are published in the
+unified schema registry at \path{docs/schema/}. Migration status is
+\emph{complete} (see \path{docs/schema/registry.json} field
+\texttt{migration.status}). This consolidation addresses cross-document schema
+divergence identified in the specification review.
+
+\begin{description}
+  \item[Registry index.] \path{docs/schema/registry.json} --- Master index of
+        all schemas across domains.
+  \item[Common types.] \path{docs/schema/common/base-types.schema.json} ---
+        Shared definitions (\texttt{Metadata}, \texttt{Currency}, etc.)
+        referenced via JSON Schema \texttt{\$ref}.
+  \item[Consolidated enums.] \path{docs/schema/common/enums.yaml} --- Single
+        source of truth for enumeration values used by all four specifications.
+  \item[Simula schemas.] \path{docs/schema/simula/} --- Domain-specific
+        schemas: \texttt{taxonomy.schema.json}, \texttt{training-example.schema.json},
+        \texttt{hana-schema-entry.schema.json}, \texttt{config.schema.json}, and
+        \texttt{meta-prompt.schema.json}. All marked \texttt{status: stable}.
+\end{description}
+
+\noindent
+The registry uses JSON Schema Draft-07 with the canonical \texttt{\$id} prefix
+\url{https://sap-oss.github.io/schema/}. Validation:
+
+\begin{lstlisting}[language=bash]
+python3 docs/schema/validate.py --registry-check
+python3 docs/schema/validate.py --domain simula \
+    --schema training-example.schema.json --file example.json
+\end{lstlisting}
+
+\noindent
+See \path{docs/schema/README.md} for Python usage examples; the CI pipeline
+executes \texttt{--registry-check} on every pull request that touches
+\path{docs/schema/} or any spec chapter that references these schemas.
+
+% =============================================================================
+% CHAPTER 3: HANA SCHEMA EXTRACTION PIPELINE
+% =============================================================================
+\newpage

@@ -1,0 +1,177 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://sap-oss.github.io/schema/arabic/vendor.schema.json",
+  "title": "Arabic Vendor Record",
+  "description": "Schema for vendor/supplier master records in Arabic AP processing",
+  "type": "object",
+  "required": ["vendor_id", "name_ar", "country", "supplier_type"],
+  "properties": {
+    "vendor_id": {
+      "type": "string",
+      "description": "Unique vendor identifier (internal)"
+    },
+    "name_ar": {
+      "type": "string",
+      "description": "Vendor name in Arabic"
+    },
+    "name_en": {
+      "type": "string",
+      "description": "Vendor name in English"
+    },
+    "tax_id": {
+      "type": "string",
+      "description": "VAT registration number"
+    },
+    "commercial_registration": {
+      "type": "string",
+      "description": "Commercial registration number"
+    },
+    "country": {
+      "type": "string",
+      "enum": ["SA", "EG", "BH", "QA"],
+      "description": "Country code per docs/schema/common/enums.yaml"
+    },
+    "tax_authority": {
+      "type": "string",
+      "enum": ["ZATCA", "ETA", "NBR", "QTA"],
+      "description": "Relevant tax authority"
+    },
+    "supplier_type": {
+      "type": "string",
+      "enum": ["INDIVIDUAL", "CORPORATE", "GOVERNMENT", "NON_PROFIT", "FOREIGN"],
+      "description": "Supplier classification for tax treatment per docs/schema/common/enums.yaml"
+    },
+    "vat_registered": {
+      "type": "boolean",
+      "description": "Whether vendor is VAT registered"
+    },
+    "vat_registration_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Date of VAT registration"
+    },
+    "activity_code": {
+      "type": "string",
+      "description": "Business activity code (used for zero-rated vs exempt determination)"
+    },
+    "address": {
+      "$ref": "#/definitions/address",
+      "description": "Vendor address"
+    },
+    "contact": {
+      "$ref": "#/definitions/contact",
+      "description": "Primary contact information"
+    },
+    "bank_details": {
+      "$ref": "#/definitions/bank_details",
+      "description": "Bank account for payments"
+    },
+    "payment_terms": {
+      "type": "string",
+      "description": "Default payment terms (e.g., NET30, NET60)"
+    },
+    "currency": {
+      "type": "string",
+      "enum": ["SAR", "EGP", "BHD", "QAR", "USD", "EUR"],
+      "description": "Default transaction currency"
+    },
+    "workflow_preference": {
+      "type": "string",
+      "enum": ["vat-payment", "po-eproc", "manual-recurring", "manual-one-off"],
+      "description": "Preferred AP workflow for this vendor"
+    },
+    "is_active": {
+      "type": "boolean",
+      "default": true,
+      "description": "Whether vendor is active"
+    },
+    "metadata": {
+      "$ref": "https://sap-oss.github.io/schema/common/base-types.schema.json#/definitions/Metadata",
+      "description": "Record metadata"
+    }
+  },
+  "definitions": {
+    "address": {
+      "type": "object",
+      "properties": {
+        "street_ar": {
+          "type": "string",
+          "description": "Street address in Arabic"
+        },
+        "street_en": {
+          "type": "string",
+          "description": "Street address in English"
+        },
+        "city_ar": {
+          "type": "string",
+          "description": "City name in Arabic"
+        },
+        "city_en": {
+          "type": "string",
+          "description": "City name in English"
+        },
+        "region": {
+          "type": "string",
+          "description": "Region/state/province"
+        },
+        "postal_code": {
+          "type": "string",
+          "description": "Postal/ZIP code"
+        },
+        "country": {
+          "type": "string",
+          "enum": ["SA", "EG", "BH", "QA"],
+          "description": "Country code"
+        }
+      }
+    },
+    "contact": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Contact person name"
+        },
+        "email": {
+          "type": "string",
+          "format": "email",
+          "description": "Email address"
+        },
+        "phone": {
+          "type": "string",
+          "description": "Phone number"
+        },
+        "role": {
+          "type": "string",
+          "description": "Contact person role/title"
+        }
+      }
+    },
+    "bank_details": {
+      "type": "object",
+      "properties": {
+        "bank_name": {
+          "type": "string",
+          "description": "Bank name"
+        },
+        "account_number": {
+          "type": "string",
+          "description": "Bank account number"
+        },
+        "iban": {
+          "type": "string",
+          "pattern": "^[A-Z]{2}[0-9]{2}[A-Z0-9]{4,30}$",
+          "description": "International Bank Account Number"
+        },
+        "swift_bic": {
+          "type": "string",
+          "description": "SWIFT/BIC code"
+        },
+        "branch_code": {
+          "type": "string",
+          "description": "Branch code"
+        }
+      }
+    }
+  }
+}

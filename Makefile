@@ -2,6 +2,11 @@
 # SBOM + LaTeX documentation pipeline
 # See scripts/sbom-lineage/README.md for full documentation.
 #
+# Directory structure:
+#   docs/latex/     - LaTeX source files (.tex)
+#   docs/pdf/       - Generated PDF files
+#   docs/docx/      - Generated Word files
+#
 # Quick start:
 #   make sbom-lineage            # collect lineage + build BOMs + generate .tex
 #   make sbom-audit              # NTIA + CycloneDX 1.5 compliance audit
@@ -14,14 +19,16 @@
 #   make sbom-verify             # verify SHA-256 integrity manifest
 #   make sbom-lineage-pdf        # also compile to PDF (requires pdflatex + packages)
 #   make sbom-lineage-docx       # export combined report to Word (.docx, requires pandoc)
-#   make sbom-per-service        # generate one .tex per service in docs/
+#   make sbom-per-service        # generate one .tex per service in docs/latex/sbom/
 #   make sbom-pdf-all-services   # compile all per-service .tex to PDF
 #   make sbom-docx-all-services  # export all per-service .tex to Word
 #   make sbom-lineage-export     # PDF + DOCX for combined report
 #   make sbom-export-all-services # PDF + DOCX for all per-service reports
-#   make technical-reports-pdf   # compile docs/technical-reports/*.tex to PDF
+#   make technical-reports-pdf   # compile technical reports to PDF
 #   make technical-reports-docx  # export technical reports to Word
 #   make technical-reports-export # PDF + DOCX for technical reports
+#   make specs-all               # compile all domain specs to PDF
+#   make specs-export            # PDF + DOCX for all specs
 #   make sbom-check              # verify generated .tex files are up-to-date (CI)
 # ════════════════════════════════════════════════════════════════════════════
 
@@ -29,8 +36,18 @@ SBOM_DIR     := scripts/sbom-lineage
 BOMS_DIR     := $(SBOM_DIR)/boms
 POLICY_FILE  := $(SBOM_DIR)/policy.yaml
 SNAPSHOT_DIR := $(SBOM_DIR)/boms-snapshot
-TECH_REPORTS_DIR := docs/technical-reports
-TECH_REPORTS_TEX := $(wildcard $(TECH_REPORTS_DIR)/*.tex)
+
+# LaTeX source directories
+LATEX_DIR    := docs/latex
+SBOM_LATEX   := $(LATEX_DIR)/sbom
+TR_LATEX     := $(LATEX_DIR)/technical-reports
+SPECS_LATEX  := $(LATEX_DIR)/specs
+
+# Output directories
+PDF_DIR      := docs/pdf
+DOCX_DIR     := docs/docx
+
+TECH_REPORTS_TEX := $(wildcard $(TR_LATEX)/*.tex)
 
 .PHONY: sbom-lineage sbom-lineage-pdf sbom-lineage-docx sbom-lineage-export \
         sbom-per-service sbom-pdf-all-services sbom-docx-all-services sbom-export-all-services \
@@ -40,7 +57,8 @@ TECH_REPORTS_TEX := $(wildcard $(TECH_REPORTS_DIR)/*.tex)
         sbom-scan-licenses sbom-scan-licenses-strict \
         sbom-add-spdx-headers sbom-add-spdx-headers-dry-run \
         sbom-ml-lineage sbom-slsa \
-        sbom-vuln-offline sbom-sarif sbom-full-audit sbom-parity
+        sbom-vuln-offline sbom-sarif sbom-full-audit sbom-parity \
+        spec-arabic spec-tb spec-regulations spec-simula specs-all specs-docx specs-export
 
 # ── Step 1: collect git lineage JSON ────────────────────────────────────────
 scripts/sbom-lineage/lineage.json:
@@ -52,99 +70,108 @@ scripts/sbom-lineage/boms: scripts/sbom-lineage/lineage.json
 	@touch scripts/sbom-lineage/boms  # stamp directory so make knows it's fresh
 
 # ── Step 3: generate combined LaTeX report ──────────────────────────────────
-docs/sbom-lineage.tex: scripts/sbom-lineage/boms
+$(SBOM_LATEX)/sbom-lineage.tex: scripts/sbom-lineage/boms
 	python3 scripts/sbom-lineage/generate_latex.py \
-	    --output docs/sbom-lineage.tex
-	cp docs/sbom-lineage.tex docs/sbom/sbom-lineage.tex
+	    --output $(SBOM_LATEX)/sbom-lineage.tex
 
 # Convenience alias: run all three steps
-sbom-lineage: docs/sbom-lineage.tex
+sbom-lineage: $(SBOM_LATEX)/sbom-lineage.tex
 
 # ── PDF: compile combined report (two passes for TOC/cross-refs) ─────────────
-# Uses pdflatex when available; otherwise tectonic (single pass, auto-fetches packages).
 sbom-lineage-pdf: sbom-lineage
+	@mkdir -p $(PDF_DIR)/sbom
 	@if command -v pdflatex >/dev/null 2>&1; then \
-	  cd docs && pdflatex -interaction=nonstopmode sbom-lineage.tex && \
-	    pdflatex -interaction=nonstopmode sbom-lineage.tex; \
+	  cd $(SBOM_LATEX) && pdflatex -interaction=nonstopmode sbom-lineage.tex && \
+	    pdflatex -interaction=nonstopmode sbom-lineage.tex && \
+	    mv sbom-lineage.pdf ../../pdf/sbom/; \
 	elif command -v tectonic >/dev/null 2>&1; then \
-	  cd docs && tectonic sbom-lineage.tex; \
+	  cd $(SBOM_LATEX) && tectonic sbom-lineage.tex && \
+	    mv sbom-lineage.pdf ../../pdf/sbom/; \
 	else \
 	  echo "ERROR: install pdflatex (MacTeX/TeX Live) or tectonic (brew install tectonic)."; exit 1; \
 	fi
-	@echo "PDF written to docs/sbom-lineage.pdf"
+	@rm -f $(SBOM_LATEX)/*.aux $(SBOM_LATEX)/*.log $(SBOM_LATEX)/*.toc $(SBOM_LATEX)/*.out
+	@echo "PDF written to $(PDF_DIR)/sbom/sbom-lineage.pdf"
 
 # ── Word: combined SBOM report (requires pandoc) ─────────────────────────────
 sbom-lineage-docx: sbom-lineage
+	@mkdir -p $(DOCX_DIR)/sbom
 	@command -v pandoc >/dev/null 2>&1 || (echo "ERROR: pandoc not found. Install from https://pandoc.org/installing.html"; exit 1)
-	cd docs && pandoc sbom-lineage.tex -o sbom-lineage.docx --from=latex
-	@echo "DOCX written to docs/sbom-lineage.docx"
+	pandoc $(SBOM_LATEX)/sbom-lineage.tex -o $(DOCX_DIR)/sbom/sbom-lineage.docx --from=latex
+	@echo "DOCX written to $(DOCX_DIR)/sbom/sbom-lineage.docx"
 
 sbom-lineage-export: sbom-lineage-pdf sbom-lineage-docx
-	@echo "Combined report: docs/sbom-lineage.pdf and docs/sbom-lineage.docx"
+	@echo "Combined report: $(PDF_DIR)/sbom/sbom-lineage.pdf and $(DOCX_DIR)/sbom/sbom-lineage.docx"
 
 # ── Per-service .tex files: one per manifest entry ───────────────────────────
-# Reads service paths from the manifest and writes docs/sbom/sbom-<cyclonedx-stem>.tex
 sbom-per-service: sbom-lineage
-	python3 scripts/sbom-lineage/gen_per_service.py
+	python3 scripts/sbom-lineage/gen_per_service.py --output-dir $(SBOM_LATEX)
 
 # ── PDF: compile ALL per-service docs ───────────────────────────────────────
 sbom-pdf-all-services: sbom-per-service
-	@cd docs/sbom && for f in sbom-*.tex; do \
+	@mkdir -p $(PDF_DIR)/sbom
+	@cd $(SBOM_LATEX) && for f in sbom-*.tex; do \
 	  test -f "$$f" || continue; \
 	  case "$$f" in sbom-lineage.tex) continue;; esac; \
 	  echo "Compiling $$f ..."; \
 	  pdflatex -interaction=nonstopmode "$$f" > /dev/null && \
 	  pdflatex -interaction=nonstopmode "$$f" > /dev/null && \
-	  echo "  OK: $${f%.tex}.pdf"; \
+	  mv "$${f%.tex}.pdf" ../../pdf/sbom/ && \
+	  echo "  OK: $(PDF_DIR)/sbom/$${f%.tex}.pdf"; \
 	done
-	@echo "All PDFs compiled."
+	@rm -f $(SBOM_LATEX)/*.aux $(SBOM_LATEX)/*.log $(SBOM_LATEX)/*.toc $(SBOM_LATEX)/*.out
+	@echo "All PDFs compiled to $(PDF_DIR)/sbom/"
 
 # ── Word: all per-service docs ───────────────────────────────────────────────
 sbom-docx-all-services: sbom-per-service
+	@mkdir -p $(DOCX_DIR)/sbom
 	@command -v pandoc >/dev/null 2>&1 || (echo "ERROR: pandoc not found. Install from https://pandoc.org/installing.html"; exit 1)
-	@cd docs/sbom && for f in sbom-*.tex; do \
+	@cd $(SBOM_LATEX) && for f in sbom-*.tex; do \
 	  test -f "$$f" || continue; \
 	  case "$$f" in sbom-lineage.tex) continue;; esac; \
 	  echo "Converting $$f ..."; \
-	  pandoc "$$f" -o "$${f%.tex}.docx" --from=latex && \
-	  echo "  OK: $${f%.tex}.docx"; \
+	  pandoc "$$f" -o "../../docx/sbom/$${f%.tex}.docx" --from=latex && \
+	  echo "  OK: $(DOCX_DIR)/sbom/$${f%.tex}.docx"; \
 	done
-	@echo "All per-service DOCX files written under docs/sbom/."
+	@echo "All per-service DOCX files written to $(DOCX_DIR)/sbom/"
 
 sbom-export-all-services: sbom-pdf-all-services sbom-docx-all-services
 	@echo "Per-service PDF and DOCX export complete."
 
-# ── Technical reports (docs/technical-reports/*.tex) ──────────────────────────
+# ── Technical reports ────────────────────────────────────────────────────────
 technical-reports-pdf:
-	@test -n "$(TECH_REPORTS_TEX)" || (echo "ERROR: no .tex files in $(TECH_REPORTS_DIR)"; exit 1)
+	@test -n "$(TECH_REPORTS_TEX)" || (echo "ERROR: no .tex files in $(TR_LATEX)"; exit 1)
+	@mkdir -p $(PDF_DIR)/technical-reports
 	@command -v pdflatex >/dev/null 2>&1 || (echo "ERROR: pdflatex not found."; exit 1)
 	@for f in $(TECH_REPORTS_TEX); do \
 	  echo "Compiling $$f ..."; \
-	  d=$$(dirname "$$f"); b=$$(basename "$$f"); \
-	  ( cd "$$d" && pdflatex -interaction=nonstopmode "$$b" > /dev/null && \
-	    pdflatex -interaction=nonstopmode "$$b" > /dev/null ) && \
-	  echo "  OK: $${f%.tex}.pdf" || exit 1; \
+	  b=$$(basename "$$f"); \
+	  ( cd $(TR_LATEX) && pdflatex -interaction=nonstopmode "$$b" > /dev/null && \
+	    pdflatex -interaction=nonstopmode "$$b" > /dev/null && \
+	    mv "$${b%.tex}.pdf" ../../pdf/technical-reports/ ) && \
+	  echo "  OK: $(PDF_DIR)/technical-reports/$${b%.tex}.pdf" || exit 1; \
 	done
+	@rm -f $(TR_LATEX)/*.aux $(TR_LATEX)/*.log $(TR_LATEX)/*.toc $(TR_LATEX)/*.out
 
 technical-reports-docx:
-	@test -n "$(TECH_REPORTS_TEX)" || (echo "ERROR: no .tex files in $(TECH_REPORTS_DIR)"; exit 1)
+	@test -n "$(TECH_REPORTS_TEX)" || (echo "ERROR: no .tex files in $(TR_LATEX)"; exit 1)
+	@mkdir -p $(DOCX_DIR)/technical-reports
 	@command -v pandoc >/dev/null 2>&1 || (echo "ERROR: pandoc not found. Install from https://pandoc.org/installing.html"; exit 1)
 	@for f in $(TECH_REPORTS_TEX); do \
 	  echo "Converting $$f ..."; \
-	  pandoc "$$f" -o "$${f%.tex}.docx" --from=latex && \
-	  echo "  OK: $${f%.tex}.docx"; \
+	  b=$$(basename "$$f"); \
+	  pandoc "$$f" -o "$(DOCX_DIR)/technical-reports/$${b%.tex}.docx" --from=latex && \
+	  echo "  OK: $(DOCX_DIR)/technical-reports/$${b%.tex}.docx"; \
 	done
 
 technical-reports-export: technical-reports-pdf technical-reports-docx
-	@echo "Technical reports: PDF and DOCX in $(TECH_REPORTS_DIR)/"
+	@echo "Technical reports: PDF in $(PDF_DIR)/technical-reports/, DOCX in $(DOCX_DIR)/technical-reports/"
 
 # ── Full Python SBOMs (transitive deps via cyclonedx-bom in venvs) ──────────
 sbom-full-python:
 	bash scripts/sbom-lineage/build_full_python_sbom.sh
 
 # ── CI staleness check ───────────────────────────────────────────────────────
-# Regenerates sbom-lineage.tex into a temp file and diffs against committed.
-# Exits non-zero if the committed file is out of date.
 sbom-check:
 	@echo "Checking sbom-lineage.tex is up to date..."
 	@python3 scripts/sbom-lineage/collect_lineage.py \
@@ -155,9 +182,9 @@ sbom-check:
 	    --boms-dir /tmp/_sbom_check_boms \
 	    --lineage /tmp/_sbom_check_lineage.json \
 	    --output /tmp/_sbom_check.tex
-	@diff docs/sbom-lineage.tex /tmp/_sbom_check.tex && \
+	@diff $(SBOM_LATEX)/sbom-lineage.tex /tmp/_sbom_check.tex && \
 	  echo "sbom-lineage.tex is up to date." || \
-	  (echo "ERROR: docs/sbom-lineage.tex is stale. Run 'make sbom-lineage' and commit."; exit 1)
+	  (echo "ERROR: $(SBOM_LATEX)/sbom-lineage.tex is stale. Run 'make sbom-lineage' and commit."; exit 1)
 
 
 # ════════════════════════════════════════════════════════════════════════════
@@ -178,100 +205,77 @@ sbom-risk-report:
 	    --policy $(POLICY_FILE) --risk-report
 
 # ── OSV vulnerability overlay + VEX generation ──────────────────────────────
-# Writes vulnerability data into BOMs and VEX docs to boms/vex/
 sbom-vuln:
 	python3 $(SBOM_DIR)/vuln_overlay.py --boms-dir $(BOMS_DIR)
 
-# Offline-safe VEX stub generation (no network required).
-# Always writes boms/vex/<service>.vex.cdx.json for every BOM.
-# Used in sbom-full-audit so VEX artefacts are always present in CI.
 sbom-vuln-offline:
 	python3 $(SBOM_DIR)/vuln_overlay.py --boms-dir $(BOMS_DIR) --offline-ok
 
-# Vulnerability scan: fail on CRITICAL
 sbom-vuln-gate:
 	python3 $(SBOM_DIR)/vuln_overlay.py --boms-dir $(BOMS_DIR) \
 	    --no-overlay --fail-on-critical
 
-# ── SPDX 2.3 JSON export (OpenChain / Linux Foundation) ─────────────────────
+# ── SPDX 2.3 JSON export ─────────────────────────────────────────────────────
 sbom-spdx:
 	python3 $(SBOM_DIR)/sbom_to_spdx.py --boms-dir $(BOMS_DIR)
 
-# ── Save a snapshot of current BOMs for diff tracking ───────────────────────
+# ── Snapshot and diff ────────────────────────────────────────────────────────
 sbom-snapshot:
 	@mkdir -p $(SNAPSHOT_DIR)
 	@cp $(BOMS_DIR)/*.cyclonedx.json $(SNAPSHOT_DIR)/
-	@echo "Snapshot saved to $(SNAPSHOT_DIR)/ ($(shell ls $(BOMS_DIR)/*.cyclonedx.json | wc -l | tr -d ' ') BOMs)"
+	@echo "Snapshot saved to $(SNAPSHOT_DIR)/"
 
-# ── Diff current BOMs against snapshot ───────────────────────────────────────
 sbom-diff:
 	python3 $(SBOM_DIR)/sbom_diff.py --old $(SNAPSHOT_DIR) --new $(BOMS_DIR)
 
-# CI gate: fail if any newly introduced dependency uses a copyleft licence
 sbom-diff-check:
 	python3 $(SBOM_DIR)/sbom_diff.py --old $(SNAPSHOT_DIR) --new $(BOMS_DIR) \
 	    --fail-on-new-copyleft
 
-# ── Integrity signing: SHA-256 manifest (no dependencies required) ───────────
+# ── Integrity signing ────────────────────────────────────────────────────────
 sbom-sign:
 	python3 $(SBOM_DIR)/sign_sbom.py --mode hash
 
 sbom-verify:
 	python3 $(SBOM_DIR)/sign_sbom.py --mode hash --verify
 
-# EC key-based signing (requires: pip install cryptography)
 sbom-sign-key: sbom-signing.pem
 	python3 $(SBOM_DIR)/sign_sbom.py --mode key --private-key sbom-signing.pem
 
 sbom-verify-key: sbom-signing.pub.pem
 	python3 $(SBOM_DIR)/sign_sbom.py --mode key --verify --public-key sbom-signing.pub.pem
 
-# Generate a signing key pair (run once, store keys securely)
 sbom-signing.pem sbom-signing.pub.pem:
 	python3 $(SBOM_DIR)/sign_sbom.py --generate-key --key-prefix sbom-signing
 
-# ── SPDX header injection (REUSE compliance) ─────────────────────────────────
-# Preview what would be changed without writing any files:
+# ── SPDX header injection ────────────────────────────────────────────────────
 sbom-add-spdx-headers-dry-run:
 	python3 $(SBOM_DIR)/add_spdx_headers.py --dry-run
 
-# Apply SPDX headers to all SAP-owned source files (idempotent):
 sbom-add-spdx-headers:
 	python3 $(SBOM_DIR)/add_spdx_headers.py
 
-# ── Source-level license discovery (binary fingerprinting analog) ─────────────
+# ── Source-level license discovery ───────────────────────────────────────────
 sbom-scan-licenses:
 	python3 $(SBOM_DIR)/scan_licenses.py
 
 sbom-scan-licenses-strict:
 	python3 $(SBOM_DIR)/scan_licenses.py --fail-on-mismatch
 
-# ── ML model cards + dataset provenance (QuantumBlack parity) ────────────────
+# ── ML model cards + dataset provenance ──────────────────────────────────────
 sbom-ml-lineage:
 	python3 $(SBOM_DIR)/ml_lineage.py
 
-# ── SLSA v1.0 provenance documents ──────────────────────────────────────────
+# ── SLSA v1.0 provenance ─────────────────────────────────────────────────────
 sbom-slsa:
 	python3 $(SBOM_DIR)/slsa_provenance.py
 
-# ── Full professional audit pipeline (PwC + QB parity) ──────────────────────
-# Runs all checks in sequence; any FAIL stops the pipeline.
+# ── Full professional audit pipeline ─────────────────────────────────────────
 sbom-full-audit: sbom-audit-policy sbom-scan-licenses \
                  sbom-vuln-offline sbom-spdx sbom-ml-lineage sbom-slsa sbom-sign
 	@echo "Full professional audit complete."
-	@echo "  - Policy gates:       passed"
-	@echo "  - Source scan:        $(BOMS_DIR)/scan/"
-	@echo "  - SPDX 2.3 export:   $(BOMS_DIR)/spdx/"
-	@echo "  - ML lineage:         $(BOMS_DIR)/ml/"
-	@echo "  - SLSA provenance:    $(BOMS_DIR)/provenance/"
-	@echo "  - Hash manifest:      $(BOMS_DIR)/sbom-sha256-manifest.json"
-	@echo ""
-	@echo "Network-dependent (run separately):"
-	@echo "  make sbom-vuln        — OSV vulnerability overlay + VEX"
-	@echo "  make sbom-risk-report — executive risk scores"
 
-# ── SARIF 2.1.0 output (industry / QB standard) ──────────────────────────────
-# Generates SARIF from all available input files; skips any that don't exist.
+# ── SARIF 2.1.0 output ───────────────────────────────────────────────────────
 sbom-sarif:
 	python3 $(SBOM_DIR)/audit_sbom.py     --json 2>/dev/null > /tmp/_audit.json;  true
 	python3 $(SBOM_DIR)/scan_licenses.py  --json 2>/dev/null > /tmp/_scan.json;   true
@@ -280,12 +284,69 @@ sbom-sarif:
 	  --scan-json   /tmp/_scan.json
 	@echo "SARIF: $(BOMS_DIR)/sarif/sbom-findings.sarif.json"
 
-	@echo "Upload: gh api repos/{owner}/{repo}/code-scanning/sarifs --field sarif=@$(BOMS_DIR)/sarif/sbom-findings.sarif.json --field ref=\$$(git rev-parse HEAD)"
-
-# ── Complete parity target — the one-stop command ────────────────────────────
+# ── Complete parity target ───────────────────────────────────────────────────
 sbom-parity: sbom-full-audit sbom-sarif sbom-risk-report
-	@echo ""
-	@echo "========================================================"
-	@echo "  PwC + QuantumBlack SBOM parity achieved."
-	@echo "  Run 'make sbom-vuln' for vulnerability data (network)."
-	@echo "========================================================"
+	@echo "PwC + QuantumBlack SBOM parity achieved."
+
+
+# ════════════════════════════════════════════════════════════════════════════
+# Domain-specific specification documents
+# ════════════════════════════════════════════════════════════════════════════
+
+# Arabic AP Invoice Processing Specification
+spec-arabic:
+	@mkdir -p $(PDF_DIR)/specs
+	@command -v pdflatex >/dev/null 2>&1 || (echo "ERROR: pdflatex not found."; exit 1)
+	cd $(SPECS_LATEX)/arabic && pdflatex -interaction=nonstopmode arabic-ap-spec.tex > /dev/null && \
+	  pdflatex -interaction=nonstopmode arabic-ap-spec.tex > /dev/null && \
+	  mv arabic-ap-spec.pdf ../../../pdf/specs/
+	@rm -f $(SPECS_LATEX)/arabic/*.aux $(SPECS_LATEX)/arabic/*.log $(SPECS_LATEX)/arabic/*.toc $(SPECS_LATEX)/arabic/*.out
+	@echo "PDF: $(PDF_DIR)/specs/arabic-ap-spec.pdf"
+
+# Trial Balance Review Specification
+spec-tb:
+	@mkdir -p $(PDF_DIR)/specs
+	@command -v pdflatex >/dev/null 2>&1 || (echo "ERROR: pdflatex not found."; exit 1)
+	cd $(SPECS_LATEX)/tb && pdflatex -interaction=nonstopmode tb-review-spec.tex > /dev/null && \
+	  pdflatex -interaction=nonstopmode tb-review-spec.tex > /dev/null && \
+	  mv tb-review-spec.pdf ../../../pdf/specs/
+	@rm -f $(SPECS_LATEX)/tb/*.aux $(SPECS_LATEX)/tb/*.log $(SPECS_LATEX)/tb/*.toc $(SPECS_LATEX)/tb/*.out
+	@echo "PDF: $(PDF_DIR)/specs/tb-review-spec.pdf"
+
+# AI Regulations Compliance Specification
+spec-regulations:
+	@mkdir -p $(PDF_DIR)/specs
+	@command -v pdflatex >/dev/null 2>&1 || (echo "ERROR: pdflatex not found."; exit 1)
+	cd $(SPECS_LATEX)/regulations && pdflatex -interaction=nonstopmode regulations-spec.tex > /dev/null && \
+	  pdflatex -interaction=nonstopmode regulations-spec.tex > /dev/null && \
+	  mv regulations-spec.pdf ../../../pdf/specs/
+	@rm -f $(SPECS_LATEX)/regulations/*.aux $(SPECS_LATEX)/regulations/*.log $(SPECS_LATEX)/regulations/*.toc $(SPECS_LATEX)/regulations/*.out
+	@echo "PDF: $(PDF_DIR)/specs/regulations-spec.pdf"
+
+# Simula Training Data Framework Specification
+spec-simula:
+	@mkdir -p $(PDF_DIR)/specs
+	@command -v pdflatex >/dev/null 2>&1 || (echo "ERROR: pdflatex not found."; exit 1)
+	cd $(SPECS_LATEX)/simula && pdflatex -interaction=nonstopmode simula-training-spec.tex > /dev/null && \
+	  pdflatex -interaction=nonstopmode simula-training-spec.tex > /dev/null && \
+	  mv simula-training-spec.pdf ../../../pdf/specs/
+	@rm -f $(SPECS_LATEX)/simula/*.aux $(SPECS_LATEX)/simula/*.log $(SPECS_LATEX)/simula/*.toc $(SPECS_LATEX)/simula/*.out
+	@echo "PDF: $(PDF_DIR)/specs/simula-training-spec.pdf"
+
+# All specs (4 domain areas: Arabic, TB, Regulations, Simula)
+specs-all: spec-arabic spec-tb spec-regulations spec-simula
+	@echo "All specification PDFs compiled to $(PDF_DIR)/specs/"
+
+# Export specs to Word (requires pandoc, run from spec dir to resolve \input)
+specs-docx:
+	@mkdir -p $(DOCX_DIR)/specs
+	@command -v pandoc >/dev/null 2>&1 || (echo "ERROR: pandoc not found."; exit 1)
+	cd $(SPECS_LATEX)/arabic && pandoc arabic-ap-spec.tex -o ../../../docx/specs/arabic-ap-spec.docx --from=latex
+	cd $(SPECS_LATEX)/tb && pandoc tb-review-spec.tex -o ../../../docx/specs/tb-review-spec.docx --from=latex
+	cd $(SPECS_LATEX)/regulations && pandoc regulations-spec.tex -o ../../../docx/specs/regulations-spec.docx --from=latex
+	cd $(SPECS_LATEX)/simula && pandoc simula-training-spec.tex -o ../../../docx/specs/simula-training-spec.docx --from=latex
+	@echo "DOCX exports: $(DOCX_DIR)/specs/*.docx"
+
+# Combined: PDF + DOCX for all specs
+specs-export: specs-all specs-docx
+	@echo "All specifications exported to $(PDF_DIR)/specs/ and $(DOCX_DIR)/specs/"

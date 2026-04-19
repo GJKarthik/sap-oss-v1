@@ -1,0 +1,252 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://sap-oss.github.io/schema/tb/commentary-draft.schema.json",
+  "title": "AI Commentary Draft",
+  "description": "Schema for AI-generated commentary drafts from Stage 3 of TB pipeline",
+  "type": "object",
+  "required": ["draft_id", "variance_id", "draft_text", "generation_metadata"],
+  "properties": {
+    "draft_id": {
+      "type": "string",
+      "description": "Unique identifier for this commentary draft"
+    },
+    "variance_id": {
+      "type": "string",
+      "description": "Reference to the variance record this commentary addresses"
+    },
+    "account_code": {
+      "type": "string",
+      "description": "GL account code"
+    },
+    "account_name": {
+      "type": "string",
+      "description": "GL account name"
+    },
+    "period": {
+      "type": "string",
+      "pattern": "^[0-9]{4}-[0-9]{2}$",
+      "description": "Accounting period (YYYY-MM format)"
+    },
+    "legal_entity": {
+      "type": "string",
+      "description": "Legal entity code"
+    },
+    "draft_text": {
+      "type": "string",
+      "description": "AI-generated commentary text"
+    },
+    "draft_sections": {
+      "$ref": "#/definitions/draft_sections",
+      "description": "Structured breakdown of commentary"
+    },
+    "generation_metadata": {
+      "$ref": "#/definitions/generation_metadata",
+      "description": "LLM generation details"
+    },
+    "rag_context": {
+      "$ref": "#/definitions/rag_context",
+      "description": "RAG retrieval context used"
+    },
+    "review_status": {
+      "type": "string",
+      "enum": ["pending", "in_review", "accepted", "edited", "rejected"],
+      "description": "Human review status"
+    },
+    "review_details": {
+      "$ref": "#/definitions/review_details",
+      "description": "Human review outcomes"
+    },
+    "final_text": {
+      "type": "string",
+      "description": "Final commentary text (after review/edit)"
+    },
+    "workflow_state": {
+      "type": "string",
+      "description": "Current workflow state ID"
+    },
+    "metadata": {
+      "$ref": "https://sap-oss.github.io/schema/common/base-types.schema.json#/definitions/Metadata",
+      "description": "Record metadata"
+    }
+  },
+  "definitions": {
+    "draft_sections": {
+      "type": "object",
+      "description": "Structured commentary sections",
+      "properties": {
+        "variance_summary": {
+          "type": "string",
+          "description": "Summary of the variance"
+        },
+        "root_cause_analysis": {
+          "type": "string",
+          "description": "Analysis of root cause"
+        },
+        "supporting_evidence": {
+          "type": "string",
+          "description": "Supporting evidence from GL/journals"
+        },
+        "impact_assessment": {
+          "type": "string",
+          "description": "Assessment of financial impact"
+        },
+        "recommended_action": {
+          "type": "string",
+          "description": "Recommended follow-up action"
+        },
+        "related_accounts": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Related account codes"
+        }
+      }
+    },
+    "generation_metadata": {
+      "type": "object",
+      "required": ["model", "generated_at"],
+      "properties": {
+        "model": {
+          "type": "string",
+          "description": "LLM model used (e.g., Qwen/Qwen3.5-35B)"
+        },
+        "model_version": {
+          "type": "string",
+          "description": "Model version"
+        },
+        "temperature": {
+          "type": "number",
+          "default": 0.3,
+          "description": "Generation temperature"
+        },
+        "max_tokens": {
+          "type": "integer",
+          "default": 4096,
+          "description": "Max tokens parameter"
+        },
+        "generated_at": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Generation timestamp"
+        },
+        "latency_ms": {
+          "type": "integer",
+          "description": "Generation latency in milliseconds"
+        },
+        "token_count": {
+          "type": "integer",
+          "description": "Number of tokens in response"
+        },
+        "prompt_tokens": {
+          "type": "integer",
+          "description": "Number of tokens in prompt"
+        },
+        "system_prompt_version": {
+          "type": "string",
+          "description": "Version of system prompt used"
+        }
+      }
+    },
+    "rag_context": {
+      "type": "object",
+      "description": "RAG retrieval context per TB spec Section 3.3",
+      "properties": {
+        "retrieval_source": {
+          "type": "string",
+          "default": "TB_REVIEW_VECTORS",
+          "description": "Vector table used for retrieval"
+        },
+        "num_chunks_retrieved": {
+          "type": "integer",
+          "default": 3,
+          "description": "Number of similar chunks retrieved"
+        },
+        "chunks": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/rag_chunk"
+          },
+          "description": "Retrieved chunks"
+        },
+        "total_context_tokens": {
+          "type": "integer",
+          "description": "Total tokens in retrieved context"
+        }
+      }
+    },
+    "rag_chunk": {
+      "type": "object",
+      "properties": {
+        "chunk_id": {
+          "type": "string",
+          "description": "Chunk identifier"
+        },
+        "source_document": {
+          "type": "string",
+          "description": "Source document path"
+        },
+        "text": {
+          "type": "string",
+          "description": "Chunk text"
+        },
+        "similarity_score": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "description": "Cosine similarity score"
+        },
+        "account_code": {
+          "type": "string",
+          "description": "Account code from historical commentary"
+        },
+        "period": {
+          "type": "string",
+          "description": "Period of historical commentary"
+        }
+      }
+    },
+    "review_details": {
+      "type": "object",
+      "description": "Human review details for EUC-002 compliance",
+      "properties": {
+        "reviewer": {
+          "type": "string",
+          "description": "Reviewer name or role (GFS Analyst)"
+        },
+        "reviewed_at": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Review timestamp"
+        },
+        "accept_mode": {
+          "type": "string",
+          "enum": ["as_is", "edited", "rejected"],
+          "description": "Review outcome per commentary register schema"
+        },
+        "edit_distance": {
+          "type": "integer",
+          "description": "Levenshtein distance between draft and final"
+        },
+        "edit_ratio": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "description": "Edit ratio (0 = no edit, 1 = complete rewrite)"
+        },
+        "rejection_reason": {
+          "type": "string",
+          "description": "Reason for rejection (if rejected)"
+        },
+        "feedback": {
+          "type": "string",
+          "description": "Reviewer feedback/notes"
+        },
+        "time_to_review_seconds": {
+          "type": "integer",
+          "description": "Time taken to complete review"
+        }
+      }
+    }
+  }
+}

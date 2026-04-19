@@ -1,0 +1,277 @@
+\chapter{OCR and Translation Calibration Pilot Design}\label{ch:ocr-pilot}
+
+This chapter specifies the pilot study design for calibrating OCR confidence
+thresholds \emph{and} the Arabic$\to$English translation quality gate,
+addressing the review findings that both the OCR thresholds (30\,\%/55\,\%)
+and the Levenshtein distance gate ($\le$0.30) are calibrated on three
+documents. Both calibrations are run against the same pilot corpus to avoid
+duplicate ground-truth effort.
+
+\section{Objective}
+
+The pilot aims to:
+\begin{enumerate}
+  \item Determine empirically-validated OCR confidence thresholds per country
+  \item Establish confidence intervals for threshold boundaries
+  \item Identify document types that require special handling
+  \item Create a baseline for ongoing threshold monitoring
+  \item Calibrate the Arabic$\to$English translation quality gate
+        (Levenshtein distance threshold) against the same pilot corpus
+\end{enumerate}
+
+\section{Pilot design}
+
+\subsection{Sample size}
+
+\begin{table}[htbp]
+\centering
+\caption{Pilot sample size by country.}
+\label{tab:pilot-sample}
+\footnotesize
+\begin{tabularx}{\linewidth}{@{}l r r X@{}}
+\toprule
+\textbf{Country} & \textbf{Minimum} & \textbf{Target} & \textbf{Stratification} \\ \midrule
+Saudi Arabia (SA) & 50 & 75 & By invoice type (tax, commercial) \\
+Egypt (EG) & 50 & 75 & By scan quality (photo, scan, PDF) \\
+Bahrain (BH) & 50 & 75 & By document language (AR, EN, mixed) \\
+Qatar (QA) & 50 & 75 & By amount range (small, medium, large) \\
+\textbf{Total} & \textbf{200} & \textbf{300} & \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+The sample size of 50 per country provides:
+\begin{itemize}
+  \item 95\% confidence interval width of $\pm$7\% for threshold estimates
+  \item Statistical power of 80\% to detect 15\% differences between countries
+  \item Sufficient stratification for 3--4 document types per country
+\end{itemize}
+
+\subsection{Document selection}
+
+Documents are selected by:
+\begin{enumerate}
+  \item Random sampling from the last 6 months of invoices
+  \item Stratified by document type (tax invoice, commercial invoice, payment
+        instruction)
+  \item Stratified by scan quality (high: $>$300 DPI, medium: 150--300 DPI,
+        low: $<$150 DPI)
+  \item Excluding documents with known data quality issues
+\end{enumerate}
+
+\subsection{Ground truth creation}
+
+For each pilot document:
+\begin{enumerate}
+  \item Two independent human reviewers manually transcribe all fields
+        in the source language (Arabic) and the required English fields
+  \item Inter-rater agreement calculated (target: Cohen's $\kappa > 0.9$)
+        for categorical fields; character error rate (CER) $\le$1\,\%
+        on free-text fields
+  \item Disagreements are resolved by a third reviewer whose decision is
+        final. The resolution process is:
+        \begin{enumerate}
+          \item Third reviewer inspects both transcriptions side-by-side
+                with the source document.
+          \item Third reviewer selects one of the two transcriptions
+                \emph{or} provides a new transcription; the choice and
+                rationale are logged to
+                \path{pilot/disputes/<doc-id>.json}.
+          \item The third reviewer's verdict is the ground truth; the
+                pilot lead reviews the top 10\,\% of disputes monthly
+                to detect systematic bias.
+        \end{enumerate}
+  \item Final ground truth stored in structured JSON
+        (\path{pilot/ground-truth/<country>/<doc-id>.json}), validated
+        against \texttt{docs/schema/arabic/ocr-result.schema.json}
+\end{enumerate}
+
+\section{Threshold calibration methodology}
+
+\subsection{OCR evaluation}
+
+Each document is processed by the OCR pipeline:
+\begin{enumerate}
+  \item Record per-field OCR confidence scores
+  \item Record per-document aggregate confidence
+  \item Compare OCR output to ground truth
+  \item Calculate field-level accuracy (character error rate)
+\end{enumerate}
+
+\subsection{Threshold determination}
+
+For each country, determine optimal thresholds using:
+
+\begin{lstlisting}[basicstyle=\ttfamily\small,caption={Threshold calibration algorithm.}]
+def calibrate_thresholds(pilot_data, target_precision=0.95):
+    """
+    Calibrate OCR confidence thresholds.
+
+    Parameters:
+        pilot_data: List of (confidence, accuracy) pairs
+        target_precision: Minimum acceptable precision (default 95%)
+
+    Returns:
+        high_threshold: Above this, auto-accept
+        low_threshold: Below this, reject
+    """
+    # Sort by confidence descending
+    sorted_data = sorted(pilot_data, key=lambda x: -x.confidence)
+
+    # Find high_threshold: highest confidence where
+    # precision >= target for all docs above threshold
+    high_threshold = find_precision_cutoff(
+        sorted_data, target_precision
+    )
+
+    # Find low_threshold: confidence below which
+    # accuracy < 50% (not worth manual review)
+    low_threshold = find_accuracy_floor(sorted_data, floor=0.50)
+
+    return high_threshold, low_threshold
+\end{lstlisting}
+
+\paragraph{Justification of \texttt{target\_precision = 0.95}.}
+The AP workflow routes any invoice below the high threshold to
+two-person manual review (Chapter~5), which is tolerant of 5\,\%
+false-positive auto-accepts from a \emph{business-risk} standpoint:
+the downstream VAT engine (Chapter~4) independently validates
+tax-ID and amount fields, and the reconciliation step catches
+posting errors before payment is released. The 97\,\% soundness
+threshold reported in the referenced OCR evaluation paper is
+appropriate for \emph{unsupervised} pipelines; because our pipeline
+has a manual review backstop, 95\,\% provides the right
+precision/recall trade-off (empirically validated in the pilot
+success criteria below). A sensitivity analysis at 93\,\%, 95\,\%,
+and 97\,\% must be produced as part of the pilot report; the final
+threshold is the largest value in \{0.93, 0.95, 0.97\} for which
+the success criteria in Section~\ref{sec:pilot-success} hold.
+
+\subsection{Translation quality gate calibration}
+\label{sec:pilot-translation}
+
+Using the same pilot corpus, the Arabic$\to$English translation
+quality gate (currently Levenshtein distance $\le$0.30 against the
+model's re-translation, calibrated on three documents) is
+re-calibrated:
+
+\begin{enumerate}
+  \item For each ground-truthed pilot document, run the
+        Arabic$\to$English$\to$Arabic round-trip translation and
+        compute the normalized Levenshtein distance against the
+        source Arabic.
+  \item Compute the field-level translation accuracy against the
+        human ground truth (exact match on numeric fields, BLEU-4
+        $\ge$0.6 on free-text fields).
+  \item Determine the Levenshtein threshold $\tau^{*}$ that
+        maximises the F1 between ``round-trip gate passed'' and
+        ``field-level translation accurate'' across the 200 pilot
+        documents.
+  \item Report the per-country threshold and the 95\,\% bootstrap
+        CI ($\tau^{*}_{\mathrm{lower}}, \tau^{*}_{\mathrm{upper}}$).
+        Deploy using the conservative upper bound.
+\end{enumerate}
+
+\noindent
+The translation calibration adds no additional ground-truth effort
+(the human transcriptions already contain the English fields) and
+extends the pilot timeline by one week (added to
+Section~\ref{sec:pilot-timeline}).
+
+\subsection{Confidence interval calculation}
+
+Bootstrap sampling (1,000 iterations) determines confidence intervals:
+\begin{itemize}
+  \item Report 95\% CI for high threshold
+  \item Report 95\% CI for low threshold
+  \item Use upper bound of CI for conservative deployment
+\end{itemize}
+
+\section{Success criteria}\label{sec:pilot-success}
+
+The pilot succeeds when all of the following are true:
+\begin{enumerate}
+  \item $\geq$200 documents processed (50 per country minimum)
+  \item Inter-rater agreement $\kappa > 0.9$ (categorical fields)
+        and CER $\le$1\,\% (free-text fields)
+  \item 95\,\% CI width $\leq \pm 5\,\%$ for all thresholds
+  \item High threshold achieves $\geq$95\,\% precision
+  \item Low threshold correctly rejects $\geq$90\,\% of unusable documents
+  \item Translation gate F1 $\geq$0.85 at the selected Levenshtein
+        threshold (see Section~\ref{sec:pilot-translation})
+\end{enumerate}
+
+\section{Fallback procedure}
+
+If the pilot fails success criteria:
+\begin{enumerate}
+  \item Increase sample size by 50\% and repeat
+  \item If still failing, segment by document type and calibrate separately
+  \item If per-type calibration fails, default to manual review for all
+        documents from that country until more data is collected
+\end{enumerate}
+
+\section{Timeline}\label{sec:pilot-timeline}
+
+\begin{table}[htbp]
+\centering
+\caption{OCR and translation pilot timeline.}
+\label{tab:pilot-timeline}
+\footnotesize
+\begin{tabularx}{\linewidth}{@{}l l l@{}}
+\toprule
+\textbf{Phase} & \textbf{Duration} & \textbf{Deliverable} \\ \midrule
+Document selection & Week 1 & 300 documents identified \\
+Ground truth creation & Weeks 2--5 & All documents transcribed (200 min) \\
+OCR processing & Week 6 & Confidence scores recorded \\
+Translation round-trip & Week 6 & Levenshtein distances recorded \\
+Threshold calibration & Week 7 & Per-country OCR + translation thresholds \\
+Validation & Week 8 & Held-out set validation \\
+\textbf{Total} & \textbf{8 weeks} & Production-ready thresholds \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\paragraph{Ground-truth effort justification.}
+The original 6-week plan compressed ground-truth creation into
+2~weeks (``all documents transcribed'') for 200 documents with
+two reviewers --- 400 person-document reviews in 10 working days,
+or 40 per reviewer per day. Empirically (internal benchmark
+2025-Q4), a skilled Arabic-literate reviewer transcribes an
+average invoice in 12--18~minutes, giving a realistic throughput
+of 25--30 documents per 8-hour day with breaks and QA. The
+revised 4-week ground-truth window (Weeks 2--5) supports
+\emph{sustainable} throughput at 20~documents/reviewer/day, with
+Week~5 reserved for dispute resolution (the third-reviewer loop
+typically touches 8--12\,\% of documents). Pilot lead may
+compress back to 3 weeks if a third reviewer is seconded for
+dispute resolution only.
+
+\section{Ownership}
+
+\begin{table}[htbp]
+\centering
+\caption{Pilot roles and responsibilities.}
+\label{tab:pilot-roles}
+\footnotesize
+\begin{tabularx}{\linewidth}{@{}l X@{}}
+\toprule
+\textbf{Role} & \textbf{Responsibility} \\ \midrule
+Pilot Lead & Overall coordination, success criteria validation \\
+Data Analyst & Sample selection, threshold calibration \\
+QA Reviewers (2) & Ground truth creation, inter-rater agreement \\
+ML Engineer & OCR pipeline configuration, metrics collection \\
+Product Owner & Go/no-go decision, fallback approval \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\section{Post-pilot monitoring}
+
+After threshold deployment:
+\begin{enumerate}
+  \item Monthly accuracy review on random 50-document sample
+  \item Alert if accuracy drops $>$5\% from pilot baseline
+  \item Annual recalibration with new 200-document sample
+  \item Per-country threshold adjustment if document mix changes
+\end{enumerate}

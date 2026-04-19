@@ -15,10 +15,9 @@ const RECENT_LIMIT = 8;
 
 const ROUTE_SEARCH_TERMS: Record<string, string[]> = {
   '/dashboard': ['overview', 'home', 'status', 'health', 'platform'],
-  '/data-explorer': ['data assets', 'datasets', 'browse data', 'tables'],
+  '/data-products': ['data products', 'publish data', 'catalog', 'data assets', 'datasets', 'browse data'],
   '/data-cleaning': ['prepare data', 'clean data', 'fix records', 'sanitize'],
   '/schema-browser': ['schema', 'columns', 'structure', 'data model'],
-  '/data-products': ['data products', 'publish data', 'catalog'],
   '/data-quality': ['quality checks', 'validate data', 'quality'],
   '/lineage': ['knowledge graph', 'memory graph', 'relationships', 'concepts', 'lineage', 'dependencies'],
   '/vocab-search': ['business terms', 'vocabulary', 'taxonomy'],

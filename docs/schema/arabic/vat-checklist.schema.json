@@ -1,0 +1,236 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://sap-oss.github.io/schema/arabic/vat-checklist.schema.json",
+  "title": "VAT Compliance Checklist",
+  "description": "Schema for VAT compliance checklist records used in Arabic AP processing (Chapter 4 of spec)",
+  "type": "object",
+  "required": ["checklist_id", "invoice_id", "country", "rules_evaluated", "overall_verdict"],
+  "properties": {
+    "checklist_id": {
+      "type": "string",
+      "description": "Unique identifier for this checklist evaluation"
+    },
+    "invoice_id": {
+      "type": "string",
+      "description": "Reference to the invoice being evaluated"
+    },
+    "country": {
+      "type": "string",
+      "enum": ["SA", "EG", "BH", "QA"],
+      "description": "Country jurisdiction for VAT rules"
+    },
+    "tax_authority": {
+      "type": "string",
+      "enum": ["ZATCA", "ETA", "NBR", "QTA"],
+      "description": "Relevant tax authority"
+    },
+    "rules_evaluated": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/rule_evaluation"
+      },
+      "description": "Individual rule evaluation results"
+    },
+    "overall_verdict": {
+      "type": "string",
+      "enum": ["RELEASE", "HOLD", "REJECT"],
+      "description": "Overall checklist verdict per docs/schema/common/enums.yaml"
+    },
+    "vat_category_determined": {
+      "type": "string",
+      "enum": ["FI", "SI", "ZR", "EX", "RC", "UR", "TCN", "CBR", "OS", "OTHER"],
+      "description": "VAT category determined by checklist evaluation"
+    },
+    "si_fi_determination": {
+      "$ref": "#/definitions/si_fi_determination",
+      "description": "Simplified vs Full Tax Invoice determination"
+    },
+    "flags": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/compliance_flag"
+      },
+      "description": "Compliance flags raised during evaluation"
+    },
+    "human_review_required": {
+      "type": "boolean",
+      "description": "Whether human review is required before release"
+    },
+    "human_review_reason": {
+      "type": "string",
+      "description": "Reason for human review requirement"
+    },
+    "workflow_routing": {
+      "type": "string",
+      "enum": ["vat-payment", "po-eproc", "manual-recurring", "manual-one-off"],
+      "description": "Determined AP workflow routing"
+    },
+    "evaluated_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Evaluation timestamp (ISO 8601)"
+    },
+    "evaluated_by": {
+      "type": "string",
+      "description": "System or user that performed evaluation"
+    },
+    "metadata": {
+      "$ref": "https://sap-oss.github.io/schema/common/base-types.schema.json#/definitions/Metadata",
+      "description": "Record metadata"
+    }
+  },
+  "definitions": {
+    "rule_evaluation": {
+      "type": "object",
+      "required": ["rule_id", "rule_name", "result"],
+      "properties": {
+        "rule_id": {
+          "type": "string",
+          "description": "Unique rule identifier"
+        },
+        "rule_name": {
+          "type": "string",
+          "description": "Human-readable rule name"
+        },
+        "rule_description": {
+          "type": "string",
+          "description": "Rule description/purpose"
+        },
+        "result": {
+          "type": "string",
+          "enum": ["Y", "N", "NA"],
+          "description": "Rule result: Y=Pass, N=Fail, NA=Not Applicable"
+        },
+        "predicate": {
+          "$ref": "#/definitions/rule_predicate",
+          "description": "Rule predicate definition"
+        },
+        "input_values": {
+          "type": "object",
+          "additionalProperties": true,
+          "description": "Input values used for evaluation"
+        },
+        "failure_reason": {
+          "type": "string",
+          "description": "Reason for failure (if result=N)"
+        },
+        "severity": {
+          "type": "string",
+          "enum": ["critical", "major", "minor", "informational"],
+          "description": "Severity of rule failure"
+        }
+      }
+    },
+    "rule_predicate": {
+      "type": "object",
+      "description": "Rule predicate expressed as JSON-Logic or named helper",
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": ["json_logic", "named_helper"],
+          "description": "Predicate type"
+        },
+        "expression": {
+          "type": "object",
+          "description": "JSON-Logic expression (when type=json_logic)",
+          "additionalProperties": true
+        },
+        "helper_name": {
+          "type": "string",
+          "description": "Named helper function (when type=named_helper)"
+        },
+        "helper_params": {
+          "type": "object",
+          "additionalProperties": true,
+          "description": "Parameters for named helper"
+        }
+      },
+      "examples": [
+        {
+          "type": "json_logic",
+          "expression": {
+            "<=": [
+              {"var": "totals.gross"},
+              {"var": "thresholds.si_fi_boundary"}
+            ]
+          }
+        },
+        {
+          "type": "json_logic", 
+          "expression": {
+            "and": [
+              {"==": [{"var": "vat_category"}, "FI"]},
+              {"!": {"var": "seller.tax_id"}}
+            ]
+          }
+        },
+        {
+          "type": "named_helper",
+          "helper_name": "check_vat_registration_validity",
+          "helper_params": {"tax_id": "seller.tax_id", "country": "country"}
+        }
+      ]
+    },
+    "si_fi_determination": {
+      "type": "object",
+      "description": "Simplified Invoice vs Full Tax Invoice determination",
+      "properties": {
+        "invoice_amount": {
+          "type": "number",
+          "description": "Invoice gross amount"
+        },
+        "threshold_amount": {
+          "type": "number",
+          "description": "SI/FI boundary threshold for country"
+        },
+        "threshold_currency": {
+          "type": "string",
+          "description": "Currency of threshold"
+        },
+        "determination": {
+          "type": "string",
+          "enum": ["SI", "FI"],
+          "description": "Determined invoice type"
+        },
+        "threshold_source": {
+          "type": "string",
+          "default": "docs/schema/common/enums.yaml#/vat_thresholds",
+          "description": "Source of threshold values"
+        }
+      }
+    },
+    "compliance_flag": {
+      "type": "object",
+      "required": ["flag_code", "flag_message"],
+      "properties": {
+        "flag_code": {
+          "type": "string",
+          "description": "Flag code (e.g., VAT_MISMATCH, MISSING_TAX_ID)"
+        },
+        "flag_message": {
+          "type": "string",
+          "description": "Human-readable flag message"
+        },
+        "severity": {
+          "type": "string",
+          "enum": ["error", "warning", "info"],
+          "description": "Flag severity"
+        },
+        "field_path": {
+          "type": "string",
+          "description": "JSON path to problematic field"
+        },
+        "expected_value": {
+          "description": "Expected value (if applicable)"
+        },
+        "actual_value": {
+          "description": "Actual value found"
+        },
+        "remediation": {
+          "type": "string",
+          "description": "Suggested remediation action"
+        }
+      }
+    }
+  }
+}

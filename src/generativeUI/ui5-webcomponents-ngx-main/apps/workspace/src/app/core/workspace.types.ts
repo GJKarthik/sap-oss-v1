@@ -83,17 +83,6 @@ export interface NavLinkDatum {
 
 export const NAV_LINK_DATA: NavLinkDatum[] = [
   {
-    path: '/forms',
-    labelKey: 'NAV_FORMS',
-    icon: 'form',
-    titleKey: 'HOME_CARD_FORMS_TITLE',
-    subtitleKey: 'HOME_CARD_FORMS_SUBTITLE',
-    descriptionKey: 'HOME_CARD_FORMS_DESC',
-    buttonKey: 'HOME_CARD_FORMS_BTN',
-    showInShellbar: false,
-    showOnHome: true,
-  },
-  {
     path: '/joule',
     labelKey: 'NAV_JOULE',
     icon: 'ai',

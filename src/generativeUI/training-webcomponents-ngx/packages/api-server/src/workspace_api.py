@@ -15,7 +15,6 @@ router = APIRouter()
 
 DEFAULT_NAV_ROUTES = [
     "/dashboard",
-    "/data-explorer",
     "/data-cleaning",
     "/schema-browser",
     "/data-products",
@@ -45,6 +44,49 @@ DEFAULT_NAV_ROUTES = [
 ]
 
 
+def _default_backend_settings() -> dict[str, Any]:
+    return {
+        # Training shell settings
+        "apiBaseUrl": "/api",
+        "collabWsUrl": "/collab",
+        # UI5 workspace settings
+        "openAiBaseUrl": "/api/v1/ui5/openai",
+        "mcpBaseUrl": "/api/v1/ui5/mcp/mcp",
+        "agUiEndpoint": "/ag-ui/run",
+        "ocrInternalToken": "",
+    }
+
+
+def _normalize_nav_items(items: list[Any]) -> list[dict[str, Any]]:
+    normalized_items: list[dict[str, Any]] = []
+    for index, item in enumerate(items):
+        if not isinstance(item, dict):
+            continue
+
+        route = str(item.get("route") or item.get("path") or "").strip()
+        path = str(item.get("path") or item.get("route") or "").strip()
+        canonical_path = path or route
+        canonical_route = route or path
+        if not canonical_path or not canonical_route:
+            continue
+
+        try:
+            order = int(item.get("order", index))
+        except (TypeError, ValueError):
+            order = index
+
+        normalized_items.append(
+            {
+                "route": canonical_route,
+                "path": canonical_path,
+                "visible": bool(item.get("visible", True)),
+                "order": order,
+            }
+        )
+
+    return normalized_items
+
+
 def _now_iso() -> str:
     return datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
 
@@ -57,13 +99,11 @@ def _default_settings(identity: RequestIdentity) -> dict[str, Any]:
             "displayName": identity.display_name,
             "teamName": identity.team_name,
         },
-        "backend": {
-            "apiBaseUrl": "/api",
-            "collabWsUrl": "/collab",
-        },
+        "backend": _default_backend_settings(),
         "nav": {
+            "defaultLandingPath": "/",
             "items": [
-                {"route": route, "visible": True, "order": index}
+                {"route": route, "path": route, "visible": True, "order": index}
                 for index, route in enumerate(DEFAULT_NAV_ROUTES)
             ],
         },
@@ -92,15 +132,25 @@ def _normalize_settings(
 ) -> dict[str, Any]:
     settings = deepcopy(payload or {})
     normalized = _default_settings(identity)
-    normalized.update({key: value for key, value in settings.items() if key in normalized})
+    normalized.update(
+        {
+            key: value
+            for key, value in settings.items()
+            if key in {"version", "theme", "language", "updatedAt"}
+        }
+    )
 
     backend = settings.get("backend")
     if isinstance(backend, dict):
         normalized["backend"].update(backend)
 
     nav = settings.get("nav")
-    if isinstance(nav, dict) and isinstance(nav.get("items"), list):
-        normalized["nav"] = {"items": nav["items"]}
+    if isinstance(nav, dict):
+        default_landing_path = str(nav.get("defaultLandingPath") or "").strip()
+        if default_landing_path:
+            normalized["nav"]["defaultLandingPath"] = default_landing_path
+        if isinstance(nav.get("items"), list):
+            normalized["nav"]["items"] = _normalize_nav_items(nav["items"])
 
     model = settings.get("model")
     if isinstance(model, dict):

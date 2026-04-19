@@ -8,7 +8,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and this
 ## [Unreleased]
 
 ### Added
-- Component specs for `PipelineComponent`, `HanaExplorerComponent`, `DataExplorerComponent`, `CompareComponent`, `RegistryComponent`
+- Component specs for `PipelineComponent`, `HanaExplorerComponent`, `CompareComponent`, `RegistryComponent`
 - `ApiService` hardening: exponential-backoff retry (max 2 attempts) for 5xx / network errors, typed `ApiError` class, `REQUEST_TIMEOUT_MS` context token
 - `TimeoutInterceptor` — enforces per-request timeout via `REQUEST_TIMEOUT_MS`; converts `TimeoutError` to a normalised `HttpErrorResponse(status=0)`
 - `CHANGELOG.md`, `CONTRIBUTING.md`, `CODE_OF_CONDUCT.md`
@@ -21,7 +21,6 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and this
 - Initial Nx 22 / Angular 20 monorepo scaffold with standalone component architecture
 - `PipelineComponent` — WebSocket live-log streaming for the data-generation pipeline, 7-stage progress tracker, per-line colour coding
 - `HanaExplorerComponent` — HANA Cloud explorer with SQL query workspace and preset library
-- `DataExplorerComponent` — tabbed browser for 16 static data assets and dynamically loaded SQL training pairs, with filtering by category and difficulty
 - `CompareComponent` — side-by-side A/B model comparison with capped 10-entry history and result-length winner indicator
 - `RegistryComponent` — model registry with tag persistence (`localStorage`), one-click deploy / delete, and status / deployed-only filters
 - `ApiService` — base HTTP wrapper (`get`, `post`, `delete`)

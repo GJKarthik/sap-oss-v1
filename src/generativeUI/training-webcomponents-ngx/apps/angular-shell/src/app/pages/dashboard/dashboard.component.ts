@@ -162,7 +162,7 @@ export class DashboardComponent implements OnInit {
         badge: 'Training mode',
         body: 'Execution routes are prioritized. Launch jobs, inspect data, and commit operational changes directly.',
         primary: '/pipeline',
-        secondary: '/data-explorer',
+        secondary: '/data-products',
       },
     };
 

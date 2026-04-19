@@ -1,0 +1,104 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://sap-oss.github.io/schema/tb/entity-params.schema.json",
+  "title": "TB Entity Parameter File",
+  "description": "Per-Legal-Entity parameter file used by the TB controls engine (one per LE, path docs/tb/machine-readable/entity-params/<le-code>.yaml).",
+  "type": "object",
+  "required": [
+    "le_code",
+    "le_name",
+    "fx_reporting_currency",
+    "materiality_threshold",
+    "variance_bands",
+    "last_calibration_date"
+  ],
+  "properties": {
+    "le_code": {
+      "type": "string",
+      "pattern": "^[A-Z]{3}$",
+      "description": "Three-letter LE code matching PSGL (e.g., HKG, SGP)."
+    },
+    "le_name": {
+      "type": "string"
+    },
+    "fx_reporting_currency": {
+      "type": "string",
+      "pattern": "^[A-Z]{3}$",
+      "description": "ISO 4217 currency code for the LE's reporting currency."
+    },
+    "materiality_threshold": {
+      "type": "object",
+      "required": ["absolute", "percentage"],
+      "properties": {
+        "absolute": {
+          "type": "number",
+          "minimum": 0,
+          "description": "Minimum absolute variance (in reporting currency) to flag."
+        },
+        "percentage": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "description": "Minimum relative variance (0..1) to flag."
+        }
+      }
+    },
+    "variance_bands": {
+      "type": "object",
+      "description": "Standard-deviation multipliers by account category.",
+      "additionalProperties": {
+        "type": "object",
+        "required": ["warn_sigma", "error_sigma"],
+        "properties": {
+          "warn_sigma": {"type": "number", "minimum": 0},
+          "error_sigma": {"type": "number", "minimum": 0}
+        }
+      }
+    },
+    "account_category_overrides": {
+      "type": "array",
+      "description": "LE-specific overrides to the global account category mapping.",
+      "items": {
+        "type": "object",
+        "required": ["account_pattern", "category"],
+        "properties": {
+          "account_pattern": {"type": "string"},
+          "category": {"type": "string"}
+        }
+      }
+    },
+    "regulator_vocabulary": {
+      "type": "array",
+      "description": "Regulator-specific terms injected into the system prompt (e.g., HKMA references for HKG).",
+      "items": {"type": "string"}
+    },
+    "commentary_style_exemplars": {
+      "type": "array",
+      "description": "Pointers to approved commentary examples used for style anchoring.",
+      "items": {
+        "type": "object",
+        "required": ["path", "period"],
+        "properties": {
+          "path": {"type": "string"},
+          "period": {"type": "string", "pattern": "^[0-9]{4}-[0-9]{2}$"}
+        }
+      }
+    },
+    "last_calibration_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Date of the last threshold calibration against historical data."
+    },
+    "onboarded_at": {
+      "type": "string",
+      "format": "date"
+    },
+    "onboarding_owner": {
+      "type": "string"
+    },
+    "notes": {
+      "type": "string"
+    }
+  },
+  "additionalProperties": false
+}

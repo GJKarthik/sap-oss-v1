@@ -1,0 +1,163 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://sap-oss.github.io/schema/common/base-types.schema.json",
+  "title": "SAP OSS Common Base Types",
+  "description": "Shared type definitions used across all domain schemas",
+  "version": "1.0.0",
+  
+  "definitions": {
+    "Metadata": {
+      "type": "object",
+      "description": "Standard metadata block for all records",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier (UUID or domain-specific ID)",
+          "pattern": "^[a-zA-Z0-9_-]+$"
+        },
+        "created_at": {
+          "type": "string",
+          "format": "date-time",
+          "description": "ISO 8601 timestamp when record was created"
+        },
+        "updated_at": {
+          "type": "string",
+          "format": "date-time",
+          "description": "ISO 8601 timestamp of last update"
+        },
+        "version": {
+          "type": "string",
+          "pattern": "^\\d+\\.\\d+\\.\\d+$",
+          "description": "SemVer version of the record schema"
+        },
+        "source": {
+          "type": "string",
+          "description": "Origin system or file path"
+        }
+      },
+      "required": ["id"]
+    },
+    
+    "Currency": {
+      "type": "object",
+      "description": "Monetary amount with currency code",
+      "properties": {
+        "amount": {
+          "type": "number",
+          "description": "Numeric value (positive or negative)"
+        },
+        "currency": {
+          "type": "string",
+          "pattern": "^[A-Z]{3}$",
+          "description": "ISO 4217 currency code (e.g., USD, SAR, BHD)"
+        }
+      },
+      "required": ["amount", "currency"]
+    },
+    
+    "DateRange": {
+      "type": "object",
+      "description": "Period with start and optional end date",
+      "properties": {
+        "start": {
+          "type": "string",
+          "format": "date",
+          "description": "Start date (YYYY-MM-DD)"
+        },
+        "end": {
+          "type": "string",
+          "format": "date",
+          "description": "End date (YYYY-MM-DD), null if ongoing"
+        }
+      },
+      "required": ["start"]
+    },
+    
+    "TaxIdentifier": {
+      "type": "object",
+      "description": "Tax registration number with jurisdiction",
+      "properties": {
+        "number": {
+          "type": "string",
+          "description": "Tax ID number"
+        },
+        "type": {
+          "type": "string",
+          "enum": ["TIN", "TRN", "VAT", "GST", "OTHER"],
+          "description": "Tax ID type"
+        },
+        "country": {
+          "$ref": "#/definitions/CountryCode"
+        }
+      },
+      "required": ["number", "country"]
+    },
+    
+    "CountryCode": {
+      "type": "string",
+      "pattern": "^[A-Z]{2}$",
+      "description": "ISO 3166-1 alpha-2 country code"
+    },
+    
+    "LanguageCode": {
+      "type": "string",
+      "pattern": "^[a-z]{2}(-[A-Z]{2})?$",
+      "description": "ISO 639-1 language code, optionally with region (e.g., ar, ar-SA, en-US)"
+    },
+    
+    "EntityParty": {
+      "type": "object",
+      "description": "Business entity (buyer, seller, counterparty)",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Legal entity name"
+        },
+        "tax_id": {
+          "$ref": "#/definitions/TaxIdentifier"
+        },
+        "address": {
+          "type": "string",
+          "description": "Full postal address"
+        },
+        "country": {
+          "$ref": "#/definitions/CountryCode"
+        }
+      },
+      "required": ["name"]
+    },
+    
+    "Status": {
+      "type": "string",
+      "enum": [
+        "draft",
+        "pending",
+        "in_review",
+        "approved",
+        "rejected",
+        "completed",
+        "archived"
+      ],
+      "description": "Workflow status"
+    },
+    
+    "Confidence": {
+      "type": "number",
+      "minimum": 0.0,
+      "maximum": 1.0,
+      "description": "Confidence score between 0 and 1"
+    },
+    
+    "FilePath": {
+      "type": "string",
+      "description": "Relative path from repository root",
+      "pattern": "^[^/].*$"
+    },
+    
+    "SHA256Hash": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$",
+      "description": "SHA-256 hash (lowercase hex)"
+    }
+  }
+}

@@ -1,0 +1,854 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage[margin=2cm]{geometry}
+\usepackage{longtable}
+\usepackage{booktabs}
+\usepackage{hyperref}
+\usepackage{xcolor}
+\usepackage{fancyhdr}
+\usepackage{titlesec}
+\usepackage{enumitem}
+\usepackage{listings}
+\usepackage{courier}
+\usepackage{tabularx}
+\usepackage{array}
+\usepackage{graphicx}
+
+% Colors
+\definecolor{sapblue}{RGB}{0, 112, 242}
+\definecolor{sapdark}{RGB}{53, 74, 95}
+\definecolor{sapgold}{RGB}{231, 140, 7}
+\definecolor{critred}{RGB}{187, 0, 0}
+\definecolor{lightbg}{RGB}{245, 246, 247}
+\definecolor{grey}{RGB}{102, 102, 102}
+
+% Page style
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\textcolor{sapdark}{\textbf{Trial Balance Review -- AI Specification}}}
+\fancyhead[R]{\textcolor{grey}{Version 1.1 | April 2026}}
+\fancyfoot[C]{\thepage}
+
+% Section formatting
+\titleformat{\section}{\Large\bfseries\color{sapdark}}{\thesection}{1em}{}
+\titleformat{\subsection}{\large\bfseries\color{sapblue}}{\thesubsection}{1em}{}
+\titleformat{\subsubsection}{\normalsize\bfseries\color{sapdark}}{\thesubsubsection}{1em}{}
+
+% Hyperref setup
+\hypersetup{
+    colorlinks=true,
+    linkcolor=sapblue,
+    urlcolor=sapblue,
+    pdftitle={Trial Balance Review - AI Specification},
+    pdfauthor={SAP OSS - Studio AI}
+}
+
+% Custom column types
+\newcolumntype{L}[1]{>{\raggedright\arraybackslash}p{#1}}
+\newcolumntype{C}[1]{>{\centering\arraybackslash}p{#1}}
+
+\lstset{
+    basicstyle=\ttfamily\footnotesize,
+    breaklines=true,
+    frame=single,
+    backgroundcolor=\color{lightbg}
+}
+
+\begin{document}
+
+% ═══════════════════════════════════════════════════════════════════════════════
+% Title Page
+% ═══════════════════════════════════════════════════════════════════════════════
+
+\begin{titlepage}
+\centering
+\vspace*{3cm}
+
+{\Huge\bfseries\textcolor{sapdark}{Trial Balance Review}\par}
+\vspace{0.5cm}
+{\LARGE\textcolor{sapblue}{AI-Augmented Processing \& Analytics}\par}
+\vspace{0.5cm}
+{\large Detailed Business Requirements, Process Specification,\\and Training Data Design\par}
+
+\vspace{2cm}
+
+\begin{tabular}{@{}ll@{}}
+\textbf{Process Owner} & Modi, Piyush \\
+\textbf{Created By} & S1 Badrinath (1498002) \\
+\textbf{Version} & 1.1 \\
+\textbf{Date} & April 2026 \\
+\textbf{Classification} & Confidential \\
+\end{tabular}
+
+\vspace{2cm}
+
+\begin{abstract}
+\noindent
+This document provides the detailed specification for AI-augmented Trial Balance (TB) review, 
+covering the month-end close process across 234 legal entities. It consolidates the business 
+requirements, formal process specification (state machine with 27 states and 5 decision gateways), 
+training data design from the HKG TB/PL workbooks, and data schema definitions.
+\end{abstract}
+
+\vfill
+{\small SAP OSS -- Studio AI}
+
+\end{titlepage}
+
+% ═══════════════════════════════════════════════════════════════════════════════
+% Table of Contents
+% ═══════════════════════════════════════════════════════════════════════════════
+
+\tableofcontents
+\newpage
+
+% ═══════════════════════════════════════════════════════════════════════════════
+% Section 1: Business Requirements
+% ═══════════════════════════════════════════════════════════════════════════════
+
+\section{Business Requirements}
+
+\subsection{Executive Summary}
+
+Trial Balance review is conducted during M+1 to M+7 across all Legal entities, 
+Segment \& Group, to understand variance \& balance movements between periods. 
+An AI model produces business insights and written commentaries based on GL transaction 
+data analysis -- detecting anomalies, trends, unusual movements, new accounts, spikes/drops 
+vs prior periods, and material balances.
+
+\begin{table}[h]
+\centering
+\caption{Current vs Target State}
+\begin{tabular}{@{}L{3cm}L{5cm}L{5.5cm}@{}}
+\toprule
+\textbf{Dimension} & \textbf{Current State} & \textbf{Target State} \\
+\midrule
+FTE Effort & 20-25 FTEs, $\sim$4 hrs/day & 15-20 FTEs (5 FTE savings) \\
+Cycle Time & M+1 to M+7 (monthly) & Daily control capability \\
+Reporting Views & Legal Entity only & LE + Caption + Segment \\
+Commentary & Manual stakeholder requests & LLM-generated drafts \\
+Controls & EUC-dependent manual & Automated with audit trail \\
+Investment & -- & 3 FTEs, <100 days \\
+Solution & -- & Studio AI (in-house) \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Scope \& Stakeholders}
+
+\begin{itemize}[noitemsep]
+    \item \textbf{In scope:} TB review at Finance caption level, variance analysis, automated commentary writing, segment \& LE reporting
+    \item \textbf{Out of scope:} Country IFRS reporting, BSS Risk Assessment (covered separately in Section 1.6)
+    \item \textbf{Coverage:} 234 legal entities across all segments and Group
+\end{itemize}
+
+\begin{table}[h]
+\centering
+\caption{Stakeholder Responsibilities}
+\begin{tabular}{@{}L{5cm}L{9cm}@{}}
+\toprule
+\textbf{Role} & \textbf{Responsibilities} \\
+\midrule
+Process Owner (Modi, Piyush) & Owns BPMN process definition; approves workflow changes \\
+Head of Africa GFS & Internal review and approval; FORTM pack oversight \\
+Country Stakeholders & Provide variance commentaries; confirm entry status by M+4 \\
+GCFO Teams & Consume narrative summaries; review and decision-making \\
+AI Architect & Solution design (PSGL + S4 compatibility) \\
+PPE Team & SAP integration assessment \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Process Steps with AI Augmentation Opportunities}
+
+\begin{longtable}{@{}C{0.8cm}L{2.5cm}C{1.5cm}C{1.5cm}L{7cm}@{}}
+\caption{Process Steps and AI Augmentation} \\
+\toprule
+\textbf{ID} & \textbf{Step} & \textbf{Timing} & \textbf{Priority} & \textbf{AI Augmentation Opportunity} \\
+\midrule
+\endfirsthead
+\toprule
+\textbf{ID} & \textbf{Step} & \textbf{Timing} & \textbf{Priority} & \textbf{AI Augmentation Opportunity} \\
+\midrule
+\endhead
+1 & Roll Forward Prior Month File & M-3 & \textcolor{sapblue}{Medium} & Auto-generate template, pre-populate parameters, detect CoA changes \\
+2 & Download PSGL \& Update Master & M-3 & \textcolor{sapgold}{High} & Automated PSGL/S4 extraction via API; auto-detect new/changed accounts \\
+3 & Extract Trial Balance & M-3 to M+5 & \textcolor{critred}{Critical} & Automated pipeline from PSGL/S4; support all 234 LEs in parallel \\
+4 & Calculate \& Filter Variances & M-2 to M+5 & \textcolor{critred}{Critical} & ML-based materiality thresholds; anomaly detection; multi-dimensional analysis \\
+5 & Seek \& Update Commentaries & M-2 to M+5 & \textcolor{critred}{Critical} & LLM-generated draft commentaries from GL data and historical patterns \\
+6 & Journal Posting \& Investigation & M-2 to M+5 & \textcolor{sapgold}{High} & Auto-detect unposted journals; predict investigation need \\
+7 & Track Entries \& Risk Assessment & M-2 to M+5 & \textcolor{sapgold}{High} & Predictive risk scoring; NLP variance categorization; real-time dashboard \\
+8 & Prepare Summary \& Review & M+5 & \textcolor{critred}{Critical} & Auto-generate narrative; FORTM pack section; multi-user collaborative review \\
+\bottomrule
+\end{longtable}
+
+\subsubsection{LLM Commentary Evaluation Criteria}
+
+Step 5 (Seek \& Update Commentaries) introduces LLM-generated draft commentaries. 
+Acceptance criteria for production deployment:
+
+\begin{table}[h]
+\centering
+\caption{LLM Commentary Evaluation Metrics}
+\begin{tabular}{@{}L{3.5cm}L{4cm}L{6.5cm}@{}}
+\toprule
+\textbf{Metric} & \textbf{Target} & \textbf{Measurement Method} \\
+\midrule
+Human acceptance rate & >85\% require only minor edits & Monthly sample of 50 commentaries, rated by GFS analysts \\
+Factual accuracy & 100\% of referenced figures match GL & Automated cross-check against variance file balances \\
+Coverage & 100\% of material variances receive a draft & Count of drafts vs. material variance count \\
+Latency & <30 seconds per commentary & P95 latency from RAG retrieval + generation pipeline \\
+Feedback loop & Monthly retraining on accepted/rejected drafts & Analyst edits stored as preference signal for RLHF \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{KPIs, Controls \& Risk Assessment}
+
+\subsubsection{Key Performance Indicators}
+
+\begin{table}[h]
+\centering
+\caption{KPI Definitions}
+\begin{tabular}{@{}L{2.5cm}L{4.5cm}L{3cm}L{3.5cm}@{}}
+\toprule
+\textbf{KPI} & \textbf{Description} & \textbf{Current} & \textbf{Target} \\
+\midrule
+TB-KPI-001 & Variance materiality threshold & Country-specific & ML-adaptive \\
+TB-KPI-002 & Review cycle time (days) & 7 days & Daily capable \\
+TB-KPI-003 & Commentary coverage rate & Variable & 100\% \\
+TB-KPI-004 & FTE effort & 20-25 FTEs & 15-20 FTEs \\
+TB-KPI-005 & Unexplained variance rate & Non-zero & 0\% \\
+TB-KPI-006 & EUC control compliance & Manual & 100\% automated \\
+TB-KPI-007 & LLM commentary acceptance rate & N/A & >85\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsubsection{EUC Control Matrix}
+
+\begin{table}[h]
+\centering
+\caption{EUC Controls}
+\begin{tabular}{@{}L{2.5cm}L{4.5cm}L{5.5cm}C{1.5cm}@{}}
+\toprule
+\textbf{Control ID} & \textbf{EUC Reference} & \textbf{Objective} & \textbf{Freq.} \\
+\midrule
+TB-CTRL-001 & EX/200/1353107/0001/000 & PSGL master data extraction integrity & Monthly \\
+TB-CTRL-002 & EX/200/1579702/0001/000 & Variance analysis calculation accuracy & Monthly \\
+TB-CTRL-003 & EX/200/1579702/0002/000 & Senior review before FORTM submission & Monthly \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsubsection{Risk Register}
+
+\begin{table}[h]
+\centering
+\caption{Risk Assessment}
+\begin{tabular}{@{}C{1.5cm}L{4cm}L{7cm}C{1cm}@{}}
+\toprule
+\textbf{ID} & \textbf{Risk} & \textbf{AI Mitigation} & \textbf{Sev.} \\
+\midrule
+CR-001 & Manual extraction errors/EUC risks & Automated extraction eliminates manual handling & H \\
+CR-002 & Delayed commentary responses & Auto-generated draft commentaries & M \\
+CR-003 & Incomplete analysis (time constraints) & AI anomaly detection across all 234 LEs & H \\
+CR-004 & Not scalable to daily controls & Foundation for daily automated monitoring & M \\
+CR-005 & PSGL/S4 API failure during parallel extraction & Retry with exponential backoff; manual EUC override state & H \\
+CR-006 & LLM commentary hallucination & Factual cross-check against GL + human review gate & H \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Implementation Timeline (15 weeks) \& Test Scenarios}
+
+\begin{table}[h]
+\centering
+\caption{Implementation Phases}
+\begin{tabular}{@{}L{3cm}C{2cm}L{4.5cm}L{4.5cm}@{}}
+\toprule
+\textbf{Phase} & \textbf{Duration} & \textbf{Key Activities} & \textbf{Milestone} \\
+\midrule
+1. Planning & 1 week & Business Requirements & BRD finalisation \\
+2. Design & 2 weeks & Process design, RACI, FRD & Solution design \\
+3. Development & 5 weeks & Solution development & Working solution \\
+4. Testing & 5 weeks & UAT, scenario testing, LLM eval & Test completion \\
+5. SIT/Governance & 2 weeks & Stress testing, governance & Governance approval \\
+6. Go Live & 1 week & Production deployment & Production \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsubsection{Key Test Scenarios (Phase 4)}
+
+\begin{longtable}{@{}C{1.2cm}L{4cm}L{6cm}C{1.5cm}@{}}
+\caption{Test Scenarios} \\
+\toprule
+\textbf{ID} & \textbf{Scenario} & \textbf{Expected Outcome} & \textbf{Priority} \\
+\midrule
+\endfirsthead
+\toprule
+\textbf{ID} & \textbf{Scenario} & \textbf{Expected Outcome} & \textbf{Priority} \\
+\midrule
+\endhead
+TS-001 & New GL account appears in current month (not in prior) & Flagged as new account; variance = 100\%; commentary drafted & \textcolor{critred}{Critical} \\
+TS-002 & Variance > \$100M BS threshold with no commentary & Auto-escalation to stakeholder; dashboard alert & \textcolor{critred}{Critical} \\
+TS-003 & PL variance > \$3M with existing commentary & Commentary displayed; no escalation & \textcolor{sapgold}{High} \\
+TS-004 & Journal required but not posted by M+3 & Auto-detect from GL; investigation state triggered & \textcolor{sapgold}{High} \\
+TS-005 & PSGL/S4 API timeout during extraction for 1 of 234 LEs & Retry 3x with backoff; remaining LEs unaffected; manual override & \textcolor{critred}{Critical} \\
+TS-006 & Zero balance in prior and current period & Excluded from variance analysis; no commentary & \textcolor{sapblue}{Medium} \\
+TS-007 & Intercompany elimination entries (reversed signs) & Correctly netted; not flagged as anomaly & \textcolor{sapgold}{High} \\
+TS-008 & LLM commentary references incorrect balance & Factual cross-check rejects draft; flagged for manual write & \textcolor{critred}{Critical} \\
+TS-009 & All variances explained -- no unexplained remaining & Proceed directly to PREPARE\_SUMMARY; skip categorization & \textcolor{sapblue}{Medium} \\
+TS-010 & Country stakeholder does not confirm by M+4 & Auto-escalation; entry tracked in risk register & \textcolor{sapgold}{High} \\
+\bottomrule
+\end{longtable}
+
+\subsection{BSS Risk Assessment \& Integration Point}
+
+The BSS Risk Assessment is conducted during M+12 to M+15 across all Legal entities, 
+critical for CFO attestation and Risk/Audit committee reporting.
+
+\begin{itemize}[noitemsep]
+    \item \textbf{Risk Categories:} Substantiated at Risk, Unsubstantiated Unowned, Unsubstantiated Owned
+    \item \textbf{AI Capabilities:} Highlight high-risk GL accounts, suggest risk ratings, detect anomalies in balances/ageing/adjustments
+    \item \textbf{FTE Impact:} 10-12 FTEs current, 1 FTE savings
+    \item \textbf{Scope:} In: BSS Risk Assessment. Out: FORTM, BSS Reconciliations
+\end{itemize}
+
+\textbf{Integration with TB Workflow:}
+
+BSS Risk Assessment branches from the main TB workflow at the \textbf{UPDATE\_RISK} state. 
+When risk scores from the TB analysis phase exceed the BSS materiality threshold, 
+the workflow triggers a \textbf{BSS\_RA\_SUBPROCESS} that runs as a deferred sub-process 
+(M+12 to M+15). Data flow: UPDATE\_RISK produces a risk register per LE; the BSS sub-process 
+consumes this register plus historical ageing data to produce the CFO attestation pack. 
+The integration is one-directional -- BSS results do not feed back into the current-month 
+TB review but are available for the next cycle's anomaly detection baseline.
+
+% ═══════════════════════════════════════════════════════════════════════════════
+% Section 2: Process Specification
+% ═══════════════════════════════════════════════════════════════════════════════
+
+\newpage
+\section{Process Specification}
+
+The TB review follows a formal BPMN workflow (source: Operation of Month End Close Controls -- 
+Trial Balance Review -- GLO). The workflow comprises \textbf{27 states} (including 3 error-handling states), 
+\textbf{5 exclusive gateways}, and spans \textbf{4 timeline phases}.
+
+\begin{table}[h]
+\centering
+\caption{Timeline Phases}
+\begin{tabular}{@{}L{4.5cm}C{2.5cm}L{7cm}@{}}
+\toprule
+\textbf{Phase} & \textbf{Timing} & \textbf{Description} \\
+\midrule
+Preparation & M-3 & Setup: roll forward file, update parameters and master data \\
+Extraction & M-3 to M+5 & Extract TB from PSGL/S4 and load into variance analysis file \\
+Extraction$\rightarrow$Analysis handshake & M-2 & UPDATE\_TB\_DETAILS completes; triggers CALCULATE\_VARIANCE \\
+Analysis & M-2 to M+5 & Variance calculation, commentary collection, investigation, risk \\
+Review & M+5 & Internal review, incorporate changes, send FORTM pack \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Phase overlap:} Extraction (M-3 to M+5) and Analysis (M-2 to M+5) overlap because 
+extraction runs per-LE on a rolling basis. Analysis begins as soon as the first batch of LEs 
+complete extraction (M-2). The handshake state UPDATE\_TB\_DETAILS acts as the trigger: once TB 
+details are loaded into the variance file for a given LE, that LE enters the analysis phase. 
+LEs still awaiting extraction continue in parallel.
+
+\subsection{State Machine}
+
+\subsubsection{Preparation Phase (M-3)}
+
+\begin{itemize}[noitemsep]
+    \item \textbf{START} -- Prepare Schedule Work Day
+    \item \textbf{ROLL\_FORWARD} -- Roll Forward Prior Month File [MS Excel, Shared Drive]
+    \item \textbf{DOWNLOAD\_PSGL} -- Download PSGL Master Account File [PSGL, MS Excel]
+    \item \textbf{UPDATE\_ACCOUNTS\_MASTER} -- Update Accounts Master Sheet [MS Excel]
+    \item \textbf{UPDATE\_PARAMETERS} -- Update Parameters \& Comparatives [MS Excel]
+\end{itemize}
+
+\subsubsection{Extraction Phase (M-3 to M+5)}
+
+\begin{itemize}[noitemsep]
+    \item \textbf{EXTRACT\_TB} -- Extract Trial Balance [SC Bridge, MS Excel]
+    \item \textbf{VALIDATE\_EXTRACTION} -- Verify row counts, checksums, and LE completeness [Automated]
+    \item \textbf{UPDATE\_TB\_DETAILS} -- Update TB Details in Variance File [MS Excel, Shared Drive] EUC: EX/200/1579702/0001/000
+\end{itemize}
+
+\subsubsection{Error Handling (any phase)}
+
+\begin{itemize}[noitemsep]
+    \item \textbf{RETRY\_EXTRACTION} -- Retry failed PSGL/S4 API call with exponential backoff (max 3 retries, 30s/60s/120s) [Automated]
+    \item \textbf{ESCALATE\_API\_FAILURE} -- Alert GFS Analyst after 3 failed retries; log to incident tracker; enable manual EUC override [MS Outlook, ITSM]
+    \item \textbf{MANUAL\_OVERRIDE} -- GFS Analyst manually extracts data via EUC spreadsheet; flags LE for post-hoc reconciliation [MS Excel]
+\end{itemize}
+
+\subsubsection{Analysis Phase (M-2 to M+5)}
+
+\begin{itemize}[noitemsep]
+    \item \textbf{CALCULATE\_VARIANCE} -- Calculate Period-over-Period Variance [MS Excel]
+    \item \textbf{FILTER\_VARIANCES} -- Filter by Materiality Criteria [MS Excel]
+    \item \textbf{CHECK\_MATERIAL\_VARIANCES} [Gateway] -- Material? Yes$\rightarrow$SEEK\_COMMENTARIES | No$\rightarrow$CHECK\_UNEXPLAINED
+    \item \textbf{SEEK\_COMMENTARIES} -- Request Explanations [MS Outlook]
+    \item \textbf{RECEIVE\_COMMENTARIES} -- Collect Responses [Event]
+    \item \textbf{UPDATE\_COMMENTARIES} -- Record in Variance File [MS Excel]
+    \item \textbf{IS\_JOURNAL\_POSTED} [Gateway] -- Posted$\rightarrow$CHECK\_UNEXPLAINED | Required$\rightarrow$SEND\_REQUEST | Not Posted$\rightarrow$INVESTIGATE
+    \item \textbf{SEND\_JOURNAL\_REQUEST} -- Request Posting [MS Outlook]
+    \item \textbf{CHECK\_FURTHER\_INVESTIGATION} [Gateway] -- No$\rightarrow$CHECK\_UNEXPLAINED | Yes$\rightarrow$CHECK\_ENTRIES
+    \item \textbf{CHECK\_ENTRIES\_STATUS} -- Follow Up with Teams [MS Outlook]
+    \item \textbf{CHECK\_CONFIRMATION} [Gateway] -- By M+4? Yes$\rightarrow$CHECK\_UNEXPLAINED | No$\rightarrow$TRACK\_ENTRIES
+    \item \textbf{TRACK\_ENTRIES} -- Track and Risk Analysis [MS Excel]
+    \item \textbf{UPDATE\_RISK} -- Update Risk Assessment [MS Excel] (BSS RA sub-process trigger)
+    \item \textbf{CHECK\_UNEXPLAINED} [Gateway] -- None$\rightarrow$PREPARE\_SUMMARY | Yes$\rightarrow$CATEGORIZE
+    \item \textbf{CATEGORIZE\_UNEXPLAINED} -- Classify Unexplained Variances [MS Excel]
+\end{itemize}
+
+\subsubsection{Review Phase (M+5)}
+
+\begin{itemize}[noitemsep]
+    \item \textbf{PREPARE\_SUMMARY} -- Consolidate Analysis [MS Excel]
+    \item \textbf{SEND\_INTERNAL\_REVIEW} -- Submit for Review [MS Outlook, Shared Drive]
+    \item \textbf{REVIEW\_INCORPORATE} -- Incorporate Changes [MS Excel] EUC: EX/200/1579702/0002/000
+    \item \textbf{SEND\_FORTM} -- Submit FORTM Pack [MS Outlook, Shared Drive]
+    \item \textbf{END} -- TB Review Completed for Month
+\end{itemize}
+
+\subsection{Decision Flowchart}
+
+The following diagram shows the 5 exclusive gateways and their branching logic. 
+Error-handling states (dashed) can trigger from any extraction or API-dependent state.
+
+\begin{lstlisting}
+START -> ROLL_FORWARD -> DOWNLOAD_PSGL -> UPDATE_ACCOUNTS_MASTER
+  -> UPDATE_PARAMETERS -> EXTRACT_TB -> VALIDATE_EXTRACTION
+  -> UPDATE_TB_DETAILS -> CALCULATE_VARIANCE -> FILTER_VARIANCES
+
+  [GW1: CHECK_MATERIAL_VARIANCES]
+    |-- Material? YES --> SEEK_COMMENTARIES --> RECEIVE
+    |                     --> UPDATE_COMMENTARIES
+    |-- Material? NO  --------------------------> [GW5]
+
+  [GW2: IS_JOURNAL_POSTED]
+    |-- Posted     --------------------------> [GW5]
+    |-- Required   --> SEND_JOURNAL_REQUEST --> [GW3]
+    |-- Not Posted --> INVESTIGATE -----------> [GW3]
+
+  [GW3: CHECK_FURTHER_INVESTIGATION]
+    |-- No  ---------------------------------> [GW5]
+    |-- Yes --> CHECK_ENTRIES_STATUS ---------> [GW4]
+
+  [GW4: CHECK_CONFIRMATION]
+    |-- By M+4? YES -------------------------> [GW5]
+    |-- By M+4? NO  --> TRACK_ENTRIES
+                        --> UPDATE_RISK ------> [GW5]
+
+  [GW5: CHECK_UNEXPLAINED]
+    |-- None -------> PREPARE_SUMMARY --> SEND_REVIEW
+    |                   --> REVIEW_INCORPORATE --> SEND_FORTM --> END
+    |-- Has unexpl --> CATEGORIZE_UNEXPLAINED --> PREPARE_SUMMARY
+
+  --- Error path (from EXTRACT_TB / DOWNLOAD_PSGL) ---
+  API_FAIL --> RETRY_EXTRACTION (x3)
+           --> ESCALATE_API_FAILURE --> MANUAL_OVERRIDE
+\end{lstlisting}
+
+\subsection{Decision Point Logic \& Feedback Loops}
+
+\begin{table}[h]
+\centering
+\caption{Decision Points}
+\begin{tabular}{@{}C{1cm}L{2.5cm}L{3cm}L{3cm}L{4cm}@{}}
+\toprule
+\textbf{ID} & \textbf{Decision} & \textbf{Input Metric} & \textbf{Condition} & \textbf{AI Augmentation} \\
+\midrule
+DP-1 & Material Variance & variance\_amount & Exceeds threshold & ML threshold tuning \\
+DP-2 & Journal Status & journal\_status & posted/required/not & Auto-detect from GL \\
+DP-3 & Investigation & investigation\_status & Required / not & Predict from entry history \\
+DP-4 & Entry Confirmation & confirmation\_received & By M+4 deadline & Auto-escalate deadline \\
+DP-5 & Unexplained Vars & unexplained\_count & Zero / non-zero & LLM draft commentaries \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{DP-1 Threshold Feedback Loop:}
+
+The ML-adaptive materiality threshold (DP-1) is trained on historical variance distributions 
+per LE and Finance Caption. The feedback loop operates as follows: (1) At month-end, the current 
+threshold classifies variances as material/non-material. (2) Analysts override classifications 
+during the review (marking false positives/negatives). (3) Override data is stored as labelled 
+training samples. (4) Monthly batch retrain updates the threshold model using the last 12 months 
+of override history. (5) New thresholds are deployed for the next cycle with a comparison report 
+showing threshold drift. Initial deployment uses the current country-specific static thresholds 
+(BS: \$100M, PL: \$3M) as the baseline.
+
+\textbf{234-LE Parallel Extraction SLA:}
+
+\begin{table}[h]
+\centering
+\caption{Extraction SLA Parameters}
+\begin{tabular}{@{}L{4cm}L{10cm}@{}}
+\toprule
+\textbf{Parameter} & \textbf{Value} \\
+\midrule
+Concurrency & 20 parallel LE extractions (rate-limited) \\
+Expected rows/LE & 5,000-50,000 GL lines \\
+Timeout per LE & 300 seconds \\
+Retry policy & 3 retries, exponential backoff (30s, 60s, 120s) \\
+Total extraction SLA & <4 hours for all 234 LEs \\
+Fallback & Manual EUC override for failed LEs \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Data Objects \& Participants}
+
+\begin{table}[h]
+\centering
+\caption{Data Objects}
+\begin{tabular}{@{}C{1.5cm}L{4cm}L{8.5cm}@{}}
+\toprule
+\textbf{ID} & \textbf{Object} & \textbf{Description} \\
+\midrule
+DO-001 & MS Excel Variance File & Primary working file (EUC: EX/200/1579702/0001/000) \\
+DO-002 & Shared Drive & Central file storage for TB review artifacts \\
+DO-003 & PSGL Master File & Primary Subledger/General Ledger master data \\
+DO-004 & SC Bridge & System interface for TB data extraction \\
+DO-005 & FORTM Pack & Financial Operations Review \& Tracking Monthly \\
+DO-006 & Incident Tracker (ITSM) & API failure logging and escalation (new) \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{table}[h]
+\centering
+\caption{Participants}
+\begin{tabular}{@{}L{4cm}L{3.5cm}L{6.5cm}@{}}
+\toprule
+\textbf{Participant} & \textbf{Role} & \textbf{Responsibility} \\
+\midrule
+GFS Analyst & Primary Executor & TB extraction, variance analysis, summary preparation \\
+Head of Africa GFS & Reviewer & Reviews and approves before FORTM submission \\
+Country Stakeholders & Commentary Providers & Variance explanations, entry confirmations \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+% ═══════════════════════════════════════════════════════════════════════════════
+% Section 3: Training Data Design & Schema
+% ═══════════════════════════════════════════════════════════════════════════════
+
+\newpage
+\section{Training Data Design \& Schema}
+
+\subsection{Source Workbooks}
+
+\begin{table}[h]
+\centering
+\caption{Source Workbooks}
+\begin{tabular}{@{}L{3cm}L{5.5cm}C{2.5cm}C{2cm}@{}}
+\toprule
+\textbf{Workbook ID} & \textbf{Name} & \textbf{Size} & \textbf{Sheets} \\
+\midrule
+hkg-tb & HKG TB Review Nov 2025 & 73.4 MB & 13 \\
+hkg-pl & HKG PL Review Nov 2025 & 50.8 MB & 14 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsubsection{HKG TB Review -- Sheet Inventory}
+
+\begin{table}[h]
+\centering
+\caption{Sheet Inventory}
+\begin{tabular}{@{}L{3.5cm}C{1.5cm}L{9cm}@{}}
+\toprule
+\textbf{Sheet Name} & \textbf{Fields} & \textbf{Purpose} \\
+\midrule
+IFRS Summary BS & -- & IFRS balance sheet summary view \\
+Count of Comments & 7 & Commentary tracking (reviewer, status, hours) \\
+Checklist & -- & Review checklist \\
+BS Variance & 5 & Balance sheet variance analysis with thresholds \\
+PL Variance & 4 & P\&L variance analysis \\
+YTD-TB & -- & Year-to-date trial balance \\
+Rates & 2 & FX rates (Nov vs Oct 2025 USD) \\
+RAW TB NOV'25 & 5 & Raw GL balance query -- November 2025 \\
+RAW TB OCT'25 & 5 & Raw GL balance query -- October 2025 \\
+GCOA & 5 & Global Chart of Accounts (definitions, IFRS/MR mappings) \\
+Dept Mapping & 12 & Department-to-vertical mapping \\
+Base file & 13 & Account-level base data with all dimensional mappings \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Key Schemas}
+
+\subsubsection{Dept Mapping Schema (12 fields)}
+
+\begin{longtable}{@{}L{3cm}L{2.5cm}C{2cm}C{2cm}L{4cm}@{}}
+\caption{Dept Mapping Schema} \\
+\toprule
+\textbf{Technical Name} & \textbf{Business Name} & \textbf{Type} & \textbf{Field Type} & \textbf{Samples} \\
+\midrule
+\endfirsthead
+\toprule
+\textbf{Technical Name} & \textbf{Business Name} & \textbf{Type} & \textbf{Field Type} & \textbf{Samples} \\
+\midrule
+\endhead
+ACCOUNT & Account & INTEGER & identifier & 111101 \\
+ACCOUNT\_DESC & Account Desc & NVARCHAR & identifier & Cash in Hand \\
+DEPT\_ID & Dept ID & NVARCHAR & identifier & 1424, 1428 \\
+DEPT\_ID\_DESC & Dept ID Desc & NVARCHAR & identifier & BB District-HKI East \\
+PRODUCT & Product & INTEGER & dimension & 259 \\
+PRODUCT\_DESC & Product Desc & NVARCHAR & dimension & Other AMS services \\
+CONCAT & CONCAT & NVARCHAR & dimension & 1424259 \\
+VERTICAL\_FINAL & Vertical final & NVARCHAR & dimension & WRB - Retail \\
+VERTICAL & Vertical & NVARCHAR & dimension & CPBB - Retail \\
+OPER\_UNIT & Oper Unit & INTEGER & dimension & 156, 158 \\
+OPER\_UNIT\_DESC & Oper Unit Desc & NVARCHAR & dimension & North Point Centre Branch \\
+VERTICAL\_PB & Vertical PB & NVARCHAR & dimension & Retail Products \\
+\bottomrule
+\end{longtable}
+
+\subsubsection{Base File Schema (13 fields)}
+
+\begin{longtable}{@{}L{3cm}L{3cm}C{2cm}C{1.5cm}L{4cm}@{}}
+\caption{Base File Schema} \\
+\toprule
+\textbf{Technical Name} & \textbf{Business Name} & \textbf{Type} & \textbf{Field Type} & \textbf{Samples} \\
+\midrule
+\endfirsthead
+\toprule
+\textbf{Technical Name} & \textbf{Business Name} & \textbf{Type} & \textbf{Field Type} & \textbf{Samples} \\
+\midrule
+\endhead
+ABDO & Acct-Branch-Dept-OpUnit Key & NVARCHAR & identifier & 111101-238-1424-156 \\
+ACCOUNT & Account & INTEGER & identifier & 111101 \\
+ACCOUNT\_DESC & Account Desc & NVARCHAR & identifier & Cash in Hand \\
+DEPT\_ID & Dept ID & INTEGER & identifier & 1424, 1428 \\
+DEPT\_ID\_DESC & Dept ID Desc & NVARCHAR & identifier & BB District-HKI East \\
+BUSS\_MAPPING & Buss Mapping & NVARCHAR & dimension & 1424259 \\
+FINAL\_MAPPING & Final Mapping & NVARCHAR & dimension & WRB - Retail \\
+VERTICAL & Vertical & NVARCHAR & dimension & WRB - Retail \\
+OPER\_UNIT & Oper Unit & INTEGER & dimension & 156, 158 \\
+OPER\_UNIT\_DESC & Oper Unit Desc & NVARCHAR & dimension & North Point Centre Branch \\
+PRODUCT & Product & INTEGER & dimension & 259 \\
+PRODUCT\_DESC & Product Desc & NVARCHAR & dimension & Other AMS services \\
+VERTICAL\_2 & Vertical (PB) & NVARCHAR & dimension & CPBB - Retail \\
+\bottomrule
+\end{longtable}
+
+\subsubsection{GCOA Schema (Global Chart of Accounts)}
+
+\begin{table}[h]
+\centering
+\caption{GCOA Schema}
+\begin{tabular}{@{}L{4cm}C{2.5cm}L{7.5cm}@{}}
+\toprule
+\textbf{Field} & \textbf{Type} & \textbf{Description} \\
+\midrule
+DEFINITION & NVARCHAR & Account definition text \\
+IFRS\_PACK\_MAPPING & NVARCHAR & IFRS Pack Schedule Reference (1A, 2A, etc.) \\
+MR\_PACK\_REFERENCE & NVARCHAR & MR Pack Schedule Reference (GP7, etc.) \\
+RETAIL\_CUBE\_MAPPING & NVARCHAR & Retail Cube mapping code \\
+FCP\_CATEGORY & NVARCHAR & FCP Category (OTHER GL - NO AGEING, etc.) \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Variance Analysis Data Model}
+
+\subsubsection{BS Variance Schema}
+
+\begin{table}[h]
+\centering
+\caption{BS Variance Schema}
+\begin{tabular}{@{}L{4cm}C{2.5cm}L{7.5cm}@{}}
+\toprule
+\textbf{Field} & \textbf{Type} & \textbf{Description} \\
+\midrule
+Count of Variances & NVARCHAR & Category (Asset/Liability) and IFRS description \\
+IFRS Pack Sch Desc & NVARCHAR & IFRS schedule (Cash \& Bal., Derivatives, etc.) \\
+BS Threshold & INTEGER/\% & Variance threshold percentage \\
+Exceeds \$100mn & NVARCHAR & Yes/No flag for \$100M materiality \\
+Variance Explanation & NVARCHAR & Free-text commentary (LLM generation target) \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Key observations:} BS threshold is \$100M; PL threshold is \$3M. 
+Commentaries reference specific business events and desk-level activity. 
+IFRS Pack Schedule groupings provide the `Finance Caption' view. 
+Dept Mapping provides segment/vertical/product dimensional breakdowns.
+
+\subsubsection{Training Data Artifacts}
+
+\begin{table}[h]
+\centering
+\caption{Training Data Files}
+\begin{tabular}{@{}L{4.5cm}L{9.5cm}@{}}
+\toprule
+\textbf{File} & \textbf{Description} \\
+\midrule
+hkg-tb-schema.yaml & Full ODPS 4.1 schema for 9 key sheets (58 fields) \\
+hkg-pl-schema.yaml & Full ODPS 4.1 schema for 8 key sheets (48 fields) \\
+hkg-tb-sample.csv & 100 rows from BS Variance (header + data) \\
+hkg-pl-sample.csv & 100 rows from PL Variance (header + data) \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Edge cases in sample data:} The 100-row samples include representative cases but 
+production testing should cover: zero balances in both periods, reversed-sign intercompany 
+eliminations, new accounts with no prior-period comparator, and multi-currency FX revaluation entries.
+
+\subsection{Audit Trail \& Versioning}
+
+Every record produced by the AI pipeline must carry audit metadata for EUC compliance and 
+regulatory traceability. The following fields are appended to all output tables:
+
+\begin{table}[h]
+\centering
+\caption{Audit Trail Fields}
+\begin{tabular}{@{}L{3cm}C{2.5cm}L{8.5cm}@{}}
+\toprule
+\textbf{Field} & \textbf{Type} & \textbf{Description} \\
+\midrule
+audit\_id & UUID & Unique identifier for this processing run \\
+version & INTEGER & Monotonic version counter per LE per month (1, 2, 3...) \\
+processed\_at & TIMESTAMP & ISO 8601 timestamp of pipeline execution \\
+processed\_by & NVARCHAR & System user or service account ID \\
+source\_hash & NVARCHAR & SHA-256 hash of input file for integrity verification \\
+override\_flag & BOOLEAN & True if this record was manually overridden (MANUAL\_OVERRIDE state) \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+% ═══════════════════════════════════════════════════════════════════════════════
+% Section 4: Domain Glossary
+% ═══════════════════════════════════════════════════════════════════════════════
+
+\newpage
+\section{Domain Glossary}
+
+\begin{longtable}{@{}L{3cm}C{1.5cm}L{7cm}L{2.5cm}@{}}
+\caption{Domain Glossary} \\
+\toprule
+\textbf{Term} & \textbf{Abbr.} & \textbf{Definition} & \textbf{Category} \\
+\midrule
+\endfirsthead
+\toprule
+\textbf{Term} & \textbf{Abbr.} & \textbf{Definition} & \textbf{Category} \\
+\midrule
+\endhead
+Trial Balance & TB & Report listing all GL account balances at a point in time & balance\_sheet \\
+General Ledger & GL & Master set of accounts summarizing all transactions & balance\_sheet \\
+FORTM Pack & FORTM & Financial Operations Review \& Tracking Monthly & regulatory \\
+PSGL & -- & Primary Subledger/General Ledger master data system & balance\_sheet \\
+SC Bridge & -- & System interface for TB data extraction from PSGL/S4 & general \\
+Finance Caption & -- & High-level financial reporting category for GL accounts & income\_stmt \\
+EUC & EUC & End User Computing control for governed spreadsheets & regulatory \\
+UK ACG & ACG & UK Automated Controls Governance framework & regulatory \\
+FCA & FCA & Financial Conduct Authority; cutoff = submission deadline & regulatory \\
+GFS & GFS & Global Financial Services organizational unit & general \\
+Legal Entity & LE & Distinct legal organization; 234 LEs enterprise-wide & general \\
+BSS RA & BSS & Business Support Services Risk Assessment & regulatory \\
+Fast Close & -- & Initiative to accelerate month-end timelines & general \\
+M-3 to M+5 & -- & Working day offsets relative to month-end close & general \\
+ABDO & -- & Account-Branch-Dept-OperUnit concatenated composite key & balance\_sheet \\
+\bottomrule
+\end{longtable}
+
+% ═══════════════════════════════════════════════════════════════════════════════
+% Section 5: RAG & Data Product Integration
+% ═══════════════════════════════════════════════════════════════════════════════
+
+\section{RAG \& Data Product Integration}
+
+\subsection{RAG Pipeline}
+
+\begin{table}[h]
+\centering
+\caption{RAG Pipeline Parameters}
+\begin{tabular}{@{}L{4cm}L{10cm}@{}}
+\toprule
+\textbf{Parameter} & \textbf{Value} \\
+\midrule
+Chunk size & 220 words \\
+Overlap & 40 words (step = 180) \\
+Total chunks & 55 \\
+Embedding ID & Deterministic UUID5 \\
+Vector table & TB\_REVIEW\_VECTORS \\
+Formats & JSONL + CSV \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{ODPS 4.1 Data Product}
+
+Registered as \textbf{trial-balance-review-v1} in the HANA Training Data Product Catalog.
+
+\begin{itemize}[noitemsep]
+    \item \textbf{Security:} Confidential, vLLM-only routing, full audit
+    \item \textbf{Country view:} HK with HKMA terminology and HKG entity filter
+    \item \textbf{System prompt:} TB review assistant with 5 decision point references
+    \item \textbf{RAG sources:} 55 chunks from extracted docs, requirements, and process specs
+    \item \textbf{Schema:} Points to workbook schemas for field-level metadata
+    \item \textbf{Audit fields:} All output records include audit\_id, version, processed\_at, source\_hash
+\end{itemize}
+
+% ═══════════════════════════════════════════════════════════════════════════════
+% Appendix: File Inventory
+% ═══════════════════════════════════════════════════════════════════════════════
+
+\newpage
+\section*{Appendix: File Inventory}
+\addcontentsline{toc}{section}{Appendix: File Inventory}
+
+\begin{longtable}{@{}L{7.5cm}L{3cm}C{3cm}@{}}
+\caption{File Inventory} \\
+\toprule
+\textbf{Path} & \textbf{Layer} & \textbf{Format} \\
+\midrule
+\endfirsthead
+\toprule
+\textbf{Path} & \textbf{Layer} & \textbf{Format} \\
+\midrule
+\endhead
+extracted/business-case-trial-balance.md & Extracted Text & Markdown \\
+extracted/business-case-bss-risk-assessment.md & Extracted Text & Markdown \\
+extracted/doi-trial-balance-process.md & Extracted Text & Markdown \\
+extracted/bpmn-tb-review-glo.md & Extracted Text & Markdown \\
+extracted/bpmn-elements.json & Extracted Text & JSON \\
+extracted/doi-images/* & Extracted Text & EMF/PNG \\
+requirements/tb-business-requirements.yaml & Requirements & YAML \\
+requirements/bss-risk-assessment-requirements.yaml & Requirements & YAML \\
+requirements/tb-glossary.yaml & Requirements & YAML \\
+process/tb-review-workflow.yaml & Process Spec & YAML \\
+process/tb-review-decision-points.yaml & Process Spec & YAML \\
+process/tb-review-controls.yaml & Process Spec & YAML \\
+training-data/hkg-tb-schema.yaml & Training Data & YAML \\
+training-data/hkg-pl-schema.yaml & Training Data & YAML \\
+training-data/hkg-tb-sample.csv & Training Data & CSV \\
+training-data/hkg-pl-sample.csv & Training Data & CSV \\
+rag/rag\_chunks.jsonl & RAG Pipeline & JSONL \\
+rag/rag\_embedding\_records.jsonl & RAG Pipeline & JSONL \\
+rag/rag\_embedding\_records.csv & RAG Pipeline & CSV \\
+rag/rag\_manifest.json & RAG Pipeline & JSON \\
+data-product/trial-balance-review-v1.yaml & App Integration & YAML \\
+manifest.json & Index & JSON \\
+\bottomrule
+\end{longtable}
+
+\vfill
+\begin{center}
+\textcolor{sapblue}{\rule{0.8\textwidth}{0.4pt}}\\[0.5cm]
+{\small Generated from Trial Balance Review Specification | SAP OSS -- Studio AI}
+\end{center}
+
+\end{document}

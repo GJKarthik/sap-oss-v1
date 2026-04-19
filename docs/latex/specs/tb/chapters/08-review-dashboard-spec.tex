@@ -1,0 +1,372 @@
+\chapter{Human Review Dashboard Specification}\label{ch:review-dashboard}
+
+This chapter specifies the human-in-the-loop review interface, addressing the
+review finding that ``human-in-the-loop is still a black box.'' The
+specification applies to both Trial Balance review and Arabic AP workflows.
+
+\section{Overview}
+
+The review dashboard provides a unified interface for human reviewers to:
+
+\begin{enumerate}
+  \item View items queued for review (from AI-generated outputs requiring
+        human validation)
+  \item Accept, edit, or reject AI-produced content
+  \item Track review metrics and team performance
+  \item Generate audit trails for compliance
+\end{enumerate}
+
+\section{Interface requirements}
+
+\subsection{Queue view}
+
+The queue view displays all items pending human review.
+
+\begin{table}[htbp]
+\centering
+\caption{Queue view required fields.}
+\label{tab:queue-fields}
+\footnotesize
+\begin{tabularx}{\linewidth}{@{}l l X@{}}
+\toprule
+\textbf{Field} & \textbf{Type} & \textbf{Description} \\ \midrule
+\texttt{item\_id} & string & Unique identifier for the review item \\
+\texttt{priority} & enum & CRITICAL, HIGH, NORMAL, LOW \\
+\texttt{source\_domain} & enum & TB, ARABIC, SIMULA \\
+\texttt{queued\_at} & datetime & When item entered queue \\
+\texttt{due\_by} & datetime & SLA deadline \\
+\texttt{ai\_confidence} & float & AI confidence score (0--1) \\
+\texttt{estimated\_time} & duration & Estimated review time \\
+\texttt{assigned\_to} & string? & Assigned reviewer (if any) \\
+\texttt{status} & enum & PENDING, IN\_PROGRESS, COMPLETED \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\subsubsection{Sorting and filtering}
+
+The queue \textbf{must} support:
+\begin{itemize}
+  \item Sort by priority (default), due date, confidence, queued time
+  \item Filter by domain, priority, status, assigned reviewer
+  \item Search by item ID or related entity (invoice number, account code)
+\end{itemize}
+
+\subsubsection{Bulk operations}
+
+For efficiency, the queue \textbf{must} support:
+\begin{itemize}
+  \item Bulk assignment to reviewer
+  \item Bulk priority change
+  \item Bulk re-queue (return to pool)
+\end{itemize}
+
+\subsection{Review view}
+
+The review view presents a single item for detailed examination.
+
+\begin{figure}[htbp]
+\centering
+\fbox{\parbox{0.9\linewidth}{
+\textbf{Review View Wireframe}\\[2mm]
+\begin{tabular}{|p{0.45\linewidth}|p{0.45\linewidth}|}
+\hline
+\textbf{Source Document} & \textbf{AI Extraction} \\
+\hline
+\vspace{2cm}
+[Original image/text] &
+\vspace{2cm}
+[Extracted fields with confidence] \\
+\hline
+\end{tabular}\\[3mm]
+\fbox{Accept} \quad \fbox{Edit} \quad \fbox{Reject} \quad \fbox{Escalate}\\[2mm]
+Comment: \rule{0.8\linewidth}{0.4pt}
+}}
+\caption{Conceptual wireframe for review view layout.}
+\label{fig:review-wireframe}
+\end{figure}
+
+\subsubsection{Required components}
+
+\begin{enumerate}
+  \item \textbf{Source panel}: Display original input (scanned image, OCR text,
+        TB extract)
+  \item \textbf{AI output panel}: Display AI-generated content with
+        field-level confidence indicators
+  \item \textbf{Comparison highlights}: Visual diff between source and extraction
+  \item \textbf{Action buttons}: Accept, Edit, Reject, Escalate, Skip
+  \item \textbf{Comment field}: Free-text for reviewer notes
+  \item \textbf{History panel}: Previous review actions on this item
+\end{enumerate}
+
+\subsubsection{Field-level editing}
+
+When reviewer selects ``Edit'':
+\begin{itemize}
+  \item Each extracted field becomes editable
+  \item Original AI value shown alongside edit field
+  \item Change tracking records before/after values
+  \item Validation runs on edited values before save
+\end{itemize}
+
+\subsection{Analytics view}
+
+The analytics view provides management visibility into review operations.
+
+\begin{table}[htbp]
+\centering
+\caption{Required analytics metrics.}
+\label{tab:analytics-metrics}
+\footnotesize
+\begin{tabularx}{\linewidth}{@{}l l X@{}}
+\toprule
+\textbf{Metric} & \textbf{Aggregation} & \textbf{Purpose} \\ \midrule
+Daily throughput & Count by day & Volume tracking \\
+Average review time & Mean, p50, p95 & Efficiency monitoring \\
+Acceptance rate & Percentage & AI quality indicator \\
+Edit rate by field & Percentage per field & Field-specific quality \\
+SLA compliance & Percentage on-time & Operational health \\
+Reviewer performance & By reviewer & Workload balancing \\
+Escalation rate & Percentage & Training needs indicator \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\section{User workflow specification}
+
+\subsection{Standard review flow}
+
+\begin{enumerate}
+  \item Reviewer logs in and views queue (filtered by assignment or domain)
+  \item Reviewer claims or is assigned an item
+  \item System displays review view with source and AI output
+  \item Reviewer examines content and selects action:
+    \begin{itemize}
+      \item \textbf{Accept}: AI output is correct, proceed to next step
+      \item \textbf{Edit}: Make corrections, then accept
+      \item \textbf{Reject}: AI output is fundamentally wrong, return for reprocessing
+      \item \textbf{Escalate}: Beyond reviewer authority, route to supervisor
+    \end{itemize}
+  \item System records decision with timestamp and reviewer ID
+  \item Item moves to next workflow stage or back to queue
+\end{enumerate}
+
+\subsection{Escalation flow}
+
+\begin{lstlisting}[basicstyle=\ttfamily\small,caption={Escalation routing rules.}]
+if item.amount > reviewer.doa_limit:
+    escalate_to = reviewer.supervisor
+elif item.ai_confidence < 0.3:
+    escalate_to = domain_expert
+elif item.has_flag("regulatory_review"):
+    escalate_to = compliance_team
+else:
+    escalate_to = team_lead
+\end{lstlisting}
+
+\section{SLA specification}
+
+\begin{table}[htbp]
+\centering
+\caption{Review SLA targets by priority.}
+\label{tab:review-sla}
+\footnotesize
+\begin{tabularx}{\linewidth}{@{}l r X@{}}
+\toprule
+\textbf{Priority} & \textbf{Target} & \textbf{Definition} \\ \midrule
+CRITICAL & 4 hours & Regulatory deadline or high-value ($>$\$1M) \\
+HIGH     & 24 hours & Month-end close items \\
+NORMAL   & 48 hours & Standard processing \\
+LOW      & 72 hours & Training data or non-urgent \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+SLA countdown \textbf{must}:
+\begin{itemize}
+  \item Exclude non-business hours (configurable by region)
+  \item Pause when item is actively being reviewed
+  \item Trigger alerts at 75\% and 90\% of time elapsed
+\end{itemize}
+
+\section{Audit trail specification}\label{sec:dashboard-audit-trail}
+
+Every user action \textbf{must} be logged to the audit trail.
+
+\subsection{Required audit events}
+
+\begin{table}[htbp]
+\centering
+\caption{Audit events to be captured.}
+\label{tab:audit-events}
+\footnotesize
+\begin{tabularx}{\linewidth}{@{}l X@{}}
+\toprule
+\textbf{Event} & \textbf{Captured Data} \\ \midrule
+\texttt{ITEM\_QUEUED} & item\_id, source, queued\_by, timestamp \\
+\texttt{ITEM\_CLAIMED} & item\_id, reviewer\_id, timestamp \\
+\texttt{REVIEW\_STARTED} & item\_id, reviewer\_id, timestamp \\
+\texttt{FIELD\_EDITED} & item\_id, field\_name, old\_value, new\_value, reviewer\_id \\
+\texttt{DECISION\_MADE} & item\_id, decision (accept/reject/escalate), reviewer\_id, comment \\
+\texttt{ITEM\_ESCALATED} & item\_id, from\_reviewer, to\_reviewer, reason \\
+\texttt{REVIEW\_COMPLETED} & item\_id, final\_decision, duration, reviewer\_id \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\subsection{Retention and access}
+
+\begin{itemize}
+  \item Audit logs retained for 7 years (regulatory requirement)
+  \item Stored in append-only table \texttt{REVIEW\_AUDIT\_LOG}
+  \item Read access: Reviewers (own records), Managers (team), Auditors (all)
+  \item Write access: System only (no manual edits permitted)
+\end{itemize}
+
+\section{Accessibility requirements}
+
+The dashboard \textbf{must} comply with WCAG 2.1 Level AA:
+
+\begin{itemize}
+  \item Keyboard navigation for all functions
+  \item Screen reader compatibility (ARIA labels)
+  \item Minimum contrast ratio 4.5:1 for text
+  \item Focus indicators visible on all interactive elements
+  \item No time-limited actions without extension option
+\end{itemize}
+
+\section{Reviewer training requirements}
+
+\subsection{Certification program}
+
+\begin{table}[htbp]
+\centering
+\caption{Reviewer certification requirements by domain.}
+\label{tab:certification}
+\footnotesize
+\begin{tabularx}{\linewidth}{@{}l l X@{}}
+\toprule
+\textbf{Domain} & \textbf{Modules} & \textbf{Validity} \\ \midrule
+Arabic AP & VAT Basics, Invoice Structure, AI Review & 12 months \\
+Trial Balance & GL Basics, Variance Analysis, Commentary Review & 12 months \\
+Cross-domain & Dashboard Navigation, Escalation Procedures & 24 months \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\subsection{Competency assessment}
+
+\begin{itemize}
+  \item Practical test with 20 known-answer items
+  \item Passing score: 85\%
+  \item Failed items reviewed with trainer
+  \item Re-test permitted after 7-day waiting period
+\end{itemize}
+
+\section{Inter-rater agreement}
+
+To ensure consistency, monthly measurement of inter-rater agreement is required.
+
+\begin{itemize}
+  \item \textbf{Metric}: Cohen's Kappa
+  \item \textbf{Target}: $\kappa > 0.8$ (substantial agreement)
+  \item \textbf{Sample size}: 50 items reviewed by multiple reviewers
+  \item \textbf{Action if below target}: Training refresh, guideline clarification
+\end{itemize}
+
+\section{API specification}
+
+\subsection{Authentication and authorization}
+\label{sec:dashboard-api-auth}
+
+All endpoints enforce OAuth 2.0 bearer-token authentication, with
+tokens issued by the SAP IAS (Identity Authentication Service)
+tenant configured for the Finance estate. Requests without a valid
+\texttt{Authorization:\ Bearer <token>} header MUST be rejected
+with HTTP \texttt{401}. The reviewer identity is derived from the
+token's \texttt{sub} claim; the \texttt{reviewer\_id} request body
+field is removed from all endpoints --- servers that see it MUST
+ignore the client-supplied value and use the token subject instead
+(rationale: client-supplied \texttt{reviewer\_id} was trivially
+spoofable). Role-based access control is enforced via the
+following scopes embedded in the token:
+
+\begin{table}[htbp]
+\centering
+\caption{OAuth scopes for dashboard API.}
+\label{tab:dashboard-api-scopes}
+\footnotesize
+\begin{tabularx}{\linewidth}{@{}l X X@{}}
+\toprule
+\textbf{Scope} & \textbf{Grants} & \textbf{Typical role} \\ \midrule
+\texttt{review.queue.read} & \texttt{GET /queue}, \texttt{GET /items/\{id\}} & Any signed-in reviewer \\
+\texttt{review.item.claim} & \texttt{POST /items/\{id\}/claim} & Reviewer \\
+\texttt{review.item.decide} & \texttt{POST /items/\{id\}/decision} & Reviewer (claimant only) \\
+\texttt{review.escalate} & escalate action in decision body & Senior reviewer / manager \\
+\texttt{review.analytics.read} & \texttt{GET /analytics} & Manager, controller \\
+\texttt{review.admin} & change queue assignments, reopen audit items & Dashboard admin \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\noindent
+Additional constraints:
+\begin{itemize}
+  \item Claim-to-decide ownership: \texttt{POST
+        /items/\{id\}/decision} MUST verify the token subject equals
+        the current claimant. Otherwise return \texttt{403}.
+  \item Rate limits: 600 req/min per subject, 60 burst; exceeded
+        limits return \texttt{429} with \texttt{Retry-After}.
+  \item Audit: every authenticated request writes an immutable
+        row to \path{dashboard_audit}
+        (\cref{sec:dashboard-audit-trail}) including
+        \texttt{sub}, IP, and user-agent.
+  \item Break-glass: service-to-service calls (e.g.\ nightly
+        exports) use mTLS with a short-lived client credentials
+        grant; they MUST NOT issue \texttt{decision} calls.
+\end{itemize}
+
+\subsection{REST endpoints}
+
+\begin{lstlisting}[basicstyle=\ttfamily\small,caption={Review dashboard API endpoints (auth header required on all).}]
+Authorization: Bearer <jwt>     # required on every endpoint below
+
+GET    /api/v1/review/queue
+       ?domain={tb|arabic}&status={pending|in_progress}
+       &priority={critical|high|normal|low}
+       &assigned_to={me|user-id|*}    # "me" resolves to token sub
+
+GET    /api/v1/review/items/{item_id}
+
+POST   /api/v1/review/items/{item_id}/claim
+       # no body -- claimant is the token subject
+
+POST   /api/v1/review/items/{item_id}/decision
+       Body: {
+         "decision": "accept|reject|escalate",
+         "edits": { "field": "new_value", ... },
+         "comment": "..."
+       }
+       # actor is the token subject; 403 if not the claimant
+
+GET    /api/v1/review/analytics
+       ?start_date={date}&end_date={date}&domain={...}
+       # requires review.analytics.read scope
+\end{lstlisting}
+
+\section{Implementation checklist}
+
+\begin{enumerate}
+  \item[$\square$] Queue view with all required fields and filters
+  \item[$\square$] Review view with source/AI side-by-side display
+  \item[$\square$] Field-level editing with change tracking
+  \item[$\square$] All four action buttons functional (Accept/Edit/Reject/Escalate)
+  \item[$\square$] Audit trail logging all events in \cref{tab:audit-events}
+  \item[$\square$] Analytics dashboard with metrics from \cref{tab:analytics-metrics}
+  \item[$\square$] SLA countdown with business hours support
+  \item[$\square$] WCAG 2.1 AA compliance verified
+  \item[$\square$] REST API endpoints implemented and documented
+  \item[$\square$] OAuth 2.0 authentication and scope enforcement
+        (\cref{sec:dashboard-api-auth}) verified in integration tests
+  \item[$\square$] Integration tests with mock review scenarios
+\end{enumerate}

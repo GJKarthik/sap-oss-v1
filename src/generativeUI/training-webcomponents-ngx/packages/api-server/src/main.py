@@ -17,7 +17,7 @@ import asyncio
 import uuid
 from fastapi import FastAPI, HTTPException, Request, WebSocket, WebSocketDisconnect, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse, StreamingResponse
+from fastapi.responses import JSONResponse, Response, StreamingResponse
 from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy import text
 from slowapi import Limiter, _rate_limit_exceeded_handler
@@ -550,6 +550,38 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+def _agent_debug_log_path() -> Path | None:
+    raw = os.getenv("AGENT_DEBUG_LOG", "").strip()
+    if raw:
+        return Path(raw)
+    default = Path("/agent-logs/debug-a31d71.log")
+    if default.parent.is_dir():
+        return default
+    return None
+
+
+@app.post("/__debug/agent-log")
+async def agent_debug_agent_log(request: Request) -> Response:
+    """Append one NDJSON line when AGENT_DEBUG_LOG or /agent-logs mount is available."""
+    log_path = _agent_debug_log_path()
+    if not log_path:
+        return Response(status_code=204)
+    raw = await request.body()
+    if len(raw) > 16384:
+        return Response(status_code=413)
+    try:
+        line = raw.decode("utf-8").strip()
+        if "\n" in line:
+            line = line.split("\n")[-1]
+        p = log_path
+        p.parent.mkdir(parents=True, exist_ok=True)
+        with p.open("a", encoding="utf-8") as f:
+            f.write(line + "\n")
+    except OSError:
+        pass
+    return Response(status_code=204)
+
 
 app.include_router(rag.router, prefix="/rag", tags=["RAG"])
 app.include_router(personal_knowledge.router, prefix="/knowledge", tags=["Personal Knowledge"])

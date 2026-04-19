@@ -1,0 +1,259 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://sap-oss.github.io/schema/simula/config.schema.json",
+  "title": "Pipeline Configuration",
+  "description": "Schema for Simula pipeline configuration (Chapter 6)",
+  "type": "object",
+  "required": ["version", "generation", "evaluation"],
+  "properties": {
+    "version": {
+      "type": "string",
+      "description": "Configuration version"
+    },
+    "llm": {
+      "$ref": "#/definitions/llm_config",
+      "description": "LLM provider configuration"
+    },
+    "generation": {
+      "$ref": "#/definitions/generation_config",
+      "description": "Generation parameters"
+    },
+    "taxonomy": {
+      "$ref": "#/definitions/taxonomy_config",
+      "description": "Taxonomy generation parameters"
+    },
+    "evaluation": {
+      "$ref": "#/definitions/evaluation_config",
+      "description": "Evaluation framework parameters"
+    },
+    "adaptive": {
+      "$ref": "#/definitions/adaptive_config",
+      "description": "v1.2 adaptive features configuration"
+    },
+    "output": {
+      "$ref": "#/definitions/output_config",
+      "description": "Output configuration"
+    }
+  },
+  "definitions": {
+    "llm_config": {
+      "type": "object",
+      "properties": {
+        "base_url": {
+          "type": "string",
+          "default": "http://localhost:9180/v1",
+          "description": "vLLM TurboQuant endpoint"
+        },
+        "model": {
+          "type": "string",
+          "default": "Qwen/Qwen3.5-35B",
+          "description": "Model for generation"
+        },
+        "mcp_url": {
+          "type": "string",
+          "default": "http://localhost:8084",
+          "description": "AI Core PAL MCP endpoint"
+        },
+        "timeout_seconds": {
+          "type": "integer",
+          "default": 120,
+          "description": "Request timeout"
+        },
+        "max_retries": {
+          "type": "integer",
+          "default": 3,
+          "description": "Max retry attempts"
+        },
+        "fallback": {
+          "$ref": "#/definitions/llm_fallback_config",
+          "description": "Fallback configuration when primary LLM unavailable"
+        }
+      }
+    },
+    "llm_fallback_config": {
+      "type": "object",
+      "description": "LLM fallback behavior (Phase 6 cross-document fix)",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable fallback behavior"
+        },
+        "circuit_breaker_threshold": {
+          "type": "integer",
+          "default": 5,
+          "description": "Consecutive failures before circuit opens"
+        },
+        "circuit_breaker_reset_seconds": {
+          "type": "integer",
+          "default": 60,
+          "description": "Time before circuit breaker resets"
+        },
+        "retry_backoff_base": {
+          "type": "number",
+          "default": 2.0,
+          "description": "Exponential backoff base"
+        },
+        "manual_queue_enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Queue failed requests for manual processing"
+        }
+      }
+    },
+    "generation_config": {
+      "type": "object",
+      "properties": {
+        "target_count": {
+          "type": "integer",
+          "default": 100000,
+          "description": "Target number of training examples"
+        },
+        "complexity_ratio": {
+          "type": "number",
+          "default": 0.5,
+          "minimum": 0,
+          "maximum": 1,
+          "description": "Fraction of examples to complexify"
+        },
+        "best_of_n": {
+          "type": "integer",
+          "default": 5,
+          "description": "Proposals per expansion"
+        },
+        "enable_critic": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable double-critic filtering"
+        },
+        "batch_size": {
+          "type": "integer",
+          "default": 100,
+          "description": "Batch size for generation"
+        },
+        "temperature": {
+          "type": "number",
+          "default": 0.9,
+          "description": "Generation temperature"
+        }
+      }
+    },
+    "taxonomy_config": {
+      "type": "object",
+      "properties": {
+        "max_depth": {
+          "type": "integer",
+          "default": 4,
+          "description": "Maximum taxonomy depth"
+        },
+        "min_completeness": {
+          "type": "number",
+          "default": 0.7,
+          "description": "Minimum completeness threshold"
+        },
+        "min_soundness": {
+          "type": "number",
+          "default": 0.9,
+          "description": "Minimum soundness threshold"
+        }
+      }
+    },
+    "evaluation_config": {
+      "type": "object",
+      "properties": {
+        "complexity": {
+          "type": "object",
+          "properties": {
+            "batch_size": {"type": "integer", "default": 5},
+            "n_samples": {"type": "integer", "default": 5},
+            "enable_elo": {"type": "boolean", "default": true},
+            "elo_k_factor": {"type": "integer", "default": 32}
+          }
+        },
+        "coverage": {
+          "type": "object",
+          "properties": {
+            "max_level": {"type": "integer", "default": 4},
+            "sample_size": {"type": "integer", "default": 1000},
+            "gap_threshold": {"type": "number", "default": 0.5}
+          }
+        },
+        "diversity": {
+          "type": "object",
+          "properties": {
+            "embedding_model": {"type": "string", "default": "sentence-transformers/all-MiniLM-L6-v2"},
+            "knn_k": {"type": "integer", "default": 10},
+            "target_global": {"type": "number", "default": 0.52},
+            "target_local": {"type": "number", "default": 0.20}
+          }
+        },
+        "critic_validation": {
+          "type": "object",
+          "properties": {
+            "validation_split": {"type": "number", "default": 0.05},
+            "max_samples": {"type": "integer", "default": 200},
+            "target_p_y": {"type": "number", "default": 0.8},
+            "target_p_corrupt": {"type": "number", "default": 0.3}
+          }
+        }
+      }
+    },
+    "adaptive_config": {
+      "type": "object",
+      "description": "v1.2 adaptive features (Section 7.6)",
+      "properties": {
+        "complexity": {
+          "type": "object",
+          "properties": {
+            "enabled": {"type": "boolean", "default": true},
+            "weak_teacher_threshold": {"type": "number", "default": 0.6},
+            "reduced_ratio": {"type": "number", "default": 0.2}
+          }
+        },
+        "critic_threshold": {
+          "type": "object",
+          "properties": {
+            "enabled": {"type": "boolean", "default": true},
+            "base_threshold": {"type": "number", "default": 0.5},
+            "high_complexity_adjustment": {"type": "number", "default": 0.2},
+            "low_complexity_adjustment": {"type": "number", "default": -0.2}
+          }
+        },
+        "coverage_gap_filling": {
+          "type": "object",
+          "properties": {
+            "enabled": {"type": "boolean", "default": true},
+            "examples_per_node": {"type": "integer", "default": 10}
+          }
+        },
+        "diversity_optimizer": {
+          "type": "object",
+          "properties": {
+            "enabled": {"type": "boolean", "default": true},
+            "learning_rate": {"type": "number", "default": 0.1},
+            "tolerance": {"type": "number", "default": 0.05}
+          }
+        }
+      }
+    },
+    "output_config": {
+      "type": "object",
+      "properties": {
+        "directory": {
+          "type": "string",
+          "default": "data/training/",
+          "description": "Output directory"
+        },
+        "format": {
+          "type": "string",
+          "enum": ["jsonl", "json", "parquet"],
+          "default": "jsonl"
+        },
+        "include_rejected": {
+          "type": "boolean",
+          "default": true
+        }
+      }
+    }
+  }
+}

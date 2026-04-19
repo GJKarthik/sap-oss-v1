@@ -1,5 +1,6 @@
 import { Injectable } from '@angular/core';
 import { Router } from '@angular/router';
+import { absolutizeSuiteSiblingPath } from './suite-sibling-url';
 import { WorkspaceService } from './workspace.service';
 
 export type ProductAppId = 'aifabric' | 'training' | 'sac' | 'experience';
@@ -39,11 +40,9 @@ export class ProductNavigationService {
     const path = normalizedRoute === '/' ? `${basePath}/` : `${basePath}${normalizedRoute}`;
     const workspaceId = this.workspace.activeWorkspace()?.id;
 
-    if (!workspaceId || appId === 'sac') {
-      return path;
-    }
-
-    return `${path}?workspace=${encodeURIComponent(workspaceId)}`;
+    const withWorkspace =
+      !workspaceId || appId === 'sac' ? path : `${path}?workspace=${encodeURIComponent(workspaceId)}`;
+    return absolutizeSuiteSiblingPath(withWorkspace);
   }
 
   private defaultLandingPath(): string {

@@ -1,0 +1,109 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://sap-oss.github.io/schema/simula/hana-schema-entry.schema.json",
+  "title": "HANA Schema Registry Entry",
+  "description": "Schema for HANA schema metadata extracted via MCP (Chapter 3)",
+  "type": "object",
+  "required": ["schema_id", "schema_name", "tables"],
+  "properties": {
+    "schema_id": {
+      "type": "string",
+      "description": "Unique identifier for this schema entry"
+    },
+    "schema_name": {
+      "type": "string",
+      "description": "HANA schema name (e.g., PAL_STORE)"
+    },
+    "tables": {
+      "type": "object",
+      "additionalProperties": {
+        "$ref": "#/definitions/table_definition"
+      },
+      "description": "Tables in this schema"
+    },
+    "views": {
+      "type": "object",
+      "additionalProperties": {
+        "$ref": "#/definitions/view_definition"
+      },
+      "description": "Views in this schema"
+    },
+    "extraction_metadata": {
+      "$ref": "#/definitions/extraction_metadata"
+    },
+    "hana_types_mapping": {
+      "type": "object",
+      "additionalProperties": {"type": "string"},
+      "description": "HANA type to SQL type mapping (addresses review issue 4.5)"
+    },
+    "metadata": {
+      "$ref": "https://sap-oss.github.io/schema/common/base-types.schema.json#/definitions/Metadata"
+    }
+  },
+  "definitions": {
+    "table_definition": {
+      "type": "object",
+      "required": ["columns"],
+      "properties": {
+        "columns": {
+          "type": "array",
+          "items": {"$ref": "#/definitions/column_definition"}
+        },
+        "primary_key": {
+          "type": "array",
+          "items": {"type": "string"}
+        },
+        "foreign_keys": {
+          "type": "array",
+          "items": {"$ref": "#/definitions/foreign_key"}
+        },
+        "row_count_estimate": {"type": "integer"},
+        "description": {"type": "string"}
+      }
+    },
+    "view_definition": {
+      "type": "object",
+      "properties": {
+        "columns": {
+          "type": "array",
+          "items": {"$ref": "#/definitions/column_definition"}
+        },
+        "base_tables": {
+          "type": "array",
+          "items": {"type": "string"}
+        },
+        "definition_sql": {"type": "string"}
+      }
+    },
+    "column_definition": {
+      "type": "object",
+      "required": ["name", "type"],
+      "properties": {
+        "name": {"type": "string"},
+        "type": {"type": "string", "description": "HANA data type"},
+        "sql_type": {"type": "string", "description": "Mapped SQL standard type"},
+        "nullable": {"type": "boolean", "default": true},
+        "default_value": {"type": "string"},
+        "description": {"type": "string"},
+        "is_primary_key": {"type": "boolean", "default": false}
+      }
+    },
+    "foreign_key": {
+      "type": "object",
+      "properties": {
+        "columns": {"type": "array", "items": {"type": "string"}},
+        "references_table": {"type": "string"},
+        "references_columns": {"type": "array", "items": {"type": "string"}}
+      }
+    },
+    "extraction_metadata": {
+      "type": "object",
+      "properties": {
+        "extracted_at": {"type": "string", "format": "date-time"},
+        "mcp_server": {"type": "string"},
+        "hana_version": {"type": "string"},
+        "extraction_duration_ms": {"type": "integer"}
+      }
+    }
+  }
+}

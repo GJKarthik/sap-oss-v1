@@ -1,0 +1,268 @@
+\chapter{Controls, testing, and acceptance}\label{ch:controls}
+
+\section{Control catalogue}
+
+The Bahrain DOI's seven controls
+(\corpus\path{structured/policies/bh-accounts-payable-doi.json},
+\texttt{controls[]}) are reproduced in \cref{tab:controls} with the
+engine mechanism that enforces each.
+
+\begin{table}[htbp]
+\centering
+\caption{Control catalogue and enforcement mechanisms.}
+\label{tab:controls}
+\small
+\begin{tabularx}{\linewidth}{@{}l l X X@{}}
+\toprule
+\textbf{ID} & \textbf{Activity} & \textbf{Description} & \textbf{Enforced by} \\ \midrule
+C1 & 4 & All required approvals present before payment release. & Workflow engine cannot transition to \textsc{paid} until every required-role approval has fired. \\
+C2 & 5 & Vendor screening revalidated within 48~hours of payment. & Precondition on \texttt{cfo\_approved}$\to$\textsc{screened} transition (\texttt{manual-one-off}). \\
+C3 & 4 & Amount payable within DOA per GDAM. & Linear DOA scan before any approval transition. \\
+C4 & 5 & Dispensation in place for recurring manual payments. & Precondition on \textsc{draft}$\to$\textsc{dispensation\_ok} in \texttt{manual-recurring}. \\
+C5 & 7 & Monthly PSGL$\leftrightarrow$eBBS reconciliation cleared within aging thresholds. & Batch job; escalation grid e-mails DBU FM / CFO. \\
+C6 & 3 & FCY invoices revalued at central-bank rate on invoice date. & VAT engine runs FCY$\to$LCY \emph{before} DOA check. \\
+C7 & 4 & Duplicate-payment check. & Intake Stage~1 short-circuits on matching \texttt{source\_document.sha256}. \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}[
+  node distance=5mm and 6mm,
+  stage/.style={draw,rounded corners,minimum width=22mm,minimum height=8mm,align=center,font=\scriptsize,fill=orange!10},
+  ctrl/.style={draw,ellipse,minimum width=10mm,minimum height=6mm,font=\tiny,fill=red!10},
+  t/.style={-{Latex[length=1.8mm]}},
+  c/.style={-{Latex[length=1.6mm]},dashed,red!60!black}
+]
+\node[stage] (intake) {Intake};
+\node[stage,right=of intake]  (ocr)  {OCR};
+\node[stage,right=of ocr]     (ext)  {Extract};
+\node[stage,right=of ext]     (vat)  {VAT engine};
+\node[stage,below=of vat]     (doa)  {DOA scan};
+\node[stage,left=of doa]      (apr)  {Approval};
+\node[stage,left=of apr]      (pay)  {Pay};
+\node[stage,left=of pay]      (rec)  {Reconcile};
+
+\draw[t] (intake) -- (ocr);
+\draw[t] (ocr) -- (ext);
+\draw[t] (ext) -- (vat);
+\draw[t] (vat) -- (doa);
+\draw[t] (doa) -- (apr);
+\draw[t] (apr) -- (pay);
+\draw[t] (pay) -- (rec);
+
+\node[ctrl,above=2.5mm of intake] (c7)  {C7};
+\node[ctrl,above=2.5mm of vat]    (c6)  {C6};
+\node[ctrl,above=2.5mm of doa]    (c3)  {C3};
+\node[ctrl,below=2.5mm of apr]    (c1)  {C1};
+\node[ctrl,below=2.5mm of pay]    (c2)  {C2};
+\node[ctrl,below=2.5mm of pay,xshift=-14mm] (c4) {C4};
+\node[ctrl,below=2.5mm of rec]    (c5)  {C5};
+
+\draw[c] (c7) -- (intake);
+\draw[c] (c6) -- (vat);
+\draw[c] (c3) -- (doa);
+\draw[c] (c1) -- (apr);
+\draw[c] (c2) -- (pay);
+\draw[c] (c4) -- (pay);
+\draw[c] (c5) -- (rec);
+\end{tikzpicture}
+\caption{Control enforcement points along the end-to-end invoice
+         lifecycle. Dashed arrows show where each DOI control
+         (\cref{tab:controls}) is evaluated.}
+\label{fig:controls-map}
+\end{figure}
+
+\section{Testing strategy}
+
+Testing follows the five-session engagement model
+(\cref{tab:sessions}). For each country rollout:
+
+\begin{description}
+  \item[Session 1 --- Understand.] Collect $\geq$5 sample invoices
+        (regulator-issued if available), normalise into the corpus,
+        confirm per-country ruleset is complete.
+  \item[Session 2 --- Sketch.] Walk the end-to-end pipeline on paper
+        using one sample invoice. Identify OCR pitfalls
+        (\cref{tab:pitfalls}) specific to the country.
+  \item[Session 3 --- Decide.] Freeze the rule precedence and the
+        decision function for the VAT engine
+        (\S\ref{ch:vat}).
+  \item[Session 4 --- Prototype.] Run the full pipeline on the cohort;
+        review each extracted record with the local finance team.
+        Human-approval rate target $\geq$~0.75.
+  \item[Session 5 --- Testing.] Independent run with $\geq$~5
+        stakeholders; target $\geq$~0.90 human-approval with
+        zero-edit rate measured.
+\end{description}
+
+\section{Regression golden set}
+
+The three Arabic records already in
+\corpus\texttt{structured/invoices/} (Egypt ETA $\times$ 2, Saudi
+ZATCA $\times$ 1) together with the KSA checklist and the two Qatar
+payment instructions constitute the regression golden set.
+
+\paragraph{Invariants.} Every change to the pipeline must preserve:
+\begin{enumerate}
+  \item byte-identical \texttt{source\_document.sha256} for every
+        corpus record (source files are immutable);
+  \item 100\,\% schema validity under \texttt{validate.py};
+  \item identical \texttt{tax\_type\_classification} for every
+        invoice record;
+  \item identical selected workflow for every record.
+\end{enumerate}
+
+\paragraph{Runner.} \texttt{validate.py} plus the following
+\texttt{jq} equality check is the regression harness:
+
+\begin{lstlisting}[language=bash,basicstyle=\ttfamily\small]
+# Per-field equality of every golden-set record between a reference
+# snapshot and the pipeline output.
+diff \
+  <(jq -S . docs/arabic/structured/invoices/*.json) \
+  <(for p in docs/arabic/source/*.pdf; do
+      ./pipeline extract "$p"
+    done | jq -S .)
+\end{lstlisting}
+
+A non-empty diff is a regression.
+
+\section{Acceptance criteria per workstream}
+
+\paragraph{AI pipeline (\cref{ch:ai}).}
+\begin{itemize}
+  \item Corpus integrity check passes (every \texttt{corpus.json} path
+        exists; every SHA-256 matches).
+  \item For every source PDF: OCR confidence $\geq$~30\% on every page,
+        schema-valid record emitted.
+  \item Translation back-translation distance $\leq$~0.30 on every
+        non-empty \texttt{description\_en}.
+\end{itemize}
+
+\paragraph{VAT engine (\cref{ch:vat}).}
+\begin{itemize}
+  \item KSA: all 11 checklist rules evaluated; decision function
+        emits expected VAT category for every golden invoice.
+  \item Egypt: \texttt{EXEMPT\_ACTIVITIES} lookup table complete for
+        activities present in the corpus.
+  \item Bahrain: each of the 11 NBR invoice types has a corresponding
+        enum code.
+\end{itemize}
+
+\paragraph{AP engine (\cref{ch:ap}).}
+\begin{itemize}
+  \item Every workflow record loadable and schema-valid.
+  \item DOA scan deterministic under round-trip FX conversion.
+  \item Workflow-selection decision tree (\cref{fig:workflow-select})
+        yields the documented workflow for every corpus record.
+\end{itemize}
+
+\section{Traceability matrix}
+
+\Cref{tab:trace} links each specification section to the source
+document that justifies it and to the structured record that realises
+it. Every row must be present for a full audit pass.
+
+\begin{table}[htbp]
+\centering
+\caption{Traceability of specification to source document and
+         structured record.}
+\label{tab:trace}
+\footnotesize
+\begin{tabularx}{\linewidth}{@{}l X X X@{}}
+\toprule
+\textbf{Section} & \textbf{Requirement} & \textbf{Source} & \textbf{Structured record} \\ \midrule
+\cref{ch:overview} & Countries in scope & Manoj e-mail, 2025-11-23 & \path{enums.yaml} (countries) \\
+\cref{ch:schema}   & Canonical invoice fields & EG ETA PDFs, ZATCA PDF & \path{schema/invoice.schema.json} \\
+\cref{ch:schema}   & 11-point checklist shape & Saudi OTP/VAT Q3 2025 & \path{schema/vat-checklist.schema.json} \\
+\cref{ch:ai}       & OCR command line & --- (new) & \path{extracted-text/*.txt} \\
+\cref{ch:ai}       & Translation glossary & \ar{اشعار صدور فاتورة} (005).pdf & \path{invoices/sa-zatca-ishaar-005.json} \\
+\cref{ch:vat}      & KSA rules (1--11) & Saudi OTP/VAT Q3 2025 & \path{vat-checklists/sa-otp-vat-q3-2025.json} \\
+\cref{ch:vat}      & ETA 26-char ID regex & EG ETA PDFs & \path{enums.yaml} (tax\_authorities.ETA) \\
+\cref{ch:vat}      & NBR 11 invoice types & AP DOI Activity 3 & \path{policies/bh-accounts-payable-doi.json} \\
+\cref{ch:ap}       & Activities 1--7 & AP DOI & \path{policies/bh-accounts-payable-doi.json} \\
+\cref{ch:ap}       & \texttt{po-eproc} state machine & AP DOI Activity 3 & \path{workflows/po-eproc.json} \\
+\cref{ch:ap}       & \texttt{manual-one-off} state machine & AP DOI Activity 5 (one-off) & \path{workflows/manual-one-off.json} \\
+\cref{ch:ap}       & \texttt{manual-recurring} state machine & AP DOI Activity 5 (recurring) & \path{workflows/manual-recurring.json} \\
+\cref{ch:ap}       & \texttt{vat-payment} state machine & KSA Q3 2025 flow + ZATCA assessment & \path{workflows/vat-payment.json} \\
+\cref{ch:controls} & Controls C1--C7 & AP DOI + KSA checklist + observations & \path{policies/bh-accounts-payable-doi.json} \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\section{Operational readiness}
+
+A country is declared \emph{production-ready} once:
+\begin{enumerate}
+  \item the regression golden set runs clean for 30 consecutive days
+        in the \textsc{uat} environment;
+  \item Session~5 acceptance meets the human-approval-rate target
+        (\cref{ch:ai});
+  \item every VAT rule for the country is present in the ruleset and
+        has at least one passing test case;
+  \item the country CFO signs off on the workflow configuration,
+        recorded as a \texttt{CFO} role entry on the \texttt{vat-payment}
+        or \texttt{manual-one-off} workflow golden record.
+\end{enumerate}
+
+\section{Deployment and rollback}
+
+\paragraph{Environments.} Three are in scope:
+\begin{description}
+  \item[\textsc{dev}.] Developer workstations and CI; reads the corpus
+        from the Git working tree. No live invoices.
+  \item[\textsc{uat}.] Shared test environment reading a frozen copy of
+        the corpus; live DOI activity stops at \textsc{cfo\_approved}
+        (no SAMA/SWIFT rail). Country finance and GBS APU run Session
+        4/5 here.
+  \item[\textsc{prod}.] Live environment; the only one authorised to
+        transition to \textsc{paid}.
+\end{description}
+
+\paragraph{Sign-off matrix.} Each promotion requires a two-party
+approval recorded as an event in the \texttt{events/} stream
+(\cref{ch:ap}):
+
+\begin{tabularx}{\linewidth}{@{}l l X@{}}
+\toprule
+\textbf{Transition} & \textbf{Approvers} & \textbf{Evidence} \\ \midrule
+\textsc{dev}$\to$\textsc{uat}  & Tech lead + QA lead           & Green CI build, clean regression. \\
+\textsc{uat}$\to$\textsc{prod} & Country CFO + GBS APU head    & Session 5 acceptance report; 30-day UAT stability; CFO workflow golden record. \\
+\bottomrule
+\end{tabularx}
+
+\paragraph{Rollback.} Deployments are blue/green. The engine, rules,
+and schemas are versioned with a content-addressed tag (SHA-256 of
+\texttt{structured/corpus.json} at release time). Rollback is a
+one-command revert to the previous tag; no database migration is
+required because the canonical corpus is append-only. Any in-flight
+invoice whose workflow record references a schema version that was
+rolled back is automatically held in \textsc{awaiting\_review}.
+
+\paragraph{Change control.} Ruleset edits (\cref{ch:vat}) and
+workflow edits (\cref{ch:ap}) are routed through the same two-party
+sign-off; schema edits require an additional sign-off from the AI
+pipeline owner because they invalidate the regression golden set
+(\S\ref{ch:ai}).
+
+\section{Audit event log}
+
+The approval engine emits an append-only event per transition
+(\texttt{workflow\_id}, \texttt{from}, \texttt{to},
+\texttt{actor\_psid}, \texttt{timestamp}, \texttt{evidence\_refs}),
+hashing its predecessor so the stream is tamper-evident. The stream
+is \emph{in scope} for compliance purposes but the storage substrate
+(append-only object store, retention policy, restoration runbook) is
+owned by the GBS APU audit team and specified in
+\emph{SCB-APU-AUDIT-001}, referenced but not reproduced here. The
+engine guarantees:
+
+\begin{itemize}
+  \item every workflow transition in \cref{ch:ap} emits exactly one
+        event;
+  \item events are linearly hash-chained;
+  \item the event stream is the sole source of truth for DOA
+        compliance (controls C1--C4 in \cref{tab:controls}).
+\end{itemize}

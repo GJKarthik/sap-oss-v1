@@ -1,6 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { TRAINING_ROUTE_LINKS } from '../app.navigation';
+import { absolutizeSuiteSiblingPath } from '../shared/utils/suite-sibling-url';
 import { WorkspaceService } from './workspace.service';
 
 export type AppId = 'aifabric' | 'training' | 'experience';
@@ -58,11 +59,10 @@ export class AppLinkService {
     const path = normalizedRoute === '/' ? `${basePath}/` : `${basePath}${normalizedRoute}`;
     const workspaceId = this.workspace.activeWorkspace()?.id;
 
-    if (!workspaceId) {
-      return path;
-    }
-
-    return `${path}?workspace=${encodeURIComponent(workspaceId)}`;
+    const withWorkspace = !workspaceId
+      ? path
+      : `${path}?workspace=${encodeURIComponent(workspaceId)}`;
+    return absolutizeSuiteSiblingPath(withWorkspace);
   }
 
   navigate(appId: AppId, route = '/'): void {

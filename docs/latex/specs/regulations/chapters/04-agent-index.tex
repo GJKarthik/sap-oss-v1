@@ -1,0 +1,87 @@
+% =============================================================================
+% Chapter 4 --- 2025 AI Agent Index
+% =============================================================================
+\chapter{2025 AI Agent Index}
+\label{ch:agent-index}
+
+\section{Source document}
+
+\begin{description}
+  \item[Title.] The 2025 AI Agent Index --- Documenting Technical and Safety
+    Features of Deployed Agentic AI Systems.
+  \item[Authors.] Staufer (Cambridge), Feng (Washington), Wei (Harvard
+    Law), Bailey (Stanford), Duan (Concordia AI), Yang (UPenn), Ozisik
+    (MIT), Casper (MIT, co-senior), Kolt (Hebrew University, co-senior).
+  \item[Venue.] \url{https://aiagentindex.mit.edu/}; CC-BY-4.0.
+  \item[Pages.] 39.
+  \item[Source.] \corpus{source/2025-AI-Agent-Index.pdf}
+    (sha256 \texttt{c67a3046\ldots0e267f}).
+\end{description}
+
+\section{What it catalogues}
+
+The Index documents 30 state-of-the-art deployed agentic systems across
+six documentation categories:
+
+\begin{enumerate}
+  \item \textbf{Legal.} Licensing, terms of service, responsible-use
+        policies, redistribution rights.
+  \item \textbf{Technical capabilities.} Supported modalities, tool
+        access, planning horizon, memory.
+  \item \textbf{Autonomy and control.} Spectrum from recommender to
+        operator; human-in-the-loop requirements.
+  \item \textbf{Ecosystem interaction.} External systems the agent
+        integrates with (MCP, web browsers, code editors, e-commerce).
+  \item \textbf{Evaluation.} Published benchmarks, capability scores,
+        safety evaluations, red-team assessments.
+  \item \textbf{Safety.} Safety documentation, risk assessments,
+        residual-risk statements.
+\end{enumerate}
+
+\section{Headline finding for governance}
+
+The Index's top-level empirical finding is directly relevant to our
+corpus design:
+
+\begin{quote}\small
+\emph{``\ldots we find different transparency levels among agent developers
+and observe that most developers share little information about safety,
+evaluations, and societal impacts.''}
+\end{quote}
+
+Our response is the transparency requirement set extracted in Table~\ref{tab:agentidx-reqs}.
+
+\begin{table}[h]
+\centering
+\small
+\begin{tabularx}{\textwidth}{p{3.2cm}p{1.4cm}p{1.6cm}X}
+\toprule
+\textbf{Req.\ id} & \textbf{Section} & \textbf{Obligation} & \textbf{Normative text (paraphrased)} \\
+\midrule
+REG-AGENTIDX-3.6-001 & 3.6 & should & Publish per-agent: risk assessment summary, evaluation results, known limitations. \\
+REG-AGENTIDX-3.3-001 & 3.3 & should & Document agent autonomy level and map each state transition to that level. \\
+\bottomrule
+\end{tabularx}
+\caption{Requirements derived from the 2025 AI Agent Index.}
+\label{tab:agentidx-reqs}
+\end{table}
+
+\section{How we verify the transparency requirement}
+
+Publication is evidenced by this very document plus the structured
+records. In practice:
+
+\begin{itemize}
+  \item Risk assessment: \corpus{../tb/structured/requirements/tb-business-requirements.json},
+        \texttt{riskAssessment} field.
+  \item Evaluation results: AI Verify \texttt{process-checklist} plugin
+        output plus Moonshot benchmark runs (\cref{ch:tooling}).
+  \item Known limitations: the gap entries in this specification's
+        coverage tables.
+\end{itemize}
+
+This chapter is cited from requirement record
+\texttt{REG-AGENTIDX-3.6-001} as
+\path{docs/regulations/spec/chapters/04-agent-index.tex}, closing the
+loop.
+\clearpage

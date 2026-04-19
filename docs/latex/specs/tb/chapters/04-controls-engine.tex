@@ -1,0 +1,217 @@
+\chapter{Controls and Commentary Engine}\label{ch:controls-engine}
+
+\section{Role of the engine}
+
+The controls engine is the declarative layer that turns the five
+decision-point records of \cref{sec:decision-point-schema} into
+executable rules. It sits between Stage 2 (anomaly detection) and
+Stage 5 (FORTM narrative) of the AI pipeline. Its inputs are the
+variance records, the GL journal extract, and the stakeholder
+commentary responses; its outputs are routing actions and a
+commentary register.
+
+\section{Decision tree}
+
+\Cref{fig:decision-tree} collapses the five gateways into a single
+cascade. The tree is identical to the workflow in \cref{ch:workflow}
+but omits task nodes; each leaf is a terminal action in the gateway
+vocabulary.
+
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}[
+  node distance=7mm and 8mm,
+  gw/.style={diamond,draw,aspect=1.8,inner sep=1pt,align=center,
+             font=\scriptsize,fill=tbamber!15,draw=tbamber!60,
+             minimum height=9mm,minimum width=22mm},
+  act/.style={draw,rounded corners=2pt,align=center,font=\scriptsize,
+              fill=tbgreen!15,draw=tbgreen!60,minimum height=6mm},
+  arr/.style={-{Latex[length=2mm]},thin}
+]
+  \node[gw] (dp1) {DP-001 \\ material?};
+  \node[gw,below right=7mm and 4mm of dp1] (dp2) {DP-002 \\ journal?};
+  \node[act,left=10mm of dp2] (noncrit) {no-commentary};
+  \node[gw,below right=7mm and 4mm of dp2] (dp3) {DP-003 \\ investigate?};
+  \node[act,left=8mm of dp3] (posted) {continue};
+  \node[gw,below right=7mm and 4mm of dp3] (dp4) {DP-004 \\ M+4 received?};
+  \node[act,left=8mm of dp4] (norinv) {continue};
+  \node[gw,below right=7mm and 4mm of dp4] (dp5) {DP-005 \\ unexplained?};
+  \node[act,left=8mm of dp5] (ontime) {continue};
+  \node[act,below=of dp5] (summary) {prepare-summary};
+  \node[act,right=20mm of dp5] (cat) {categorise};
+
+  \draw[arr] (dp1) -- node[above,font=\tiny]{yes} (dp2);
+  \draw[arr] (dp1) -- node[above,font=\tiny]{no}  (noncrit);
+  \draw[arr] (dp2) -- node[above,font=\tiny]{not posted} (dp3);
+  \draw[arr] (dp2) -- node[above,font=\tiny]{posted}     (posted);
+  \draw[arr] (dp3) -- node[above,font=\tiny]{yes} (dp4);
+  \draw[arr] (dp3) -- node[above,font=\tiny]{no}  (norinv);
+  \draw[arr] (dp4) -- node[above,font=\tiny]{no}  (dp5);
+  \draw[arr] (dp4) -- node[above,font=\tiny]{yes} (ontime);
+  \draw[arr] (dp5) -- node[left,font=\tiny]{none}  (summary);
+  \draw[arr] (dp5) -- node[above,font=\tiny]{some} (cat);
+\end{tikzpicture}
+\caption{Decision cascade encoded by the five decision-point
+records.}\label{fig:decision-tree}
+\end{figure}
+
+\section{Rule format}
+
+Each rule is a record with five fields:
+
+\begin{lstlisting}[language=jsonx,caption={Generalised rule form.}]
+{
+  "id":          "<DP-nnn>",
+  "state":       "<workflow stateId>",
+  "input":       "<record field path>",
+  "operator":    "<exceeds_threshold|boolean|in_set|...>",
+  "threshold":   "<value or parameter name>",
+  "branches":    [ {"condition":"...","action":"..."} ... ]
+}
+\end{lstlisting}
+
+Rule evaluation is deterministic. When a record enters a gateway
+state, the engine reads the named input field, applies the operator,
+and dispatches the matching branch's action. Actions reference
+downstream tasks in the workflow (\cref{ch:workflow}).
+
+\section{Materiality thresholds}
+
+\texttt{DP-001} reads \texttt{materiality\_limit} from the country
+parameters sheet. During the AI rollout, the fitted ML threshold
+(Stage 2) is compared side-by-side with the manual limit for six
+months; divergences $> 10\%$ surface to the Head of Africa GFS for
+review. Only after six clean cycles does the fitted threshold
+replace the manual one in the parameter sheet.
+
+\section{Journal posting}
+
+\texttt{DP-002} has three branches. The engine first reads
+\texttt{journal\_status} from the GL extract. If the status is
+\textsc{posted}, the routing short-circuits to
+\stateid{CHECK\_UNEXPLAINED}. If \textsc{posting\_required}, the
+engine emits a posting request via
+\stateid{SEND\_JOURNAL\_REQUEST} and returns to
+\stateid{CHECK\_FURTHER\_INVESTIGATION}. If \textsc{not\_posted}
+(stuck), the path proceeds directly to
+\stateid{CHECK\_FURTHER\_INVESTIGATION}, skipping the request.
+
+\section{Investigation and deadlines}
+
+\texttt{DP-003} is a boolean gateway controlled by the
+\texttt{investigation\_status} field. \texttt{DP-004} enforces the
+\texttt{M+4} deadline by reading \texttt{days\_to\_deadline} from the
+variance record. Crossing the deadline triggers the
+\stateid{TRACK\_ENTRIES} branch and the risk-assessment update in
+\stateid{UPDATE\_RISK}.
+
+\section{Unexplained-variance handling}
+
+\texttt{DP-005} is the final gate before summary. If
+\texttt{unexplained\_variance\_count $= 0$}, the engine transitions to
+\stateid{PREPARE\_SUMMARY}. Otherwise, the unexplained items are
+passed to \stateid{CATEGORIZE\_UNEXPLAINED}, where each item is
+tagged against the BSS risk vocabulary (\textsc{substantiated at risk},
+\textsc{unsubstantiated unowned}, \textsc{unsubstantiated owned}) and
+a commentary draft is requested.
+
+\section{Commentary register}
+
+All drafts produced by Stage 3 of the AI pipeline, together with the
+analyst accept/edit decision, are persisted to the commentary
+register. The register is the primary evidence artefact for
+\texttt{EUC-002}: the register row count must equal the flagged
+variance row count at the end of \stateid{UPDATE\_VARIANCE\_COMMENTARIES}.
+
+\begin{table}[htbp]
+\caption{Commentary register schema (derived from the variance
+record).}\label{tab:commentary-register}
+\centering
+\small
+\begin{tabularx}{\linewidth}{@{}llX@{}}
+\toprule
+\textbf{Field} & \textbf{Type} & \textbf{Notes} \\ \midrule
+account\_id      & string  & GL account number \\
+period           & string  & ISO yyyy-mm \\
+variance\_amount & number  & Prior $\to$ current delta \\
+draft            & string  & LLM-generated narrative \\
+final            & string  & Post-review narrative \\
+accept\_mode     & enum    & \textsc{as-is}, \textsc{edited}, \textsc{rejected} \\
+reviewer         & string  & GFS Analyst name or role \\
+review\_ts       & datetime & ISO-8601 \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\section{Per-country parameter views}\label{sec:per-country-views}
+
+The data product record carries a \texttt{x-country-views.HK} block
+that injects an HKMA-aware vocabulary and sets
+\texttt{defaultFilters.entity = "HKG"}. Adding a new country is a
+matter of adding another view; no schema change is needed. Until
+additional views exist, Hong Kong is the only LE with a fitted
+threshold history.
+
+\subsection{Parameter loading and validation for 234 entities}
+\label{sec:params-234}
+
+Full Group rollout to all 234 Legal Entities (LEs) is gated on the
+availability of a per-entity parameter file, not on model capacity.
+This section specifies how those parameters are loaded, validated,
+and versioned so that entities can be on-boarded without schema or
+code changes.
+
+\begin{description}
+  \item[Parameter file layout.] Per-entity parameters live at
+        \path{docs/tb/machine-readable/entity-params/<le-code>.yaml}
+        (one file per LE; \texttt{le-code} matches the three-letter
+        ISO-ish LE code used by PSGL, e.g.\ \texttt{HKG},
+        \texttt{SGP}). Each file is a dictionary with keys
+        \texttt{materiality\_threshold}, \texttt{variance\_bands},
+        \texttt{account\_category\_overrides},
+        \texttt{fx\_reporting\_currency},
+        \texttt{regulator\_vocabulary},
+        \texttt{commentary\_style\_exemplars}, and
+        \texttt{last\_calibration\_date}.
+  \item[Schema.] All entity parameter files validate against
+        \path{docs/schema/tb/entity-params.schema.json} (new,
+        registered in \path{docs/schema/registry.json} under the
+        \texttt{tb} domain). The CI \texttt{--registry-check}
+        command fails if any file deviates.
+  \item[Loading.] The TB pipeline loads parameters at batch start
+        via \texttt{EntityParamsRegistry.load\_all()}
+        (\path{src/tb/entity_params.py}) which reads every file in
+        the directory, validates it against the schema, and caches
+        the result. Missing LE codes are logged as
+        \texttt{warn}; a missing code does not block the pipeline
+        for \emph{other} entities, but processing for the missing
+        LE is skipped with an audit record.
+  \item[Onboarding a new LE.] The runbook is
+        \path{docs/tb/runbooks/onboard-le.md}: (1) copy
+        \texttt{HKG.yaml} as a template, (2) fit a threshold
+        history against 12 months of TB data, (3) open a pull
+        request with the new file, (4) CI validates the file and
+        runs a dry-run cycle on the new LE, (5) reviewer sign-off
+        (senior analyst + controller).
+  \item[Roll-forward safety.] Parameter files are versioned in
+        git; the data product record records the git SHA of the
+        entity-params directory at run start
+        (\texttt{runMetadata.entityParamsSha}). Retrospective
+        ACG queries reconstruct parameters at the historical run
+        time.
+\end{description}
+
+\noindent
+Rollout readiness (see Chapter~\ref{ch:overview}, Section on
+Timeline): HKG is fully onboarded; a wave of 8--10 LEs is added in
+phase~4 (quarter after v1.0 go-live), with the remaining 220+
+on-boarded over 12--18 months. The dashboard
+(\cref{ch:review-dashboard}) surfaces per-LE coverage so that
+operations can prioritise LEs by review volume and regulator risk.
+
+\section{Observability}
+
+Every rule firing is logged with input, branch taken, timestamp, and
+the version of the ruleset. Logs are aggregated into the
+\texttt{TB\_REVIEW\_VECTORS} table's metadata index so that prior
+decisions are retrievable by account and period.

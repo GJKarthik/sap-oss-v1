@@ -1,0 +1,256 @@
+\chapter{AP workflow and approval engine}\label{ch:ap}
+
+\section{Engine responsibilities}
+
+Given a validated invoice record and the VAT engine's verdict
+(\cref{ch:vat}), the approval engine must:
+
+\begin{enumerate}
+  \item select the correct workflow from
+        \corpus\texttt{structured/workflows/};
+  \item instantiate the state machine with the record;
+  \item drive transitions as approvals arrive (human or system);
+  \item at every transition, verify the
+        \texttt{delegation\_of\_authority} is respected for the current
+        LCY amount;
+  \item on reaching a terminal state, emit the payment instruction
+        conforming to \texttt{payment-instruction.schema.json}.
+\end{enumerate}
+
+The engine is a \emph{pure} workflow executor; it never invents fields.
+
+\section{Activity view of the Bahrain DOI}
+
+\Cref{tab:doi-activities} is the unabridged activity map from
+\corpus\path{structured/policies/bh-accounts-payable-doi.json}; the
+engine maps each activity onto one or more workflow paths.
+
+\begin{table}[htbp]
+\centering
+\caption{The seven DOI activities and the workflow paths they drive.}
+\label{tab:doi-activities}
+\small
+\begin{tabularx}{\linewidth}{@{}c l X l@{}}
+\toprule
+\# & \textbf{Activity} & \textbf{Description (condensed)} & \textbf{Workflow} \\ \midrule
+1 & Introduction & DOI purpose \& Group alignment. & --- \\
+2 & Group systems & Mandate eProc/T\&E/SODA; anything else = manual. & --- \\
+3 & PO invoices  & eProc route; Tax-Q assigns POP/VAT; FCY at central-bank rate. & \texttt{po-eproc} \\
+4 & Manual invoices (non-eProc) & CC + supply chain + CFO approvals; BH\_APUeInvoice mailbox. & \texttt{manual-one-off} \\
+5 & In-country manual payments & One-off: MD+CFO + 48h screening. Recurring: dispensation + eOPS. & \texttt{manual-one-off}, \texttt{manual-recurring} \\
+6 & CBR   & Centrally managed by GBS APU CBR team. & (central, out of this engine) \\
+7 & Suspense clearing & Monthly PSGL$\leftrightarrow$eBBS reconciliation. & (batch, not per-invoice) \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\section{Workflow selection}
+
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}[
+  node distance=8mm and 14mm,
+  d/.style={draw,diamond,aspect=2,align=center,font=\small,inner sep=1pt,fill=yellow!10},
+  w/.style={draw,rounded corners,minimum width=30mm,minimum height=8mm,align=center,font=\small,fill=violet!10},
+  t/.style={-{Latex[length=2mm]}}
+]
+\node[d] (tax)    {Tax-authority\\counterparty?};
+\node[w,right=of tax] (vat) {\texttt{vat-payment}};
+\node[d,below=of tax] (po)  {PO reference\\present?};
+\node[w,right=of po]  (pop) {\texttt{po-eproc}};
+\node[d,below=of po]  (rec) {Recurring\\vendor?};
+\node[w,right=of rec] (recp){\texttt{manual-recurring}};
+\node[w,below=of rec] (oneo){\texttt{manual-one-off}};
+
+\draw[t] (tax.east) -- node[above,font=\tiny]{yes} (vat.west);
+\draw[t] (tax.south) -- node[right,font=\tiny]{no} (po.north);
+\draw[t] (po.east)  -- node[above,font=\tiny]{yes} (pop.west);
+\draw[t] (po.south) -- node[right,font=\tiny]{no} (rec.north);
+\draw[t] (rec.east) -- node[above,font=\tiny]{yes} (recp.west);
+\draw[t] (rec.south)-- node[right,font=\tiny]{no} (oneo.north);
+\end{tikzpicture}
+\caption{Workflow selection decision tree applied at Stage~5 of the AI
+         pipeline (\cref{ch:ai}).}
+\label{fig:workflow-select}
+\end{figure}
+
+\section{\texttt{po-eproc} state machine}
+
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}[
+  node distance=7mm and 6mm,
+  s/.style={draw,rounded corners,minimum width=22mm,minimum height=7mm,align=center,font=\scriptsize},
+  t/.style={-{Latex[length=2mm]}}
+]
+\node[s] (d)  {\textsc{draft}};
+\node[s,right=of d] (po) {\textsc{po\_issued}};
+\node[s,right=of po] (ir) {\textsc{invoice\_received}};
+\node[s,right=of ir] (txq){\textsc{tax\_q\_review}};
+\node[s,below=of txq] (posted){\textsc{posted}};
+\node[s,left=of posted] (paid) {\textsc{paid}};
+\node[s,below=of ir,fill=red!7] (rej) {\textsc{rejected}};
+
+\draw[t] (d) -- node[above,font=\tiny]{CC} (po);
+\draw[t] (po) -- (ir);
+\draw[t] (ir) -- (txq);
+\draw[t] (txq) -- node[right,font=\tiny]{VAT+POP} (posted);
+\draw[t] (posted) -- node[above,font=\tiny]{APU} (paid);
+\draw[t] (ir) -- node[right,font=\tiny]{reject} (rej);
+\end{tikzpicture}
+\caption{\texttt{po-eproc} state machine
+(\corpus\texttt{structured/workflows/po-eproc.json}).}
+\label{fig:po-eproc}
+\end{figure}
+
+\paragraph{Preconditions.}
+\begin{itemize}
+  \item \texttt{tax\_q\_review}~$\to$~\texttt{posted}: VAT category
+        assigned and FCY revalued at central-bank rate on
+        \texttt{issue\_date}.
+  \item \texttt{posted}~$\to$~\texttt{paid}: LCY amount within DOA per
+        GDAM.
+\end{itemize}
+
+\section{\texttt{manual-one-off} state machine}
+
+\Cref{fig:manual-one-off} captures Activity 5's one-off branch:
+evidence of one-off nature, vendor screening refreshed within 48 hours,
+MD and CFO approvals, and account coding captured in the approval
+document.
+
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}[
+  node distance=7mm and 9mm,
+  s/.style={draw,rounded corners,minimum width=24mm,minimum height=7mm,align=center,font=\footnotesize},
+  t/.style={-{Latex[length=2mm]}}
+]
+\node[s] (d)  {\textsc{draft}};
+\node[s,right=of d] (cc) {\textsc{cc\_approved}};
+\node[s,right=of cc] (su) {\textsc{supply\_approved}};
+\node[s,right=of su] (md) {\textsc{md\_approved}};
+\node[s,below=of md] (cfo){\textsc{cfo\_approved}};
+\node[s,left=of cfo] (scr){\textsc{screened}};
+\node[s,left=of scr] (paid){\textsc{paid}};
+
+\draw[t] (d) -- node[above,font=\tiny]{CC} (cc);
+\draw[t] (cc) -- node[above,font=\tiny]{SCM} (su);
+\draw[t] (su) -- node[above,font=\tiny]{MD} (md);
+\draw[t] (md) -- node[right,font=\tiny]{CFO} (cfo);
+\draw[t] (cfo) -- node[below,font=\tiny]{$\leq$48h} (scr);
+\draw[t] (scr) -- node[below,font=\tiny]{execute} (paid);
+\end{tikzpicture}
+\caption{\texttt{manual-one-off}
+(\corpus\texttt{structured/workflows/manual-one-off.json}).}
+\label{fig:manual-one-off}
+\end{figure}
+
+\section{\texttt{manual-recurring} state machine}
+
+\paragraph{Precondition.} A written dispensation from the policy owner
+is \emph{mandatory} before entry. This is enforced by the engine: the
+record cannot leave \textsc{draft} until a
+\texttt{dispensation\_document\_path} is recorded in \texttt{notes[]}.
+Post-payment, the record must reach \textsc{quarterly\_reviewed} within
+the following quarter, triggered by the CFO's quarterly log retrieval.
+
+\section{\texttt{vat-payment} state machine}
+
+Used when the counterparty is a tax authority
+(\texttt{supplier.supplier\_type} = \textsc{government}). The KSA Q3
+2025 assessment walks this workflow from
+\textsc{assessment\_received} $\to$ \textsc{checklist\_validated}
+(upon 11/11 rules resolved) $\to$ \textsc{cfo\_approved} $\to$
+\textsc{paid} $\to$ \textsc{posted}.
+
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}[
+  node distance=5mm and 5mm,
+  s/.style={draw,rounded corners,minimum width=22mm,minimum height=7mm,align=center,font=\scriptsize,fill=teal!8},
+  t/.style={-{Latex[length=2mm]}}
+]
+\node[s] (a)  {\textsc{assessment\_received}};
+\node[s,right=of a] (cv) {\textsc{checklist\_validated}};
+\node[s,right=of cv] (ca) {\textsc{cfo\_approved}};
+\node[s,below=of ca] (p)  {\textsc{paid}};
+\node[s,left=of p]   (po) {\textsc{posted}};
+
+\draw[t] (a) -- node[above,font=\tiny]{11/11 rules} (cv);
+\draw[t] (cv) -- node[above,font=\tiny]{CFO} (ca);
+\draw[t] (ca) -- node[right,font=\tiny]{SAMA rail} (p);
+\draw[t] (p) -- node[above,font=\tiny]{GL post} (po);
+\end{tikzpicture}
+\caption{\texttt{vat-payment}: linear path walked by the ZATCA Q3
+2025 assessment. Entry requires every VAT checklist rule to resolve
+to \textsc{y} or \textsc{na}.}
+\label{fig:vat-payment}
+\end{figure}
+
+\section{Delegation-of-authority}
+
+The engine enforces DOA as a linear scan of the workflow's
+\texttt{delegation\_of\_authority} array, sorted ascending by
+\texttt{max\_amount}. The role required is the first entry whose
+\texttt{max\_amount} is $\geq$ the invoice's LCY value. An FX
+conversion (at the central-bank rate on \texttt{issue\_date}) is
+applied before comparison.
+
+\Cref{tab:doa} shows the shipped thresholds.
+
+\begin{table}[htbp]
+\centering
+\caption{Default DOA thresholds per workflow.}
+\label{tab:doa}
+\small
+\begin{tabularx}{\linewidth}{@{}l l r l@{}}
+\toprule
+\textbf{Workflow} & \textbf{Currency} & \textbf{Max LCY} & \textbf{Required role} \\ \midrule
+\texttt{po-eproc}        & BHD &    10{,}000 & CC\_OWNER \\
+\texttt{po-eproc}        & BHD &   100{,}000 & SUPPLY\_CHAIN\_MGR \\
+\texttt{po-eproc}        & BHD & 1{,}000{,}000 & CFO \\
+\texttt{manual-one-off}  & BHD &      500 & SUPPLY\_CHAIN\_MGR \\
+\texttt{manual-one-off}  & BHD &   50{,}000 & CFO \\
+\texttt{manual-one-off}  & BHD & 1{,}000{,}000 & MD \\
+\texttt{manual-recurring}& BHD & 1{,}000{,}000 & CFO \\
+\texttt{vat-payment}     & SAR & 10{,}000{,}000 & CFO \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\section{Exceptions}
+
+The shipped workflows carry an \texttt{exceptions[]} array. The most
+important entry is the GSAM legal/professional fees exception
+(\texttt{manual-one-off}): these are \emph{not} covered by the default
+GDAM approval limits and must be routed to a GSAM-specific approver. The
+engine consults \texttt{exceptions[]} before applying DOA.
+
+\section{Payment-suspense reconciliation}
+
+Activity 7 is operated as a \emph{batch} procedure; the approval engine
+does not execute it per invoice. Reconciliation compares the PSGL
+extract against the eBBS extract on the accounts listed in the DOI:
+
+\begin{itemize}
+  \item DBU BHD suspense: \texttt{09-0906743-50}
+  \item DBU USD suspense: \texttt{09-0906743-50}
+\end{itemize}
+
+The aging escalation grid (30/60/90 day buckets) drives automated
+e-mails to the DBU finance manager; items aged $>$90~days escalate to
+the CFO.
+
+\section{Auditability}
+
+Every transition records a structured event:
+\texttt{(workflow\_id, from, to, actor\_psid, timestamp, evidence\_refs)}.
+The concatenation of events is a tamper-evident log because each event
+hashes its predecessor. This is what downstream auditors consume; it
+is \emph{not} part of the record schema but sits alongside the
+\texttt{structured/} corpus in an append-only \texttt{events/} stream.
+The event contract specified here is in scope (\cref{ch:controls},
+``Audit event log''); the storage substrate, retention policy, and
+restoration runbook are owned by GBS APU Audit and documented in
+\emph{SCB-APU-AUDIT-001}.

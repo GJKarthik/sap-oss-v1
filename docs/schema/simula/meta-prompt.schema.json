@@ -1,0 +1,74 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://sap-oss.github.io/schema/simula/meta-prompt.schema.json",
+  "title": "Meta-Prompt Record",
+  "description": "Schema for meta-prompts used in Simula training data generation (Chapter 5)",
+  "type": "object",
+  "required": ["meta_prompt_id", "mix", "prompt_text"],
+  "properties": {
+    "meta_prompt_id": {
+      "type": "string",
+      "description": "Unique identifier for this meta-prompt"
+    },
+    "mix": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/mix_node"
+      },
+      "description": "Taxonomy nodes that form this mix"
+    },
+    "prompt_text": {
+      "type": "string",
+      "description": "Generated meta-prompt text"
+    },
+    "schema_context": {
+      "type": "string",
+      "description": "Schema context included in generation"
+    },
+    "sampling_strategy": {
+      "type": "string",
+      "enum": ["UNIFORM", "COVERAGE"],
+      "description": "Strategy used to sample the mix"
+    },
+    "generation_metadata": {
+      "$ref": "#/definitions/generation_metadata"
+    },
+    "examples_generated": {
+      "type": "integer",
+      "default": 0,
+      "description": "Number of examples generated from this meta-prompt"
+    },
+    "metadata": {
+      "$ref": "https://sap-oss.github.io/schema/common/base-types.schema.json#/definitions/Metadata"
+    }
+  },
+  "definitions": {
+    "mix_node": {
+      "type": "object",
+      "required": ["taxonomy_id", "node_path"],
+      "properties": {
+        "taxonomy_id": {
+          "type": "string",
+          "description": "Reference to taxonomy"
+        },
+        "node_path": {
+          "type": "string",
+          "description": "Path to selected node (e.g., query_type/aggregation/sum)"
+        },
+        "node_name": {
+          "type": "string",
+          "description": "Node name"
+        }
+      }
+    },
+    "generation_metadata": {
+      "type": "object",
+      "properties": {
+        "model": {"type": "string"},
+        "temperature": {"type": "number", "default": 0.9},
+        "generated_at": {"type": "string", "format": "date-time"},
+        "seed": {"type": "integer"}
+      }
+    }
+  }
+}

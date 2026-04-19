@@ -1,0 +1,281 @@
+\chapter{Arabic invoice AI pipeline}\label{ch:ai}
+
+\section{Pipeline at a glance}
+
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}[
+  node distance=6mm and 9mm,
+  stage/.style={draw,rounded corners,minimum width=32mm,minimum height=11mm,align=center,font=\small,fill=orange!10},
+  store/.style={draw,cylinder,shape border rotate=90,aspect=0.3,minimum width=22mm,minimum height=10mm,font=\small,fill=blue!7},
+  arr/.style={-{Latex[length=2.2mm]},thick}
+]
+\node[store] (src) {PDF / e-mail};
+\node[stage,right=of src]   (s1) {1.~Intake};
+\node[stage,right=of s1]    (s2) {2.~OCR};
+\node[stage,below=of s2]    (s3) {3.~Field\\extraction};
+\node[stage,left=of s3]     (s4) {4.~Translation};
+\node[stage,left=of s4]     (s5) {5.~Validation\\\& routing};
+\node[store,below=of s5]    (out) {\texttt{structured/invoices/}};
+
+\draw[arr] (src) -- (s1);
+\draw[arr] (s1)  -- (s2);
+\draw[arr] (s2)  -- (s3);
+\draw[arr] (s3)  -- (s4);
+\draw[arr] (s4)  -- (s5);
+\draw[arr] (s5)  -- (out);
+\end{tikzpicture}
+\caption{The five pipeline stages; each emits a well-typed payload to
+         the next. Only Stage~5 writes to the canonical corpus.}
+\label{fig:pipeline}
+\end{figure}
+
+\section{Stage 1 -- Intake}
+
+\paragraph{Inputs.} A source file, either:
+\begin{itemize}
+  \item a PDF dropped into a watched folder, or
+  \item an e-mail attachment (e.g.\ the thread captured in
+        \corpus\texttt{source/FW- AI~\_ Arabic Invoice\ldots.eml}).
+\end{itemize}
+
+\paragraph{Outputs.} A new entry staged for Stage~2 and a provisional
+\texttt{source\_document} object:
+\begin{lstlisting}[language=jsonx]
+{ "path": "docs/arabic/source/<file>", "sha256": "<sha>" }
+\end{lstlisting}
+The SHA-256 is computed first and compared against
+\corpus\texttt{structured/corpus.json}; a match short-circuits
+re-processing (idempotence) and is the duplicate-payment control
+(\S\ref{ch:controls}).
+
+\paragraph{Precondition.} The MIME detector must classify the file as
+one of \texttt{application/pdf}, the OOXML Word type
+(\texttt{application/vnd.openxmlformats-\allowbreak officedocument.\allowbreak wordprocessingml.\allowbreak document}),
+\texttt{text/plain}, or \texttt{message/rfc822}. All other types are
+rejected with reason \textsc{unsupported\_media}.
+
+\section{Stage 2 -- OCR}
+
+\paragraph{Command.} The corpus has been produced with:
+\begin{lstlisting}[language=bash,basicstyle=\ttfamily\small]
+pdftoppm -r 300 <input.pdf> work/page -png
+for img in work/page-*.png; do
+  tesseract "$img" stdout -l ara+eng >> <output>.txt
+done
+\end{lstlisting}
+The combined \texttt{ara+eng} language model is mandatory: invoices
+routinely contain English brand names, Latin-script SKU codes, and
+numerals alongside Arabic prose.
+
+\paragraph{Quality gate.} Stage 2 emits a per-page confidence metric
+(mean of tesseract's \texttt{conf} values over non-empty tokens). Pages
+below \textbf{55\%} confidence are flagged for human review; below
+\textbf{30\%} the file is rejected with reason \textsc{ocr\_low\_confidence}
+and routed to manual processing.
+
+\paragraph{Calibration.} The 30\,\%/55\,\% thresholds are preliminary
+estimates pending production pilot validation.
+
+\textbf{v1 status:} These values were derived from three golden-set documents,
+which is insufficient for statistical confidence. The 30\,\% threshold represents
+the lowest observed confidence on pages that still yielded correctable records;
+55\,\% is the lowest value achieving error-free extraction. \textbf{Both thresholds
+are TBD pending pilot:} production calibration requires $\geq$50 documents per
+country before these values can be considered validated. The pilot will also
+establish per-jurisdiction calibration as OCR quality varies with document source
+(e.g., ZATCA assessments vs.\ commercial invoices).
+
+\paragraph{Artefact.} The raw OCR text is written to
+\corpus\texttt{extracted-text/<slug>.txt} and its path is recorded
+in \texttt{source\_document.ocr\_text\_path}. This preserves the
+training signal for future model refinement.
+
+\section{Stage 3 -- Schema-guided field extraction}
+
+\paragraph{Objective.} Produce a candidate record conforming to
+\texttt{invoice.schema.json} from the OCR text. The extraction is
+\emph{schema-guided}: the LLM prompt is constructed at run time by
+serialising the schema (with \texttt{description} fields) so the
+model is told exactly which JSON keys it may emit. This is the
+single largest lever against hallucinated fields.
+
+\paragraph{Prompt template.} Pseudocode; the concrete implementation
+uses the Anthropic Messages API with structured-output tooling.
+
+\begin{lstlisting}[language=bash,basicstyle=\ttfamily\small,caption={Schema-guided extraction prompt template.}]
+SYSTEM: You extract tax-invoice fields into a JSON object that MUST
+        validate against the provided JSON Schema. If a field is not
+        present in the source, omit it -- NEVER invent a value.
+USER:   <schema>
+        ---
+        OCR TEXT (Arabic may appear in RTL order; preserve spelling):
+        <ocr_text>
+        ---
+        Emit JSON only. Set "metadata.language" to "ar", "en", or "ar+en"
+        based on the dominant script.
+\end{lstlisting}
+
+\paragraph{Known-hard fields.} The following fields are the most error-prone
+in the shipped corpus and must be handled with care:
+
+\begin{table}[htbp]
+\centering
+\caption{Extraction pitfalls observed in the corpus and mitigations.}
+\label{tab:pitfalls}
+\small
+\begin{tabularx}{\linewidth}{@{}l X X@{}}
+\toprule
+\textbf{Field} & \textbf{Pitfall} & \textbf{Mitigation} \\ \midrule
+\texttt{electronic\_id}    & Tesseract maps the digit ``1'' to ``I'' in mixed alnum strings (e.g.\ \texttt{B1STE8}$\to$\texttt{BISTE8}). & Validate against the regex \verb|^[0-9A-Z]{26}$|; on mismatch, re-OCR at 600 dpi with \texttt{--psm~6}. \\
+\texttt{totals.gross}      & Arabic digits (\ar{٠١٢٣٤٥٦٧٨٩}) may slip through unmapped. & Pre-tokenise: substitute Arabic-Indic digits with ASCII before parsing. \\
+\texttt{vat\_rate\_percent}& Zero-rated vs exempt both show $0$. & Disambiguate with \texttt{vat\_category}: \textsc{zr} vs \textsc{ex} drawn from supplier's activity code lookup. \\
+\texttt{signature.kind}    & ZATCA assessments have no signature block. & Default to \textsc{system\_generated} for \texttt{document\_kind} = \textsc{vat\_assessment}. \\
+\texttt{seller.name\_en}   & Pure-Arabic invoices lack an English name. & Leave empty; Stage 4 will populate via translation. \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\paragraph{Output.} A candidate record is written in memory only (never
+persisted yet) and passed to Stage~4.
+
+\section{Stage 4 -- Arabic$\to$English translation}
+
+\paragraph{Scope.} This stage does \emph{not} translate the whole
+document. It translates only the free-text fields that downstream AP
+actually uses in English:
+
+\begin{itemize}
+  \item \texttt{seller.name\_en} and \texttt{buyer.name\_en} if absent;
+  \item every \texttt{line\_items[].description\_en} if absent;
+  \item \texttt{seller.address\_en} and \texttt{buyer.address\_en}.
+\end{itemize}
+
+Tax IDs, amounts, dates, and enum values are \emph{never} passed through
+translation; they are copied verbatim.
+
+\paragraph{Glossary.} A fixed glossary enforces terminology consistency.
+Worked examples:
+
+\begin{table}[htbp]
+\centering
+\caption{Locked glossary. The right-hand column is what the translation
+         agent \emph{must} output.}
+\label{tab:glossary}
+\small
+\begin{tabularx}{\linewidth}{@{}X X@{}}
+\toprule
+\textbf{Arabic} & \textbf{English (locked)} \\ \midrule
+\ar{هيئة الزكاة والضريبة والجمارك} & Zakat, Tax and Customs Authority (ZATCA) \\
+\ar{بنك ستاندرد تشارترد}           & Standard Chartered Bank \\
+\ar{ضريبة القيمة المضافة}           & Value-Added Tax (VAT) \\
+\ar{اشعار صدور فاتورة}              & Invoice Issuance Notification \\
+\ar{فاتورة ضريبية}                  & Tax Invoice \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\paragraph{Quality gate.} Back-translation is run as a sanity check:
+the English output is translated back to Arabic and compared to the
+source Arabic string. The metric is the \emph{normalised Levenshtein
+distance} $d = \mathrm{lev}(a, b) / \max(|a|, |b|)$ computed at the
+Unicode-codepoint level after Arabic NFKC normalisation (stripping
+tatweel and harakat). The 0.30 ceiling was chosen because the three
+golden-set Arabic strings have pairwise $d \leq 0.18$ between their
+recorded Arabic and a human-verified back-translation, leaving a
+$\geq 1.5\times$ safety margin. Distances above \textbf{0.30} are
+flagged (\textsc{translation\_drift}) and the original Arabic is
+retained as authoritative.
+
+\section{Stage 5 -- Validation and routing}
+
+\paragraph{Validation.} The candidate record is validated with
+\texttt{validate.py} (\cref{ch:schema}). Any schema failure halts the
+pipeline and the record is written to a side-queue
+(\texttt{structured/invoices/rejected/}) with a \texttt{notes[]} entry
+summarising the failure.
+
+\paragraph{Routing.} On success, the pipeline consults the structured
+\texttt{bh-accounts-payable-doi.json} and the \texttt{workflows/} set
+to decide which state machine to instantiate:
+
+\begin{enumerate}
+  \item If the counterparty is a tax authority
+        (\texttt{supplier\_type}~=~\textsc{government} or
+         \texttt{tax\_authority}~=~\textsc{zatca})
+        $\Rightarrow$ \texttt{vat-payment} workflow.
+  \item Else if there is a PO reference in \texttt{notes[]}
+        $\Rightarrow$ \texttt{po-eproc} workflow.
+  \item Else if a prior \texttt{manual-recurring} record exists for
+        the same \texttt{vendor\_id}
+        $\Rightarrow$ \texttt{manual-recurring} workflow.
+  \item Otherwise $\Rightarrow$ \texttt{manual-one-off} workflow.
+\end{enumerate}
+
+\paragraph{Commit.} The record is written to
+\corpus\path{structured/invoices/<slug>.json} and a new item is
+appended to \texttt{corpus.json}. This is the only stage in the
+pipeline that mutates the corpus.
+
+\section{Pipeline control plane}
+
+\Cref{fig:pipeline-states} models the pipeline itself as a small state
+machine; each invoice occupies exactly one of these states at any
+moment. The control plane exposes three operations:
+\texttt{ingest(file)}, \texttt{retry(id)}, \texttt{release(id)}.
+
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}[
+  node distance=6mm and 5mm,
+  s/.style={draw,rounded corners,minimum width=20mm,minimum height=7mm,align=center,font=\footnotesize,fill=gray!5},
+  t/.style={-{Latex[length=2mm]}}
+]
+\node[s] (new)    {\textsc{received}};
+\node[s,right=of new] (ocr) {\textsc{ocr\_ok}};
+\node[s,right=of ocr] (ext) {\textsc{extracted}};
+\node[s,right=of ext] (xlat) {\textsc{translated}};
+\node[s,right=of xlat] (val)  {\textsc{validated}};
+\node[s,below=of val] (route) {\textsc{routed}};
+\node[s,below=of ocr] (hitl) {\textsc{hitl\_review}};
+
+\draw[t] (new) -- (ocr);
+\draw[t] (ocr) -- (ext);
+\draw[t] (ext) -- (xlat);
+\draw[t] (xlat) -- (val);
+\draw[t] (val) -- (route);
+\draw[t] (ocr) -- node[right,font=\tiny]{conf\textless 30\%} (hitl);
+\draw[t] (val) to[bend left] node[above,font=\tiny,pos=0.3]{schema fail} (hitl);
+\draw[t] (hitl) -- node[below,font=\tiny,pos=0.4]{corrected} (route);
+\end{tikzpicture}
+\caption{Pipeline control-plane states for a single invoice.}
+\label{fig:pipeline-states}
+\end{figure}
+
+\section{Evaluation harness}
+
+\paragraph{Golden set.} The three Arabic records in
+\corpus\texttt{structured/invoices/} form the regression golden set.
+Every code change must re-produce byte-identical records from the
+source PDFs; \texttt{validate.py} plus a \texttt{jq}-driven equality
+check is the verifier.
+
+\paragraph{Per-field metrics.} For each round of Session-5 testing the
+harness reports:
+
+\begin{itemize}
+  \item \textbf{Per-field exact-match accuracy} (over the 27 scalar
+        fields in \texttt{invoice.schema.json}).
+  \item \textbf{Per-field F1} on \texttt{line\_items[]} treated as sets
+        (descriptions matched after glossary-aware fuzzing).
+  \item \textbf{Human-approval rate.} Fraction of records released by
+        HITL with zero edits. Target $\geq$~0.75 after Session~4,
+        $\geq$~0.90 after Session~5.
+\end{itemize}
+
+\paragraph{Session acceptance.} The five-session model from
+\cref{tab:sessions} is scheduled per country; the
+\texttt{ai\_session\_phases} enum in \texttt{enums.yaml} is the system
+of record. An AI rollout is complete for a country once the
+Session-5 pass meets the human-approval-rate target against a cohort
+of $\geq$~5 stakeholders.
