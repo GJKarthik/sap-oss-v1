@@ -1,0 +1,7 @@
+{
+  "variance_id": "VAR-HKG-2025-11-001",
+  "account_code": "410100",
+  "period": "2025-11",
+  "variance_amount": 125000.50,
+  "flags": ["PERIOD_SPIKE"]
+}

@@ -5,6 +5,7 @@
   "description": "Schema for Trial Balance extract records from PSGL/SC Bridge (Stage 1 output)",
   "type": "object",
   "required": ["extract_id", "legal_entity", "period", "accounts", "totals"],
+  "additionalProperties": false,
   "properties": {
     "extract_id": {
       "type": "string",
@@ -65,6 +66,7 @@
     "account_balance": {
       "type": "object",
       "required": ["account_code", "account_name", "debit", "credit"],
+      "additionalProperties": false,
       "properties": {
         "account_code": {
           "type": "string",
@@ -134,6 +136,7 @@
     "tb_totals": {
       "type": "object",
       "required": ["total_debits", "total_credits"],
+      "additionalProperties": false,
       "properties": {
         "total_debits": {
           "type": "number",
@@ -163,6 +166,7 @@
     },
     "extraction_metadata": {
       "type": "object",
+      "additionalProperties": false,
       "properties": {
         "extracted_at": {
           "type": "string",

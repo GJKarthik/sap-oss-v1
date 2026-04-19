@@ -4,6 +4,7 @@
   "title": "HANA Schema Registry Entry",
   "description": "Schema for HANA schema metadata extracted via MCP (Chapter 3)",
   "type": "object",
+  "additionalProperties": false,
   "required": ["schema_id", "schema_name", "tables"],
   "properties": {
     "schema_id": {
@@ -43,7 +44,8 @@
   "definitions": {
     "table_definition": {
       "type": "object",
-      "required": ["columns"],
+      "additionalProperties": false,
+  "required": ["columns"],
       "properties": {
         "columns": {
           "type": "array",
@@ -77,7 +79,8 @@
     },
     "column_definition": {
       "type": "object",
-      "required": ["name", "type"],
+      "additionalProperties": false,
+  "required": ["name", "type"],
       "properties": {
         "name": {"type": "string"},
         "type": {"type": "string", "description": "HANA data type"},

@@ -4,6 +4,7 @@
   "title": "Regulation Record",
   "description": "Schema for regulation records in AI governance corpus (Chapter 2)",
   "type": "object",
+  "additionalProperties": false,
   "required": ["regulation_id", "title", "jurisdiction", "source_document"],
   "properties": {
     "regulation_id": {
@@ -64,7 +65,8 @@
   "definitions": {
     "source_document": {
       "type": "object",
-      "required": ["path", "sha256"],
+      "additionalProperties": false,
+  "required": ["path", "sha256"],
       "properties": {
         "path": {"type": "string"},
         "sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},

@@ -3,9 +3,9 @@
   "$id": "https://sap-oss.github.io/schema/registry.json",
   "title": "SAP OSS Schema Registry",
   "description": "Master index of all JSON Schemas across domains",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "generated": "2026-04-18",
-  "updated": "2026-04-18T10:47:00+08:00",
+  "updated": "2026-04-19T08:57:00+08:00",
 
   "domains": {
     "common": {
@@ -18,7 +18,8 @@
           "status": "stable"
         }
       ],
-      "enums": "common/enums.yaml"
+      "enums": "common/enums.yaml",
+      "moscow": "common/moscow.yaml"
     },
 
     "arabic": {
@@ -230,9 +231,12 @@
 
   "validation": {
     "command": "python3 docs/schema/validate.py",
+    "requirements": "docs/schema/requirements.txt",
+    "ci_workflow": ".github/workflows/schema-validation.yml",
     "options": {
       "--registry-check": "Verify all schemas exist and are valid",
       "--registry-status": "Show migration status of all domains",
+      "--validate-all": "Validate all schemas against meta-schema",
       "--domain <name>": "Validate specific domain",
       "--schema <name>": "Schema file within domain",
       "--file <path>": "Data file to validate",

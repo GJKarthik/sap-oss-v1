@@ -4,6 +4,7 @@
   "title": "Regulations Corpus",
   "description": "Schema for the complete regulations corpus (Chapter 3)",
   "type": "object",
+  "additionalProperties": false,
   "required": ["corpus_id", "version", "regulations", "requirements"],
   "properties": {
     "corpus_id": {

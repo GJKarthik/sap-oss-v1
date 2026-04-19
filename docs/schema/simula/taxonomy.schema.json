@@ -4,6 +4,7 @@
   "title": "Taxonomy Tree Structure",
   "description": "Schema for taxonomy trees used in Simula training data generation (Chapter 4)",
   "type": "object",
+  "additionalProperties": false,
   "required": ["taxonomy_id", "name", "root", "metadata"],
   "properties": {
     "taxonomy_id": {
@@ -50,7 +51,8 @@
   "definitions": {
     "taxonomy_node": {
       "type": "object",
-      "required": ["node_id", "name", "node_type"],
+      "additionalProperties": false,
+  "required": ["node_id", "name", "node_type"],
       "properties": {
         "node_id": {
           "type": "string",

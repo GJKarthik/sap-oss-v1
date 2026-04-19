@@ -5,6 +5,7 @@
   "description": "Schema for variance records produced by Stage 2 anomaly detection (Chapter 3 of TB spec)",
   "type": "object",
   "required": ["variance_id", "account_code", "period", "variance_amount", "flags"],
+  "additionalProperties": false,
   "properties": {
     "variance_id": {
       "type": "string",
@@ -124,6 +125,7 @@
     "anomaly_detection": {
       "type": "object",
       "description": "Anomaly detection results per Table 3.1 of TB spec",
+      "additionalProperties": false,
       "properties": {
         "period_spike": {
           "$ref": "#/definitions/period_spike_check",
@@ -155,6 +157,7 @@
     },
     "period_spike_check": {
       "type": "object",
+      "additionalProperties": false,
       "properties": {
         "triggered": {
           "type": "boolean",
@@ -195,6 +198,7 @@
     },
     "sign_flip_check": {
       "type": "object",
+      "additionalProperties": false,
       "properties": {
         "triggered": {
           "type": "boolean",
@@ -218,6 +222,7 @@
     },
     "new_account_check": {
       "type": "object",
+      "additionalProperties": false,
       "properties": {
         "triggered": {
           "type": "boolean",
@@ -235,6 +240,7 @@
     },
     "stale_balance_check": {
       "type": "object",
+      "additionalProperties": false,
       "properties": {
         "triggered": {
           "type": "boolean",
@@ -258,6 +264,7 @@
     "normality_test": {
       "type": "object",
       "description": "Shapiro-Wilk normality test (caveat from spec)",
+      "additionalProperties": false,
       "properties": {
         "test_performed": {
           "type": "boolean",
@@ -289,6 +296,7 @@
     "materiality_assessment": {
       "type": "object",
       "description": "DP-001 materiality check",
+      "additionalProperties": false,
       "properties": {
         "is_material": {
           "type": "boolean",

@@ -5,6 +5,7 @@
   "description": "Schema for VAT compliance checklist records used in Arabic AP processing (Chapter 4 of spec)",
   "type": "object",
   "required": ["checklist_id", "invoice_id", "country", "rules_evaluated", "overall_verdict"],
+  "additionalProperties": false,
   "properties": {
     "checklist_id": {
       "type": "string",
@@ -83,6 +84,7 @@
     "rule_evaluation": {
       "type": "object",
       "required": ["rule_id", "rule_name", "result"],
+      "additionalProperties": false,
       "properties": {
         "rule_id": {
           "type": "string",
@@ -124,6 +126,7 @@
     "rule_predicate": {
       "type": "object",
       "description": "Rule predicate expressed as JSON-Logic or named helper",
+      "additionalProperties": false,
       "properties": {
         "type": {
           "type": "string",
@@ -174,6 +177,7 @@
     "si_fi_determination": {
       "type": "object",
       "description": "Simplified Invoice vs Full Tax Invoice determination",
+      "additionalProperties": false,
       "properties": {
         "invoice_amount": {
           "type": "number",
@@ -202,6 +206,7 @@
     "compliance_flag": {
       "type": "object",
       "required": ["flag_code", "flag_message"],
+      "additionalProperties": false,
       "properties": {
         "flag_code": {
           "type": "string",

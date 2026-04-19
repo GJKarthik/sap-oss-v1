@@ -1,0 +1,6 @@
+# Schema validation dependencies
+# Compatible with jsonschema 4.x (modern referencing API)
+jsonschema>=4.20.0,<5.0.0
+referencing>=0.31.0
+pyyaml>=6.0.1
+requests>=2.31.0

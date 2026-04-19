@@ -4,6 +4,7 @@
   "title": "Requirement with Status",
   "description": "Schema for regulatory requirements with implementation status (Chapter 7)",
   "type": "object",
+  "additionalProperties": false,
   "required": ["requirement_id", "regulation_id", "description", "status"],
   "properties": {
     "requirement_id": {
@@ -64,6 +65,7 @@
   "definitions": {
     "implementation_reference": {
       "type": "object",
+      "additionalProperties": false,
       "properties": {
         "primary": {
           "type": "string",
@@ -87,6 +89,7 @@
     },
     "verification_reference": {
       "type": "object",
+      "additionalProperties": false,
       "properties": {
         "primary": {
           "type": "string",
