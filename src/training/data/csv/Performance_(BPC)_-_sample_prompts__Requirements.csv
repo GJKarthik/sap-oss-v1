@@ -1,0 +1,58 @@
+,S No,Sample Prompts,Key Aspects of Prompts : Dimensions and measures 
+,1,Which quarter was the record quarter for Wealth product in the last 3 years?,Period: Quarters (3 years)| Product: Wealth | Account: Income
+,2,Was Q1 2025 a record quarter for Markets product in the last 2 years?,Period: Quarters (2 years)| Product: Markets | Account: Income
+,3,What is the current YTD monthly run rate for Credit Impairment? Also provide Segment split,Period: Current Month YTD | Account: Credit Impairment
+,4,What percentage does Trade product contribute to overall revenue of Bank based on FY 2024 Income?,Period: Current FY | Product: Trade | Account: Income
+,5,What percentage of CIB income is from Local Corporates and Middle Markets Segment?,Period: Current YTD | SegmentL CIB | Account: Income (contribution)
+,6,How much does Affluent segment contribute to WRB revenue?,Period: Current YTD | SegmentL WRB | Account: Income (contribution)
+,7,What is the YTD March 2025 MRWA movement at Group level?,Period: Current YTD | Account: Market RWA
+,8,"What is the CASA to TD ratio for Group, CIB and WRB for YTD Mar 2025?",Period: Current YTD | Product: CASA & TD | Account: Deposits
+,9,How much is Cash products revenue in UAE for FY 2024?,Period: Current YTD | Product: Cash | Entity: UAE | Account: Deposits
+,10,"Can you show Q1 2025 revenue at L2 Product level along with YoY $, YoY% and QoQ% comparisons",Period: Current YTD | Product (specific hierarchies) | Entity: specific countries | Account: Income
+,11,"Please show FY 2024 Income by geography for following markets along with YoY% comparison – HK, SG, India, China, Korea, UAE, UK and US","Period: Current FY| Product, Entity (specific) | Account: Income | Calc: YoY "
+,12,"Can you show a table of Assets, Liabilities, Customer L&A, Customer Deposits for Q1’25 along with YoY% and QoQ % comparisons","Period: Current QTR | Product, Entity (specific) | Account: Assets, Liabs, Loan & advances, and deposits | Calc: YoY and QoQ"
+,13,What is the underlying operating income for WRB for FY’24?,Period: FY'24 | Segment: WRB | Account: Operating Income
+,14,"Please show a costs by MT view for Q1’25 along with YoY$, YoY% and vs Budget $ comparisons","Period: Current QTR | Cost Centres: MT view | Account: Total Cost| Version: Actual, Budget"
+,15,What is the CIB/WRB Income % for India for Q1’25,Period: current QTR | Entity: India | Account: Income | calculation (metric): Ratio
+,16,What is the CIB/WRB L&A % for China for Q1’25,Period: current QTR | Entity: China | Account: Loans and advances | calculation (metric): Ratio
+,17,"What is the underlying ETR%1 for Q1 2025?
+1To be computed by AI as Underlying Tax/Underlying PBT ","Period: current QTR | Account: Underlying Tax, Underlying PBT | calculation (metric): Ratio"
+,18,"What is the Forward FX impact2 for Income and costs Outlook for FY 2025?
+2To be computed by AI as Budget @ forward rates – Budget @ RFX?",Period: FY'25 | Account: Cost & Income | version: Budget vs Budget forward rates | Computation:forward rates - RFX
+,19,"What is the Forward FX impact3 on FY’24 Actuals for Income and costs?
+3To be computed by AI as Actuals @ forward rates – Actuals @ RFX?",Period: FY'25 | Account: Cost & Income | version: Actuals forward vs Actual RFX forward rates | Computation:forward rates - RFX
+,20,"What is the Total CIB pre-C&O Actuals Financials (Revenue, Client Income, Trading Income, Adjusted NII, Adjusted NFI, Cost, Impairment, Operating Profit, Tax, PAT, PE RWA, Avg RWA, Funded Assets, Funding Liabilities, Cash Liabilities, Leverage, RoRWA %, RoTE %, CIR%) for current year YTD with YoY % and vs Budget on RFX basis? ","Period: Current Month YTD | Account: Multiple | Version: Actuals, budget "
+,21,"What is the Product-wise pre-C&O Actuals Financials (Revenue, Client Income, Trading Income, Adjusted NII, Adjusted NFI, PE RWA, Avg RWA, Funded Assets, Funding Liabilities, Leverage, RoRWA %) for current year YTD with YoY % and vs Budget on RFX basis?
+Same set of questions for different combinations of (i) post C&O basis; (ii) Outlook (upcoming Quarter / FY) and (iii) comparison on CFX basis","Period: Current Month YTD | Account: Multiple | Version: Actuals, budget, outlook | Currency: RFX, CFX "
+,22,"What is the Overall CIB Actuals Cost split (Incurred cost – Direct Controllable BAU (Controllable Net Recoveries (Controllable costs, Investment recoveries), Bonus), Investments, TTO Recharges, GFGCR, GBS Proj recharges – MPB), Service Charges for current year YTD with YoY % and vs Budget on RFX basis?
+Same question for different combinations of (i) Outlook (upcoming Quarter / FY) and (ii) comparison on CFX basis",
+,23,"What is the Overall CIB pre-C&O Actuals Impairment split (Credit Impairment, Other Impairment) for current year YTD with YoY % and vs Budget on RFX basis?
+Same question for different combinations of (i) post C&O basis; (ii) Outlook (upcoming Quarter / FY) and (iii) comparison on CFX basis","Period: Current YTD | Account: Credit Impairment, Other Impairment | verion: Actual, Budget, Outlook| Currency: RFX, CFX"
+,24,"What is Product-wise pre-C&O Actuals RoTE% for current year YTD with YoY % and vs Budget on RFX basis?
+Same question for different combinations of (i) post C&O basis; (ii) Outlook (upcoming Quarter / FY) and (iii) comparison on CFX basis","Period: Current YTD | Product | Account: RoTE | verion: Actual, Budget, Outlook| Currency: RFX, CFX"
+,25,"What is Product-wise Asset yield% for current year YTD with YoY % on RFX basis?
+Same question for Outlook (upcoming Quarter / FY)","Period: Current YTD, Upcoming QTR (outlook) | Product: split | Currency: RFX | version: Outlook, Actulas | Calculation: Asset Yields (%)"
+,26,"What is Product-wise NIM% for current year YTD with YoY % on RFX basis?
+Same question for Outlook (upcoming Quarter / FY)","Period: Current YTD, Upcoming QTR (outlook) | Product: split | Currency: RFX | Version: Outlook, Actulas | Calculation: Product NIM (%)"
+,27,"What is the Trade exposure for current year YTD with YoY % and vs Budget on RFX basis?
+Same question for different combinations of (i) Outlook (upcoming Quarter / FY) and (ii) comparison on CFX basis","Period: Current YTD, Upcoming QTR (outlook) | Product: Trade | Currency: RFX | Version: Outlook, Actulas, Budget | Currency: RFX, CFX"
+,28,"What is the Overall CIB L&A to Customers for current year YTD with YoY % and vs Budget on RFX basis?
+Same question for different combinations of (i) Outlook (upcoming Quarter / FY) and (ii) comparison on CFX basis","Period: Current YTD, Upcoming QTR (outlook) | Segment: CIB | Currency: RFX | Version: Outlook, Actulas, Budget | Currency: RFX, CFX| Account: L&A"
+,29,"What is the Overall CIB Funding Gap for current year YTD on RFX basis?
+Same question for Outlook (upcoming Quarter / FY)","Period: Current YTD, Upcoming QTR (outlook) | Segment: CIB | Currency: RFX | Version: Outlook, Actulas | Currency: RFX| Account: Funding Gap"
+,30,"Total Income split by accounts for June 2025 YTD, and YoY ",Period: Current YTD | Account: Income
+,31,"Total Income split by countries for June 2025 YTD, and YoY ",Period: Current YTD | Account: Income | Entity: Countries
+,32,Total Income split by Products and sub-products for June 2025 YTD,Period: Current YTD | Account: Income | Product: Product & Sub-product
+,33,Subproduct -3 Income split by Corporates and FI for June 2025 YTD,Period: Current YTD | Account: Income | Segment: CIB | Product: Sub-segment
+,34,Total Income split by Segment and sub-segment for June 2025 YTD,Period: Current YTD | Account: Income | Segment: CIB & Sub-segment
+,35,"Total Cost lines split by controllable and non-controllable accounts for June 2025 YTD, and YoY",Period: Current YTD | Account: Total Cost
+,36,Loans & Advances to Customers for June 2025 with YoY % ,Period: Current YTD | Account: Loan & Advances
+,37,YTD June 2025 P&L for Korea.,Period: Current YTD | Account: Entire IS | Entity: Korea
+,38,June 2025 Balance sheet for Singapore Market ,Period: Current YTD | Account: Entire BS | Entity: SG
+,39,NIM% by Product for 2025 YTD with YoY % on RFX & CFX basis,Period: Current YTD | Account: NIM | Product: multiple | currency: RFX and CFX
+,40,"Total Impairment Split by credit and other impairment for June 2025 YTD , and YoY ",Period: Current YTD | Account: Impairement split
+,41,"CASA to TD ratio for Group, CIB and WRB for YTD June 2025","Period: Current YTD | Account: Deposits | Product: CASA, TD | Entity: Countries | Segment: CIB, WRB, Group"
+,42,WRB revenue split by countries and products,Period: Current YTD | Account: Income | Entity: Countries | Segment: WRB
+,43,Trade product income on FY 2024 Total Income,Period: Current YTD | Account: Income
+,44,2020 to 2025 (Past five years) cost trend for WRB split by account lines.,Period: Current YTD | Account: Cost trend for 5 Years
+,45,Headcount for all countries ,Period: Current YTD | Account: Headcount

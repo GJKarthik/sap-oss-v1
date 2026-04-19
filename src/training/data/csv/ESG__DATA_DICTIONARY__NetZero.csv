@@ -1,0 +1,48 @@
+,,
+,Technical name,Business name
+,ASSID,Asset ID
+,EMIINTAL,Asset Intensity
+,ASSNAME,Asset Name
+,ASSTY,Asset Type
+,EMIINTAT,Asset Type Physical Intensity
+,ATT_PROD,Attributed Production
+,ATTR_FACTOR,Attribution Factor
+,BEBOOKINGLOCID,Booking location
+,CD_LOCATION,Client Domicile Location
+,PCAF_S12_SC,Client PCAF Score for Scope 1 & 2
+,PCAFS3SC,Client PCAF Score for Scope 3
+,EMI_INTENSITY_CP,Client Physical Intensity
+,C_SSEG_ID,Client Segment Hierarchy
+,C_SSEG_ID_1,Client Sub Segment Level 5 ID
+,L_CRG,Credit Grade
+,EVIC,EVIC
+,PE_ASS,Exposure
+,ATT_EMI,Financed Emission
+,FEMISSSION_S12,Financed Emission Scope 1 & 2
+,F_EMISSION_S3,Financed Emission Scope 3
+,Sector_Flag,Intensity Based Sector
+,LE_NAME,LE Name
+,LE_ID,LEID
+,Management_Prod_Hier,Management Product Hierarchy
+,MB_DES,Maturity Bucket
+,EUNIT,Measurement Unit
+,DD_SEC,Net Zero Sector
+,CLGRD,NZ Alignment Grading
+,CALMONTH,Period
+,TRYTDTR,Revenue
+,FoL_Location,Revised FAM Location
+,RAHDR,Risk Appetite Headroom
+,TRAABS,Risk Appetite Threshold
+,ESCHRD,Risk Escalation Headroom
+,TREABS,Risk Escalation Threshold
+,RWAASSTR,RWA
+,WPCAFS12SC,Sector PCAF Score for Scope 1 & 2
+,WPCAFS3SC,Sector PCAF Score for Scope 3
+,EMI_INTENSITY,Sector wise Physical Intensity
+,Group_View,Shipping Normalised View
+,U_PID,Ultimate Parent ID
+,Ultimate_Parent_Location,Ultimate Parent Location
+,U_PNAME,Ultimate Parent Name
+,EMIINTPL,Ultimate Parent Physical Intensity
+,VCSCOPE,Value Chain Client Level
+,VAL_CH,Value Chain Sector Level

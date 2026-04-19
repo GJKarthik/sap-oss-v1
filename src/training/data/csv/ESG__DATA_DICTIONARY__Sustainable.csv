@@ -1,0 +1,71 @@
+,,
+,Technical name,Business name
+,Avg_Assets__Contingents_MTD,Avg Assets and Contingents MTD
+,Avg_Assets__Contingents_YTD,Avg Assets and Contingents YTD
+,Avg_Assets_MTD,Avg Assets MTD
+,Avg_Assets_YTD,Avg Assets YTD
+,Avg_Gross_Liabilities_Abs_MTD,Avg Gross Liabilities MTD
+,Avg_Gross_Liabilities__Abs_YTD,Avg Gross Liabilities YTD
+,BE_LOCATION,Booking Location
+,Total_Limit_CAT1_Outer,Cat1 limit
+,CLIENT_DOMICILE_LOCATION,Client Domicile Location
+,CLIENT_DOMICILE_REGION,Client Domicile Region
+,CLIENT_GRP_DOMICILE_LOCATION,Client Group Domicile Location
+,CLIENT_GRP_DOMICILE_REGION,Client Group Domicile Region
+,CLIENT_GROUP_ID,Client Group ID
+,CLIENT_GROUP_NAME,Client Group Name
+,CLIENT_GRP_SEGMENT,Client Group Segment
+,Client_ID,Client ID
+,CLIENT_ISIC_CODE,Client ISIC
+,CLIENT_ISIC_DESCRIPTION,Client ISIC Description
+,CLIENT_NAME,Client Name
+,Client_Role,Client Role
+,CLIENT_SUB_SEGMENT_ID,Client Segment Hierarchy
+,Client_Sub_Segment_Roll_Up,Client Sub Seg Roll Up FI Segment Level 1
+,CLIENT_SUB_SEG_ROLL_UP_II,Client Sub Seg Roll Up II FI Segment Level 2
+,CLIENT_TIER,Client Tier
+,Latest_CRG,Credit Grade
+,FAM_Location_Abbr,FAM Location
+,FRANCHISE_SEGMENT,Franchise Segment
+,Franchise_Segment_Sub_Category,Franchise Segment Sub Category
+,GAM_Location_Abbr,GAM Location
+,Industry,Industry
+,LE_Name,LE Name
+,LE_ID,LEID
+,Management_Product_Hierarchy,Management Product Hierarchy
+,NFI_MTD,NFI MTD
+,NFI_YTD,NFI YTD
+,NII_MTD,NII MTD
+,NII_YTD,NII YTD
+,PE_Assets__Contingents,PE Assets and Contingents
+,PE_Gross_Liabilities__Abs,PE Gross Liabilities
+,Period,Period
+,PORTFOLIO,Portfolio
+,PSGL_Product_Code,PSGL Product Code
+,PUREPLAY,Pureplay
+,PUREPLAY_CATEGORY,Pureplay Category
+,PUREPLAY_FLAG,Pureplay Flag
+,PUREPLAY_SUB_CATEGORY,Pureplay Sub Category
+,PRODUCT_ALTER_HIER_L1,Reporting Product Level 1
+,PRODUCT_ALTER_HIER_L2,Reporting Product Level 2
+,PRODUCT_ALTER_HIER_L3,Reporting Product Level 3
+,PRODUCT_ALTER_HIER_L4,Reporting Product Level 4
+,FOL_Location,Revised FAM Location
+,ROLLING_12_INCOME,Rolling 12 month Income
+,ROLLING_13_AV_RWA,Rolling 13 month Average RWA
+,RoRWA,RoRWA
+,RWA,RWA
+,FACILITY_REFERENCE,SCI Limit ID
+,Sector,Sector
+,SF_Category,SF Category
+,SF_Impact,SF Impact
+,PE_Assets,SF PE Asset
+,SF_Sub_Category,SF Sub Category
+,Tagging_Model,SF Tagging Model
+,Strategic_Pillar,Strategic Pillar
+,Strategy,Strategic View
+,SUSTAINABLE_FLAG,Sustainable Flag
+,Total_Revenue_MTD,Total Revenue MTD
+,Total_Revenue_YTD,Total Revenue YTD
+,TYPOLOGY,Typology
+,Ultimate_Parent_Location,Ultimate Parent Location
