@@ -1,0 +1,332 @@
+\chapter{Capability Monitoring Specification}\label{ch:monitoring}
+
+This chapter specifies the emergent capability monitoring system, addressing the
+MAS MGF requirement (Section 2.3.3) that ``monitoring for emergent capabilities
+must be implemented with defined detection triggers.''
+
+\section{Overview}
+
+AI systems may develop unexpected capabilities or behaviours through:
+\begin{itemize}
+  \item Model updates that alter response patterns
+  \item Prompt injection or adversarial inputs
+  \item Emergent behaviours from complex interactions
+  \item Drift in input data distributions
+\end{itemize}
+
+The monitoring system provides continuous observation and alerting to detect
+such changes before they cause operational harm.
+
+\section{Architecture}
+
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}[
+  node distance=10mm and 18mm,
+  box/.style={draw,rounded corners,minimum width=32mm,minimum height=12mm,align=center,font=\small,fill=blue!5},
+  mon/.style={draw,rounded corners,minimum width=32mm,minimum height=12mm,align=center,font=\small,fill=orange!10},
+  alert/.style={draw,rounded corners,minimum width=28mm,minimum height=10mm,align=center,font=\small,fill=red!10},
+  db/.style={draw,cylinder,shape border rotate=90,aspect=0.25,minimum width=20mm,minimum height=14mm,fill=gray!10,font=\small},
+  t/.style={-{Latex[length=2mm]}}
+]
+\node[box] (pipeline) {AI Pipeline};
+\node[mon,right=of pipeline,align=center] (collector) {Metrics\\Collector};
+\node[mon,right=of collector,align=center] (analyzer) {Anomaly\\Analyzer};
+\node[alert,below=of analyzer,align=center] (alert) {Alert\\Manager};
+\node[db,below=of collector,align=center] (store) {Metrics\\Store};
+
+\draw[t] (pipeline) -- node[above,font=\scriptsize]{telemetry} (collector);
+\draw[t] (collector) -- (analyzer);
+\draw[t] (collector) -- (store);
+\draw[t] (analyzer) -- (alert);
+\draw[t] (store.east) -- (analyzer.south west);
+\end{tikzpicture}
+\caption{Capability monitoring architecture.}
+\label{fig:monitor-arch}
+\end{figure}
+
+\section{Metrics collection}
+
+\subsection{Required metrics}
+
+\begin{table}[htbp]
+\centering
+\caption{Capability monitoring metrics.}
+\label{tab:monitor-metrics}
+\footnotesize
+\begin{tabularx}{\linewidth}{@{}l l X@{}}
+\toprule
+\textbf{Metric} & \textbf{Type} & \textbf{Description} \\ \midrule
+\texttt{output\_token\_count} & histogram & Distribution of output lengths \\
+\texttt{response\_latency\_ms} & histogram & Response time distribution \\
+\texttt{confidence\_score} & histogram & AI confidence distribution \\
+\texttt{refusal\_rate} & counter & Rate of model refusals \\
+\texttt{tool\_call\_frequency} & counter & Frequency of tool/function calls \\
+\texttt{output\_format\_violations} & counter & JSON schema validation failures \\
+\texttt{hallucination\_flags} & counter & Detected hallucination instances \\
+\texttt{unexpected\_topic\_detections} & counter & Off-topic responses \\
+\texttt{novel\_capability\_indicators} & gauge & Composite novelty score \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\subsection{Collection points}
+
+Metrics are collected at the following pipeline stages:
+
+\begin{enumerate}
+  \item \textbf{Pre-inference}: Input characteristics (length, complexity, topic)
+  \item \textbf{Post-inference}: Output characteristics (length, confidence, format)
+  \item \textbf{Post-validation}: Validation results (schema, business rules)
+  \item \textbf{Post-review}: Human review outcomes (accept/edit/reject rates)
+\end{enumerate}
+
+\section{Detection triggers}
+
+\subsection{Statistical anomaly detection}
+
+For each metric, maintain a rolling baseline and alert when values deviate
+significantly.
+
+\begin{table}[htbp]
+\centering
+\caption{Anomaly detection thresholds.}
+\label{tab:anomaly-thresholds}
+\footnotesize
+\begin{tabularx}{\linewidth}{@{}l l X@{}}
+\toprule
+\textbf{Metric} & \textbf{Alert Threshold} & \textbf{Baseline Period} \\ \midrule
+Output length (mean) & $>2\sigma$ shift & 7-day rolling \\
+Latency (p95) & $>50\%$ increase & 24-hour rolling \\
+Confidence (mean) & $>10\%$ drop & 7-day rolling \\
+Refusal rate & $>3\times$ baseline & 7-day rolling \\
+Schema violations & $>5\%$ of requests & 24-hour rolling \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\subsection{Behavioural pattern detection}
+
+Beyond statistical metrics, monitor for qualitative behavioural changes:
+
+\begin{enumerate}
+  \item \textbf{Topic drift}: Cosine similarity of output embeddings to expected
+        topics falls below 0.7
+  \item \textbf{Instruction leakage}: Presence of system prompt fragments in output
+  \item \textbf{Novel tool usage}: Model attempts to call undeclared tools
+  \item \textbf{Self-referential loops}: Model references its own previous outputs
+        in unexpected ways
+\end{enumerate}
+
+\subsection{Trigger definitions}
+
+\begin{lstlisting}[language=Python,basicstyle=\ttfamily\small,caption={Detection trigger configuration.}]
+triggers = {
+    "output_length_anomaly": {
+        "metric": "output_token_count",
+        "condition": "mean > baseline_mean + 2 * baseline_std",
+        "severity": "WARNING",
+        "cooldown_minutes": 60
+    },
+    "latency_spike": {
+        "metric": "response_latency_ms",
+        "condition": "p95 > 1.5 * baseline_p95",
+        "severity": "WARNING",
+        "cooldown_minutes": 15
+    },
+    "high_refusal_rate": {
+        "metric": "refusal_rate",
+        "condition": "rate > 3 * baseline_rate",
+        "severity": "CRITICAL",
+        "cooldown_minutes": 5
+    },
+    "schema_violation_surge": {
+        "metric": "output_format_violations",
+        "condition": "rate > 0.05",  # >5% failure
+        "severity": "CRITICAL",
+        "cooldown_minutes": 5
+    },
+    "topic_drift": {
+        "metric": "topic_similarity",
+        "condition": "mean < 0.7",
+        "severity": "WARNING",
+        "cooldown_minutes": 30
+    }
+}
+\end{lstlisting}
+
+\section{Alert management}
+
+\subsection{Alert severity levels}
+
+\begin{table}[htbp]
+\centering
+\caption{Alert severity definitions.}
+\label{tab:alert-severity}
+\footnotesize
+\begin{tabularx}{\linewidth}{@{}l l X@{}}
+\toprule
+\textbf{Severity} & \textbf{Response Time} & \textbf{Action} \\ \midrule
+CRITICAL & Immediate & Page on-call; consider circuit breaker \\
+WARNING & 1 hour & Investigate during business hours \\
+INFO & Next business day & Review in weekly monitoring meeting \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\subsection{Alert routing}
+
+\begin{lstlisting}[basicstyle=\ttfamily\small,caption={Alert routing configuration.}]
+routing:
+  CRITICAL:
+    channels:
+      - pagerduty: "ai-ops-critical"
+      - slack: "#ai-incidents"
+      - email: "ai-ops@company.com"
+    escalation_after_minutes: 15
+    
+  WARNING:
+    channels:
+      - slack: "#ai-monitoring"
+      - email: "ai-ops@company.com"
+    escalation_after_minutes: 60
+    
+  INFO:
+    channels:
+      - slack: "#ai-monitoring"
+    escalation_after_minutes: null  # no escalation
+\end{lstlisting}
+
+\subsection{Circuit breaker integration}
+
+When CRITICAL alerts persist, the monitoring system can activate a circuit
+breaker:
+
+\begin{enumerate}
+  \item After 3 consecutive CRITICAL alerts within 15 minutes
+  \item Circuit breaker opens: all AI requests routed to manual queue
+  \item Alert sent to AI governance team
+  \item Manual intervention required to close circuit breaker
+\end{enumerate}
+
+\subsection{Graceful degradation ladder}
+\label{sec:degradation-ladder}
+
+A hard circuit-break (manual queue only) is the last resort. Before
+that point, the monitoring system walks a four-rung degradation
+ladder, chosen so that each rung trades off quality for availability
+in a \emph{controlled and observable} way.
+Table~\ref{tab:degradation-ladder} specifies the ladder per
+pipeline; rung escalation is automatic, rung de-escalation requires
+a human ack.
+
+\begin{table}[htbp]
+\centering
+\caption{Graceful degradation ladder (from normal operation down
+to circuit break). Transitions are logged as governance events.}
+\label{tab:degradation-ladder}
+\footnotesize
+\begin{tabularx}{\linewidth}{@{}l l l X@{}}
+\toprule
+\textbf{Rung} & \textbf{Name} & \textbf{Trigger} & \textbf{Action} \\ \midrule
+0 & Normal & p95 latency $<$ SLO, error rate $<$ 1\,\% & Primary model on primary GPU (e.g.\ Qwen2.5-32B on A100). \\
+1 & Reduced concurrency & p95 latency $\ge$ SLO for 5\,min & Halve request concurrency; queue depth bounded; user-visible latency warning. \\
+2 & Smaller model & Primary model unavailable or OOM for 2\,min & Automatic failover to smaller model (TB: 32B$\to$14B; Arabic AP: 14B$\to$7B; Simula: 32B$\to$14B for non-user-facing batches). Output tagged \texttt{model\_tier=fallback} for audit. \\
+3 & Cached / heuristic & Smaller model also unhealthy & Return cached response if cache hit within TTL; else return heuristic output (TB: statistical threshold only; Arabic AP: OCR-only, no translation; Simula: block generation). \\
+4 & Circuit break & Rung~3 still failing for 5\,min & All AI calls routed to manual queue; page on-call; governance ticket. \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\paragraph{Tagging and auditability.}
+Every response served from rung~1--3 carries a \texttt{model\_tier}
+attribute in its envelope and an audit event referencing the rung
+and the ladder-transition decision. Downstream consumers (review
+dashboard, AP workflow) render a visible ``fallback'' badge so
+reviewers know the response did not come from the primary model.
+This preserves the MAS MGF~2.1.2-002 attribution guarantee across
+all rungs: attribution is to the \emph{model actually used}, not
+to the model the request was routed to.
+
+\paragraph{Rung selection rationale.}
+Rung~1 (concurrency cut) is cheap and preserves quality; it buys
+time for transient load spikes. Rung~2 (smaller model) is the
+primary availability lever because model-host failures are the
+most common outage mode. Rung~3 (cached/heuristic) is the last
+value-preserving rung. Rung~4 is reserved for the case where the
+AI subsystem cannot be trusted at all; it is deliberately
+\emph{not} automatic to close --- human judgement is required to
+confirm the root cause is resolved. Rung transitions upward are
+automatic; transitions downward (closer to normal) require either
+a human acknowledgement or a clean 15-minute signal window.
+
+\section{Dashboard specification}
+
+\subsection{Real-time view}
+
+The monitoring dashboard provides:
+
+\begin{itemize}
+  \item Live metric charts (1-minute granularity)
+  \item Active alert panel with acknowledge/resolve actions
+  \item System health summary (green/yellow/red)
+  \item Recent trigger history
+\end{itemize}
+
+\subsection{Historical analysis}
+
+For trend analysis and post-incident review:
+
+\begin{itemize}
+  \item Metric time series with configurable ranges
+  \item Alert history with resolution notes
+  \item Correlation views (multiple metrics overlaid)
+  \item Baseline comparison charts
+\end{itemize}
+
+\section{Audit and compliance}
+
+\subsection{Retention requirements}
+
+\begin{table}[htbp]
+\centering
+\caption{Monitoring data retention.}
+\label{tab:monitor-retention}
+\footnotesize
+\begin{tabularx}{\linewidth}{@{}l r X@{}}
+\toprule
+\textbf{Data Type} & \textbf{Retention} & \textbf{Storage} \\ \midrule
+Raw metrics & 90 days & Time-series database \\
+Aggregated metrics & 2 years & Data warehouse \\
+Alert history & 7 years & Compliance archive \\
+Incident reports & 7 years & Document management \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\subsection{Regulatory reporting}
+
+For MAS MGF compliance, generate quarterly reports containing:
+
+\begin{enumerate}
+  \item Summary of monitoring coverage (metrics, triggers, alerts)
+  \item List of all CRITICAL alerts and resolutions
+  \item Trend analysis of key capability metrics
+  \item Any identified emergent behaviours and mitigations
+  \item Circuit breaker activations and durations
+\end{enumerate}
+
+\section{Implementation checklist}
+
+\begin{itemize}
+  \item[\texttt{[ ]}] Metrics collector integrated with all AI pipelines
+  \item[\texttt{[ ]}] All metrics in Table~\ref{tab:monitor-metrics} collected
+  \item[\texttt{[ ]}] Anomaly detection for all triggers in Table~\ref{tab:anomaly-thresholds}
+  \item[\texttt{[ ]}] Alert routing configured for all severity levels
+  \item[\texttt{[ ]}] Circuit breaker integration tested
+  \item[\texttt{[ ]}] Dashboard with real-time and historical views
+  \item[\texttt{[ ]}] Retention policies implemented per Table~\ref{tab:monitor-retention}
+  \item[\texttt{[ ]}] Quarterly report template created
+  \item[\texttt{[ ]}] Runbook for each alert type documented
+  \item[\texttt{[ ]}] Integration tests with simulated anomalies
+\end{itemize}

@@ -1,0 +1,269 @@
+\chapter{Project Roadmap}\label{ch:reg-roadmap}
+
+\section*{Scope of this chapter}
+\addcontentsline{toc}{section}{Scope of this chapter}
+
+This chapter is the roadmap for the \textbf{Agentic AI Regulations
+corpus and implementation-evidence} project. It is a project-level
+artefact, not a programme plan. Other SAP OSS Finance projects (Trial
+Balance, Arabic AP, Simula) run on the same platform, workspaces, and
+backends, but each owns its own roadmap, business case, and go/no-go
+decision. This project is a \emph{supplier} of shared-platform
+components (audit service, identity attribution, monitoring,
+conformance tooling) that the consumer projects depend on.
+
+\paragraph{Sequence, not dates.}
+The milestones and dependency graph below express \emph{order} and
+\emph{prerequisite} relationships, not calendar dates. This is
+deliberate. Implementation teams must know what depends on what, and
+where the schedule can absorb slippage (the Should/Could items); a
+date column would harden targets into commitments they were never
+meant to be. Dates, when set, live in the project steering packet and
+the ticketing system, not in this specification.
+
+\section{MoSCoW classification}\label{sec:reg-moscow}
+
+Every milestone below carries one of four priorities. The mapping is
+contractual: a milestone's priority determines what happens when it is
+dropped, de-scoped, or slips.
+
+\begin{table}[htbp]
+\centering
+\caption{MoSCoW prioritisation (shared across the four SAP OSS Finance
+projects).}
+\label{tab:reg-moscow}
+\footnotesize
+\begin{tabularx}{\linewidth}{@{}l l X@{}}
+\toprule
+\textbf{Priority} & \textbf{Meaning} & \textbf{Allowance} \\ \midrule
+\textbf{Must} (\textbf{M}) & Non-negotiable for v1.0. Without this milestone, the release does not ship. & None. Missing a Must halts the release; see the kill-switch in \cref{sec:reg-kill-switch}. \\
+\textbf{Should} (\textbf{S}) & Important but not vital. Ship without it only with sponsor sign-off; document the deviation in the business-case refresh. & May slip by one consumer wave; two consecutive slips escalate to GFAIC. \\
+\textbf{Could} (\textbf{C}) & Desirable enhancement. Included if Must and Should items are on track. & May be dropped to v1.1 at project steering's discretion. \\
+\textbf{Won't} (\textbf{W}) & Explicitly out of v1.0 scope. Listed so the boundary is legible. & Not eligible for v1.0 planning at all. \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\noindent
+The critical path of this project is the chain of Must items in
+\cref{tab:reg-milestones}; the Should and Could items are where the
+schedule and scope can absorb delivery risk without a release slip.
+
+\section{Dependency graph}\label{sec:reg-dependency-graph}
+
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}[
+  node distance=5mm and 10mm,
+  must/.style={draw,rounded corners=2pt,align=center,font=\scriptsize,
+               fill=regamber!20,draw=regamber!70,
+               minimum height=7mm,minimum width=32mm},
+  should/.style={draw,rounded corners=2pt,align=center,font=\scriptsize,
+               fill=regblue!12,draw=regblue!50,
+               minimum height=7mm,minimum width=32mm},
+  could/.style={draw,rounded corners=2pt,align=center,font=\scriptsize,
+               fill=reggreen!12,draw=reggreen!50,dotted,
+               minimum height=7mm,minimum width=32mm},
+  dep/.style={-{Latex[length=2mm]},thick},
+  soft/.style={-{Latex[length=2mm]},thick,dashed}
+]
+  \node[must] (m01) {M01 REG-ENG-001 \\ \scriptsize agent index + MGF};
+  \node[must,below=of m01] (m02) {M02 REG-AUDIT-001 \\ \scriptsize audit service};
+  \node[must,below=of m02] (m03) {M03 REG-IDENT-001 \\ \scriptsize identity attribution};
+  \node[must,right=14mm of m02] (m04) {M04 REG-MON-001 \\ \scriptsize monitoring + degradation};
+  \node[must,right=14mm of m04] (m05) {M05 REG-INTG-TB-001 \\ \scriptsize TB integration};
+  \node[must,below=of m05] (m06) {M06 REG-GA-001 \\ \scriptsize GA sign-off};
+  \node[should,right=14mm of m06] (s01) {S01 REG-INTG-AP-001 \\ \scriptsize AP integration};
+  \node[should,above=of s01] (s02) {S02 REG-INTG-SIM-001 \\ \scriptsize Simula integration};
+  \node[should,above=of s02] (s03) {S03 REG-MGF-V11 \\ \scriptsize MGF v1.1 pillars};
+  \node[could,above=of s03] (c01) {C01 REG-V2-EXPLORE \\ \scriptsize multi-regulator};
+
+  \draw[dep] (m01) -- (m02);
+  \draw[dep] (m01) -- (m04);
+  \draw[dep] (m02) -- (m03);
+  \draw[dep] (m03) -- (m05);
+  \draw[dep] (m04) -- (m05);
+  \draw[dep] (m05) -- (m06);
+  \draw[dep] (m06) -- (s01);
+  \draw[dep] (s01) -- (s02);
+  \draw[dep] (s02) -- (s03);
+  \draw[soft] (s03) -- (c01);
+\end{tikzpicture}
+\caption{Regulations dependency graph. Amber nodes are Must (critical
+path); blue are Should (consumer-integration and MGF-pillar
+allowance); dotted green are Could (discretionary). Solid arrows are
+hard prerequisites; dashed arrows indicate conditional starts (the
+target is unlocked when the upstream completes \emph{and} the v2.0
+trigger in \cref{sec:reg-v2-trigger} fires).}
+\label{fig:reg-dependency-graph}
+\end{figure}
+
+\section{Project milestones}\label{sec:reg-milestones}
+
+\begin{table}[htbp]
+\centering
+\caption{Regulations v1.0 project milestones in dependency order.
+Priority: M=Must (critical path), S=Should, C=Could, W=Won't.}
+\label{tab:reg-milestones}
+\footnotesize
+\begin{tabularx}{\linewidth}{@{}l l l l X@{}}
+\toprule
+\textbf{ID} & \textbf{Prereq} & \textbf{Pri.} & \textbf{Ticket} & \textbf{Milestone} \\ \midrule
+M01 & ---       & M & REG-ENG-001        & Agent index and MGF framework specification complete; conformance tooling passes the fixtures in \cref{ch:conformance}. \\
+M02 & M01       & M & REG-AUDIT-001      & Audit service (reserve/complete, immutable storage) live in UAT; SEV1/SEV2 clean. \\
+M03 & M02       & M & REG-IDENT-001      & Identity attribution wiring (\cref{ch:identity}) live in UAT; REG-MGF-2.1.2-002 compliance upgraded from \textit{missing} to \textit{partial}. \\
+M04 & M01       & M & REG-MON-001        & Monitoring spec operational: circuit breaker plus graceful-degradation ladder (\cref{sec:degradation-ladder}). \\
+M05 & M03, M04  & M & REG-INTG-TB-001    & First consumer (Trial Balance) integrated end-to-end; reserve/complete coverage $=$ 100\,\% on TB actions. \\
+M06 & M05       & M & REG-GA-001         & GA sign-off (audit + identity + monitoring) on the TB integration. \\
+M07 & M06       & M & REG-BC-REFRESH     & Business-case refresh and compliance attestation (first cycle after GA; then annual). \\
+S01 & M06       & S & REG-INTG-AP-001    & Arabic AP integration: reserve/complete on AP actions; REG-MGF-2.1.2-002 becomes \textit{compliant} once AP live. \\
+S02 & S01       & S & REG-INTG-SIM-001   & Simula integration: reserve/complete on Simula corpus-generation actions. \\
+S03 & M06       & S & REG-MGF-V11        & MGF v1.1 pillar updates ingested and mapped to agent index. \\
+C01 & S03 + \cref{sec:reg-v2-trigger} trigger & C & REG-V2-EXPLORE & v2.0 multi-regulator correlation scoped (beyond MAS MGF). \\
+C02 & M06       & C & REG-TUNE           & Quarterly conformance-tooling retraining from accept/edit telemetry. \\
+W01 & ---       & W & REG-V1-REALTIME    & Real-time cross-project audit dashboards are \emph{not} in v1.0 scope. \\
+W02 & ---       & W & REG-V1-MULTIREG    & Multi-regulator correlation is \emph{not} in v1.0 scope; single-regulator (MAS MGF) only. \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\noindent
+The Must chain (M01 $\to$ M02 $\to$ M03/M04 $\to$ M05 $\to$ M06 $\to$
+M07) is the critical path. The Should items (S01--S03) are the
+primary \emph{schedule allowance}: additional consumer integrations
+and MGF pillars can slip without affecting v1.0 sign-off. The Could
+items are the \emph{scope allowance}: they may be cut to v1.1 without
+renegotiation.
+
+\section{Launch tiers and exit gates}\label{sec:reg-launch-tiers}
+
+The project walks the four-tier ladder shared across SAP OSS Finance
+projects. A tier is exited only when the named exit gate is satisfied;
+slippage requires sponsor sign-off.
+
+\begin{table}[htbp]
+\centering
+\caption{Regulations launch tiers. The exit gate defines the MoSCoW
+items that must be closed to exit the tier.}
+\label{tab:reg-launch-tiers}
+\footnotesize
+\begin{tabularx}{\linewidth}{@{}l l X@{}}
+\toprule
+\textbf{Tier} & \textbf{Scope} & \textbf{Exit gate (references MoSCoW IDs)} \\ \midrule
+Alpha & Engineering only, DEV + UAT, conformance fixtures only. & M01, M02, M04 closed; conformance tooling green on fixtures; reproducibility of audit outputs confirmed on two consecutive runs. \\
+Beta  & Audit + identity + monitoring live for one consumer project (TB) in UAT. & M03, M05 closed; parallel-run gate in the TB spec passes for one full cycle; no open SEV1/SEV2; audit coverage $=$ 100\,\% of in-scope TB actions. \\
+GA (limited) & Audit + identity + monitoring live for TB in production. & M06 closed; Beta gate sustained for two consecutive cycles; kill-switch green; REG-MGF-2.1.2-002 at \textit{partial} (TB-only). \\
+Full rollout & All three current consumer projects integrated (TB, AP, Simula). & S01 and S02 closed; REG-MGF-2.1.2-002 at \textit{compliant}; two quarterly reviews sustained; M07 complete; business-case refresh complete. \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\section{Kill-switch conditions}\label{sec:reg-kill-switch}
+
+The kill-switch is a pre-committed rulebook: a tripped condition enters
+the action column without further debate. GFAIC and sponsor are
+notified within 24 hours. The conditions are evaluated continuously
+(on every cycle) and do not carry dates.
+
+\begin{table}[htbp]
+\centering
+\caption{Regulations kill-switch.}
+\label{tab:reg-kill-switch}
+\footnotesize
+\begin{tabularx}{\linewidth}{@{}l l X@{}}
+\toprule
+\textbf{Condition} & \textbf{Evaluation} & \textbf{Action} \\ \midrule
+Audit-coverage gap (missed \texttt{reserve/complete} pair) detected in production & continuous & \textbf{Halt GA onboarding for all consumers}; incident-review before next integration. \\
+Circuit breaker tripped with no successful graceful-degradation fallback for three consecutive cycles & per cycle & \textbf{Halt upstream LLM traffic}; fail over to cached/heuristic path; remediate before resuming. \\
+Identity-attribution reconciliation fails (principal of record cannot be resolved) for $>$\,0.01\,\% of actions & per cycle & \textbf{Pause affected consumer}; block further reserves until remediated. \\
+Any MAS MGF finding attributable to the Regulations platform (audit, identity, monitoring) & continuous & \textbf{Halt rollout}; remediate before next wave. \\
+Any consumer project declares red on a Regulations-supplied component & continuous & \textbf{Pause downstream Should}; re-plan at next steering. \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\section{Shared-platform dependencies}\label{sec:reg-shared-deps}
+
+This project depends on two shared-platform components (it supplies
+the rest). Each is tracked here only as a dependency, not a commitment
+this project can unilaterally adjust. Sequence is expressed in terms
+of the Must item that first consumes the dependency, not in calendar
+time.
+
+\begin{table}[htbp]
+\centering
+\caption{Shared-platform dependencies.}
+\label{tab:reg-shared-deps}
+\footnotesize
+\begin{tabularx}{\linewidth}{@{}l l l X@{}}
+\toprule
+\textbf{Component} & \textbf{Owner} & \textbf{First consumed by} & \textbf{Impact if late} \\ \midrule
+Unified schema registry (\path{docs/schema/}) & Shared infra & M01 & Already \texttt{migration.status=complete}; no remaining risk. \\
+vLLM hosting (\texttt{vllm-only} policy) & Shared platform & M04 & The graceful-degradation ladder (\cref{sec:degradation-ladder}) is the mitigation; this project is the \emph{owner} of that ladder for sibling consumers. \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\noindent
+Shared-platform dependencies are surfaced at monthly steering. If any
+upstream owner declares \textbf{amber} or \textbf{red} on a component
+in \cref{tab:reg-shared-deps}, the affected downstream Must milestone
+is re-planned at the following steering.
+
+\section{v2.0 expansion trigger}\label{sec:reg-v2-trigger}
+
+The Could item C01 (REG-V2-EXPLORE) is unlocked only when all of the
+following are observed after two consecutive quarters of full rollout
+under v1.0:
+
+\begin{itemize}
+  \item a second regulator framework (beyond MAS MGF) is formally
+        adopted as in-scope by the AI Governance Working Group;
+  \item MGF v1.1 pillars (S03) are fully mapped and at \textit{compliant}
+        status;
+  \item business-case refresh (M07) explicitly budgets the v2.0
+        programme.
+\end{itemize}
+
+\noindent
+If any of the three conditions fails, C01 remains in the Could column
+and is re-evaluated at the next business-case refresh.
+
+\section{Governance and business-case cadence}\label{sec:reg-governance}
+
+\paragraph{Project governance.}
+The Regulations project reports monthly to a project steering (AI
+Governance Lead, Compliance Officer, Platform Engineer) and quarterly
+to the cross-project GFAIC, which it also convenes. Monthly steering
+accepts or rejects amber/red signals on Must items; GFAIC reviews
+compliance posture and cross-project dependencies (this project's
+consumer-integration Should items feed directly into sibling projects'
+Must items).
+
+\paragraph{Business-case refresh (M07).}
+The business case that authorises this project is refreshed on the
+following rhythm:
+
+\begin{itemize}
+  \item \textbf{Mandatory refresh}: at the first cycle after GA, and
+        annually thereafter (ticket REG-BC-REFRESH, priority M in
+        \cref{tab:reg-milestones}). Refresh packet includes consumer
+        integration load assumptions, unit economics
+        (\cref{sec:reg-unit-economics}), platform operating cost
+        realised vs.\ forecast, and a deviation statement against the
+        baseline.
+  \item \textbf{Trigger-based refresh}: any of
+        \begin{itemize}
+          \item consumer-project count in scope changes by $\ge\,1$
+                (new consumer adopts, or one is retired);
+          \item per-action audit cost changes by $\ge\,30$\,\%
+                (storage, indexing, identity-reconciliation throughput);
+          \item a new MGF pillar, a new regulator framework, or a
+                material change to REG-MGF-2.1.2-002;
+          \item any kill-switch in \cref{tab:reg-kill-switch} is
+                tripped.
+        \end{itemize}
+  \item \textbf{Owner}: AI Governance Lead. Approval routed through
+        the project steering and filed at
+        \path{docs/regulations/business-case/refresh-history.yaml}.
+\end{itemize}

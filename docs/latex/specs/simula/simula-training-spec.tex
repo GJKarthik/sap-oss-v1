@@ -1,0 +1,119 @@
+% =============================================================================
+% Simula Training Data Framework — Implementation Specification
+% Main document - includes chapter files
+% =============================================================================
+\documentclass[11pt,a4paper]{article}
+
+% ─── Core packages ───────────────────────────────────────────────────────────
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage{amsmath}
+\usepackage[margin=2.5cm]{geometry}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{longtable}
+\usepackage{tabularx}
+\usepackage{multirow}
+\usepackage{array}
+\usepackage{float}
+\usepackage{enumitem}
+\usepackage{xcolor}
+\usepackage{hyperref}
+\usepackage[capitalize,noabbrev]{cleveref}
+\usepackage{fancyhdr}
+\usepackage{titlesec}
+
+% ─── Code listings ───────────────────────────────────────────────────────────
+\usepackage{listings}
+
+\definecolor{codebg}{RGB}{248,248,248}
+\definecolor{codegreen}{RGB}{0,128,0}
+\definecolor{codegray}{RGB}{128,128,128}
+\definecolor{codeblue}{RGB}{0,0,180}
+\definecolor{codepurple}{RGB}{128,0,128}
+
+\lstdefinelanguage{Python}{
+  keywords={class,def,return,if,elif,else,for,in,import,from,async,await,
+            True,False,None,self,try,except,finally,with,as,yield,not,and,or,
+            Optional,Dict,List,Tuple,Any,str,int,float,bool,dataclass,field,Enum},
+  keywordstyle=\color{codeblue}\bfseries,
+  sensitive=true,
+  comment=[l]{\#},
+  morecomment=[s]{"""}{"""},
+  commentstyle=\color{codegreen}\itshape,
+  stringstyle=\color{codepurple},
+  morestring=[b]',
+  morestring=[b]",
+  backgroundcolor=\color{codebg},
+}
+
+\lstset{
+  basicstyle=\ttfamily\small,
+  breaklines=true,
+  frame=single,
+  numbers=left,
+  numberstyle=\tiny\color{codegray},
+  backgroundcolor=\color{codebg},
+  captionpos=b,
+}
+
+% ─── TikZ for diagrams ───────────────────────────────────────────────────────
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta,positioning,shapes.geometric,shapes.multipart,fit,calc}
+
+% ─── SAP colors ──────────────────────────────────────────────────────────────
+\definecolor{sapblue}{HTML}{0070F2}
+\definecolor{sapgold}{HTML}{E78C07}
+\definecolor{sapdark}{HTML}{354A5F}
+\definecolor{saplight}{HTML}{F5F6F7}
+\definecolor{hanagreen}{HTML}{00875A}
+\definecolor{llmpurple}{HTML}{7B68EE}
+
+% ─── Headers ─────────────────────────────────────────────────────────────────
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\small\color{sapdark}Simula Training Data Framework}
+\fancyhead[R]{\small\color{sapdark}SAP OSS -- Studio AI}
+\fancyfoot[C]{\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+
+\hypersetup{
+    colorlinks=true,
+    linkcolor=sapblue,
+    urlcolor=sapblue,
+    citecolor=sapblue
+}
+
+% ─── Title ───────────────────────────────────────────────────────────────────
+\title{%
+    \vspace{-1cm}
+    {\LARGE\bfseries Reasoning-Driven Synthetic Training Data Generation}\\[0.3cm]
+    {\Large for SAP HANA Cloud}\\[0.5cm]
+    {\large Simula Framework: HANA-Direct Pipeline\\
+    with vLLM TurboQuant}\\[0.3cm]
+    {\normalsize Implementation Specification v1.2}\\[0.5cm]
+    \rule{\textwidth}{1pt}
+}
+\author{%
+    SAP OSS -- Studio AI\\
+    \small Training Data Pipeline Working Group
+}
+\date{April 2026}
+
+\begin{document}
+
+% Include chapters
+\input{chapters/00-frontmatter}
+\input{chapters/01-overview}
+\input{chapters/02-data-schema}
+\input{chapters/03-extraction-pipeline}
+\input{chapters/04-taxonomy-engine}
+\input{chapters/05-generation-engine}
+\input{chapters/06-environment-cli}
+\input{chapters/07-references}
+\input{chapters/08-test-fixtures-spec}
+\input{chapters/09-testing}
+\input{chapters/10-project-roadmap}
+
+\end{document}

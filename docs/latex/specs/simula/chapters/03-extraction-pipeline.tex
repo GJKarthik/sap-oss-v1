@@ -1,0 +1,148 @@
+\section{HANA Schema Extraction Pipeline}
+\label{chap:extraction}
+
+\subsection{Pipeline at a Glance}
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[
+    node distance=0.8cm,
+    stage/.style={rectangle, draw, rounded corners, fill=sapblue!10, 
+                  minimum width=2.5cm, minimum height=0.8cm, font=\small,
+                  text width=2.3cm, align=center},
+    arr/.style={-{Stealth[length=2mm]}, thick},
+]
+    \node[stage] (s1) {1. MCP Discovery};
+    \node[stage, right=of s1] (s2) {2. Table Enumeration};
+    \node[stage, right=of s2] (s3) {3. Column Extraction};
+    \node[stage, right=of s3] (s4) {4. Registry Population};
+    \node[stage, right=of s4] (s5) {5. JSON Export};
+    
+    \draw[arr] (s1) -- (s2);
+    \draw[arr] (s2) -- (s3);
+    \draw[arr] (s3) -- (s4);
+    \draw[arr] (s4) -- (s5);
+\end{tikzpicture}
+\caption{The five extraction stages; each emits a well-typed payload to the next.}
+\label{fig:extraction-pipeline}
+\end{figure}
+
+\subsection{Stage 1 --- MCP Discovery}
+
+The extractor connects to the AI Core PAL MCP server and discovers available tools:
+
+\begin{lstlisting}[language=Python,caption={MCP connection (hana\_schema\_extractor.py, lines 45--60)}]
+async def connect(self) -> None:
+    """Establish MCP connection to AI Core PAL."""
+    # Handle both HTTP->WS and HTTPS->WSS
+    transport_url = self.config.mcp_url
+    transport_url = transport_url.replace("https://", "wss://")
+    transport_url = transport_url.replace("http://", "ws://")
+    transport_url = f"{transport_url}/mcp/ws"
+    
+    self._transport = WebSocketClientTransport(transport_url)
+    self._session = ClientSession(self._transport)
+    
+    await self._session.initialize()
+    
+    # Discover available tools
+    tools_result = await self._session.list_tools()
+    self._available_tools = {t.name for t in tools_result.tools}
+\end{lstlisting}
+
+\textbf{Precondition.} The MCP server must expose at least one of: \texttt{execute\_sql},
+\texttt{hana\_tables}, or \texttt{list\_tables}.
+
+\subsection{Stage 2 --- Table Enumeration}
+
+Tables are discovered via the \texttt{hana\_tables} MCP tool or by querying
+\texttt{SYS.TABLES}:
+
+\begin{lstlisting}[language=Python,caption={Table discovery (hana\_schema\_extractor.py, lines 85--105)}]
+async def _discover_tables(self, schema: str) -> list[str]:
+    """Discover tables in a schema."""
+    if "hana_tables" in self._available_tools:
+        result = await self._session.call_tool(
+            "hana_tables",
+            {"schema": schema}
+        )
+        return [t["table_name"] for t in result.content]
+    else:
+        # Fallback to direct SQL
+        result = await self._execute_sql(
+            'SELECT TABLE_NAME FROM SYS.TABLES '
+            'WHERE SCHEMA_NAME = ?',
+            [schema]
+        )
+        return [row["TABLE_NAME"] for row in result]
+\end{lstlisting}
+
+\subsection{Stage 3 --- Column Extraction}
+
+For each table, column metadata is extracted from \texttt{SYS.TABLE\_COLUMNS}:
+
+\begin{lstlisting}[language=Python,caption={Column extraction SQL}]
+SELECT 
+    COLUMN_NAME,
+    DATA_TYPE_NAME,
+    LENGTH,
+    IS_NULLABLE
+FROM SYS.TABLE_COLUMNS
+WHERE SCHEMA_NAME = ? AND TABLE_NAME = ?
+ORDER BY POSITION
+\end{lstlisting}
+
+\subsection{Stage 4 --- Registry Population}
+
+Extracted metadata is normalized and stored in the \texttt{SchemaRegistry}:
+
+\begin{lstlisting}[language=Python,caption={Registry population (hana\_schema\_extractor.py, lines 140--165)}]
+async def extract_table_schema(
+    self, schema: str, table: str
+) -> TableSchema:
+    """Extract full schema for a single table."""
+    columns_data = await self._get_table_columns(schema, table)
+    
+    columns = [
+        Column(
+            name=col["COLUMN_NAME"],
+            data_type=col["DATA_TYPE_NAME"],
+            length=col.get("LENGTH"),
+            nullable=col.get("IS_NULLABLE", "TRUE") == "TRUE",
+        )
+        for col in columns_data
+    ]
+    
+    return TableSchema(
+        schema_name=schema,
+        table_name=table,
+        columns=columns,
+    )
+\end{lstlisting}
+
+\subsection{Stage 5 --- JSON Export}
+
+The registry exports to JSON for caching and debugging:
+
+\begin{lstlisting}[language=Python,caption={JSON export format}]
+{
+  "schemas": {
+    "PAL_STORE": {
+      "tables": {
+        "ESG_METRICS": {
+          "columns": [
+            {"name": "METRIC_ID", "type": "INTEGER", ...},
+            {"name": "SCOPE", "type": "NVARCHAR", ...}
+          ]
+        }
+      }
+    }
+  },
+  "extracted_at": "2026-04-18T08:00:00Z"
+}
+\end{lstlisting}
+
+% =============================================================================
+% CHAPTER 4: TAXONOMY GENERATION ENGINE
+% =============================================================================
+\newpage

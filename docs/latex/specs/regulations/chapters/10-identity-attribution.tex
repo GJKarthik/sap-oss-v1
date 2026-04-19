@@ -1,0 +1,372 @@
+\chapter{Per-Request Identity Attribution Specification}\label{ch:identity}
+
+This chapter specifies the per-request identity attribution system, addressing
+the MAS MGF requirement REG-MGF-2.1.2-002 that ``each agent action must be
+traceable to the requesting identity and approval chain.''
+
+\section{Overview}
+
+Per-request identity attribution ensures that every AI agent action can be
+traced to:
+\begin{enumerate}
+  \item The \textbf{initiating user} who triggered the request
+  \item The \textbf{agent identity} that executed the action
+  \item The \textbf{approval chain} (if human-in-the-loop was invoked)
+  \item The \textbf{system context} (pipeline, model version, timestamp)
+\end{enumerate}
+
+\section{Identity model}
+
+\subsection{Agent identity schema}
+
+\begin{lstlisting}[basicstyle=\ttfamily\small,caption={Agent identity record schema.}]
+{
+  "agent_id": "agent-tb-variance-001",
+  "agent_type": "variance_analyzer",
+  "model_version": "qwen2.5-72b-instruct-v1.2",
+  "pipeline_version": "tb-review-2.1.0",
+  "deployment_environment": "production",
+  "capabilities": [
+    "variance_calculation",
+    "anomaly_detection",
+    "commentary_generation"
+  ],
+  "permissions": {
+    "can_modify_data": false,
+    "can_trigger_downstream": true,
+    "requires_human_approval": ["commentary_generation"]
+  }
+}
+\end{lstlisting}
+
+\subsection{Request identity schema}
+
+\begin{lstlisting}[basicstyle=\ttfamily\small,caption={Request identity record schema.}]
+{
+  "request_id": "req-20260418-001234",
+  "correlation_id": "session-abc123",
+  "initiating_user": {
+    "user_id": "jsmith@company.com",
+    "user_type": "human",
+    "authentication_method": "oauth2_sso",
+    "roles": ["tb_reviewer", "senior_accountant"]
+  },
+  "timestamp": "2026-04-18T10:30:00+08:00",
+  "source_system": "tb-review-dashboard",
+  "source_ip": "10.0.1.100"
+}
+\end{lstlisting}
+
+\section{Audit trail specification}
+
+\subsection{Audit event schema}
+
+Every agent action generates an audit event:
+
+\begin{lstlisting}[basicstyle=\ttfamily\small,caption={Audit event schema.}]
+{
+  "event_id": "evt-20260418-567890",
+  "event_type": "agent_action",
+  "timestamp": "2026-04-18T10:30:05+08:00",
+  
+  "request_identity": {
+    "request_id": "req-20260418-001234",
+    "initiating_user_id": "jsmith@company.com"
+  },
+  
+  "agent_identity": {
+    "agent_id": "agent-tb-variance-001",
+    "model_version": "qwen2.5-72b-instruct-v1.2"
+  },
+  
+  "action": {
+    "action_type": "variance_calculation",
+    "entity_id": "HKG-2026-04",
+    "input_hash": "sha256:abc123...",
+    "output_hash": "sha256:def456..."
+  },
+  
+  "approval_chain": [
+    {
+      "approver_id": "jsmith@company.com",
+      "approval_type": "implicit",
+      "timestamp": "2026-04-18T10:30:00+08:00"
+    }
+  ],
+  
+  "outcome": {
+    "status": "success",
+    "duration_ms": 1234,
+    "tokens_used": 500
+  }
+}
+\end{lstlisting}
+
+\subsection{Required audit events}
+
+\begin{table}[htbp]
+\centering
+\caption{Mandatory audit events by action type.}
+\label{tab:audit-events}
+\footnotesize
+\begin{tabularx}{\linewidth}{@{}l l X@{}}
+\toprule
+\textbf{Action Type} & \textbf{Event Type} & \textbf{Required Fields} \\ \midrule
+AI inference & \texttt{agent\_inference} & model\_version, input\_hash, output\_hash \\
+Data modification & \texttt{agent\_write} & entity\_id, before\_hash, after\_hash \\
+Human review request & \texttt{review\_requested} & reviewer\_id, queue\_id \\
+Human approval & \texttt{review\_approved} & approver\_id, decision, rationale \\
+Human rejection & \texttt{review\_rejected} & rejecter\_id, decision, rationale \\
+Error/failure & \texttt{agent\_error} & error\_code, stack\_trace\_hash \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\section{Storage and retention}
+
+\subsection{Storage requirements}
+
+\begin{table}[htbp]
+\centering
+\caption{Audit storage requirements.}
+\label{tab:audit-storage}
+\footnotesize
+\begin{tabularx}{\linewidth}{@{}l r X@{}}
+\toprule
+\textbf{Data Type} & \textbf{Retention} & \textbf{Storage} \\ \midrule
+Audit events & 7 years & Append-only log (immutable) \\
+Request identities & 7 years & Indexed for query \\
+Agent configurations & Forever & Version-controlled \\
+Input/output hashes & 7 years & With audit events \\
+Full input/output & 90 days & Cold storage, then purge \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\subsection{Immutability requirements}
+
+Audit logs \textbf{must} be immutable:
+\begin{itemize}
+  \item Append-only storage (no updates, no deletes)
+  \item Cryptographic chaining (hash of previous event included)
+  \item External timestamp authority (prevents backdating)
+  \item Write-once media for long-term archive
+\end{itemize}
+
+\section{API specification}
+
+\subsection{Audit write API}
+
+Two audit write points are required per action: a
+\texttt{pre\_action} reservation (before the inference executes) and
+a \texttt{post\_action} completion (after the inference returns). The
+\texttt{pre\_action} write is the enforcement gate --- if it fails,
+the inference is \emph{rejected before execution}, which is the only
+tractable way to achieve the ``no action without audit'' invariant
+(see Section~\ref{sec:audit-failure-handling}).
+
+\begin{lstlisting}[language=Python,basicstyle=\ttfamily\small,caption={Audit service API contract.}]
+def reserve_agent_action(
+    request_identity: RequestIdentity,
+    agent_identity: AgentIdentity,
+    planned_action: AgentActionPlan,
+) -> AuditEventId:
+    """
+    Reserve an audit event slot BEFORE the agent action executes.
+
+    This function MUST be called and succeed before the inference is
+    dispatched. A successful return contractually commits the caller
+    to writing a matching complete_agent_action() within the event's
+    TTL (default: 120 s).
+
+    Raises:
+        AuditWriteError: If the reservation cannot be written. The
+            caller MUST NOT dispatch the agent action.
+    """
+
+def complete_agent_action(
+    event_id: AuditEventId,
+    action: AgentAction,
+    outcome: ActionOutcome,
+) -> None:
+    """
+    Complete a previously reserved audit event with the actual
+    action and outcome. MUST be called after the action returns
+    (whether success or error).
+
+    If this call fails, the reservation remains visible in the audit
+    trail in state "orphaned" and operations are alerted; the caller
+    MUST return an error to the user because downstream side effects
+    could not be verifiably attributed.
+    """
+\end{lstlisting}
+
+\subsection{Audit query API}
+
+\begin{lstlisting}[language=Python,basicstyle=\ttfamily\small,caption={Audit query API contract.}]
+def query_audit_trail(
+    filters: AuditFilters,
+    pagination: Pagination
+) -> AuditQueryResult:
+    """
+    Query the audit trail.
+    
+    Filters:
+        - request_id: Specific request
+        - user_id: All actions by user
+        - agent_id: All actions by agent
+        - entity_id: All actions on entity
+        - time_range: Start and end timestamps
+        - action_type: Filter by action type
+    
+    Returns:
+        List of matching audit events with pagination
+    """
+\end{lstlisting}
+
+\section{Integration requirements}
+
+\subsection{Pipeline integration}
+
+Every AI pipeline \textbf{must} integrate the identity attribution system:
+
+\begin{enumerate}
+  \item \textbf{Request entry}: Capture initiating user identity from authentication
+  \item \textbf{Pre-inference}: Log \texttt{agent\_inference\_start} event
+  \item \textbf{Post-inference}: Log \texttt{agent\_inference\_complete} event
+  \item \textbf{Data write}: Log \texttt{agent\_write} event before commit
+  \item \textbf{Error}: Log \texttt{agent\_error} event on any failure
+\end{enumerate}
+
+\subsection{Failure handling}\label{sec:audit-failure-handling}
+
+LLM inference is not reversible once executed: tokens have been
+emitted, compute was consumed, and any downstream side effects
+(database writes, external calls) are already in flight. ``Roll
+back the inference'' is therefore not a valid operation. The
+specification enforces audit coverage by \emph{gating} the action
+behind a successful reservation write, and by containing side
+effects:
+
+\begin{enumerate}
+  \item \textbf{Reservation-before-action.} The
+        \texttt{reserve\_agent\_action()} call (see audit write
+        API) MUST succeed before the agent dispatches the
+        inference. If the reservation write fails, the agent
+        action MUST NOT be executed and the request MUST return a
+        \texttt{503} error with an operations alert.
+  \item \textbf{Side-effect containment.} Any data-modification or
+        external call triggered by an AI output MUST be staged and
+        only committed after \texttt{complete\_agent\_action()}
+        succeeds. If completion fails, staged side effects are
+        discarded (this \emph{is} a rollback --- of the side
+        effects, not of the inference itself).
+  \item \textbf{Orphaned reservation handling.} If a reservation
+        is written but never completed within the TTL (e.g.\ the
+        inference server crashed), the reservation is marked
+        \texttt{orphaned}; operations are alerted; staged side
+        effects are discarded; downstream consumers see an
+        explicit failure.
+  \item \textbf{Alerting and no-silent-proceed.} An alert MUST be
+        sent to operations on every audit failure; the system
+        MUST NOT proceed to emit results without a completed audit
+        record.
+\end{enumerate}
+
+\noindent
+This wording supersedes the earlier text (which called for
+``rolling back the agent action''): because LLM inference is not
+reversible, the equivalent invariant is enforced by gating with a
+pre-action reservation and staging side effects.
+
+\section{Compliance mapping}
+
+\begin{table}[htbp]
+\centering
+\caption{MAS MGF requirement mapping.}
+\label{tab:mgf-mapping}
+\footnotesize
+\begin{tabularx}{\linewidth}{@{}l l X@{}}
+\toprule
+\textbf{Requirement} & \textbf{Section} & \textbf{Implementation} \\ \midrule
+REG-MGF-2.1.2-002 & \S10.2--10.3 & Request identity schema, audit trail \\
+REG-MGF-2.1.3-001 & \S10.4 & Immutable storage, retention policy \\
+REG-MGF-2.2.1-001 & \S10.5 & Audit write API with rollback \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\section{Implementation checklist and integration status}
+
+\subsection{Audit service (this chapter)}
+
+\begin{itemize}
+  \item[\texttt{[x]}] Agent identity schema defined
+  \item[\texttt{[x]}] Request identity schema defined
+  \item[\texttt{[x]}] Audit event schema defined
+  \item[\texttt{[x]}] Audit write API contract specified
+        (reserve/complete pattern, Section~\ref{sec:audit-failure-handling})
+  \item[\texttt{[x]}] Audit query API contract specified
+  \item[\texttt{[ ]}] Audit service implementation
+        (\path{src/governance/audit_service/}) --- target: v1.0
+  \item[\texttt{[ ]}] Immutable storage configured (append-only,
+        hash chaining, external timestamp authority) --- target: v1.0
+  \item[\texttt{[ ]}] Retention policy enforced (7 years) --- target: v1.0
+\end{itemize}
+
+\subsection{Pipeline integration rollout}
+\label{sec:identity-integration-rollout}
+
+The integration of the identity attribution audit service with the
+three application pipelines (TB, Arabic AP, Simula) is sequenced
+against explicit milestones, not an open-ended forward commitment.
+Each pipeline has its own integration sub-ticket with an acceptance
+criterion and a position in the dependency graph of
+\cref{ch:reg-roadmap}; slippage on any row escalates to the GFAIC
+governance committee. \textbf{Sequence, not dates}: the rows below
+use the MoSCoW identifiers from \cref{tab:reg-milestones} so
+implementation teams know what depends on what, not when a
+calendar target is supposed to fire (that belongs in the steering
+packet).
+
+\begin{table}[htbp]
+\centering
+\caption{Audit service and pipeline integration rollout, keyed to
+the MoSCoW priorities in \cref{tab:reg-milestones}. Pri.\ column:
+M=Must (critical path), S=Should, C=Could.}
+\label{tab:identity-rollout}
+\footnotesize
+\begin{tabularx}{\linewidth}{@{}l l l l X@{}}
+\toprule
+\textbf{ID} & \textbf{Prereq} & \textbf{Pri.} & \textbf{Ticket} & \textbf{Acceptance criterion} \\ \midrule
+R1 & ---        & M & REG-AUDIT-001   & Audit service skeleton (reserve/complete endpoints, in-memory store): contract tests pass against the two endpoints; 404/409/500 paths exercised. \\
+R2 & R1         & M & REG-AUDIT-002   & Immutable storage backend (append-only + hash chain + RFC~3161 timestamp): tamper-test suite passes; restored chain validates after adversarial edit. \\
+R3 & R2         & M & REG-AUDIT-003   & 7-year retention + legal-hold API: retention policy enforced; legal-hold flag blocks GDPR erasure. \\
+R4 & R3         & M & REG-INTG-TB-001 & TB dashboard integration: every dashboard decision \emph{and} AI commentary draft emits \texttt{reserve}/\texttt{complete}; 100\,\% coverage in \cref{ch:testing}. \\
+R5 & R4         & S & REG-INTG-AP-001 & Arabic AP integration: OCR, field extraction, VAT rule evaluation each emit audit events; PII hashed. \\
+R6 & R5         & S & REG-INTG-SIM-001 & Simula batch integration: training-data runs logged at batch granularity; per-example logging enabled under \texttt{AUDIT\_VERBOSE=1}. \\
+R7 & R4         & M & GAIC-REV        & v1.0 compliance gate: quarterly GFAIC review confirms MAS MGF~2.1.2-002 compliance; traceability matrix \cref{tab:trace} flips from \texttt{partial} to \texttt{implemented} on this row. \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\noindent
+Until each pipeline's integration is verified, the governance status
+for that pipeline's MAS MGF~2.1.2-002 compliance is \texttt{partial}
+(see the traceability matrix in \cref{ch:refs}). Integration tickets
+REG-INTG-TB-001 (R4) is a Must for the Regulations project and a Must
+for TB; REG-INTG-AP-001 (R5) is a Should for Regulations and a Must
+for Arabic AP (it is the \texttt{partial}-to-\texttt{compliant}
+upgrade path for REG-MGF-2.1.2-002); REG-INTG-SIM-001 (R6) is Should
+for Regulations and is not a v1.0 gate for Simula itself.
+Table~\ref{tab:identity-rollout} is tracked in the programme status
+dashboard and refreshed on every cycle.
+
+\subsection{Compliance tests}
+
+\begin{itemize}
+  \item[\texttt{[ ]}] Per-pipeline compliance tests passing
+        (\cref{ch:testing}, Section on audit coverage)
+  \item[\texttt{[ ]}] Quarterly re-validation against the
+        AIVerify subset (\cref{sec:aiverify-subset})
+\end{itemize}
