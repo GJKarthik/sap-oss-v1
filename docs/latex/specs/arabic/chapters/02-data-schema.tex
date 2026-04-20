@@ -121,6 +121,39 @@ matching the taxpayer's \textsc{zatca\_tdn}. The \texttt{status} enum is
 \{\textsc{valid}, \textsc{invalid}, \textsc{pending}, \textsc{cancelled}\};
 ZATCA assessments are always \textsc{valid} on arrival.
 
+\section{Payment instruction record}
+\label{sec:payment-instruction-schema}
+
+The payment instruction record is emitted by the approval engine
+(\cref{ch:ap}) when a validated invoice and approval workflow reach a
+terminal state. \Cref{tab:payment-instruction-fields} enumerates the
+top-level fields of \texttt{payment-instruction.schema.json}. Two
+instance records are provided in the corpus under
+\texttt{structured/payment-instructions/}: the Qatar EDAA annual fee
+and the QCSD payment instruction referenced in the overview chapter.
+
+\begin{table}[htbp]
+\centering
+\caption{Top-level fields of \texttt{payment-instruction.schema.json}.}
+\label{tab:payment-instruction-fields}
+\small
+\begin{tabularx}{\linewidth}{@{}l l c X@{}}
+\toprule
+\textbf{Field} & \textbf{Type} & \textbf{Req.} & \textbf{Notes} \\ \midrule
+\texttt{id}               & string & \checkmark & Filename stem under \texttt{payment-instructions/}. \\
+\texttt{metadata}         & object & \checkmark & Country, tax authority (may be null), issue/due date, status, language. \\
+\texttt{payer}            & party  & \checkmark & Same party shape used in the invoice record (\cref{tab:invoice-fields}). \\
+\texttt{payee}            & party  & \checkmark & Vendor receiving the funds. \\
+\texttt{amount}           & object & \checkmark & \texttt{value} (number) and \texttt{currency} (ISO 4217 code). \\
+\texttt{payment\_method}  & string & \checkmark & One of \texttt{bank\_transfer}, \texttt{check}, \texttt{card}, \texttt{cash}, \texttt{other}. \\
+\texttt{reference}        & object & --         & Link back to the paying invoice (\texttt{invoice\_id}, \texttt{description}). \\
+\texttt{approval\_chain}  & array  & --         & Links to approval-workflow records that authorised the payment. \\
+\texttt{due\_date}        & string & \checkmark & ISO-8601 date. \\
+\texttt{status}           & string & \checkmark & One of \texttt{draft}, \texttt{approved}, \texttt{emitted}, \texttt{settled}, \texttt{cancelled}. \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
 \section{VAT compliance checklist}
 
 The KSA OTP/VAT checklist is encoded as an ordered array of items

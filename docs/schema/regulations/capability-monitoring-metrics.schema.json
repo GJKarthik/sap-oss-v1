@@ -1,0 +1,89 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://sap-oss.github.io/schema/regulations/capability-monitoring-metrics.schema.json",
+  "title": "Capability Monitoring Metric",
+  "description": "Single-metric emission record for capability monitoring (Regulations Chapter 8 §8.3, Table tab:monitor-metrics)",
+  "type": "object",
+  "required": ["metric_name", "metric_type", "value", "timestamp", "source_pipeline"],
+  "properties": {
+    "metric_name": {
+      "type": "string",
+      "enum": [
+        "output_token_count",
+        "response_latency_ms",
+        "confidence_score",
+        "refusal_rate",
+        "tool_call_frequency",
+        "output_format_violations",
+        "hallucination_flags",
+        "unexpected_topic_detections",
+        "novel_capability_indicators"
+      ],
+      "description": "Metric identifier from Chapter 8 §8.3 capability monitoring metrics table"
+    },
+    "metric_type": {
+      "type": "string",
+      "enum": ["histogram", "counter", "gauge"],
+      "description": "Metric kind; must match the metric_name per the chapter table"
+    },
+    "value": {
+      "type": "number",
+      "description": "Observed metric value for this emission"
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time",
+      "description": "RFC 3339 timestamp of the emission"
+    },
+    "source_pipeline": {
+      "type": "string",
+      "enum": ["arabic-ap", "tb-review", "simula", "other"],
+      "description": "Pipeline that produced the metric"
+    },
+    "labels": {
+      "type": "object",
+      "additionalProperties": true,
+      "description": "Free-form dimensions (e.g., agent_id, model_version)"
+    },
+    "request_id": {
+      "type": "string",
+      "description": "Correlation to audit-event.request_identity.request_id"
+    }
+  },
+  "oneOf": [
+    {
+      "properties": {
+        "metric_name": {
+          "enum": [
+            "output_token_count",
+            "response_latency_ms",
+            "confidence_score"
+          ]
+        },
+        "metric_type": { "const": "histogram" }
+      }
+    },
+    {
+      "properties": {
+        "metric_name": {
+          "enum": [
+            "refusal_rate",
+            "tool_call_frequency",
+            "output_format_violations",
+            "hallucination_flags",
+            "unexpected_topic_detections"
+          ]
+        },
+        "metric_type": { "const": "counter" }
+      }
+    },
+    {
+      "properties": {
+        "metric_name": {
+          "enum": ["novel_capability_indicators"]
+        },
+        "metric_type": { "const": "gauge" }
+      }
+    }
+  ]
+}

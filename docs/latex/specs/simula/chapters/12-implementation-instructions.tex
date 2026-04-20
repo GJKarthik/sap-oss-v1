@@ -1,0 +1,386 @@
+\chapter{Agent Implementation Instructions}
+\label{ch:agent-impl}
+
+\section{Purpose and audience}
+This chapter is the self-contained, intent-based instruction set for
+implementing the \emph{Simula training data framework} domain inside
+the unified SAP OSS platform. It is written for LLM-driven and human
+implementation agents who will extend existing services to realise
+the specification. It assumes only this PDF; every platform
+decision, integration contract, and governance obligation the Simula
+workstream depends on is restated here so that no companion document
+is required. Existing sections~\ref{chap:overview}--\ref{sec:sim-roadmap}
+remain the normative source for the Simula domain itself; this
+chapter tells future agents \emph{how} to build what those sections
+describe, \emph{where} to put it in the codebase, and \emph{how} it
+plugs into the wider platform.
+
+\input{../shared-intent-core.tex}
+
+\section{FMEA: Failure Mode and Effects Analysis for AI}
+\label{sec:fmea-ai}
+
+The following analysis identifies critical AI failure modes within the Simula pipeline and their deterministic mitigations.
+
+\begin{table}[htbp]
+\centering
+\footnotesize
+\caption{FMEA for Simula AI Pipeline.}
+\label{tab:simula-fmea}
+\begin{tabularx}{\textwidth}{@{}l X X X@{}}
+\toprule
+\textbf{Failure Mode} & \textbf{Symptom} & \textbf{Impact} & \textbf{Technical Mitigation} \\
+\midrule
+Critic Collusion & Both critics pass a low-quality SQL query. & High (Model Bias) & Inject a 'Gold Standard' probe query every 100 samples. \\
+Schema Contraction & LLM ignores complex JOIN paths in the taxonomy. & Medium (Coverage) & Taxonomic coverage check against Graph-DB baseline. \\
+Elo-Score Drift & Calibrated complexity scores diverge from human ratings. & Medium (UI/UX) & Monthly Elo-recalibration against human-label set. \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\section{This domain in context}
+\label{sec:agent-domain-context}
+Simula is the training-data workstream among the four domains. Its
+primary persona is the Training Engineer, whose working view is the
+Simula console surfaced through the shared workspace shell and gated
+by Simula entitlements. The domain's entry points are the schema
+sets and fixtures exported by Arabic AP, TB, and regulations, plus
+the HANA Cloud catalogue read via the extraction pipeline; its exit
+points are \texttt{TrainingExample} records emitted to the training
+corpus and Elo-calibrated complexity reports. Every artefact is
+validated against the Simula-owned schemas in
+\texttt{structured/schema/} before it leaves the pipeline. The
+domain is read-only with respect to the other three domains at the
+schema layer: it never mutates their records, and it never calls
+their runtime MCP tools. The horizontal regulations wrapper governs
+Simula calls like any other domain.
+
+\section{Schema contribution}
+\label{sec:agent-schema-contrib}
+Simula owns the schemas catalogued in
+chapter~\ref{chap:schema}, including the training-example record,
+the schema-registry record, the taxonomy structure, and the
+enumerations listed there. These schemas live under
+\texttt{docs/latex/specs/simula/} as normative text and under
+\texttt{structured/schema/} as the JSON Schema artefacts consumed by
+the pipeline at \texttt{src/training/pipeline/}. Registration in the
+unified registry is additive: each schema is listed in
+\texttt{src/intelligence/ai-core-pal/data\_products/registry.yaml}
+with its URI, owning domain (\texttt{simula}), security class
+(\texttt{confidential}), and LLM routing (\texttt{vllm-only}),
+following the ODPS~4.1 pattern already documented for HANA training
+data products in that file. Simula also consumes the schemas owned
+by Arabic, TB, and regulations as inputs; the contract is strictly
+schema-in, \texttt{TrainingExample}-out. Simula performs no schema
+merges; the two \texttt{requirement.schema.json} files in TB and
+regulations remain distinct when Simula reads them.
+
+\section{Persona and MCP allow-list}
+\label{sec:agent-persona}
+\begin{itemize}
+  \item \textbf{Persona id:} \texttt{training-engineer}.
+  \item \textbf{Roles:} schema extraction, taxonomy authoring,
+    training-data synthesis supervision, critic-calibration review,
+    corpus export.
+  \item \textbf{Entitlements:} read/write on the training-example
+    record, schema-registry record, and taxonomy structure; read on
+    every other domain's schemas (Arabic, TB, regulations);
+    run-execute on Simula pipeline stages described in
+    chapter~\ref{chap:generator}.
+  \item \textbf{UI route:} \texttt{/simula/\{tenant\}/console} on the
+    shared workspace shell; surfaced only to callers whose
+    entitlement set includes \texttt{training-engineer}.
+  \item \textbf{MCP tool allow-list:}
+    \texttt{simula.schema.extract}, \texttt{simula.taxonomy.build},
+    \texttt{simula.generate.examples},
+    \texttt{simula.critic.calibrate},
+    \texttt{simula.evaluate.coverage},
+    \texttt{simula.evaluate.diversity},
+    \texttt{simula.corpus.export}. All other MCP tools are denied by
+    default per MAS MGF pillar~1.
+\end{itemize}
+
+\section{Implementation tasks for this domain}
+\label{sec:agent-tasks}
+The tasks below are intent-based: each task states the outcome a
+future agent must achieve and the location in the existing codebase
+where the work belongs. None of them contains code; each task binds
+to the Simula sections that define the required behaviour.
+
+\subsubsection{Task S1 --- HANA schema extraction.}
+\textbf{Intent.} Realise the HANA schema extraction pipeline in
+chapter~\ref{chap:extraction}, covering MCP discovery, table
+enumeration, column extraction, and registry population.
+
+\begin{adrbox}{Why Direct SQL Metadata?}
+We chose direct SQL-metadata extraction over high-level MCP discovery for the baseline to ensure we capture SAP-specific table types (Global Temporary, Row-Store) that standard MCP tools often omit.
+\end{adrbox}
+
+\textbf{In-scope.} Each of the four stages in the pipeline figure
+(\ref{fig:extraction-pipeline}); schema registry writer; per-table
+dimension/measure classification.
+\textbf{Out-of-scope.} Non-HANA backends.
+\textbf{Paths to extend.} \texttt{src/training/pipeline/} extraction
+module; registry writer that emits entries conforming to the
+schema-registry record.
+\textbf{Definition of done.} Running extraction against a HANA
+Cloud catalogue produces a registry populated with every in-scope
+table; registry entries validate against the schema-registry record.
+
+\textbf{Autonomous Verification (Agent Logic):}
+\begin{lstlisting}[language=jsonx]
+// Verify Task S1
+{
+  "test_fixture": "tests/fixtures/simula/hana_mock.sql",
+  "expected_outcome": "table_count == 14",
+  "validation_command": "python src/simula/extract.py --verify-registry"
+}
+\end{lstlisting}
+
+\textbf{Verification.} Pipeline dry-run against the fixture store
+described in chapter~\ref{ch:test-fixtures} produces the expected
+registry entries.
+
+\subsubsection{Task S2 --- Taxonomy generation (Algorithm 1).}
+\textbf{Intent.} Implement Algorithm~1 (reasoning-driven taxonomy
+generation) from chapter~\ref{chap:taxonomy} in full, including all
+four steps (factor identification, breadth-first expansion,
+best-of-N proposal, critic refinement).
+\textbf{In-scope.} Per-step module with the checkpoints
+in~\ref{fig:taxonomy-stages}; taxonomy structure writer.
+\textbf{Out-of-scope.} Manual taxonomy authoring UI.
+\textbf{Paths to extend.} Taxonomy engine colocated with the
+pipeline.
+\textbf{Definition of done.} Running Algorithm~1 against an extracted
+registry produces a taxonomy that validates against the taxonomy
+structure schema and passes the coverage check in
+chapter~\ref{chap:evaluation}.
+\textbf{Verification.} Taxonomy engine unit tests pass; the
+coverage evaluator reports coverage within the chapter's target
+band.
+
+\subsubsection{Task S3 --- Agentic data synthesis (Algorithm 2).}
+\textbf{Intent.} Implement Algorithm~2 (agentic data synthesis) from
+chapter~\ref{chap:generator}, including all four steps (mix
+sampling, meta-prompt generation, complexification, example
+generation) and the double-critic validation.
+\textbf{In-scope.} The agent roster implied by
+\ref{fig:generator-stages}; vLLM TurboQuant routing for all LLM
+calls; complexification step and the two critic agents.
+\textbf{Out-of-scope.} Non-agentic synthesis paths.
+\textbf{Paths to extend.} Generation engine in
+\texttt{src/training/pipeline/}; vLLM client wrapper.
+\textbf{Definition of done.} Running Algorithm~2 against a taxonomy
+produces \texttt{TrainingExample} records that pass both critics and
+validate against the training-example record schema.
+\textbf{Verification.} Generation unit tests pass on fixture inputs;
+double-critic agreement rate meets the threshold in
+chapter~\ref{chap:evaluation}.
+
+\subsubsection{Task S4 --- Environment and CLI.}
+\textbf{Intent.} Deliver the environment and CLI surfaces specified
+in chapter~\ref{chap:config}, including the configuration table, CLI
+usage, and output files listed in~\ref{tab:outputs}.
+\textbf{In-scope.} Configuration loader; CLI subcommands for each
+pipeline stage; output-file writers.
+\textbf{Out-of-scope.} IDE integrations.
+\textbf{Paths to extend.} CLI module in
+\texttt{src/training/pipeline/}.
+\textbf{Definition of done.} Each configuration key in the
+configuration table is read and respected; the CLI runs end-to-end
+and produces every output file in~\ref{tab:outputs}.
+\textbf{Verification.} CLI smoke tests pass; output files match the
+schemas declared for them.
+
+\subsubsection{Task S5 --- Evaluation framework.}
+\textbf{Intent.} Deliver the evaluation framework in
+chapter~\ref{chap:evaluation}, including calibrated complexity
+scoring (Algorithm~3, Elo), taxonomic coverage evaluation,
+embedding-based diversity, and critic-calibration validation.
+\textbf{In-scope.} Each evaluator as a runnable function; report
+writers.
+\textbf{Out-of-scope.} Real-time evaluation dashboards beyond what
+the chapter defines.
+\textbf{Paths to extend.} Evaluation module in
+\texttt{src/training/pipeline/}.
+\textbf{Definition of done.} Each evaluator runs against a fixture
+corpus and emits a report that validates against the corresponding
+report schema.
+\textbf{Verification.} Evaluator unit tests pass; reports reproduce
+under fixed seeds.
+
+\subsubsection{Task S6 --- Test fixtures and testing.}
+\textbf{Intent.} Deliver the test fixtures specification in
+chapter~\ref{ch:test-fixtures} and the testing specification in
+chapter~\ref{ch:testing} at the coverage thresholds
+in~\ref{tab:simula-coverage}.
+\textbf{In-scope.} Invoice, OCR, taxonomy, and training-example
+fixtures; unit tests for taxonomy traversal and generation; CI
+wiring.
+\textbf{Out-of-scope.} Performance benchmarking infrastructure.
+\textbf{Paths to extend.} Test directory colocated with the Simula
+pipeline code.
+\textbf{Definition of done.} Coverage meets~\ref{tab:simula-coverage};
+CI gates block regressions.
+\textbf{Verification.} \texttt{make spec-simula} remains green; the
+Simula test entry points all run.
+
+
+\section{Governance obligations applied to this domain}
+\label{sec:agent-governance}
+The regulations domain wraps Simula at runtime. Four obligations
+apply without exception; each is stated as a concrete hook in the
+Simula codebase.
+
+\begin{itemize}
+  \item \textbf{MAS MGF four pillars} (see regulations
+    chapter~3 in
+    \texttt{docs/latex/specs/regulations/chapters/03-mgf-framework.tex}).
+    Pillar~1 (assess and bound): every Simula MCP tool is declared
+    in the allow-list in \S\ref{sec:agent-persona}, deny-by-default.
+    Pillar~2 (design and deploy): the pipeline stages in
+    chapter~\ref{chap:generator} are traceable end-to-end via the
+    per-request identity attribution described below. Pillar~3
+    (operate and monitor) and pillar~4 (govern and disclose) are
+    satisfied by emitting the evidence records produced by the
+    Simula evaluation framework (chapter~\ref{chap:evaluation}) into
+    the shared governance store.
+  \item \textbf{Identity attribution} (regulations chapter~10,
+    \texttt{10-identity-attribution.tex}). Every MCP call and every
+    pipeline run carries the persona id, agent id, request id, and
+    tenant id. The gateway is the attachment point; Simula code
+    propagates the identity envelope without mutating it.
+  \item \textbf{Emergent-capability monitoring} (regulations
+    chapter~8, \texttt{08-monitoring-spec.tex}). Extraction,
+    taxonomy generation, synthesis, and evaluation steps are
+    instrumented with the monitoring metrics specified in that
+    chapter; metrics flow to the monitoring sink defined there.
+  \item \textbf{Conformance tooling} (regulations chapter~6,
+    \texttt{06-conformance-tooling.tex}). The Simula service
+    exposes AI Verify 2.0 plug-in hooks and Moonshot CI/CD 1.1.0
+    benchmark entry points as required by that chapter.
+\end{itemize}
+
+\section{Cross-spec integration --- full detail}
+\label{sec:agent-integration}
+
+\subsection{With Arabic AP}
+Simula consumes Arabic's schemas and fixtures as training input. The
+contract is schema-in, \texttt{TrainingExample}-out: Simula reads
+\texttt{invoice.schema.json}, \texttt{vat-checklist.schema.json}, and
+the Arabic fixture store; it produces \texttt{TrainingExample}
+records. Simula does not call Arabic MCP tools at runtime and does
+not share state with the Arabic workflow. No cross-domain
+operational envelope is introduced.
+
+\subsection{With Trial Balance}
+Simula consumes TB's schemas and fixtures as training input. The
+contract is schema-in, \texttt{TrainingExample}-out: Simula reads
+the TB schema set and the TB fixture store; it produces
+\texttt{TrainingExample} records. Simula does not call TB MCP tools
+at runtime and does not share state with the TB workflow.
+
+\subsection{With Regulations}
+Regulations wraps Simula at runtime. Every Simula MCP call is
+brokered through the regulations governance gate, which applies
+pillars~1--4 of MAS MGF, attaches the identity envelope, and routes
+emergent-capability metrics to the monitoring store. The Simula
+service code does not call regulations directly; the gateway layer
+enforces this. Simula also consumes regulations' schemas
+(requirement, conformance-tool, monitoring metrics, identity and
+audit) as training input.
+
+\subsection{With Simula}
+Simula exports the training-example record, the schema-registry
+record, the taxonomy structure, and the enum vocabularies under
+\texttt{structured/schema/} (chapter~\ref{chap:schema}); registers
+the MCP tools enumerated in \S\ref{sec:agent-persona}; and applies
+the four governance hooks in \S\ref{sec:agent-governance} to every
+call it serves. External consumers see Simula only through these
+contracts and through the corpus it emits; there are no private
+back-channels.
+
+\section{Wave assignment and sequencing}
+\label{sec:agent-waves}
+Implementation runs in three waves.
+
+\begin{itemize}
+  \item \textbf{Wave 1 --- foundations.} Unified schema registry
+    entry; persona-gated surface for the Training Engineer;
+    identity attribution envelope flowing through the gateway; HANA
+    extraction pipeline (Task S1). Prerequisites: the regulations
+    chapter~10 identity schema must be frozen.
+  \item \textbf{Wave 2 --- Simula core build-out.} Tasks S2, S3, S4,
+    S5. Prerequisites: Wave~1 complete; vLLM TurboQuant endpoint
+    reachable; Arabic, TB, and regulations schema sets published.
+  \item \textbf{Wave 3 --- hardening and conformance.} Task S6 and
+    full conformance-tooling hook-up. Prerequisites: Wave~2
+    complete; regulations Wave~2 conformance tooling integrated;
+    monitoring sink live.
+\end{itemize}
+
+Simula occupies Wave~1 for its extraction pipeline (because other
+domains depend on Simula's fixtures being reachable), Wave~2 for its
+core build-out, and Wave~3 for its testing and conformance surfaces.
+
+\section{Acceptance criteria (platform-wide)}
+\label{sec:agent-acceptance}
+When all four chapter~12 instruction sets are implemented, the
+platform satisfies the following invariants:
+
+\begin{enumerate}
+  \item \textbf{One instance.} A single codebase runs a single
+    logical instance; no domain ships as a separate product.
+  \item \textbf{Persona-gated surfaces.} The four personas each
+    reach a tailored UI on the shared shell; no route, MCP tool, or
+    data product is visible outside its persona's entitlement set.
+  \item \textbf{Unified registry.} Every schema in use is listed in
+    the ODPS~4.1 registry under its owning domain; validators
+    resolve \texttt{\$ref}s through the unified registry only.
+  \item \textbf{No schema merges.} The two
+    \texttt{requirement.schema.json} files in TB and regulations
+    remain distinct; no cross-domain composite schemas are produced.
+  \item \textbf{No cross-domain operational envelope.} Runtime
+    orchestration stays within each domain's service; only Simula
+    consumes other domains' outputs, and only as training input.
+  \item \textbf{Governance wraps all three non-regulations domains.}
+    Arabic, TB, and Simula service calls pass through the
+    regulations runtime wrapper without exception.
+\end{enumerate}
+
+\section{References}
+\label{sec:agent-references}
+Within-spec references:
+chapter~\ref{chap:overview} (overview),
+chapter~\ref{chap:schema} (data schema),
+chapter~\ref{chap:extraction} (HANA extraction pipeline),
+chapter~\ref{chap:taxonomy} (taxonomy engine, Algorithm~1),
+chapter~\ref{chap:generator} (generation engine, Algorithm~2),
+chapter~\ref{chap:config} (environment and CLI),
+chapter~\ref{chap:evaluation} (evaluation framework),
+chapter~\ref{ch:test-fixtures} (test fixtures),
+chapter~\ref{ch:testing} (testing specification),
+chapter~\ref{sec:sim-roadmap} (project roadmap).
+
+Peer chapter~12 instruction sets for the other three domains (each
+is self-contained; consult directly when operating in that domain):
+\begin{itemize}
+  \item Arabic AP:
+    \texttt{docs/latex/specs/arabic/chapters/12-implementation-instructions.tex}.
+  \item Trial Balance:
+    \texttt{docs/latex/specs/tb/chapters/12-implementation-instructions.tex}.
+  \item Regulations:
+    \texttt{docs/latex/specs/regulations/chapters/12-implementation-instructions.tex}.
+\end{itemize}
+
+Shared platform artefacts:
+\begin{itemize}
+  \item ODPS~4.1 registry:
+    \texttt{src/intelligence/ai-core-pal/data\_products/registry.yaml}.
+  \item Schema pipeline and resolver:
+    \texttt{src/intelligence/schema\_pipeline/}.
+  \item Training pipeline (Simula):
+    \texttt{src/training/pipeline/}.
+  \item Shared workspace shell:
+    \texttt{generativeUI/training-webcomponents-ngx}.
+\end{itemize}

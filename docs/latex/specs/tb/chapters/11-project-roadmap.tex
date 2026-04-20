@@ -93,7 +93,7 @@ schedule and scope can absorb delivery risk without a release slip.
 (critical path); blue are Should (allowance); dotted green are Could
 (discretionary). Solid arrows are hard prerequisites; dashed arrows
 indicate conditional starts (the target is unlocked when the upstream
-completes \emph{and} the v2.0 trigger in \cref{sec:v2-trigger} fires).}
+completes \emph{and} the v2.0 trigger fires).}
 \label{fig:tb-dependency-graph}
 \end{figure}
 
@@ -113,13 +113,13 @@ M02 & M01       & M & TB-ENG-002         & Statistical anomaly engine passes the
 M03 & M01       & M & TB-ENG-003         & OAuth 2.0 scopes enforced end-to-end (\cref{sec:dashboard-api-auth}). \\
 M04 & M02, M03  & M & REG-INTG-TB-001    & Identity-attribution wiring (reserve/complete) live in UAT. \\
 M05 & M04       & M & TB-BETA-001        & Beta cycle: HK LE only, AI parallel to manual, no business users yet. \\
-M06 & M05       & M & TB-PARALLEL-001    & Beta parallel-run gate passes (\cref{sec:tb-parallel-run}). \\
+M06 & M05       & M & TB-PARALLEL-001    & Beta parallel-run gate passes. \\
 M07 & M06       & M & TB-GA-001          & GA sign-off by Head of Africa GFS; HK goes live. \\
 M08 & M07       & M & TB-BC-REFRESH      & Business-case refresh and compliance attestation (first cycle after GA; then annual). \\
 S01 & M07       & S & TB-WAVE-002        & Rollout wave 2: three further LEs onboarded via entity-params (\cref{sec:params-234}). \\
 S02 & S01       & S & TB-WAVE-003        & Rollout wave 3: cumulative 12 LEs live. \\
 S03 & S02       & S & TB-WAVE-N          & Subsequent waves through full 234-LE coverage (repeated application of the onboarding runbook). \\
-C01 & M07 + \cref{sec:v2-trigger} trigger & C & TB-V2-KICKOFF & v2.0 ML anomaly programme kickoff (Chapter~\ref{ch:future-ml}). \\
+C01 & M07 + v2.0 trigger & C & TB-V2-KICKOFF & v2.0 ML anomaly programme kickoff (Chapter~\ref{ch:future-ml}). \\
 C02 & M07       & C & TB-COMMENTARY-TUNE & Quarterly commentary-prompt retraining from accept/edit telemetry. \\
 W01 & ---       & W & TB-V1-ML           & ML-based anomaly detection is \emph{not} in v1.0 scope (see \cref{ch:future-ml}). \\
 W02 & ---       & W & TB-V1-FULL-234     & Full 234-LE rollout is \emph{not} in v1.0 scope; scope for v1.0 ends at wave 3. \\
@@ -200,7 +200,7 @@ that first consumes the dependency, not in calendar time.
 \textbf{Component} & \textbf{Owner} & \textbf{First consumed by} & \textbf{Impact if late} \\ \midrule
 Audit service (reserve/complete, immutable storage) & Regulations project & M04 (REG-INTG-TB-001) & No Beta gate possible without this; TB GA slips in lockstep with the audit service. \\
 Unified schema registry (\path{docs/schema/}) & Shared infra & M01 & Already \texttt{migration.status=complete}; no remaining risk. \\
-vLLM hosting (\texttt{vllm-only} policy) & Shared platform & M02 & Graceful-degradation ladder (\cref{sec:degradation-ladder}) provides fallback; slip tolerable. \\
+vLLM hosting (\texttt{vllm-only} policy) & Shared platform & M02 & Graceful-degradation ladder defined in the Regulations spec provides fallback; slip tolerable. \\
 Review dashboard infra (SAPUI5 + BTP destination) & Shared platform & M01 & Degrade to read-only evidence mirror on Shared Drive; EUC retirement timeline reopens. \\
 \bottomrule
 \end{tabularx}
@@ -229,7 +229,7 @@ on the following rhythm:
   \item \textbf{Mandatory refresh}: at the first cycle after GA, and
         annually thereafter (ticket TB-BC-REFRESH, priority M in
         \cref{tab:tb-milestones}). Refresh packet includes volume
-        assumptions, unit economics (\cref{sec:tb-unit-economics}),
+        assumptions, unit economics,
         FTE leverage realised vs.\ forecast, and a deviation statement
         against the 2025-12-14 baseline.
   \item \textbf{Trigger-based refresh}: any of

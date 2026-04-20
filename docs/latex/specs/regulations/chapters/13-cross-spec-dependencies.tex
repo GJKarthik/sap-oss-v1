@@ -1,0 +1,183 @@
+% =============================================================================
+% Chapter 13: Cross-Specification Dependencies
+% Regulations and AI Governance Specification
+% =============================================================================
+
+\chapter{Cross-Specification Dependencies}
+\label{ch:cross-spec}
+
+This chapter documents how the Regulations and AI Governance specification
+integrates with the other three SAP OSS specifications. All dependencies
+are traceable to \texttt{docs/schema/registry.json} (v1.2.0).
+
+% -----------------------------------------------------------------------------
+\section{Architecture Position}
+\label{sec:arch-position}
+
+The Regulations specification occupies the \textbf{horizontal governance wrapper}
+position in the four-domain architecture:
+
+\begin{itemize}
+  \item \textbf{Wraps}: Arabic AP (all AI-powered stages)
+  \item \textbf{Wraps}: Trial Balance (all AI-powered stages)
+  \item \textbf{Wraps}: Simula (training data governance)
+  \item \textbf{Downstream}: Audit logs, compliance reports, conformance results
+\end{itemize}
+
+% -----------------------------------------------------------------------------
+\section{Schema Dependencies}
+\label{sec:schema-deps}
+
+\subsection{Schemas Owned by Regulations}
+
+\begin{tabularx}{\linewidth}{@{}l l X@{}}
+\toprule
+\textbf{Schema} & \textbf{Status} & \textbf{Purpose} \\
+\midrule
+regulation.schema.json & stable & MAS MGF requirement tracking \\
+requirement.schema.json & stable & Individual requirement status \\
+conformance-tool.schema.json & stable & AI Verify/Moonshot integration \\
+corpus.schema.json & stable & Red-team prompt library \\
+agent-identity.schema.json & stable & AI action attribution \\
+audit-event.schema.json & stable & Audit trail events \\
+\bottomrule
+\end{tabularx}
+
+\subsection{Schemas Consumed from Other Domains}
+
+\begin{tabularx}{\linewidth}{@{}l l X@{}}
+\toprule
+\textbf{Schema} & \textbf{Source} & \textbf{Usage} \\
+\midrule
+base-types.yaml & common & Shared type definitions \\
+enums.yaml & common & Requirement status values \\
+decision-point.schema.json & tb & Human approval checkpoints \\
+\bottomrule
+\end{tabularx}
+
+% -----------------------------------------------------------------------------
+\section{MAS MGF Four Pillars Application}
+\label{sec:pillar-application}
+
+\subsection{Pillar 1: Assess \& Bound Risks}
+
+Applied to all three operational domains:
+
+\begin{itemize}
+  \item \textbf{Arabic AP}: MCP tool allow-list (invoice processing tools only)
+  \item \textbf{Trial Balance}: MCP tool allow-list (TB analysis tools only)
+  \item \textbf{Simula}: Training data bounds (no PII, synthetic only)
+\end{itemize}
+
+\subsection{Pillar 2: Human Accountability}
+
+Human approval checkpoints across domains:
+
+\begin{itemize}
+  \item \textbf{Arabic AP}: DP-AP-001 through DP-AP-004 (see Arabic Ch.13)
+  \item \textbf{Trial Balance}: DP-001 through DP-005 (see TB Ch.13)
+  \item \textbf{Simula}: Schema extraction approval, corpus sign-off
+\end{itemize}
+
+\subsection{Pillar 3: Technical Controls}
+
+Cross-domain monitoring and testing:
+
+\begin{itemize}
+  \item Drift monitoring signals from all AI stages (Chapter 8)
+  \item Emergent capability monitoring (Chapter 8)
+  \item AI Verify/Moonshot conformance testing (Chapter 6)
+\end{itemize}
+
+\subsection{Pillar 4: End-User Responsibility}
+
+Training and awareness programs:
+
+\begin{itemize}
+  \item AP clerk training for Arabic AP users (Chapter 9)
+  \item Financial controller training for TB users (Chapter 9)
+  \item Automation bias awareness across all domains
+\end{itemize}
+
+% -----------------------------------------------------------------------------
+\section{Arabic AP Integration}
+\label{sec:arabic-integration}
+
+Regulations wraps all Arabic AP AI-powered stages:
+
+\begin{itemize}
+  \item \textbf{OCR Stage}: Emergent capability monitoring
+  \item \textbf{Field Extraction}: Drift monitoring, confidence thresholds
+  \item \textbf{VAT Engine}: Audit logging, human approval for HOLD/REJECT
+  \item \textbf{AP Workflow}: Identity attribution for all AI actions
+  \item Cross-reference: See Arabic AP specification Chapter 13
+\end{itemize}
+
+% -----------------------------------------------------------------------------
+\section{Trial Balance Integration}
+\label{sec:tb-integration}
+
+Regulations wraps all TB AI-powered stages:
+
+\begin{itemize}
+  \item \textbf{Anomaly Detection}: Drift monitoring, false positive tracking
+  \item \textbf{Commentary Generation}: Quality metrics, human review
+  \item \textbf{Decision Points}: DP-001 through DP-005 checkpoints
+  \item \textbf{TB Workflow}: Identity attribution for all AI actions
+  \item Cross-reference: See TB specification Chapter 13
+\end{itemize}
+
+% -----------------------------------------------------------------------------
+\section{Simula Integration}
+\label{sec:simula-integration}
+
+Regulations governs Simula training data generation:
+
+\begin{itemize}
+  \item \textbf{Schema Extraction}: DBA approval required
+  \item \textbf{Training Corpus}: Domain SME sign-off
+  \item \textbf{Data Provenance}: Lineage tracking (Chapter 7)
+  \item \textbf{Quality Metrics}: Training data quality monitoring (Chapter 8)
+  \item Cross-reference: See Simula specification Chapter 13
+\end{itemize}
+
+% -----------------------------------------------------------------------------
+\section{Cross-Reference Summary}
+\label{sec:xref-summary}
+
+\begin{longtable}{@{}p{3.5cm}p{4cm}p{5cm}@{}}
+\toprule
+\textbf{Target Spec} & \textbf{Chapter} & \textbf{Integration Point} \\
+\midrule
+\endhead
+Arabic AP & Ch.3 (AI Pipeline) & OCR/extraction governance \\
+Arabic AP & Ch.4 (VAT Engine) & Audit logging, human checkpoints \\
+Arabic AP & Ch.12 (Implementation) & MCP tool allow-list \\
+\midrule
+Trial Balance & Ch.3 (AI Pipeline) & Anomaly detection governance \\
+Trial Balance & Ch.4 (Controls Engine) & Commentary quality monitoring \\
+Trial Balance & Ch.12 (Implementation) & MCP tool allow-list \\
+\midrule
+Simula & Ch.3 (Extraction) & Schema extraction approval \\
+Simula & Ch.5 (Generation) & Training corpus governance \\
+Simula & Ch.12 (Implementation) & Data provenance tracking \\
+\bottomrule
+\caption{Regulations cross-specification references}
+\end{longtable}
+
+% -----------------------------------------------------------------------------
+\section{Governance Wrapper Architecture}
+\label{sec:wrapper-arch}
+
+The Regulations domain acts as a horizontal wrapper around all AI-powered
+stages in the other three specifications:
+
+\begin{enumerate}
+  \item All MCP tools are gated through the allow-list (Pillar 1)
+  \item All material decisions require human approval (Pillar 2)
+  \item All AI actions are monitored for drift/emergence (Pillar 3)
+  \item All users receive training on automation bias (Pillar 4)
+\end{enumerate}
+
+This ensures consistent governance across the entire SAP OSS platform while
+allowing each domain to focus on its specific functionality.

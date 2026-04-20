@@ -1,0 +1,149 @@
+% =============================================================================
+% Chapter 13: Cross-Specification Dependencies
+% Trial Balance Review Specification
+% =============================================================================
+
+\chapter{Cross-Specification Dependencies}
+\label{ch:cross-spec}
+
+This chapter documents how the Trial Balance Review specification integrates
+with the other three SAP OSS specifications. All dependencies are traceable
+to \texttt{docs/schema/registry.json} (v1.2.0).
+
+% -----------------------------------------------------------------------------
+\section{Architecture Position}
+\label{sec:arch-position}
+
+The Trial Balance specification occupies the \textbf{month-end close} position
+in the four-domain architecture:
+
+\begin{itemize}
+  \item \textbf{Upstream}: Arabic AP (posted AP records feed variance explanations)
+  \item \textbf{Downstream}: FORTM reporting (signed review packs)
+  \item \textbf{Horizontal}: Regulations (governance wrapper for all AI stages)
+  \item \textbf{Training}: Simula (consumes TB schemas for training data generation)
+\end{itemize}
+
+% -----------------------------------------------------------------------------
+\section{Schema Dependencies}
+\label{sec:schema-deps}
+
+\subsection{Schemas Owned by Trial Balance}
+
+\begin{tabularx}{\linewidth}{@{}l l X@{}}
+\toprule
+\textbf{Schema} & \textbf{Status} & \textbf{Consumed By} \\
+\midrule
+tb-extract.schema.json & stable & Simula (training) \\
+pl-extract.schema.json & stable & Simula (training) \\
+variance-record.schema.json & stable & Internal only \\
+commentary-draft.schema.json & stable & Internal only \\
+decision-point.schema.json & stable & Regulations (checkpoints) \\
+entity-params.schema.json & stable & Internal only \\
+\bottomrule
+\end{tabularx}
+
+\subsection{Schemas Consumed from Other Domains}
+
+\begin{tabularx}{\linewidth}{@{}l l X@{}}
+\toprule
+\textbf{Schema} & \textbf{Source} & \textbf{Usage} \\
+\midrule
+base-types.yaml & common & Currency, amounts, dates \\
+enums.yaml & common & Account categories, variance flags \\
+invoice.schema.json & arabic & AP records as evidence \\
+requirement.schema.json & regulations & Compliance tracking \\
+agent-identity.schema.json & regulations & AI action attribution \\
+\bottomrule
+\end{tabularx}
+
+% -----------------------------------------------------------------------------
+\section{Regulations Integration}
+\label{sec:reg-integration}
+
+The TB pipeline is wrapped by the Regulations domain's MAS MGF framework:
+
+\subsection{Pillar 1: Assess \& Bound Risks}
+
+\begin{itemize}
+  \item MCP tool allow-list defined in Chapter~\ref{ch:implementation}
+  \item Reversibility: Commentary drafts are suggestions, not final postings
+  \item Autonomy bounds: Material variances require human approval
+\end{itemize}
+
+\subsection{Pillar 2: Human Accountability}
+
+Human approval checkpoints (see Regulations Ch.3):
+\begin{itemize}
+  \item DP-001: Material variance detected ($>$30\% MoM)
+  \item DP-002: Journal posting confirmation
+  \item DP-003: Further investigation required
+  \item DP-004: Third-party confirmation pending
+  \item DP-005: Unexplained variance escalation
+\end{itemize}
+
+\subsection{Pillar 3: Technical Controls}
+
+\begin{itemize}
+  \item Drift monitoring: Commentary quality tracked per Regulations Ch.8
+  \item Anomaly detection accuracy: False positive rate monitored
+  \item Conformance testing: AI Verify hooks per Regulations Ch.6
+\end{itemize}
+
+\subsection{Pillar 4: End-User Responsibility}
+
+\begin{itemize}
+  \item Financial controller training curriculum per Regulations Ch.9
+  \item Automation bias awareness for variance approval decisions
+\end{itemize}
+
+% -----------------------------------------------------------------------------
+\section{Simula Integration}
+\label{sec:simula-integration}
+
+The Simula Training Data Framework consumes TB schemas:
+
+\begin{itemize}
+  \item \textbf{tb-extract.schema.json} $\rightarrow$ Training examples for account analysis
+  \item \textbf{pl-extract.schema.json} $\rightarrow$ Training examples for P\&L commentary
+  \item \textbf{variance-record.schema.json} $\rightarrow$ Variance explanation training
+  \item \textbf{HANA metadata} $\rightarrow$ Schema extraction for ACDOCA/BSEG queries
+\end{itemize}
+
+See Simula specification Chapter 3 for schema extraction details.
+
+% -----------------------------------------------------------------------------
+\section{Arabic AP Integration}
+\label{sec:arabic-integration}
+
+Trial Balance consumes upstream data from Arabic AP:
+
+\begin{itemize}
+  \item Posted AP invoices appear as liability movements in TB extract
+  \item AP records serve as evidence for variance explanations
+  \item Vendor payment history supports commentary generation
+  \item Cross-reference: See Arabic AP specification Chapter 5 (AP Workflow)
+\end{itemize}
+
+% -----------------------------------------------------------------------------
+\section{Cross-Reference Summary}
+\label{sec:xref-summary}
+
+\begin{longtable}{@{}p{3.5cm}p{4cm}p{5cm}@{}}
+\toprule
+\textbf{Target Spec} & \textbf{Chapter} & \textbf{Integration Point} \\
+\midrule
+\endhead
+Regulations & Ch.3 (MGF Framework) & Four-pillar compliance \\
+Regulations & Ch.6 (Conformance) & AI Verify/Moonshot hooks \\
+Regulations & Ch.8 (Monitoring) & Drift and emergent capabilities \\
+Regulations & Ch.10 (Identity) & Agent action attribution \\
+\midrule
+Simula & Ch.3 (Schema Extraction) & TB schema consumption \\
+Simula & Ch.5 (Training Examples) & Variance analysis training \\
+\midrule
+Arabic AP & Ch.5 (AP Workflow) & Posted invoices as evidence \\
+Arabic AP & Ch.2 (Data Schema) & Invoice schema for lookups \\
+\bottomrule
+\caption{Trial Balance cross-specification references}
+\end{longtable}

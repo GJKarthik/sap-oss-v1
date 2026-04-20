@@ -1,0 +1,3548 @@
+% !TEX program = xelatex
+\documentclass[11pt,a4paper,twoside]{report}
+
+\usepackage{xcolor}
+\usepackage[a4paper,margin=28mm]{geometry}
+\usepackage{graphicx}
+\usepackage{microtype}
+\usepackage{setspace}
+\usepackage{parskip}
+\usepackage{booktabs}
+\usepackage{tabularx}
+\usepackage{longtable}
+\usepackage{array}
+\usepackage{multirow}
+\usepackage{enumitem}
+\usepackage{amssymb}
+\usepackage{listings}
+\usepackage[hyphens]{url}
+\usepackage{tcolorbox}
+\usepackage{tikz}
+\usepackage[table]{colortbl}
+\usetikzlibrary{arrows.meta,positioning,shapes.geometric,fit,calc,chains,
+decorations.pathmorphing,backgrounds}
+
+\newtcolorbox{adrbox}[2][]{colback=blue!5,colframe=blue!75!black,fonttitle=\bfseries,title=ADR: #2,#1}
+
+% --- Semantic Hyperlinking --------------------------------------------------
+\usepackage{xr-hyper}
+\usepackage[hidelinks]{hyperref}
+
+% External references to peer specifications
+\externaldocument[reg:]{../regulations/regulations-spec}
+\externaldocument[tb:]{../tb/tb-review-spec}
+\externaldocument[sim:]{../simula/simula-training-spec}
+
+% --- Fonts and listings -----------------------------------------------------
+\usepackage{fontspec}
+\usepackage{polyglossia}
+\setmainlanguage{english}
+\setotherlanguage{arabic}
+\newfontfamily\arabicfont[Script=Arabic]{Geeza Pro}
+
+% --- cleveref must come AFTER hyperref but keep it here (post-babel) -------
+\usepackage[capitalize,noabbrev]{cleveref}
+
+\definecolor{codebg}{gray}{0.96}
+\definecolor{sapblue}{HTML}{0B5FA5}
+\definecolor{sapgreen}{HTML}{00695C}
+\definecolor{sapamber}{HTML}{B8360F}
+\definecolor{sapgrey}{HTML}{546E7A}
+\definecolor{sapmidnight}{HTML}{1C2B39}
+\definecolor{sapgold}{HTML}{F0AB00}
+\definecolor{apred}{HTML}{B71C1C}
+\definecolor{apblue}{HTML}{1565C0}
+\definecolor{apgreen}{HTML}{2E7D32}
+\definecolor{apgrey}{HTML}{546E7A}
+\definecolor{apamber}{HTML}{F0AB00}
+
+\lstdefinelanguage{jsonx}{
+basicstyle=\ttfamily\small,
+columns=fullflexible,
+breaklines=true,
+showstringspaces=false,
+comment=[l]{//},
+morestring=[b]",
+stringstyle=\color{sapgreen},
+keywordstyle=\color{sapblue},
+}
+
+\onehalfspacing
+\setlist{topsep=2pt,itemsep=1pt,parsep=0pt}
+\setlength{\emergencystretch}{3em}
+\tolerance=1000
+\hbadness=10000
+
+% --- Global Command Overrides -----------------------------------------------
+\newcommand{\corpus}{}
+\newcommand{\tool}{}
+\newcommand{\stateid}[1]{\textsc{\lowercase{#1}}}
+\newcommand{\ar}[1]{\foreignlanguage{arabic}{#1}}
+
+% --- Glossary Helper Commands -----------------------------------------------
+\definecolor{pathcolor}{HTML}{004D40}
+\newcommand{\schemapath}[1]{\texttt{\textcolor{pathcolor}{#1}}}
+\newcommand{\enumval}[1]{\texttt{\textcolor{sapgreen}{#1}}}
+\newcommand{\fieldref}[1]{\texttt{\textcolor{sapblue}{#1}}}
+
+\begin{document}
+
+\title{\vspace{-2em}\Large Multi-Country Accounts Payable Processing \\
+\textbf{Arabic Invoice AI Pipeline} \\
+\large Implementation Specification \\
+\small Ref: \texttt{AP-ARABIC-2026-v1.2}}
+\author{SAP-OSS Accounts Payable Team}
+\date{April 2026}
+
+\maketitle
+
+% --- Incorporated Executive Summary ---
+
+\chapter*{Abstract}
+\addcontentsline{toc}{chapter}{Abstract}
+
+This specification defines the full implementation of Standard Chartered
+Bank's multi-country Accounts Payable (AP) capability across the
+Middle~East \& Pakistan (MEP) footprint, with particular emphasis on the
+Arabic-language invoice processing pipeline sanctioned by the AI solutioning
+team under the initiative titled \emph{Arabic Invoice, Peer analysis,~\& Translation}
+and announced by Manoj Hemath Kumar on 2025-11-23. Three orthogonal
+workstreams are specified in full:
+
+\begin{itemize}
+\item an \textbf{Arabic-invoice AI pipeline} that ingests PDF or e-mail
+attachments, performs bilingual OCR and schema-guided field
+extraction, applies an Arabic$\to$English translation agent,
+and hands a validated record to downstream AP;
+\item a \textbf{multi-country VAT compliance engine} that enforces the
+regulator-specific checklists of ZATCA (Saudi Arabia), ETA
+(Egypt), NBR (Bahrain), and the Qatari counterparty conventions;
+\item an \textbf{AP workflow and approval engine} that formalises the
+seven activities of the Bahrain \emph{Accounts Payable Departmental
+Operating Instruction} (DOI) as explicit state machines.
+\end{itemize}
+
+All three workstreams consume a single canonical data schema
+(\cref{ch:schema}) defined in \corpus\texttt{structured/schema/}. The
+specification intentionally \emph{excludes} the downstream SAP/PeopleSoft
+integration, which is covered by a separate interface document.
+
+\paragraph{Reading order.} \Cref{ch:overview} situates the work;
+\cref{ch:schema} defines the normalised record types; \cref{ch:ai} covers
+the AI pipeline; \cref{ch:vat} covers the VAT engine; \cref{ch:ap}
+covers the AP workflow engine; \cref{ch:controls} specifies controls,
+testing, and acceptance; \cref{ch:references} is a traceability
+appendix linking every requirement to a source document and a structured
+record in \corpus\texttt{structured/}.
+
+\paragraph{Conventions.} Arabic fragments are set with the
+\texttt{Geeza Pro} font family, for example \ar{هيئة الزكاة والضريبة والجمارك}.
+File paths are typeset in \texttt{monospace} and are relative to the
+repository root. Enum values in running text appear in \textsc{small
+caps}; they are defined authoritatively in
+\corpus\texttt{structured/enums.yaml}.
+\chapter{Overview and scope}\label{ch:overview}
+
+\section{The problem}
+
+Standard Chartered Bank operates Accounts Payable across a heterogeneous
+regulatory and linguistic landscape. Depending on the country, an
+incoming invoice may be:
+
+\begin{itemize}
+\item issued by a national e-invoicing portal (Egypt's ETA, with a
+26-character \textsc{electronic\_id}; Saudi Arabia's ZATCA with
+an analogous assessment reference);
+\item purely Arabic (as in the two Egyptian invoices
+\texttt{3CPJR5CQ\ldots K10.pdf} and \texttt{B1STE8RH\ldots SJ10.pdf}
+and the Saudi VAT assessment \ar{اشعار صدور فاتورة});
+\item bilingual (Qatar's QCSD / EDAA memo);
+\item wholly English with pre-assigned GL coding (e.g.\ the Bahrain
+DOI-covered PO flow).
+\end{itemize}
+
+Today the Arabic-language material is handled manually: a finance analyst
+reads the PDF, transcribes key fields into an OTP/VAT checklist (see the
+Saudi Q3 2025 checklist in \corpus\texttt{source/Saudi\ldots OTP\ldots}),
+and routes it through the DOI approval chain. The November 2025 e-mail
+thread from Manoj Hemath Kumar identifies this manual path as the target
+for AI replacement.
+
+\section{Goals}
+
+The specification targets three outcomes, each with a direct lineage to
+the sample corpus in \corpus\texttt{source/}:
+
+\begin{enumerate}
+\item \textbf{Structured ingestion.} Every Arabic or bilingual invoice
+becomes a record conforming to
+\texttt{structured/schema/invoice.schema.json}
+(\cref{ch:schema}).
+\item \textbf{Deterministic compliance.} Every invoice is passed
+through a rule engine that emits a VAT compliance checklist
+conforming to \texttt{structured/schema/vat-checklist.schema.json}
+(\cref{ch:vat}), with the rule set derived from the
+regulator-specific controls in the corpus.
+\item \textbf{Auditable approval.} Every payment follows one of the
+four state machines in \corpus\texttt{structured/workflows/} and
+meets the controls enumerated in the Bahrain DOI
+(\cref{ch:ap,ch:controls}).
+\end{enumerate}
+
+\section{In-scope countries and counterparties}
+
+\begin{table}[htbp]
+\centering
+\caption{Countries in scope, with the controlling source document and
+the structured records derived from it.}
+\label{tab:countries}
+\small
+\begin{tabularx}{\linewidth}{@{}l l l X@{}}
+\toprule
+\textbf{Country} & \textbf{Authority} & \textbf{Currency} &
+\textbf{Source document(s)} \\ \midrule
+Egypt (EG)  & ETA   & EGP &
+\texttt{3CPJR5CQ\ldots K10.pdf},\newline\texttt{B1STE8RH\ldots SJ10.pdf} \\
+Saudi Arabia (SA) & ZATCA & SAR &
+\ar{اشعار صدور فاتورة} (005).pdf, \newline Saudi OTP/VAT Q3'25 checklist \\
+Qatar (QA)  & QTA   & QAR &
+EDAA Annual Fee 2025, \newline QCSD payment instruction \\
+Bahrain (BH) & NBR  & BHD &
+Accounts Payable DOI \\
+Iraq (IQ), UAE, PK & various & --- &
+\emph{Planned}; referenced in the initiative e-mail but formally
+out of scope until at least five sample invoices per jurisdiction
+are added to \texttt{source/} \\ \bottomrule
+\end{tabularx}
+\end{table}
+
+\section{System context}
+
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}[
+node distance=9mm and 13mm,
+box/.style={draw,rounded corners,minimum width=26mm,minimum height=9mm,
+align=center,font=\small},
+ext/.style={box,fill=blue!6},
+sys/.style={box,fill=green!7},
+ai/.style={box,fill=orange!10},
+ap/.style={box,fill=violet!8},
+arr/.style={-{Latex[length=2.2mm]},thick}
+]
+\node[ext] (eta)   {ETA portal\\(Egypt)};
+\node[ext,right=of eta] (zatca) {ZATCA portal\\(Saudi Arabia)};
+\node[ext,right=of zatca] (vendor) {Vendor PDFs\\e-mail/scan};
+
+\node[ai,below=12mm of zatca] (ai) {Arabic-invoice\\AI pipeline\\(Ch.~\ref{ch:ai})};
+
+\node[sys,below=of ai,xshift=-28mm] (vat) {VAT engine\\(Ch.~\ref{ch:vat})};
+\node[sys,below=of ai,xshift= 28mm] (wf)  {Approval engine\\(Ch.~\ref{ch:ap})};
+
+\node[ap,below=14mm of vat,xshift=28mm] (gl) {GL posting\\(out of scope)};
+
+\draw[arr] (eta)    -- (ai);
+\draw[arr] (zatca)  -- (ai);
+\draw[arr] (vendor) -- (ai);
+\draw[arr] (ai)     -- (vat);
+\draw[arr] (ai)     -- (wf);
+\draw[arr] (vat)    -- (gl);
+\draw[arr] (wf)     -- (gl);
+\end{tikzpicture}
+\caption{System context. Regulator portals (blue) and vendor PDFs feed
+the AI pipeline (orange), which emits canonical records to
+the deterministic VAT and approval engines (green). Downstream
+posting to GL is out of scope.}
+\label{fig:context}
+\end{figure}
+
+\section{Out of scope}
+
+The following are \emph{explicitly} out of scope for this document:
+
+\begin{itemize}
+\item Integration contracts with PeopleSoft PSAP/PSGL, eBBS, eOPS, and
+Tax-Q. These are covered by a separate interface specification.
+\item Vendor master-data on-boarding and the 48-hour screening service
+itself; this document assumes a screening result is available as
+a boolean precondition.
+\item The encrypted template
+\texttt{Business Instruction Template - V1.0 (002) (1).xlsm} and the
+duplicate \texttt{EDAA\ldots[65].pdf}; neither is referenced by
+any structured record.
+\item Peer/competitor analysis across jurisdictions, which the e-mail
+thread itself identifies as a separate initiative.
+\end{itemize}
+
+\section{Five-session engagement model}
+
+Per the e-mail, every country instance of this system follows a
+five-session agile discovery cadence
+(\Cref{tab:sessions}); the AI pipeline of \cref{ch:ai} is designed to
+advance with that cadence.
+
+\begin{table}[htbp]
+\centering
+\caption{Five-session engagement model (codified in
+\corpus\texttt{structured/enums.yaml}).}
+\label{tab:sessions}
+\small
+\begin{tabularx}{\linewidth}{@{}l l X@{}}
+\toprule
+\textbf{Code} & \textbf{Name} & \textbf{Goal} \\ \midrule
+\textsc{understand} & Session~1 & Map problem, define user journey, pick target. \\
+\textsc{sketch}     & Session~2 & Develop detailed solution design. \\
+\textsc{decide}     & Session~3 & Critique approaches, select best path. \\
+\textsc{prototype}  & Session~4 & Build practical system for use case. \\
+\textsc{test}       & Session~5 & Test with $\geq$5 stakeholders, gather feedback. \\
+\bottomrule
+\end{tabularx}
+\end{table}
+\chapter{Canonical data schema}\label{ch:schema}
+
+\section{Layout of \texttt{structured/}}
+
+The machine-readable corpus is organised as in \cref{tab:layout}.
+All records validate against a JSON Schema Draft~07 file under
+\corpus\texttt{structured/schema/}. The
+\corpus\texttt{structured/validate.py} script walks the tree, resolves
+\texttt{\$ref} entries via a local registry (so offline validation
+succeeds), and exits non-zero on any failure; it is the authoritative
+acceptance gate for this chapter.
+
+\begin{table}[htbp]
+\centering
+\caption{Directory layout under \corpus\texttt{structured/}.}
+\label{tab:layout}
+\small
+\begin{tabularx}{\linewidth}{@{}l X@{}}
+\toprule
+\textbf{Path} & \textbf{Contents} \\ \midrule
+\texttt{schema/invoice.schema.json}            & Canonical invoice / assessment record. \\
+\texttt{schema/vat-checklist.schema.json}      & Regulator checklist (KSA 11-point; extensible). \\
+\texttt{schema/payment-instruction.schema.json}& Vendor payment memo. \\
+\texttt{schema/approval-workflow.schema.json}  & Declarative state machine. \\
+\texttt{schema/doi-policy.schema.json}         & DOI with activities and controls. \\
+\texttt{invoices/*.json}                       & Invoice records (EG ETA ×2; SA ZATCA ×1). \\
+\texttt{payment-instructions/*.json}           & Qatar QCSD/EDAA records. \\
+\texttt{vat-checklists/*.json}                 & Saudi OTP/VAT Q3 2025. \\
+\texttt{policies/*.json}                       & Bahrain AP DOI. \\
+\texttt{workflows/*.json}                      & PO-eProc, manual-one-off, manual-recurring, VAT payment. \\
+\texttt{enums.yaml}                            & Controlled vocabulary. \\
+\texttt{corpus.json}                           & Flat index of every source $\leftrightarrow$ text $\leftrightarrow$ record link. \\
+\texttt{validate.py}                           & Offline validator. \\ \bottomrule
+\end{tabularx}
+\end{table}
+
+\section{Invoice record}
+
+The invoice record is the central object shared by ingestion (\cref{ch:ai}),
+the VAT engine (\cref{ch:vat}), and the approval engine
+(\cref{ch:ap}). \Cref{tab:invoice-fields} enumerates the top-level
+fields; \cref{lst:invoice-example} is a worked example taken verbatim
+from \corpus\path{structured/invoices/eg-eta-3CPJR5CQ4PNNN9A4XHBB370K10.json}.
+
+\begin{table}[htbp]
+\centering
+\caption{Top-level fields of \texttt{invoice.schema.json}.}
+\label{tab:invoice-fields}
+\small
+\begin{tabularx}{\linewidth}{@{}l l c X@{}}
+\toprule
+\textbf{Field} & \textbf{Type} & \textbf{Req.} & \textbf{Notes} \\ \midrule
+\texttt{id}               & string & \checkmark & Filename stem under \texttt{invoices/}. \\
+\texttt{metadata}         & object & \checkmark & Country, authority, dates, language, status. \\
+\texttt{seller}           & party  & \checkmark & Includes Arabic name, English name, \texttt{tax\_id\_type}. \\
+\texttt{buyer}            & party  & \checkmark & Same shape as seller. \\
+\texttt{line\_items[]}    & array  & --         & At least one of \texttt{description}, \texttt{description\_ar}, \texttt{description\_en}. \\
+\texttt{totals}           & object & \checkmark & \texttt{currency}, \texttt{gross} required. \\
+\texttt{tax\_period}      & object & --         & Populated for periodic assessments (ZATCA). \\
+\texttt{signature}        & object & --         & Kind $\in$ \{\textsc{seal}, \textsc{wet\_ink}, \textsc{digital}, \textsc{system\_generated}\}. \\
+\texttt{source\_document} & object & \checkmark & \texttt{path}, \texttt{sha256}, \texttt{ocr\_text\_path}. \\
+\texttt{notes[]}          & array  & --         & Free-form analyst notes. \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\begin{figure}[htbp]
+\begin{lstlisting}[language=jsonx,caption={Full invoice record for the
+Egypt ETA seal invoice (\texttt{eg-eta-3CPJR5CQ4PNNN9A4XHBB370K10}).
+Arabic strings are UTF-8; the LaTeX engine renders them RTL.},
+label=lst:invoice-example]
+{
+"id": "eg-eta-3CPJR5CQ4PNNN9A4XHBB370K10",
+"schema_ref": "invoice.schema.json",
+"metadata": {
+"country": "EG",
+"tax_authority": "ETA",
+"document_kind": "E_INVOICE",
+"electronic_id": "3CPJR5CQ4PNNN9A4XHBB370K10",
+"issue_date": "2025-07-15",
+"submission_date": "2025-07-15T16:10:00+00:00",
+"language": "ar",
+"status": "VALID"
+},
+"seller": {
+"name_ar": "محمد شريف شرف الدين",
+"tax_id": "438212282",
+"tax_id_type": "ETA_TRN",
+"activity_code": "1811"
+},
+"buyer": {
+"name_ar": "بنك ستاندرد تشارترد",
+"tax_id": "670307459",
+"tax_id_type": "ETA_TRN"
+},
+"line_items": [{
+"description_ar": "ختم ترودات دائرى 42 مللى سريلة",
+"description_en": "Circular Trodat seal 42mm, series",
+"quantity": 1, "unit_of_measure": "EA",
+"unit_price": 580000.00, "line_total": 580000.00
+}],
+"totals": {
+"currency": "EGP",
+"net": 580000.00, "vat_amount": 81200.00,
+"vat_rate_percent": 14, "vat_category": "FI",
+"gross": 661200.00
+},
+"source_document": {
+"path": "docs/arabic/source/3CPJR5CQ4PNNN9A4XHBB370K10.pdf",
+"sha256": "2b9126...4b2c0",
+"ocr_text_path": "docs/arabic/extracted-text/eg-eta-3CPJR...txt"
+}
+}
+\end{lstlisting}
+\end{figure}
+
+Invoice \textsc{electronic\_id} for ETA must match the regex in
+\corpus\texttt{structured/enums.yaml}
+(\verb|^[0-9A-Z]{26}$|); the ZATCA assessment number is a decimal prefix
+matching the taxpayer's \textsc{zatca\_tdn}. The \texttt{status} enum is
+\{\textsc{valid}, \textsc{invalid}, \textsc{pending}, \textsc{cancelled}\};
+ZATCA assessments are always \textsc{valid} on arrival.
+
+\section{Payment instruction record}
+\label{sec:payment-instruction-schema}
+
+The payment instruction record is emitted by the approval engine
+(\cref{ch:ap}) when a validated invoice and approval workflow reach a
+terminal state. \Cref{tab:payment-instruction-fields} enumerates the
+top-level fields of \texttt{payment-instruction.schema.json}. Two
+instance records are provided in the corpus under
+\texttt{structured/payment-instructions/}: the Qatar EDAA annual fee
+and the QCSD payment instruction referenced in the overview chapter.
+
+\begin{table}[htbp]
+\centering
+\caption{Top-level fields of \texttt{payment-instruction.schema.json}.}
+\label{tab:payment-instruction-fields}
+\small
+\begin{tabularx}{\linewidth}{@{}l l c X@{}}
+\toprule
+\textbf{Field} & \textbf{Type} & \textbf{Req.} & \textbf{Notes} \\ \midrule
+\texttt{id}               & string & \checkmark & Filename stem under \texttt{payment-instructions/}. \\
+\texttt{metadata}         & object & \checkmark & Country, tax authority (may be null), issue/due date, status, language. \\
+\texttt{payer}            & party  & \checkmark & Same party shape used in the invoice record (\cref{tab:invoice-fields}). \\
+\texttt{payee}            & party  & \checkmark & Vendor receiving the funds. \\
+\texttt{amount}           & object & \checkmark & \texttt{value} (number) and \texttt{currency} (ISO 4217 code). \\
+\texttt{payment\_method}  & string & \checkmark & One of \texttt{bank\_transfer}, \texttt{check}, \texttt{card}, \texttt{cash}, \texttt{other}. \\
+\texttt{reference}        & object & --         & Link back to the paying invoice (\texttt{invoice\_id}, \texttt{description}). \\
+\texttt{approval\_chain}  & array  & --         & Links to approval-workflow records that authorised the payment. \\
+\texttt{due\_date}        & string & \checkmark & ISO-8601 date. \\
+\texttt{status}           & string & \checkmark & One of \texttt{draft}, \texttt{approved}, \texttt{emitted}, \texttt{settled}, \texttt{cancelled}. \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\section{VAT compliance checklist}
+
+The KSA OTP/VAT checklist is encoded as an ordered array of items
+(\cref{tab:checklist-fields}). Each item records the regulator's
+question, the analyst's verdict (\textsc{y}/\textsc{n}/\textsc{na}), and
+the extracted value. The authoritative list is the eleven points in the
+Saudi Q3 2025 checklist; NBR (Bahrain) maintains an analogous set drawn
+from Activity~3 of the DOI.
+
+\begin{table}[htbp]
+\centering
+\caption{Fields of a VAT checklist record.}
+\label{tab:checklist-fields}
+\small
+\begin{tabularx}{\linewidth}{@{}l l c X@{}}
+\toprule
+\textbf{Field} & \textbf{Type} & \textbf{Req.} & \textbf{Notes} \\ \midrule
+\texttt{period}                 & object & \checkmark & \texttt{start}, \texttt{end}, \texttt{label}. \\
+\texttt{checklist[]}            & array  & \checkmark & Items indexed 1\dots$n$; each has \texttt{result} $\in$ \{Y,N,NA\}. \\
+\texttt{gl\_coding}             & object & \checkmark & Chart fields (account/product/dept/OU/class). \\
+\texttt{supplier}               & object & \checkmark & \texttt{supplier\_type} $\in$ \{\textsc{government}, \textsc{vendor}, \textsc{employee}, \textsc{inter\_bu}\}. \\
+\texttt{tax\_type\_classification} & string & \checkmark & VAT category enum. \\
+\texttt{withholding\_tax}       & object & --         & Rate and amount if applicable. \\
+\texttt{psid}                   & string & --         & Preparer PSID. \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\begin{figure}[htbp]
+\begin{lstlisting}[language=jsonx,caption={Excerpt from
+\texttt{structured/vat-checklists/sa-otp-vat-q3-2025.json}
+showing items 1--5 of the KSA 11-point checklist.},label=lst:checklist-excerpt]
+"checklist": [
+{"n": 1, "label": "Invoice in Arabic language",                   "result": "Y"},
+{"n": 2, "label": "Addressed to Standard Chartered Capital",      "result": "Y"},
+{"n": 3, "label": "Date of issue",                                "result": "Y", "value": "2025-10-30"},
+{"n": 4, "label": "Sequential number",                            "result": "Y", "value": "3003093648253002"},
+{"n": 5, "label": "Tax Identification Number (15-digit)",         "result": "NA",
+"regulation": "Supplier is ZATCA itself -- government body"}
+],
+\end{lstlisting}
+\end{figure}
+
+\section{Payment instruction}
+
+Derived from the Qatar QCSD instruction. The approval chain is an array
+of typed signatories; each entry carries PSID, role, and approval
+timestamp --- giving a tamper-evident audit trail once hashed.
+The \texttt{chart\_field} is stored as a dash-separated composite
+string (e.g.\ \texttt{665011-4551-800} = account-product-operating\_unit)
+because this is the convention used by the source memos.
+
+\section{Approval workflow}
+
+Each workflow record is a deterministic state machine. States are nodes;
+transitions are edges tagged with a trigger and, where relevant, a
+\texttt{required\_role} and a list of \texttt{preconditions}. The
+\texttt{delegation\_of\_authority} array gates roles by LCY threshold and
+is consulted by the approval engine before any transition out of a
+``$x$-approved'' state. Four workflow instances are shipped in the corpus:
+
+\begin{itemize}
+\item \texttt{po-eproc} --- PO / eProcurement path (DOI Activity~3);
+\item \texttt{manual-one-off} --- one-off manual payment (DOI Activity~5);
+\item \texttt{manual-recurring} --- recurring manual with dispensation (DOI Activity~5);
+\item \texttt{vat-payment} --- authority-counterparty (e.g.\ ZATCA) path.
+\end{itemize}
+
+\section{DOI policy}
+
+The Bahrain Accounts Payable DOI is represented as a
+\texttt{doi-policy} record whose \texttt{activities[]} array preserves
+the original numbering (1--7) and whose \texttt{controls[]} array gives
+each control an ID, description, pointer back to the activity, and the
+risk it mitigates. This is what the approval engine consults to decide
+\emph{which} workflow instance applies to a given invoice.
+
+\section{Enumerations}
+
+The file \corpus\texttt{structured/enums.yaml} is the single source of
+truth for controlled vocabulary used across the corpus: country codes,
+tax-authority codes and portal URLs, VAT category codes,
+\texttt{tax\_id\_type} regexes, business-unit codes, approval-role
+codes, payment methods, and the five AI-session phase codes. Any new
+enum value must be added to \texttt{enums.yaml} \emph{before} being
+used in a schema or record; \texttt{validate.py} enforces this.
+
+\section{Provenance}
+
+Each record stores the SHA-256 of its source document in
+\texttt{source\_document.sha256}. Reproducing the corpus from the
+originals is therefore a single command:
+\begin{lstlisting}[language=bash,basicstyle=\ttfamily\small]
+find docs/arabic/source -type f -print0 \
+| xargs -0 shasum -a 256 \
+| diff - <(jq -r '.items[] | select(.sha256) | "\(.sha256)  \(.source_path)"' \
+docs/arabic/structured/corpus.json | sed 's|docs/arabic/source/||')
+\end{lstlisting}
+A clean diff proves the corpus is unaltered since the last
+specification snapshot.
+
+\section{Unified Schema Registry}
+
+As of 18 April 2026, all schemas in this specification are published in the
+unified schema registry at \path{docs/schema/}. Migration status is
+\emph{complete} (see \path{docs/schema/registry.json} field
+\texttt{migration.status}). This consolidation addresses cross-document schema
+divergence identified in the specification review.
+
+\begin{description}
+\item[Registry index.] \path{docs/schema/registry.json} --- Master index of
+all schemas across domains.
+\item[Common types.] \path{docs/schema/common/base-types.schema.json} ---
+Shared definitions (\texttt{Metadata}, \texttt{Currency},
+\texttt{TaxIdentifier}, \texttt{EntityParty}) referenced via JSON
+Schema \texttt{\$ref}.
+\item[Consolidated enums.] \path{docs/schema/common/enums.yaml} --- Single
+source of truth for enumeration values including \texttt{countries},
+\texttt{vat\_category}, \texttt{supplier\_type}, and
+\texttt{vat\_thresholds} used by this specification.
+\item[Arabic schemas.] \path{docs/schema/arabic/} --- Domain-specific
+schemas: \texttt{invoice.schema.json}, \texttt{vat-checklist.schema.json},
+\texttt{vendor.schema.json}, and \texttt{ocr-result.schema.json}.
+All marked \texttt{status: stable}.
+\end{description}
+
+\noindent
+The per-country VAT thresholds (e.g.\ BHD~500 for Bahrain SI/FI boundary)
+are defined in \path{docs/schema/common/enums.yaml\#/vat\_thresholds}
+rather than in domain-specific \texttt{enums.yaml} files. Validation:
+
+\begin{lstlisting}[language=bash]
+python3 docs/schema/validate.py --registry-check
+python3 docs/schema/validate.py --domain arabic \
+--schema invoice.schema.json --file invoice.json
+\end{lstlisting}
+
+\noindent
+CI runs \texttt{--registry-check} on every pull request touching
+\path{docs/schema/} or any dependent pipeline module.
+\chapter{Arabic invoice AI pipeline}\label{ch:ai}
+
+\section{Pipeline at a glance}
+
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}[
+node distance=6mm and 9mm,
+stage/.style={draw,rounded corners,minimum width=32mm,minimum height=11mm,align=center,font=\small,fill=orange!10},
+store/.style={draw,cylinder,shape border rotate=90,aspect=0.3,minimum width=22mm,minimum height=10mm,font=\small,fill=blue!7},
+arr/.style={-{Latex[length=2.2mm]},thick}
+]
+\node[store] (src) {PDF / e-mail};
+\node[stage,right=of src]   (s1) {1.~Intake};
+\node[stage,right=of s1]    (s2) {2.~OCR};
+\node[stage,below=of s2]    (s3) {3.~Field\\extraction};
+\node[stage,left=of s3]     (s4) {4.~Translation};
+\node[stage,left=of s4]     (s5) {5.~Validation\\\& routing};
+\node[store,below=of s5]    (out) {\texttt{structured/invoices/}};
+
+\draw[arr] (src) -- (s1);
+\draw[arr] (s1)  -- (s2);
+\draw[arr] (s2)  -- (s3);
+\draw[arr] (s3)  -- (s4);
+\draw[arr] (s4)  -- (s5);
+\draw[arr] (s5)  -- (out);
+\end{tikzpicture}
+\caption{The five pipeline stages; each emits a well-typed payload to
+the next. Only Stage~5 writes to the canonical corpus.}
+\label{fig:pipeline}
+\end{figure}
+
+\section{Stage 1 -- Intake}
+
+\paragraph{Inputs.} A source file, either:
+\begin{itemize}
+\item a PDF dropped into a watched folder, or
+\item an e-mail attachment (e.g.\ the thread captured in
+\corpus\texttt{source/FW- AI~\_ Arabic Invoice\ldots.eml}).
+\end{itemize}
+
+\paragraph{Outputs.} A new entry staged for Stage~2 and a provisional
+\texttt{source\_document} object:
+\begin{lstlisting}[language=jsonx]
+{ "path": "docs/arabic/source/<file>", "sha256": "<sha>" }
+\end{lstlisting}
+The SHA-256 is computed first and compared against
+\corpus\texttt{structured/corpus.json}; a match short-circuits
+re-processing (idempotence) and is the duplicate-payment control
+(\S\ref{ch:controls}).
+
+\paragraph{Precondition.} The MIME detector must classify the file as
+one of \texttt{application/pdf}, the OOXML Word type
+(\texttt{application/vnd.openxmlformats-\allowbreak officedocument.\allowbreak wordprocessingml.\allowbreak document}),
+\texttt{text/plain}, or \texttt{message/rfc822}. All other types are
+rejected with reason \textsc{unsupported\_media}.
+
+\section{Stage 2 -- OCR}
+
+\paragraph{Command.} The corpus has been produced with:
+\begin{lstlisting}[language=bash,basicstyle=\ttfamily\small]
+pdftoppm -r 300 <input.pdf> work/page -png
+for img in work/page-*.png; do
+tesseract "$img" stdout -l ara+eng >> <output>.txt
+done
+\end{lstlisting}
+The combined \texttt{ara+eng} language model is mandatory: invoices
+routinely contain English brand names, Latin-script SKU codes, and
+numerals alongside Arabic prose.
+
+\paragraph{Quality gate.} Stage 2 emits a per-page confidence metric
+(mean of tesseract's \texttt{conf} values over non-empty tokens). Pages
+below \textbf{55\%} confidence are flagged for human review; below
+\textbf{30\%} the file is rejected with reason \textsc{ocr\_low\_confidence}
+and routed to manual processing.
+
+\paragraph{Calibration.} The 30\,\%/55\,\% thresholds are preliminary
+estimates pending production pilot validation.
+
+\textbf{v1 status:} These values were derived from three golden-set documents,
+which is insufficient for statistical confidence. The 30\,\% threshold represents
+the lowest observed confidence on pages that still yielded correctable records;
+55\,\% is the lowest value achieving error-free extraction. \textbf{Both thresholds
+are TBD pending pilot:} production calibration requires $\geq$50 documents per
+country before these values can be considered validated. The pilot will also
+establish per-jurisdiction calibration as OCR quality varies with document source
+(e.g., ZATCA assessments vs.\ commercial invoices).
+
+\paragraph{Artefact.} The raw OCR text is written to
+\corpus\texttt{extracted-text/<slug>.txt} and its path is recorded
+in \texttt{source\_document.ocr\_text\_path}. This preserves the
+training signal for future model refinement.
+
+\section{Stage 3 -- Schema-guided field extraction}
+
+\paragraph{Objective.} Produce a candidate record conforming to
+\texttt{invoice.schema.json} from the OCR text. The extraction is
+\emph{schema-guided}: the LLM prompt is constructed at run time by
+serialising the schema (with \texttt{description} fields) so the
+model is told exactly which JSON keys it may emit. This is the
+single largest lever against hallucinated fields.
+
+\paragraph{Prompt template.} Pseudocode; the concrete implementation
+uses the Anthropic Messages API with structured-output tooling.
+
+\begin{lstlisting}[language=bash,basicstyle=\ttfamily\small,caption={Schema-guided extraction prompt template.}]
+SYSTEM: You extract tax-invoice fields into a JSON object that MUST
+validate against the provided JSON Schema. If a field is not
+present in the source, omit it -- NEVER invent a value.
+USER:   <schema>
+---
+OCR TEXT (Arabic may appear in RTL order; preserve spelling):
+<ocr_text>
+---
+Emit JSON only. Set "metadata.language" to "ar", "en", or "ar+en"
+based on the dominant script.
+\end{lstlisting}
+
+\paragraph{Known-hard fields.} The following fields are the most error-prone
+in the shipped corpus and must be handled with care:
+
+\begin{table}[htbp]
+\centering
+\caption{Extraction pitfalls observed in the corpus and mitigations.}
+\label{tab:pitfalls}
+\small
+\begin{tabularx}{\linewidth}{@{}l X X@{}}
+\toprule
+\textbf{Field} & \textbf{Pitfall} & \textbf{Mitigation} \\ \midrule
+\texttt{electronic\_id}    & Tesseract maps the digit ``1'' to ``I'' in mixed alnum strings (e.g.\ \texttt{B1STE8}$\to$\texttt{BISTE8}). & Validate against the regex \verb|^[0-9A-Z]{26}$|; on mismatch, re-OCR at 600 dpi with \texttt{--psm~6}. \\
+\texttt{totals.gross}      & Arabic digits (\ar{٠١٢٣٤٥٦٧٨٩}) may slip through unmapped. & Pre-tokenise: substitute Arabic-Indic digits with ASCII before parsing. \\
+\texttt{vat\_rate\_percent}& Zero-rated vs exempt both show $0$. & Disambiguate with \texttt{vat\_category}: \textsc{zr} vs \textsc{ex} drawn from supplier's activity code lookup. \\
+\texttt{signature.kind}    & ZATCA assessments have no signature block. & Default to \textsc{system\_generated} for \texttt{document\_kind} = \textsc{vat\_assessment}. \\
+\texttt{seller.name\_en}   & Pure-Arabic invoices lack an English name. & Leave empty; Stage 4 will populate via translation. \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\paragraph{Output.} A candidate record is written in memory only (never
+persisted yet) and passed to Stage~4.
+
+\section{Stage 4 -- Arabic$\to$English translation}
+
+\paragraph{Scope.} This stage does \emph{not} translate the whole
+document. It translates only the free-text fields that downstream AP
+actually uses in English:
+
+\begin{itemize}
+\item \texttt{seller.name\_en} and \texttt{buyer.name\_en} if absent;
+\item every \texttt{line\_items[].description\_en} if absent;
+\item \texttt{seller.address\_en} and \texttt{buyer.address\_en}.
+\end{itemize}
+
+Tax IDs, amounts, dates, and enum values are \emph{never} passed through
+translation; they are copied verbatim.
+
+\paragraph{Glossary.} A fixed glossary enforces terminology consistency.
+Worked examples:
+
+\begin{table}[htbp]
+\centering
+\caption{Locked glossary. The right-hand column is what the translation
+agent \emph{must} output.}
+\label{tab:glossary}
+\small
+\begin{tabularx}{\linewidth}{@{}X X@{}}
+\toprule
+\textbf{Arabic} & \textbf{English (locked)} \\ \midrule
+\ar{هيئة الزكاة والضريبة والجمارك} & Zakat, Tax and Customs Authority (ZATCA) \\
+\ar{بنك ستاندرد تشارترد}           & Standard Chartered Bank \\
+\ar{ضريبة القيمة المضافة}           & Value-Added Tax (VAT) \\
+\ar{اشعار صدور فاتورة}              & Invoice Issuance Notification \\
+\ar{فاتورة ضريبية}                  & Tax Invoice \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\paragraph{Quality gate.} Back-translation is run as a sanity check:
+the English output is translated back to Arabic and compared to the
+source Arabic string. The metric is the \emph{normalised Levenshtein
+distance} $d = \mathrm{lev}(a, b) / \max(|a|, |b|)$ computed at the
+Unicode-codepoint level after Arabic NFKC normalisation (stripping
+tatweel and harakat). The 0.30 ceiling was chosen because the three
+golden-set Arabic strings have pairwise $d \leq 0.18$ between their
+recorded Arabic and a human-verified back-translation, leaving a
+$\geq 1.5\times$ safety margin. Distances above \textbf{0.30} are
+flagged (\textsc{translation\_drift}) and the original Arabic is
+retained as authoritative.
+
+\section{Stage 5 -- Validation and routing}
+
+\paragraph{Validation.} The candidate record is validated with
+\texttt{validate.py} (\cref{ch:schema}). Any schema failure halts the
+pipeline and the record is written to a side-queue
+(\texttt{structured/invoices/rejected/}) with a \texttt{notes[]} entry
+summarising the failure.
+
+\paragraph{Routing.} On success, the pipeline consults the structured
+\texttt{bh-accounts-payable-doi.json} and the \texttt{workflows/} set
+to decide which state machine to instantiate:
+
+\begin{enumerate}
+\item If the counterparty is a tax authority
+(\texttt{supplier\_type}~=~\textsc{government} or
+\texttt{tax\_authority}~=~\textsc{zatca})
+$\Rightarrow$ \texttt{vat-payment} workflow.
+\item Else if there is a PO reference in \texttt{notes[]}
+$\Rightarrow$ \texttt{po-eproc} workflow.
+\item Else if a prior \texttt{manual-recurring} record exists for
+the same \texttt{vendor\_id}
+$\Rightarrow$ \texttt{manual-recurring} workflow.
+\item Otherwise $\Rightarrow$ \texttt{manual-one-off} workflow.
+\end{enumerate}
+
+\paragraph{Commit.} The record is written to
+\corpus\path{structured/invoices/<slug>.json} and a new item is
+appended to \texttt{corpus.json}. This is the only stage in the
+pipeline that mutates the corpus.
+
+\section{Pipeline control plane}
+
+\Cref{fig:pipeline-states} models the pipeline itself as a small state
+machine; each invoice occupies exactly one of these states at any
+moment. The control plane exposes three operations:
+\texttt{ingest(file)}, \texttt{retry(id)}, \texttt{release(id)}.
+
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}[
+node distance=6mm and 5mm,
+s/.style={draw,rounded corners,minimum width=20mm,minimum height=7mm,align=center,font=\footnotesize,fill=gray!5},
+t/.style={-{Latex[length=2mm]}}
+]
+\node[s] (new)    {\textsc{received}};
+\node[s,right=of new] (ocr) {\textsc{ocr\_ok}};
+\node[s,right=of ocr] (ext) {\textsc{extracted}};
+\node[s,right=of ext] (xlat) {\textsc{translated}};
+\node[s,right=of xlat] (val)  {\textsc{validated}};
+\node[s,below=of val] (route) {\textsc{routed}};
+\node[s,below=of ocr] (hitl) {\textsc{hitl\_review}};
+
+\draw[t] (new) -- (ocr);
+\draw[t] (ocr) -- (ext);
+\draw[t] (ext) -- (xlat);
+\draw[t] (xlat) -- (val);
+\draw[t] (val) -- (route);
+\draw[t] (ocr) -- node[right,font=\tiny]{conf\textless 30\%} (hitl);
+\draw[t] (val) to[bend left] node[above,font=\tiny,pos=0.3]{schema fail} (hitl);
+\draw[t] (hitl) -- node[below,font=\tiny,pos=0.4]{corrected} (route);
+\end{tikzpicture}
+\caption{Pipeline control-plane states for a single invoice.}
+\label{fig:pipeline-states}
+\end{figure}
+
+\section{Evaluation harness}
+
+\paragraph{Golden set.} The three Arabic records in
+\corpus\texttt{structured/invoices/} form the regression golden set.
+Every code change must re-produce byte-identical records from the
+source PDFs; \texttt{validate.py} plus a \texttt{jq}-driven equality
+check is the verifier.
+
+\paragraph{Per-field metrics.} For each round of Session-5 testing the
+harness reports:
+
+\begin{itemize}
+\item \textbf{Per-field exact-match accuracy} (over the 27 scalar
+fields in \texttt{invoice.schema.json}).
+\item \textbf{Per-field F1} on \texttt{line\_items[]} treated as sets
+(descriptions matched after glossary-aware fuzzing).
+\item \textbf{Human-approval rate.} Fraction of records released by
+HITL with zero edits. Target $\geq$~0.75 after Session~4,
+$\geq$~0.90 after Session~5.
+\end{itemize}
+
+\paragraph{Session acceptance.} The five-session model from
+\cref{tab:sessions} is scheduled per country; the
+\texttt{ai\_session\_phases} enum in \texttt{enums.yaml} is the system
+of record. An AI rollout is complete for a country once the
+Session-5 pass meets the human-approval-rate target against a cohort
+of $\geq$~5 stakeholders.
+\chapter{Multi-country VAT compliance engine}\label{ch:vat}
+
+\section{Engine responsibilities}
+
+Given a validated invoice record, the VAT engine must:
+
+\begin{enumerate}
+\item select the correct regulator and ruleset from the record's
+\texttt{metadata.country} and \texttt{metadata.tax\_authority};
+\item run every applicable rule, producing a
+\texttt{vat-checklist.schema.json} record with one item per rule;
+\item decide a final \texttt{tax\_type\_classification} (VAT category
+code from \texttt{enums.yaml});
+\item compute any adjustments (withholding, reverse-charge accrual);
+\item refuse to release the record for payment unless every
+mandatory rule emits \textsc{y} or \textsc{na}.
+\end{enumerate}
+
+Rules are declarative data, not code: the engine is a rule interpreter.
+This isolates regulation change from engineering change.
+
+\section{Rule shape}
+
+A rule is a tuple \mbox{$(c, a, p, q, r)$} where:
+\begin{itemize}
+\item $c$ --- country (\textsc{sa}, \textsc{eg}, \textsc{bh}, \textsc{qa});
+\item $a$ --- tax authority (\textsc{zatca}, \textsc{eta}, \textsc{nbr}, \textsc{qta});
+\item $p$ --- a predicate over the invoice record (expressed as a JSON-Logic
+expression or a named helper);
+\item $q$ --- the checklist \emph{question} emitted when the rule fires
+(human-readable string);
+\item $r$ --- a \texttt{result} $\in$ \{\textsc{y}, \textsc{n}, \textsc{na}\}
+computed by evaluating $p$ and optionally a secondary predicate.
+\end{itemize}
+
+The engine iterates over the ruleset for $(c,a)$ in a deterministic
+order and appends each evaluated rule as an item in the output
+\texttt{checklist[]}. The final \texttt{tax\_type\_classification} is
+chosen by a \emph{decision function} that maps the full result vector to
+a single VAT category.
+
+\section{Saudi Arabia (ZATCA)}
+
+\subsection{Rules}
+
+The eleven-point ruleset is lifted verbatim from the Q3 2025 checklist
+and is shown in \cref{tab:ksa-rules}. Each row is one rule; the
+mapping from rule to \texttt{result} is given in the predicate column.
+
+\begin{table}[htbp]
+\centering
+\caption{KSA VAT rules derived from the Q3 2025 OTP checklist.}
+\label{tab:ksa-rules}
+\footnotesize
+\begin{tabularx}{\linewidth}{@{}c l X@{}}
+\toprule
+\textbf{\#} & \textbf{Question} & \textbf{Predicate / Source} \\ \midrule
+1  & Invoice in Arabic language
+& \texttt{metadata.language} $\in$ \{\textsc{ar}, \textsc{ar+en}\}. \\
+2  & Addressed to Standard Chartered Capital
+& \texttt{buyer.tax\_id} equals the entity's ZATCA TIN. \\
+3  & Date of issue present
+& \texttt{metadata.issue\_date} set and well-formed. \\
+4  & Sequential number present
+& \texttt{metadata.electronic\_id} or \texttt{metadata.invoice\_number} set. \\
+5  & 15-digit TIN on supplier side
+& \texttt{seller.tax\_id} matches \verb|^[0-9]{15}$|; if supplier is \textsc{government}, emit \textsc{na}. \\
+6  & Nature of goods/services present
+& At least one \texttt{line\_items[].description*} non-empty. \\
+7  & VAT rate applied
+& \texttt{totals.vat\_rate\_percent} set and $\in$ \{0, 5, 15\}. \\
+8  & Net amount
+& \texttt{totals.net} set. \\
+9  & Gross amount
+& \texttt{totals.gross} set. \\
+10 & VAT amount
+& \texttt{totals.vat\_amount} set and equals round($\texttt{net} \cdot r / 100$). \\
+11 & Withholding tax
+& \texttt{withholding\_tax.applicable}; \textsc{na} if supplier is KSA-resident. \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\subsection{Decision function}
+
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}[
+node distance=7mm and 11mm,
+d/.style={draw,diamond,aspect=2.2,align=center,font=\footnotesize,inner sep=1pt,fill=yellow!10},
+o/.style={draw,rounded corners,minimum width=20mm,minimum height=7mm,align=center,font=\small,fill=green!10},
+t/.style={-{Latex[length=2mm]}}
+]
+\node[d] (gov)  {\textsc{government}\\counterparty?};
+\node[o,right=of gov] (rc) {\textsc{rc}};
+\node[d,below=of gov] (zr) {rate = 0\,\%?};
+\node[o,right=of zr] (zro) {\textsc{zr}};
+\node[d,below=of zr] (fi) {rate = 15\,\%?};
+\node[o,right=of fi] (fio) {\textsc{fi}};
+\node[o,below=of fi] (oth) {\textsc{other}};
+\draw[t] (gov.east) -- node[above,font=\tiny]{yes} (rc.west);
+\draw[t] (gov.south) -- node[right,font=\tiny]{no} (zr.north);
+\draw[t] (zr.east) -- node[above,font=\tiny]{yes} (zro.west);
+\draw[t] (zr.south) -- node[right,font=\tiny]{no} (fi.north);
+\draw[t] (fi.east) -- node[above,font=\tiny]{yes} (fio.west);
+\draw[t] (fi.south) -- node[right,font=\tiny]{no} (oth.north);
+\end{tikzpicture}
+\caption{KSA decision function. The first matching branch determines
+the emitted \texttt{tax\_type\_classification}.}
+\label{fig:ksa-decision}
+\end{figure}
+
+\begin{lstlisting}[language=bash,basicstyle=\ttfamily\small,caption={KSA
+decision logic applied to a validated invoice record.}]
+if supplier.supplier_type == GOVERNMENT
+and tax_authority == ZATCA:
+classification = RC         # reverse-charge / government payment
+elif totals.vat_rate_percent == 0
+and supplier.supplier_type != GOVERNMENT:
+classification = ZR
+elif totals.vat_rate_percent == 15:
+classification = FI
+elif totals.vat_rate_percent in {5, 10, 7, 14, 20}:
+# A rate that is legal in another jurisdiction but not in KSA.
+# Never silently classify: emit HOLD + human review.
+classification = OTHER
+verdict       = HOLD        # consumed by the AP engine
+reason        = "unexpected_vat_rate_for_ksa"
+else:
+# Unknown rate (e.g. 3%, negative, null): always HOLD.
+classification = OTHER
+verdict       = HOLD
+reason        = "unknown_vat_rate"
+\end{lstlisting}
+
+\subsection{Worked example}
+
+The Saudi Q3 2025 assessment (\ar{اشعار صدور فاتورة}) has
+\texttt{supplier.supplier\_type} = \textsc{government} and
+\texttt{tax\_authority} = \textsc{zatca}; the decision function
+correctly yields \texttt{tax\_type\_classification} = \textsc{rc}. All
+eleven rules fire; rules 5 and 11 are \textsc{na} because the
+counterparty is ZATCA itself and the buyer is KSA-resident. The total
+\texttt{gross} = SAR~1{,}558{,}629.96 (due 2025-10-31) is posted as a
+reverse-charge VAT payment through the \texttt{vat-payment} workflow.
+
+\section{Egypt (ETA)}
+
+\subsection{Rules}
+
+\begin{table}[htbp]
+\centering
+\caption{ETA e-invoice rules.}
+\label{tab:eta-rules}
+\footnotesize
+\begin{tabularx}{\linewidth}{@{}c l X@{}}
+\toprule
+\textbf{\#} & \textbf{Question} & \textbf{Predicate / Source} \\ \midrule
+1 & \texttt{electronic\_id} well-formed
+& Matches \verb|^[0-9A-Z]{26}$|. \\
+2 & Seller TRN well-formed   & \texttt{seller.tax\_id} matches \verb|^[0-9]{9}$|. \\
+3 & Buyer TRN well-formed    & \texttt{buyer.tax\_id} matches \verb|^[0-9]{9}$|. \\
+4 & Activity code present    & \texttt{seller.activity\_code} set. \\
+5 & Submission within 24h of issue
+& \texttt{submission\_date} $-$ \texttt{issue\_date} $\leq$ 24~h. \\
+6 & VAT rate consistent      & 14\% (standard) or 0\% (exempt by activity lookup). \\
+7 & Line-item subtotals      & Sum of \texttt{line\_total} equals \texttt{totals.net}. \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\subsection{Decision function}
+
+\begin{lstlisting}[language=bash,basicstyle=\ttfamily\small]
+if seller.activity_code in EXEMPT_ACTIVITIES:
+classification = EX
+elif totals.vat_rate_percent == 14:
+classification = FI
+elif totals.vat_rate_percent == 0:
+classification = ZR
+else:
+classification = OTHER
+\end{lstlisting}
+The set \texttt{EXEMPT\_ACTIVITIES} is a configured lookup. Activity
+\texttt{8890} (``Professional services'', as used by the Chapter Zero
+corporate-membership invoice) is included.
+
+\subsection{Worked examples}
+
+\paragraph{Seal invoice (\texttt{3CPJR5CQ\ldots K10}).}
+All seven rules pass; activity code \texttt{1811} is not exempt;
+\texttt{totals.vat\_rate\_percent~=~14}; the decision function yields
+\textsc{fi} (Full Tax Invoice). Gross \texttt{EGP~661{,}200} posts to
+the PO e-Proc or manual path depending on the presence of a PO
+reference.
+
+\paragraph{Corporate membership (\texttt{B1STE8RH\ldots SJ10}).}
+Activity code \texttt{8890} is in the exempt set; rule 6 still passes
+because 0\% with an exempt code is consistent; decision yields \textsc{ex}.
+No VAT accrues and the routing is \texttt{manual-one-off}.
+
+\section{Bahrain (NBR)}
+
+\subsection{Rules}
+
+Derived from Activity 3 of the Bahrain DOI
+(\corpus\path{structured/policies/bh-accounts-payable-doi.json}). The
+NBR ruleset is wider than KSA's eleven points because the DOI
+distinguishes ten VAT invoice types.
+
+\begin{table}[htbp]
+\centering
+\caption{NBR VAT invoice types recognised in Bahrain AP.
+Each row maps to a \texttt{vat\_category} enum value.}
+\label{tab:nbr-types}
+\footnotesize
+\begin{tabularx}{\linewidth}{@{}l l X@{}}
+\toprule
+\textbf{DOI name} & \textbf{Enum} & \textbf{Selection criterion} \\ \midrule
+Full Tax Invoice                 & \textsc{fi}  & VAT-registered supplier, $\geq$ BHD 500. \\
+Simplified Tax Invoice           & \textsc{si}  & Transaction \textbf{under BHD 500}. \\
+Unregistered Vendor Purchases    & \textsc{ur}  & Supplier not VAT-registered. \\
+Zero Rated Purchases             & \textsc{zr}  & Transport, food, healthcare, education, construction, oil/gas. \\
+Exempt Purchases                 & \textsc{ex}  & Real estate, financial services. \\
+Tax Credit Notes                 & \textsc{tcn} & Negative-amount adjustment to prior invoice. \\
+Reverse Charge Invoices          & \textsc{rc}  & Overseas supplier; buyer accounts for VAT. \\
+GCC Tax Invoice                  & \textsc{fi}  & Intra-GCC supplier (handled as \textsc{fi} with a GCC flag). \\
+Inter Business Unit Transfers    & \textsc{cbr} & Routed via GBS APU CBR team. \\
+Out of Scope                     & \textsc{os}  & Pre-Jan 2019 vouchers, MPV vouchers. \\
+Other                            & \textsc{other} & EWA utility bills. \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}[
+node distance=6mm and 9mm,
+d/.style={draw,diamond,aspect=2.4,align=center,font=\scriptsize,inner sep=0.5pt,fill=yellow!10},
+o/.style={draw,rounded corners,minimum width=14mm,minimum height=6mm,align=center,font=\scriptsize,fill=green!10},
+t/.style={-{Latex[length=1.8mm]}}
+]
+\node[d] (reg)  {supplier\\VAT-reg?};
+\node[d,right=of reg] (os) {pre-2019?};
+\node[o,right=of os] (osx) {\textsc{os}};
+\node[o,below=of os] (ur) {\textsc{ur}};
+\node[d,below=of reg] (ic) {inter-BU?};
+\node[o,right=of ic] (cbr) {\textsc{cbr}};
+\node[d,below=of ic] (neg) {credit\\note?};
+\node[o,right=of neg] (tcn) {\textsc{tcn}};
+\node[d,below=of neg] (rev) {overseas?};
+\node[o,right=of rev] (rc) {\textsc{rc}};
+\node[d,below=of rev] (zrq) {ZR\\activity?};
+\node[o,right=of zrq] (zr) {\textsc{zr}};
+\node[d,below=of zrq] (exq) {exempt?};
+\node[o,right=of exq] (ex) {\textsc{ex}};
+\node[d,below=of exq] (amt) {amount\\$<$ BHD 500?};
+\node[o,right=of amt] (si) {\textsc{si}};
+\node[o,below=of amt] (fi) {\textsc{fi}};
+
+\draw[t] (reg.east) -- node[above,font=\tiny]{no} (os.west);
+\draw[t] (os.east)  -- node[above,font=\tiny]{yes} (osx.west);
+\draw[t] (os.south) -- node[right,font=\tiny]{no} (ur.north);
+\draw[t] (reg.south) -- node[right,font=\tiny]{yes} (ic.north);
+\draw[t] (ic.east) -- node[above,font=\tiny]{yes} (cbr.west);
+\draw[t] (ic.south) -- node[right,font=\tiny]{no} (neg.north);
+\draw[t] (neg.east) -- node[above,font=\tiny]{yes} (tcn.west);
+\draw[t] (neg.south) -- node[right,font=\tiny]{no} (rev.north);
+\draw[t] (rev.east) -- node[above,font=\tiny]{yes} (rc.west);
+\draw[t] (rev.south) -- node[right,font=\tiny]{no} (zrq.north);
+\draw[t] (zrq.east) -- node[above,font=\tiny]{yes} (zr.west);
+\draw[t] (zrq.south) -- node[right,font=\tiny]{no} (exq.north);
+\draw[t] (exq.east) -- node[above,font=\tiny]{yes} (ex.west);
+\draw[t] (exq.south) -- node[right,font=\tiny]{no} (amt.north);
+\draw[t] (amt.east) -- node[above,font=\tiny]{yes} (si.west);
+\draw[t] (amt.south) -- node[right,font=\tiny]{no} (fi.north);
+\end{tikzpicture}
+\caption{Bahrain NBR classification cascade. The first branch
+whose predicate holds emits the \texttt{vat\_category} and
+short-circuits the remaining tests.}
+\label{fig:nbr-decision}
+\end{figure}
+
+\subsection{BHD 500 threshold}
+
+The DOI fixes BHD~500 as the SI/FI threshold for Bahrain. This value is
+stored in the per-country engine configuration file
+\texttt{vat-thresholds.yaml} (not in \texttt{enums.yaml}, which holds
+only enum \emph{types}). The threshold structure is:
+
+\begin{lstlisting}[basicstyle=\ttfamily\small]
+thresholds:
+BH:
+si_fi_boundary: 500
+currency: BHD
+\end{lstlisting}
+
+Regulator updates are applied by editing this file; a CI check validates
+that all threshold values match the authoritative DOI documents.
+
+\section{Qatar (QTA)}
+
+Qatar does not currently impose VAT. The engine therefore runs a single
+rule --- \emph{payment is to a valid counterparty with a QCSD-registered
+account} --- and classifies the record as \textsc{other} unless a
+future VAT regime is detected (\texttt{metadata.tax\_authority}
+$\neq$ \textsc{qta}). The
+\corpus\path{structured/payment-instructions/qa-qcsd-payment-instruction.json}
+record is the reference.
+
+\section{Withholding tax}
+
+Withholding rules are modelled as a secondary ruleset keyed on
+\emph{supplier residence}. The engine emits a
+\texttt{withholding\_tax} object with \texttt{applicable}, \texttt{rate\_percent},
+and \texttt{amount}. KSA-resident suppliers yield
+\texttt{applicable~=~false} (\textsc{na}), mirroring the Q3 2025
+checklist. Non-resident, non-GCC suppliers trigger a country-specific
+rate (e.g.\ 5\% KSA royalty, 15\% services) that must be explicitly
+configured in \texttt{enums.yaml} before the engine can emit
+\textsc{y}/\textsc{n}.
+
+\section{Engine outputs}
+
+For every invoice the engine produces:
+\begin{itemize}
+\item a \texttt{vat-checklist} record stored at
+\texttt{structured/vat-checklists/<slug>.json};
+\item an updated \texttt{invoice} record with a populated
+\texttt{totals.vat\_category};
+\item a verdict of \textsc{release} or \textsc{hold} consumed by the
+approval engine (\cref{ch:ap}).
+\end{itemize}
+
+A hold is produced whenever any rule resolves \textsc{n}. The engine
+must never up-grade a \textsc{hold} to \textsc{release} without a human
+recorded in the corresponding workflow transition.
+\chapter{AP workflow and approval engine}\label{ch:ap}
+
+\section{Engine responsibilities}
+
+Given a validated invoice record and the VAT engine's verdict
+(\cref{ch:vat}), the approval engine must:
+
+\begin{enumerate}
+\item select the correct workflow from
+\corpus\texttt{structured/workflows/};
+\item instantiate the state machine with the record;
+\item drive transitions as approvals arrive (human or system);
+\item at every transition, verify the
+\texttt{delegation\_of\_authority} is respected for the current
+LCY amount;
+\item on reaching a terminal state, emit the payment instruction
+conforming to \texttt{payment-instruction.schema.json}.
+\end{enumerate}
+
+The engine is a \emph{pure} workflow executor; it never invents fields.
+
+\section{Activity view of the Bahrain DOI}
+
+\Cref{tab:doi-activities} is the unabridged activity map from
+\corpus\path{structured/policies/bh-accounts-payable-doi.json}; the
+engine maps each activity onto one or more workflow paths.
+
+\begin{table}[htbp]
+\centering
+\caption{The seven DOI activities and the workflow paths they drive.}
+\label{tab:doi-activities}
+\small
+\begin{tabularx}{\linewidth}{@{}c l X l@{}}
+\toprule
+\# & \textbf{Activity} & \textbf{Description (condensed)} & \textbf{Workflow} \\ \midrule
+1 & Introduction & DOI purpose \& Group alignment. & --- \\
+2 & Group systems & Mandate eProc/T\&E/SODA; anything else = manual. & --- \\
+3 & PO invoices  & eProc route; Tax-Q assigns POP/VAT; FCY at central-bank rate. & \texttt{po-eproc} \\
+4 & Manual invoices (non-eProc) & CC + supply chain + CFO approvals; BH\_APUeInvoice mailbox. & \texttt{manual-one-off} \\
+5 & In-country manual payments & One-off: MD+CFO + 48h screening. Recurring: dispensation + eOPS. & \texttt{manual-one-off}, \texttt{manual-recurring} \\
+6 & CBR   & Centrally managed by GBS APU CBR team. & (central, out of this engine) \\
+7 & Suspense clearing & Monthly PSGL$\leftrightarrow$eBBS reconciliation. & (batch, not per-invoice) \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\section{Workflow selection}
+
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}[
+node distance=8mm and 14mm,
+d/.style={draw,diamond,aspect=2,align=center,font=\small,inner sep=1pt,fill=yellow!10},
+w/.style={draw,rounded corners,minimum width=30mm,minimum height=8mm,align=center,font=\small,fill=violet!10},
+t/.style={-{Latex[length=2mm]}}
+]
+\node[d] (tax)    {Tax-authority\\counterparty?};
+\node[w,right=of tax] (vat) {\texttt{vat-payment}};
+\node[d,below=of tax] (po)  {PO reference\\present?};
+\node[w,right=of po]  (pop) {\texttt{po-eproc}};
+\node[d,below=of po]  (rec) {Recurring\\vendor?};
+\node[w,right=of rec] (recp){\texttt{manual-recurring}};
+\node[w,below=of rec] (oneo){\texttt{manual-one-off}};
+
+\draw[t] (tax.east) -- node[above,font=\tiny]{yes} (vat.west);
+\draw[t] (tax.south) -- node[right,font=\tiny]{no} (po.north);
+\draw[t] (po.east)  -- node[above,font=\tiny]{yes} (pop.west);
+\draw[t] (po.south) -- node[right,font=\tiny]{no} (rec.north);
+\draw[t] (rec.east) -- node[above,font=\tiny]{yes} (recp.west);
+\draw[t] (rec.south)-- node[right,font=\tiny]{no} (oneo.north);
+\end{tikzpicture}
+\caption{Workflow selection decision tree applied at Stage~5 of the AI
+pipeline (\cref{ch:ai}).}
+\label{fig:workflow-select}
+\end{figure}
+
+\section{\texttt{po-eproc} state machine}
+
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}[
+node distance=7mm and 6mm,
+s/.style={draw,rounded corners,minimum width=22mm,minimum height=7mm,align=center,font=\scriptsize},
+t/.style={-{Latex[length=2mm]}}
+]
+\node[s] (d)  {\textsc{draft}};
+\node[s,right=of d] (po) {\textsc{po\_issued}};
+\node[s,right=of po] (ir) {\textsc{invoice\_received}};
+\node[s,right=of ir] (txq){\textsc{tax\_q\_review}};
+\node[s,below=of txq] (posted){\textsc{posted}};
+\node[s,left=of posted] (paid) {\textsc{paid}};
+\node[s,below=of ir,fill=red!7] (rej) {\textsc{rejected}};
+
+\draw[t] (d) -- node[above,font=\tiny]{CC} (po);
+\draw[t] (po) -- (ir);
+\draw[t] (ir) -- (txq);
+\draw[t] (txq) -- node[right,font=\tiny]{VAT+POP} (posted);
+\draw[t] (posted) -- node[above,font=\tiny]{APU} (paid);
+\draw[t] (ir) -- node[right,font=\tiny]{reject} (rej);
+\end{tikzpicture}
+\caption{\texttt{po-eproc} state machine
+(\corpus\texttt{structured/workflows/po-eproc.json}).}
+\label{fig:po-eproc}
+\end{figure}
+
+\paragraph{Preconditions.}
+\begin{itemize}
+\item \texttt{tax\_q\_review}~$\to$~\texttt{posted}: VAT category
+assigned and FCY revalued at central-bank rate on
+\texttt{issue\_date}.
+\item \texttt{posted}~$\to$~\texttt{paid}: LCY amount within DOA per
+GDAM.
+\end{itemize}
+
+\section{\texttt{manual-one-off} state machine}
+
+\Cref{fig:manual-one-off} captures Activity 5's one-off branch:
+evidence of one-off nature, vendor screening refreshed within 48 hours,
+MD and CFO approvals, and account coding captured in the approval
+document.
+
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}[
+node distance=7mm and 9mm,
+s/.style={draw,rounded corners,minimum width=24mm,minimum height=7mm,align=center,font=\footnotesize},
+t/.style={-{Latex[length=2mm]}}
+]
+\node[s] (d)  {\textsc{draft}};
+\node[s,right=of d] (cc) {\textsc{cc\_approved}};
+\node[s,right=of cc] (su) {\textsc{supply\_approved}};
+\node[s,right=of su] (md) {\textsc{md\_approved}};
+\node[s,below=of md] (cfo){\textsc{cfo\_approved}};
+\node[s,left=of cfo] (scr){\textsc{screened}};
+\node[s,left=of scr] (paid){\textsc{paid}};
+
+\draw[t] (d) -- node[above,font=\tiny]{CC} (cc);
+\draw[t] (cc) -- node[above,font=\tiny]{SCM} (su);
+\draw[t] (su) -- node[above,font=\tiny]{MD} (md);
+\draw[t] (md) -- node[right,font=\tiny]{CFO} (cfo);
+\draw[t] (cfo) -- node[below,font=\tiny]{$\leq$48h} (scr);
+\draw[t] (scr) -- node[below,font=\tiny]{execute} (paid);
+\end{tikzpicture}
+\caption{\texttt{manual-one-off}
+(\corpus\texttt{structured/workflows/manual-one-off.json}).}
+\label{fig:manual-one-off}
+\end{figure}
+
+\section{\texttt{manual-recurring} state machine}
+
+\paragraph{Precondition.} A written dispensation from the policy owner
+is \emph{mandatory} before entry. This is enforced by the engine: the
+record cannot leave \textsc{draft} until a
+\texttt{dispensation\_document\_path} is recorded in \texttt{notes[]}.
+Post-payment, the record must reach \textsc{quarterly\_reviewed} within
+the following quarter, triggered by the CFO's quarterly log retrieval.
+
+\section{\texttt{vat-payment} state machine}
+
+Used when the counterparty is a tax authority
+(\texttt{supplier.supplier\_type} = \textsc{government}). The KSA Q3
+2025 assessment walks this workflow from
+\textsc{assessment\_received} $\to$ \textsc{checklist\_validated}
+(upon 11/11 rules resolved) $\to$ \textsc{cfo\_approved} $\to$
+\textsc{paid} $\to$ \textsc{posted}.
+
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}[
+node distance=5mm and 5mm,
+s/.style={draw,rounded corners,minimum width=22mm,minimum height=7mm,align=center,font=\scriptsize,fill=teal!8},
+t/.style={-{Latex[length=2mm]}}
+]
+\node[s] (a)  {\textsc{assessment\_received}};
+\node[s,right=of a] (cv) {\textsc{checklist\_validated}};
+\node[s,right=of cv] (ca) {\textsc{cfo\_approved}};
+\node[s,below=of ca] (p)  {\textsc{paid}};
+\node[s,left=of p]   (po) {\textsc{posted}};
+
+\draw[t] (a) -- node[above,font=\tiny]{11/11 rules} (cv);
+\draw[t] (cv) -- node[above,font=\tiny]{CFO} (ca);
+\draw[t] (ca) -- node[right,font=\tiny]{SAMA rail} (p);
+\draw[t] (p) -- node[above,font=\tiny]{GL post} (po);
+\end{tikzpicture}
+\caption{\texttt{vat-payment}: linear path walked by the ZATCA Q3
+2025 assessment. Entry requires every VAT checklist rule to resolve
+to \textsc{y} or \textsc{na}.}
+\label{fig:vat-payment}
+\end{figure}
+
+\section{Delegation-of-authority}
+
+The engine enforces DOA as a linear scan of the workflow's
+\texttt{delegation\_of\_authority} array, sorted ascending by
+\texttt{max\_amount}. The role required is the first entry whose
+\texttt{max\_amount} is $\geq$ the invoice's LCY value. An FX
+conversion (at the central-bank rate on \texttt{issue\_date}) is
+applied before comparison.
+
+\Cref{tab:doa} shows the shipped thresholds.
+
+\begin{table}[htbp]
+\centering
+\caption{Default DOA thresholds per workflow.}
+\label{tab:doa}
+\small
+\begin{tabularx}{\linewidth}{@{}l l r l@{}}
+\toprule
+\textbf{Workflow} & \textbf{Currency} & \textbf{Max LCY} & \textbf{Required role} \\ \midrule
+\texttt{po-eproc}        & BHD &    10{,}000 & CC\_OWNER \\
+\texttt{po-eproc}        & BHD &   100{,}000 & SUPPLY\_CHAIN\_MGR \\
+\texttt{po-eproc}        & BHD & 1{,}000{,}000 & CFO \\
+\texttt{manual-one-off}  & BHD &      500 & SUPPLY\_CHAIN\_MGR \\
+\texttt{manual-one-off}  & BHD &   50{,}000 & CFO \\
+\texttt{manual-one-off}  & BHD & 1{,}000{,}000 & MD \\
+\texttt{manual-recurring}& BHD & 1{,}000{,}000 & CFO \\
+\texttt{vat-payment}     & SAR & 10{,}000{,}000 & CFO \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\section{Exceptions}
+
+The shipped workflows carry an \texttt{exceptions[]} array. The most
+important entry is the GSAM legal/professional fees exception
+(\texttt{manual-one-off}): these are \emph{not} covered by the default
+GDAM approval limits and must be routed to a GSAM-specific approver. The
+engine consults \texttt{exceptions[]} before applying DOA.
+
+\section{Payment-suspense reconciliation}
+
+Activity 7 is operated as a \emph{batch} procedure; the approval engine
+does not execute it per invoice. Reconciliation compares the PSGL
+extract against the eBBS extract on the accounts listed in the DOI:
+
+\begin{itemize}
+\item DBU BHD suspense: \texttt{09-0906743-50}
+\item DBU USD suspense: \texttt{09-0906743-50}
+\end{itemize}
+
+The aging escalation grid (30/60/90 day buckets) drives automated
+e-mails to the DBU finance manager; items aged $>$90~days escalate to
+the CFO.
+
+\section{Auditability}
+
+Every transition records a structured event:
+\texttt{(workflow\_id, from, to, actor\_psid, timestamp, evidence\_refs)}.
+The concatenation of events is a tamper-evident log because each event
+hashes its predecessor. This is what downstream auditors consume; it
+is \emph{not} part of the record schema but sits alongside the
+\texttt{structured/} corpus in an append-only \texttt{events/} stream.
+The event contract specified here is in scope (\cref{ch:controls},
+``Audit event log''); the storage substrate, retention policy, and
+restoration runbook are owned by GBS APU Audit and documented in
+\emph{SCB-APU-AUDIT-001}.
+\chapter{Controls, testing, and acceptance}\label{ch:controls}
+
+\section{Control catalogue}
+
+The Bahrain DOI's seven controls
+(\corpus\path{structured/policies/bh-accounts-payable-doi.json},
+\texttt{controls[]}) are reproduced in \cref{tab:controls} with the
+engine mechanism that enforces each.
+
+\begin{table}[htbp]
+\centering
+\caption{Control catalogue and enforcement mechanisms.}
+\label{tab:controls}
+\small
+\begin{tabularx}{\linewidth}{@{}l l X X@{}}
+\toprule
+\textbf{ID} & \textbf{Activity} & \textbf{Description} & \textbf{Enforced by} \\ \midrule
+C1 & 4 & All required approvals present before payment release. & Workflow engine cannot transition to \textsc{paid} until every required-role approval has fired. \\
+C2 & 5 & Vendor screening revalidated within 48~hours of payment. & Precondition on \texttt{cfo\_approved}$\to$\textsc{screened} transition (\texttt{manual-one-off}). \\
+C3 & 4 & Amount payable within DOA per GDAM. & Linear DOA scan before any approval transition. \\
+C4 & 5 & Dispensation in place for recurring manual payments. & Precondition on \textsc{draft}$\to$\textsc{dispensation\_ok} in \texttt{manual-recurring}. \\
+C5 & 7 & Monthly PSGL$\leftrightarrow$eBBS reconciliation cleared within aging thresholds. & Batch job; escalation grid e-mails DBU FM / CFO. \\
+C6 & 3 & FCY invoices revalued at central-bank rate on invoice date. & VAT engine runs FCY$\to$LCY \emph{before} DOA check. \\
+C7 & 4 & Duplicate-payment check. & Intake Stage~1 short-circuits on matching \texttt{source\_document.sha256}. \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}[
+node distance=5mm and 6mm,
+stage/.style={draw,rounded corners,minimum width=22mm,minimum height=8mm,align=center,font=\scriptsize,fill=orange!10},
+ctrl/.style={draw,ellipse,minimum width=10mm,minimum height=6mm,font=\tiny,fill=red!10},
+t/.style={-{Latex[length=1.8mm]}},
+c/.style={-{Latex[length=1.6mm]},dashed,red!60!black}
+]
+\node[stage] (intake) {Intake};
+\node[stage,right=of intake]  (ocr)  {OCR};
+\node[stage,right=of ocr]     (ext)  {Extract};
+\node[stage,right=of ext]     (vat)  {VAT engine};
+\node[stage,below=of vat]     (doa)  {DOA scan};
+\node[stage,left=of doa]      (apr)  {Approval};
+\node[stage,left=of apr]      (pay)  {Pay};
+\node[stage,left=of pay]      (rec)  {Reconcile};
+
+\draw[t] (intake) -- (ocr);
+\draw[t] (ocr) -- (ext);
+\draw[t] (ext) -- (vat);
+\draw[t] (vat) -- (doa);
+\draw[t] (doa) -- (apr);
+\draw[t] (apr) -- (pay);
+\draw[t] (pay) -- (rec);
+
+\node[ctrl,above=2.5mm of intake] (c7)  {C7};
+\node[ctrl,above=2.5mm of vat]    (c6)  {C6};
+\node[ctrl,above=2.5mm of doa]    (c3)  {C3};
+\node[ctrl,below=2.5mm of apr]    (c1)  {C1};
+\node[ctrl,below=2.5mm of pay]    (c2)  {C2};
+\node[ctrl,below=2.5mm of pay,xshift=-14mm] (c4) {C4};
+\node[ctrl,below=2.5mm of rec]    (c5)  {C5};
+
+\draw[c] (c7) -- (intake);
+\draw[c] (c6) -- (vat);
+\draw[c] (c3) -- (doa);
+\draw[c] (c1) -- (apr);
+\draw[c] (c2) -- (pay);
+\draw[c] (c4) -- (pay);
+\draw[c] (c5) -- (rec);
+\end{tikzpicture}
+\caption{Control enforcement points along the end-to-end invoice
+lifecycle. Dashed arrows show where each DOI control
+(\cref{tab:controls}) is evaluated.}
+\label{fig:controls-map}
+\end{figure}
+
+\section{Testing strategy}
+
+Testing follows the five-session engagement model
+(\cref{tab:sessions}). For each country rollout:
+
+\begin{description}
+\item[Session 1 --- Understand.] Collect $\geq$5 sample invoices
+(regulator-issued if available), normalise into the corpus,
+confirm per-country ruleset is complete.
+\item[Session 2 --- Sketch.] Walk the end-to-end pipeline on paper
+using one sample invoice. Identify OCR pitfalls
+(\cref{tab:pitfalls}) specific to the country.
+\item[Session 3 --- Decide.] Freeze the rule precedence and the
+decision function for the VAT engine
+(\S\ref{ch:vat}).
+\item[Session 4 --- Prototype.] Run the full pipeline on the cohort;
+review each extracted record with the local finance team.
+Human-approval rate target $\geq$~0.75.
+\item[Session 5 --- Testing.] Independent run with $\geq$~5
+stakeholders; target $\geq$~0.90 human-approval with
+zero-edit rate measured.
+\end{description}
+
+\section{Regression golden set}
+
+The three Arabic records already in
+\corpus\texttt{structured/invoices/} (Egypt ETA $\times$ 2, Saudi
+ZATCA $\times$ 1) together with the KSA checklist and the two Qatar
+payment instructions constitute the regression golden set.
+
+\paragraph{Invariants.} Every change to the pipeline must preserve:
+\begin{enumerate}
+\item byte-identical \texttt{source\_document.sha256} for every
+corpus record (source files are immutable);
+\item 100\,\% schema validity under \texttt{validate.py};
+\item identical \texttt{tax\_type\_classification} for every
+invoice record;
+\item identical selected workflow for every record.
+\end{enumerate}
+
+\paragraph{Runner.} \texttt{validate.py} plus the following
+\texttt{jq} equality check is the regression harness:
+
+\begin{lstlisting}[language=bash,basicstyle=\ttfamily\small]
+# Per-field equality of every golden-set record between a reference
+# snapshot and the pipeline output.
+diff \
+<(jq -S . docs/arabic/structured/invoices/*.json) \
+<(for p in docs/arabic/source/*.pdf; do
+./pipeline extract "$p"
+done | jq -S .)
+\end{lstlisting}
+
+A non-empty diff is a regression.
+
+\section{Acceptance criteria per workstream}
+
+\paragraph{AI pipeline (\cref{ch:ai}).}
+\begin{itemize}
+\item Corpus integrity check passes (every \texttt{corpus.json} path
+exists; every SHA-256 matches).
+\item For every source PDF: OCR confidence $\geq$~30\% on every page,
+schema-valid record emitted.
+\item Translation back-translation distance $\leq$~0.30 on every
+non-empty \texttt{description\_en}.
+\end{itemize}
+
+\paragraph{VAT engine (\cref{ch:vat}).}
+\begin{itemize}
+\item KSA: all 11 checklist rules evaluated; decision function
+emits expected VAT category for every golden invoice.
+\item Egypt: \texttt{EXEMPT\_ACTIVITIES} lookup table complete for
+activities present in the corpus.
+\item Bahrain: each of the 11 NBR invoice types has a corresponding
+enum code.
+\end{itemize}
+
+\paragraph{AP engine (\cref{ch:ap}).}
+\begin{itemize}
+\item Every workflow record loadable and schema-valid.
+\item DOA scan deterministic under round-trip FX conversion.
+\item Workflow-selection decision tree (\cref{fig:workflow-select})
+yields the documented workflow for every corpus record.
+\end{itemize}
+
+\section{Traceability matrix}
+
+\Cref{tab:trace} links each specification section to the source
+document that justifies it and to the structured record that realises
+it. Every row must be present for a full audit pass.
+
+\begin{table}[htbp]
+\centering
+\caption{Traceability of specification to source document and
+structured record.}
+\label{tab:trace}
+\footnotesize
+\begin{tabularx}{\linewidth}{@{}l X X X@{}}
+\toprule
+\textbf{Section} & \textbf{Requirement} & \textbf{Source} & \textbf{Structured record} \\ \midrule
+\cref{ch:overview} & Countries in scope & Manoj e-mail, 2025-11-23 & \path{enums.yaml} (countries) \\
+\cref{ch:schema}   & Canonical invoice fields & EG ETA PDFs, ZATCA PDF & \path{schema/invoice.schema.json} \\
+\cref{ch:schema}   & 11-point checklist shape & Saudi OTP/VAT Q3 2025 & \path{schema/vat-checklist.schema.json} \\
+\cref{ch:ai}       & OCR command line & --- (new) & \path{extracted-text/*.txt} \\
+\cref{ch:ai}       & Translation glossary & \ar{اشعار صدور فاتورة} (005).pdf & \path{invoices/sa-zatca-ishaar-005.json} \\
+\cref{ch:vat}      & KSA rules (1--11) & Saudi OTP/VAT Q3 2025 & \path{vat-checklists/sa-otp-vat-q3-2025.json} \\
+\cref{ch:vat}      & ETA 26-char ID regex & EG ETA PDFs & \path{enums.yaml} (tax\_authorities.ETA) \\
+\cref{ch:vat}      & NBR 11 invoice types & AP DOI Activity 3 & \path{policies/bh-accounts-payable-doi.json} \\
+\cref{ch:ap}       & Activities 1--7 & AP DOI & \path{policies/bh-accounts-payable-doi.json} \\
+\cref{ch:ap}       & \texttt{po-eproc} state machine & AP DOI Activity 3 & \path{workflows/po-eproc.json} \\
+\cref{ch:ap}       & \texttt{manual-one-off} state machine & AP DOI Activity 5 (one-off) & \path{workflows/manual-one-off.json} \\
+\cref{ch:ap}       & \texttt{manual-recurring} state machine & AP DOI Activity 5 (recurring) & \path{workflows/manual-recurring.json} \\
+\cref{ch:ap}       & \texttt{vat-payment} state machine & KSA Q3 2025 flow + ZATCA assessment & \path{workflows/vat-payment.json} \\
+\cref{ch:controls} & Controls C1--C7 & AP DOI + KSA checklist + observations & \path{policies/bh-accounts-payable-doi.json} \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\section{Operational readiness}
+
+A country is declared \emph{production-ready} once:
+\begin{enumerate}
+\item the regression golden set runs clean for 30 consecutive days
+in the \textsc{uat} environment;
+\item Session~5 acceptance meets the human-approval-rate target
+(\cref{ch:ai});
+\item every VAT rule for the country is present in the ruleset and
+has at least one passing test case;
+\item the country CFO signs off on the workflow configuration,
+recorded as a \texttt{CFO} role entry on the \texttt{vat-payment}
+or \texttt{manual-one-off} workflow golden record.
+\end{enumerate}
+
+\section{Deployment and rollback}
+
+\paragraph{Environments.} Three are in scope:
+\begin{description}
+\item[\textsc{dev}.] Developer workstations and CI; reads the corpus
+from the Git working tree. No live invoices.
+\item[\textsc{uat}.] Shared test environment reading a frozen copy of
+the corpus; live DOI activity stops at \textsc{cfo\_approved}
+(no SAMA/SWIFT rail). Country finance and GBS APU run Session
+4/5 here.
+\item[\textsc{prod}.] Live environment; the only one authorised to
+transition to \textsc{paid}.
+\end{description}
+
+\paragraph{Sign-off matrix.} Each promotion requires a two-party
+approval recorded as an event in the \texttt{events/} stream
+(\cref{ch:ap}):
+
+\begin{tabularx}{\linewidth}{@{}l l X@{}}
+\toprule
+\textbf{Transition} & \textbf{Approvers} & \textbf{Evidence} \\ \midrule
+\textsc{dev}$\to$\textsc{uat}  & Tech lead + QA lead           & Green CI build, clean regression. \\
+\textsc{uat}$\to$\textsc{prod} & Country CFO + GBS APU head    & Session 5 acceptance report; 30-day UAT stability; CFO workflow golden record. \\
+\bottomrule
+\end{tabularx}
+
+\paragraph{Rollback.} Deployments are blue/green. The engine, rules,
+and schemas are versioned with a content-addressed tag (SHA-256 of
+\texttt{structured/corpus.json} at release time). Rollback is a
+one-command revert to the previous tag; no database migration is
+required because the canonical corpus is append-only. Any in-flight
+invoice whose workflow record references a schema version that was
+rolled back is automatically held in \textsc{awaiting\_review}.
+
+\paragraph{Change control.} Ruleset edits (\cref{ch:vat}) and
+workflow edits (\cref{ch:ap}) are routed through the same two-party
+sign-off; schema edits require an additional sign-off from the AI
+pipeline owner because they invalidate the regression golden set
+(\S\ref{ch:ai}).
+
+\section{Audit event log}
+
+The approval engine emits an append-only event per transition
+(\texttt{workflow\_id}, \texttt{from}, \texttt{to},
+\texttt{actor\_psid}, \texttt{timestamp}, \texttt{evidence\_refs}),
+hashing its predecessor so the stream is tamper-evident. The stream
+is \emph{in scope} for compliance purposes but the storage substrate
+(append-only object store, retention policy, restoration runbook) is
+owned by the GBS APU audit team and specified in
+\emph{SCB-APU-AUDIT-001}, referenced but not reproduced here. The
+engine guarantees:
+
+\begin{itemize}
+\item every workflow transition in \cref{ch:ap} emits exactly one
+event;
+\item events are linearly hash-chained;
+\item the event stream is the sole source of truth for DOA
+compliance (controls C1--C4 in \cref{tab:controls}).
+\end{itemize}
+\chapter{References}\label{ch:references}
+
+This appendix lists every file that backs a normative statement in the
+specification. Paths are relative to the repository root. SHA-256 hashes
+are taken from \corpus\texttt{structured/corpus.json} and are the
+ground truth for the provenance check of \cref{ch:schema}.
+
+\section{Source documents}
+
+\footnotesize
+\begin{longtable}{@{}p{3.4cm}p{8cm}p{3cm}@{}}
+\toprule
+\textbf{Short name} & \textbf{Path} & \textbf{SHA-256 (prefix)} \\ \midrule
+\endfirsthead
+\toprule
+\textbf{Short name} & \textbf{Path} & \textbf{SHA-256 (prefix)} \\ \midrule
+\endhead
+EG ETA seal invoice & \path{docs/arabic/source/3CPJR5CQ4PNNN9A4XHBB370K10.pdf} & \texttt{2b912687fa94\ldots} \\
+EG ETA corp membership & \path{docs/arabic/source/B1STE8RHNWZY9TYEXDS6WSZJ10.pdf} & \texttt{18eb35671131\ldots} \\
+SA ZATCA assessment & \path{docs/arabic/source/} \ar{اشعار صدور فاتورة} (005).pdf & \texttt{cbbb3f702ad5\ldots} \\
+QA EDAA annual fee & \path{docs/arabic/source/EDAA Annual Fee Invoice 2025.pdf} & \texttt{cf91c2a43574\ldots} \\
+QA QCSD payment instr. & \path{docs/arabic/source/Instruction for payment to vendor (QCSD).pdf} & \texttt{39ed62690d0f\ldots} \\
+SA OTP VAT Q3 2025 & \path{docs/arabic/source/Saudi - OTP Entry processing- VAT Q3'25 (1).docx} & \texttt{3a6c8f37528f\ldots} \\
+BH AP DOI & \path{docs/arabic/source/Accounts Payable DOI.docx} & \texttt{128ff6792798\ldots} \\
+AI initiative e-mail & \path{docs/arabic/source/FW- AI _ Arabic Invoice...eml} & \texttt{e01ba78d5ca5\ldots} \\
+\bottomrule
+\end{longtable}
+\normalsize
+
+\section{Derived text}
+
+Every Arabic PDF has a UTF-8 OCR artefact in
+\corpus\texttt{extracted-text/}, produced with
+\texttt{pdftoppm -r 300 | tesseract -l ara+eng}. English PDFs use
+\texttt{pdftotext -layout}; Word documents use
+\texttt{pandoc -t plain}; the e-mail is decomposed by a small Python
+script driven by the standard-library \texttt{email} module.
+
+\section{Structured records}
+
+All of the following are JSON records validated by
+\corpus\texttt{structured/validate.py}.
+
+\footnotesize
+\begin{longtable}{@{}p{4cm}p{10cm}@{}}
+\toprule
+\textbf{Type} & \textbf{Path} \\ \midrule
+\endhead
+Invoice & \path{structured/invoices/eg-eta-3CPJR5CQ4PNNN9A4XHBB370K10.json} \\
+Invoice & \path{structured/invoices/eg-eta-B1STE8RHNWZY9TYEXDS6WSZJ10.json} \\
+Invoice (assessment) & \path{structured/invoices/sa-zatca-ishaar-005.json} \\
+Payment instruction & \path{structured/payment-instructions/qa-edaa-annual-fee-2025.json} \\
+Payment instruction & \path{structured/payment-instructions/qa-qcsd-payment-instruction.json} \\
+VAT checklist & \path{structured/vat-checklists/sa-otp-vat-q3-2025.json} \\
+DOI policy & \path{structured/policies/bh-accounts-payable-doi.json} \\
+Workflow & \path{structured/workflows/po-eproc.json} \\
+Workflow & \path{structured/workflows/manual-one-off.json} \\
+Workflow & \path{structured/workflows/manual-recurring.json} \\
+Workflow & \path{structured/workflows/vat-payment.json} \\
+Index & \path{structured/corpus.json} \\
+Enumerations & \path{structured/enums.yaml} \\
+\bottomrule
+\end{longtable}
+\normalsize
+
+\section{Tools}
+
+\begin{tabularx}{\linewidth}{@{}l X@{}}
+\toprule
+\textbf{Tool} & \textbf{Purpose} \\ \midrule
+\texttt{pdftoppm}    & Rasterise PDF pages to 300~dpi PNG for OCR. \\
+\texttt{tesseract}   & Bilingual OCR with \texttt{-l ara+eng}. \\
+\texttt{pdftotext}   & Direct text extraction for born-digital English PDFs. \\
+\texttt{pandoc}      & Convert \texttt{.docx} to plain text. \\
+Python \texttt{email}& Parse the \texttt{.eml} envelope and MIME parts. \\
+\texttt{jq}          & Query and cross-check \texttt{corpus.json}. \\
+\texttt{jsonschema} / \texttt{referencing} (Python) & Offline schema validation with a local registry. \\
+\texttt{xelatex} / \texttt{tectonic} & Build this document (polyglossia, bidi support). \\
+\bottomrule
+\end{tabularx}
+
+\section{Minimal corpus excerpt}
+
+The entire corpus is in-tree under \corpus; for readers without
+access to the Git repository, \cref{lst:corpus-excerpt} reproduces
+the first three items of \corpus\texttt{structured/corpus.json}
+verbatim. This is a sufficient starting point to reconstruct the
+shape of the index; the full file contains 12 items covering every
+source in \cref{tab:layout}.
+
+\begin{figure}[htbp]
+\begin{lstlisting}[language=jsonx,caption={First three items of
+\texttt{corpus.json}; identical SHA-256 values are reproduced in
+\cref{ch:references}.},label=lst:corpus-excerpt]
+{
+"schema_version": "1.0",
+"items": [
+{
+"id": "eg-eta-3CPJR5CQ4PNNN9A4XHBB370K10",
+"type": "invoice",
+"country": "EG",
+"tax_authority": "ETA",
+"sha256": "2b912687fa94...",
+"source_path":     "docs/arabic/source/3CPJR5CQ...K10.pdf",
+"text_path":       "docs/arabic/extracted-text/eg-eta-...K10.txt",
+"structured_path": "docs/arabic/structured/invoices/eg-eta-...K10.json"
+},
+{
+"id": "sa-zatca-ishaar-005",
+"type": "invoice",
+"country": "SA",
+"tax_authority": "ZATCA",
+"sha256": "cbbb3f702ad5...",
+"source_path":     "docs/arabic/source/<arabic-name>.pdf",
+"text_path":       "docs/arabic/extracted-text/sa-zatca-ishaar-005.txt",
+"structured_path": "docs/arabic/structured/invoices/sa-zatca-ishaar-005.json"
+},
+{
+"id": "qa-edaa-annual-fee-2025",
+"type": "payment_instruction",
+"country": "QA",
+"tax_authority": null,
+"sha256": "cf91c2a43574..."
+}
+]
+}
+\end{lstlisting}
+\end{figure}
+
+\section{Out-of-scope assets}
+
+The following files sit in
+\corpus\texttt{source/} but are \emph{not} part of the corpus and
+are not referenced by any record:
+
+\begin{itemize}
+\item \texttt{Business Instruction Template - V1.0 (002) (1).xlsm} ---
+encrypted CDFV2 workbook; cannot be opened without the owner's
+password.
+\item \texttt{EDAA Annual Fee Invoice 2025[65].pdf} --- byte-identical
+duplicate of \texttt{EDAA Annual Fee Invoice 2025.pdf}.
+\end{itemize}
+\chapter{VAT Module Implementation Specification}\label{ch:vat-impl}
+
+This chapter provides the technical implementation specification for the VAT
+processing module, addressing the review finding that ``VAT engine rule format
+is underspecified.'' The specification enables developers to build conformant
+implementations.
+
+\section{Module architecture}
+
+The VAT module comprises four components:
+
+\begin{enumerate}
+\item \textbf{RulesEngine} --- evaluates JSON-Logic expressions against invoice
+data and produces checklist items;
+\item \textbf{RegistrationValidator} --- validates VAT registration numbers
+against country-specific formats and (optionally) authority APIs;
+\item \textbf{Calculator} --- computes expected VAT amounts given rates and
+subtotals;
+\item \textbf{ActivityLookup} --- maps business activity codes to VAT
+treatment categories.
+\end{enumerate}
+
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}[
+node distance=8mm and 15mm,
+box/.style={draw,rounded corners,minimum width=28mm,minimum height=10mm,align=center,font=\small,fill=blue!5},
+db/.style={draw,cylinder,shape border rotate=90,aspect=0.25,minimum width=18mm,minimum height=12mm,fill=gray!10,font=\small},
+t/.style={-{Latex[length=2mm]}}
+]
+\node[box] (eng) {RulesEngine};
+\node[box,below left=of eng,align=center] (reg) {Registration\\Validator};
+\node[box,below=of eng] (calc) {Calculator};
+\node[box,below right=of eng,align=center] (act) {Activity\\Lookup};
+\node[db,above=of eng] (rules) {rules.json};
+\node[db,above left=of eng,xshift=-5mm,align=center] (inv) {invoice\\record};
+\node[db,above right=of eng,xshift=5mm,align=center] (out) {checklist\\record};
+
+\draw[t] (inv.south) -- (eng.north west);
+\draw[t] (rules.south) -- (eng.north);
+\draw[t] (eng.north east) -- (out.south);
+\draw[t,dashed] (eng.south west) -- (reg.north east);
+\draw[t,dashed] (eng.south) -- (calc.north);
+\draw[t,dashed] (eng.south east) -- (act.north west);
+\end{tikzpicture}
+\caption{VAT module component diagram. Dashed arrows indicate helper
+invocations from the rules engine.}
+\label{fig:vat-arch}
+\end{figure}
+
+\section{API contracts}
+
+Each helper function has a defined API contract. Implementations \textbf{must}
+conform to these signatures to be invoked by the rules engine.
+
+\subsection{Registration validation}
+
+\begin{lstlisting}[language=Python,basicstyle=\ttfamily\small,caption={Registration validator API contract.}]
+def check_vat_registration_validity(
+tax_id: str,
+country: str  # ISO 3166-1 alpha-2
+) -> ValidationResult:
+"""
+Validate a VAT registration number.
+
+Returns:
+ValidationResult with fields:
+- valid: bool
+- format_valid: bool
+- authority_confirmed: Optional[bool]
+- error_code: Optional[str]
+"""
+\end{lstlisting}
+
+\begin{table}[htbp]
+\centering
+\caption{VAT registration number formats by country.}
+\label{tab:vat-formats}
+\footnotesize
+\begin{tabularx}{\linewidth}{@{}l l X@{}}
+\toprule
+\textbf{Country} & \textbf{Regex} & \textbf{Notes} \\ \midrule
+SA & \verb|^[0-9]{15}$| & 15-digit ZATCA TIN \\
+EG & \verb|^[0-9]{9}$| & 9-digit ETA TRN \\
+BH & \verb|^[0-9]{9,15}$| & NBR VAT number (variable length) \\
+QA & \verb|^[A-Z0-9]{10}$| & QCSD registration (non-VAT) \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\subsection{VAT calculation}
+
+\begin{lstlisting}[language=Python,basicstyle=\ttfamily\small,caption={VAT calculator API contract.}]
+def calculate_vat_amount(
+subtotal: Decimal,
+vat_rate_percent: Decimal
+) -> CalculationResult:
+"""
+Calculate expected VAT amount.
+
+Returns:
+CalculationResult with fields:
+- vat_amount: Decimal (rounded to 2 decimal places)
+- gross_amount: Decimal
+- calculation_method: str  # "standard" | "reverse"
+"""
+\end{lstlisting}
+
+The calculator \textbf{must} use banker's rounding (ROUND\_HALF\_EVEN) and
+\textbf{must} handle the following edge cases:
+
+\begin{enumerate}
+\item Negative subtotals (credit notes): return negative VAT amount
+\item Zero rate: return VAT amount of exactly 0.00
+\item Rate $>$ 100\%: reject with error code \texttt{INVALID\_RATE}
+\end{enumerate}
+
+\subsection{Activity lookup}
+
+\begin{lstlisting}[language=Python,basicstyle=\ttfamily\small,caption={Activity lookup API contract.}]
+def lookup_activity_code_treatment(
+activity_code: str,
+country: str  # ISO 3166-1 alpha-2
+) -> TreatmentResult:
+"""
+Determine VAT treatment from business activity code.
+
+Returns:
+TreatmentResult with fields:
+- vat_category: str  # ZR, EX, FI, etc.
+- rate_percent: Optional[Decimal]
+- source: str  # regulation reference
+"""
+\end{lstlisting}
+
+\begin{table}[htbp]
+\centering
+\caption{Activity code to VAT treatment mapping (Egypt, partial).}
+\label{tab:activity-lookup}
+\footnotesize
+\begin{tabularx}{\linewidth}{@{}l l l X@{}}
+\toprule
+\textbf{Code} & \textbf{Description} & \textbf{Treatment} & \textbf{Source} \\ \midrule
+1811 & Printing services & FI (14\%) & ETA Circular 2019/1 \\
+8890 & Professional services & EX (exempt) & ETA Circular 2020/3 \\
+4911 & Passenger rail transport & ZR (0\%) & VAT Law Art. 23 \\
+6411 & Banking services & EX (exempt) & VAT Law Art. 29 \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\section{JSON-Logic expression specification}
+
+The rules engine evaluates predicates expressed in JSON-Logic format
+(\url{https://jsonlogic.com}). This section specifies the supported
+operators and variable paths.
+
+\subsection{Supported operators}
+
+\begin{table}[htbp]
+\centering
+\caption{JSON-Logic operators supported by the rules engine.}
+\label{tab:jsonlogic-ops}
+\footnotesize
+\begin{tabularx}{\linewidth}{@{}l l X@{}}
+\toprule
+\textbf{Category} & \textbf{Operators} & \textbf{Notes} \\ \midrule
+Comparison & \texttt{==}, \texttt{===}, \texttt{!=}, \texttt{!==} & Strict equality recommended \\
+& \texttt{<}, \texttt{<=}, \texttt{>}, \texttt{>=} & Numeric comparison \\
+Logic      & \texttt{and}, \texttt{or}, \texttt{!}, \texttt{!!} & Boolean operations \\
+& \texttt{if} & Ternary conditional \\
+String     & \texttt{in}, \texttt{cat}, \texttt{substr} & String operations \\
+Array      & \texttt{in}, \texttt{merge}, \texttt{map}, \texttt{filter} & Array operations \\
+Arithmetic & \texttt{+}, \texttt{-}, \texttt{*}, \texttt{/}, \texttt{\%} & Basic arithmetic \\
+Data       & \texttt{var}, \texttt{missing}, \texttt{missing\_some} & Variable access \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\subsection{Variable paths}
+
+Variable paths use dot notation to access nested fields in the invoice record.
+The root object is the validated invoice conforming to
+\texttt{invoice.schema.json}.
+
+\begin{lstlisting}[basicstyle=\ttfamily\small,caption={Example variable paths for invoice data.}]
+totals.gross           # Invoice gross amount
+totals.vat_rate_percent  # VAT rate as percentage
+seller.tax_id          # Seller VAT registration number
+seller.country         # Seller country code
+buyer.country          # Buyer country code
+metadata.issue_date    # Invoice issue date
+line_items.0.description  # First line item description
+\end{lstlisting}
+
+\subsection{Named helper invocation}
+
+When a predicate requires complex logic beyond JSON-Logic capabilities,
+the engine invokes a named helper. The syntax is:
+
+\begin{lstlisting}[basicstyle=\ttfamily\small,caption={Named helper invocation in rule predicate.}]
+{
+"predicate": {
+"type": "named_helper",
+"name": "check_vat_registration_validity",
+"args": {
+"tax_id": {"var": "seller.tax_id"},
+"country": {"var": "seller.country"}
+}
+}
+}
+\end{lstlisting}
+
+\section{Error handling specification}
+
+The module \textbf{must} handle errors gracefully without crashing the
+parent invoice processing pipeline.
+
+\subsection{Error codes}
+
+\begin{table}[htbp]
+\centering
+\caption{VAT module error codes.}
+\label{tab:vat-errors}
+\footnotesize
+\begin{tabularx}{\linewidth}{@{}l l X@{}}
+\toprule
+\textbf{Code} & \textbf{Severity} & \textbf{Description} \\ \midrule
+\texttt{VAT\_E001} & ERROR & Invalid VAT registration format \\
+\texttt{VAT\_E002} & ERROR & Unknown country code \\
+\texttt{VAT\_E003} & ERROR & Invalid VAT rate (negative or $>$100\%) \\
+\texttt{VAT\_E004} & ERROR & JSON-Logic parse failure \\
+\texttt{VAT\_W001} & WARNING & Authority API unavailable (fallback to format check) \\
+\texttt{VAT\_W002} & WARNING & Activity code not in lookup table \\
+\texttt{VAT\_I001} & INFO & Rate changed since last validation \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\subsection{Fallback behaviour}
+
+When an error occurs:
+
+\begin{enumerate}
+\item Log the error with full context (invoice ID, field values, stack trace)
+\item Set the rule result to \textsc{hold} (never silently pass)
+\item Populate \texttt{checklist[].error\_code} with the appropriate code
+\item Continue processing remaining rules (fail-open for diagnostics)
+\item Return the partial checklist to the caller
+\end{enumerate}
+
+\section{Performance requirements}
+
+\begin{table}[htbp]
+\centering
+\caption{VAT module performance requirements.}
+\label{tab:vat-perf}
+\footnotesize
+\begin{tabularx}{\linewidth}{@{}l r X@{}}
+\toprule
+\textbf{Metric} & \textbf{Target} & \textbf{Measurement} \\ \midrule
+p95 latency per invoice & $<$ 100 ms & Excluding authority API calls \\
+p95 latency with API    & $<$ 2000 ms & Including authority validation \\
+Memory per invoice      & $<$ 10 MB & Peak allocation during processing \\
+Throughput              & $>$ 100/sec & Single-threaded, no API calls \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\section{Implementation checklist}
+
+Developers \textbf{must} verify the following before marking the module
+complete:
+
+\begin{itemize}
+\item[\texttt{[ ]}] All four helper functions implemented with correct signatures
+\item[\texttt{[ ]}] Unit tests achieve $\geq$90\% line coverage
+\item[\texttt{[ ]}] All country-specific regex patterns validated against test data
+\item[\texttt{[ ]}] JSON-Logic parser handles all operators in Table~\ref{tab:jsonlogic-ops}
+\item[\texttt{[ ]}] Error codes match Table~\ref{tab:vat-errors}
+\item[\texttt{[ ]}] Performance meets targets in Table~\ref{tab:vat-perf}
+\item[\texttt{[ ]}] Integration test with real invoice records from each country
+\item[\texttt{[ ]}] Security review completed (input validation, injection prevention)
+\end{itemize}
+\chapter{Testing Specification}\label{ch:testing}
+
+This chapter specifies the testing requirements for the Arabic AP invoice
+processing pipeline, including test cases, coverage targets, and CI/CD
+integration.
+
+\section{Test coverage requirements}
+
+\begin{table}[htbp]
+\centering
+\caption{Arabic AP test coverage targets.}
+\label{tab:arabic-coverage}
+\footnotesize
+\begin{tabularx}{\linewidth}{@{}l r r X@{}}
+\toprule
+\textbf{Component} & \textbf{Line \%} & \textbf{Branch \%} & \textbf{Notes} \\ \midrule
+OCR extractor & 85 & 75 & \\
+VAT rules engine & 90 & 85 & Critical path \\
+Invoice validator & 90 & 85 & Schema + business rules \\
+AP workflow engine & 80 & 70 & \\
+\textbf{Overall minimum} & \textbf{85} & \textbf{75} & Enforced in CI \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\section{Test fixtures}
+
+Fixtures are located in \texttt{tests/fixtures/arabic/}.
+
+\subsection{Invoice fixtures}
+
+\begin{table}[htbp]
+\centering
+\caption{Required invoice fixture categories.}
+\footnotesize
+\begin{tabularx}{\linewidth}{@{}l l X@{}}
+\toprule
+\textbf{Category} & \textbf{Count} & \textbf{Coverage} \\ \midrule
+Standard invoices & 20 & 5 per country (SA, EG, BH, QA) \\
+Edge cases & 15 & Missing fields, unusual formats \\
+Invalid invoices & 10 & Schema violations, invalid TINs \\
+Credit notes & 5 & Negative amounts, adjustments \\
+Multi-currency & 5 & Non-local currency invoices \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\subsection{OCR fixtures}
+
+OCR fixtures cover all confidence thresholds:
+\begin{itemize}
+\item High quality ($>$85\%): 10 samples
+\item Medium quality (55--85\%): 10 samples
+\item Low quality (30--55\%): 5 samples
+\item Very low quality ($<$30\%): 5 samples
+\end{itemize}
+
+\section{Unit test cases}
+
+\subsection{Invoice extraction}
+
+\begin{tabularx}{\linewidth}{@{}l l X@{}}
+\toprule
+\textbf{ID} & \textbf{Priority} & \textbf{Description} \\ \midrule
+AP-EXT-001 & P1 & Extract all fields from standard Saudi invoice \\
+AP-EXT-002 & P1 & Extract all fields from standard Egyptian invoice \\
+AP-EXT-003 & P1 & Extract all fields from standard Bahrain invoice \\
+AP-EXT-004 & P1 & Extract all fields from Qatar payment instruction \\
+AP-EXT-005 & P1 & Handle missing optional fields gracefully \\
+AP-EXT-006 & P2 & Handle multi-page invoice \\
+AP-EXT-007 & P2 & Handle poor quality scan ($<$55\% confidence) \\
+AP-EXT-008 & P2 & Handle Arabic-only invoice \\
+AP-EXT-009 & P2 & Handle Arabic+English bilingual invoice \\
+AP-EXT-010 & P3 & Handle unusual date formats \\
+\bottomrule
+\end{tabularx}
+
+\subsection{VAT validation}
+
+\begin{tabularx}{\linewidth}{@{}l l X@{}}
+\toprule
+\textbf{ID} & \textbf{Priority} & \textbf{Description} \\ \midrule
+AP-VAT-001 & P1 & Validate 15-digit Saudi TIN format \\
+AP-VAT-002 & P1 & Validate 9-digit Egyptian TRN format \\
+AP-VAT-003 & P1 & Calculate VAT amount matches invoice \\
+AP-VAT-004 & P1 & Apply correct VAT rate by country \\
+AP-VAT-005 & P1 & Identify reverse-charge transactions \\
+AP-VAT-006 & P2 & Handle zero-rated supplies \\
+AP-VAT-007 & P2 & Handle exempt supplies \\
+AP-VAT-008 & P2 & Apply withholding tax rules \\
+AP-VAT-009 & P3 & Handle credit notes correctly \\
+AP-VAT-010 & P3 & Handle inter-GCC transactions \\
+\bottomrule
+\end{tabularx}
+
+\section{Integration test suite}
+
+\begin{lstlisting}[basicstyle=\ttfamily\small]
+pytest tests/integration/arabic/ -v --tb=short
+\end{lstlisting}
+
+Expected duration: 15 minutes.
+
+\subsection{End-to-end scenarios}
+
+\begin{enumerate}
+\item \textbf{Happy path}: Invoice scan $\rightarrow$ OCR $\rightarrow$ extraction
+$\rightarrow$ VAT validation $\rightarrow$ approval workflow
+\item \textbf{Manual review}: Low-confidence extraction triggers human review
+\item \textbf{VAT hold}: Rule failure triggers hold and escalation
+\item \textbf{Multi-country}: Invoices from all four countries processed correctly
+\end{enumerate}
+
+\section{Performance benchmarks}
+
+All p95 targets in Table~\ref{tab:ap-perf-targets} are measured on the
+\emph{reference hardware profile} in Section~\ref{sec:ap-perf-hardware}.
+CI enforces each target by failing the performance regression job when
+the measured p95 exceeds the target by more than 20\,\% on three
+consecutive runs on identical hardware.
+
+\begin{table}[htbp]
+\centering
+\caption{Arabic AP performance targets on reference hardware.}
+\label{tab:ap-perf-targets}
+\footnotesize
+\begin{tabularx}{\linewidth}{@{}l r r X@{}}
+\toprule
+\textbf{Operation} & \textbf{p95 Target} & \textbf{Throughput} & \textbf{Notes} \\ \midrule
+OCR extraction & 3,000 ms & 200/hr & Per page \\
+Field extraction (LLM) & 5,000 ms & 100/hr & Per invoice \\
+VAT rule evaluation & 100 ms & 1,000/sec & No external API \\
+Full pipeline E2E & 10,000 ms & 50/hr & Including all steps \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\subsection{Reference hardware profile}
+\label{sec:ap-perf-hardware}
+
+\begin{description}
+\item[GPU.] 1$\times$ NVIDIA A100 40\,GB SXM4 \emph{or} L40S 48\,GB.
+Shared with Simula and TB; reservation is not required for
+single-invoice latency targets.
+\item[OCR engine.] Tesseract 5.3.x with Arabic language pack
+(\texttt{ara}, \texttt{ara\_old}), CPU-only. A 2-page invoice
+at 300\,dpi is the reference document size.
+\item[LLM.] \texttt{Qwen2.5-14B-Instruct} served via vLLM 0.6.x,
+\texttt{max\_model\_len=8192}, 14-field extraction prompt
+($\sim$1,200 input tokens, $\sim$400 output tokens).
+\item[CPU / RAM.] 8~vCPU, 32\,GB RAM host.
+\item[Storage.] NVMe SSD; invoice PDFs streamed from object storage
+with 2\,Gbps link.
+\item[Network.] Co-located vLLM; RTT $<$0.5\,ms. For remote LLM
+endpoints, add measured RTT to the field-extraction p95.
+\end{description}
+
+\noindent
+Running on consumer-grade GPUs (e.g.\ T4 15\,GB) is not supported for
+the 14B model; a fallback profile using
+\texttt{Qwen2.5-7B-Instruct} is documented in
+\path{docs/arabic/runbooks/perf-fallback.md} with correspondingly
+relaxed p95 targets (field extraction $\le$8,000\,ms).
+
+\section{Security tests}
+
+\subsection{Prompt injection}
+
+\begin{tabularx}{\linewidth}{@{}l X@{}}
+\toprule
+\textbf{Test} & \textbf{Description} \\ \midrule
+AP-SEC-001 & Malicious text in invoice description field \\
+AP-SEC-002 & JSON injection via seller name \\
+AP-SEC-003 & Unicode control characters in OCR output \\
+AP-SEC-004 & System prompt extraction attempt \\
+\bottomrule
+\end{tabularx}
+
+\section{CI/CD integration}
+
+\begin{lstlisting}[basicstyle=\ttfamily\small,caption={GitHub Actions workflow excerpt.}]
+arabic-tests:
+runs-on: ubuntu-latest
+steps:
+- uses: actions/checkout@v4
+- name: Run Arabic AP tests
+run: |
+pytest tests/unit/arabic/ -v --cov=src/arabic
+pytest tests/integration/arabic/ -v
+- name: Check coverage
+run: |
+coverage report --fail-under=85
+\end{lstlisting}
+
+\section{Acceptance criteria}
+
+Tests pass when:
+\begin{enumerate}
+\item All P1 test cases pass (100\%)
+\item P2 test cases pass ($\geq$95\%)
+\item P3 test cases pass ($\geq$90\%)
+\item Line coverage $\geq$85\%
+\item Performance within targets
+\item No critical security findings
+\end{enumerate}
+\chapter{OCR and Translation Calibration Pilot Design}\label{ch:ocr-pilot}
+
+This chapter specifies the pilot study design for calibrating OCR confidence
+thresholds \emph{and} the Arabic$\to$English translation quality gate,
+addressing the review findings that both the OCR thresholds (30\,\%/55\,\%)
+and the Levenshtein distance gate ($\le$0.30) are calibrated on three
+documents. Both calibrations are run against the same pilot corpus to avoid
+duplicate ground-truth effort.
+
+\section{Objective}
+
+The pilot aims to:
+\begin{enumerate}
+\item Determine empirically-validated OCR confidence thresholds per country
+\item Establish confidence intervals for threshold boundaries
+\item Identify document types that require special handling
+\item Create a baseline for ongoing threshold monitoring
+\item Calibrate the Arabic$\to$English translation quality gate
+(Levenshtein distance threshold) against the same pilot corpus
+\end{enumerate}
+
+\section{Pilot design}
+
+\subsection{Sample size}
+
+\begin{table}[htbp]
+\centering
+\caption{Pilot sample size by country.}
+\label{tab:pilot-sample}
+\footnotesize
+\begin{tabularx}{\linewidth}{@{}l r r X@{}}
+\toprule
+\textbf{Country} & \textbf{Minimum} & \textbf{Target} & \textbf{Stratification} \\ \midrule
+Saudi Arabia (SA) & 50 & 75 & By invoice type (tax, commercial) \\
+Egypt (EG) & 50 & 75 & By scan quality (photo, scan, PDF) \\
+Bahrain (BH) & 50 & 75 & By document language (AR, EN, mixed) \\
+Qatar (QA) & 50 & 75 & By amount range (small, medium, large) \\
+\textbf{Total} & \textbf{200} & \textbf{300} & \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+The sample size of 50 per country provides:
+\begin{itemize}
+\item 95\% confidence interval width of $\pm$7\% for threshold estimates
+\item Statistical power of 80\% to detect 15\% differences between countries
+\item Sufficient stratification for 3--4 document types per country
+\end{itemize}
+
+\subsection{Document selection}
+
+Documents are selected by:
+\begin{enumerate}
+\item Random sampling from the last 6 months of invoices
+\item Stratified by document type (tax invoice, commercial invoice, payment
+instruction)
+\item Stratified by scan quality (high: $>$300 DPI, medium: 150--300 DPI,
+low: $<$150 DPI)
+\item Excluding documents with known data quality issues
+\end{enumerate}
+
+\subsection{Ground truth creation}
+
+For each pilot document:
+\begin{enumerate}
+\item Two independent human reviewers manually transcribe all fields
+in the source language (Arabic) and the required English fields
+\item Inter-rater agreement calculated (target: Cohen's $\kappa > 0.9$)
+for categorical fields; character error rate (CER) $\le$1\,\%
+on free-text fields
+\item Disagreements are resolved by a third reviewer whose decision is
+final. The resolution process is:
+\begin{enumerate}
+\item Third reviewer inspects both transcriptions side-by-side
+with the source document.
+\item Third reviewer selects one of the two transcriptions
+\emph{or} provides a new transcription; the choice and
+rationale are logged to
+\path{pilot/disputes/<doc-id>.json}.
+\item The third reviewer's verdict is the ground truth; the
+pilot lead reviews the top 10\,\% of disputes monthly
+to detect systematic bias.
+\end{enumerate}
+\item Final ground truth stored in structured JSON
+(\path{pilot/ground-truth/<country>/<doc-id>.json}), validated
+against \texttt{docs/schema/arabic/ocr-result.schema.json}
+\end{enumerate}
+
+\section{Threshold calibration methodology}
+
+\subsection{OCR evaluation}
+
+Each document is processed by the OCR pipeline:
+\begin{enumerate}
+\item Record per-field OCR confidence scores
+\item Record per-document aggregate confidence
+\item Compare OCR output to ground truth
+\item Calculate field-level accuracy (character error rate)
+\end{enumerate}
+
+\subsection{Threshold determination}
+
+For each country, determine optimal thresholds using:
+
+\begin{lstlisting}[basicstyle=\ttfamily\small,caption={Threshold calibration algorithm.}]
+def calibrate_thresholds(pilot_data, target_precision=0.95):
+"""
+Calibrate OCR confidence thresholds.
+
+Parameters:
+pilot_data: List of (confidence, accuracy) pairs
+target_precision: Minimum acceptable precision (default 95%)
+
+Returns:
+high_threshold: Above this, auto-accept
+low_threshold: Below this, reject
+"""
+# Sort by confidence descending
+sorted_data = sorted(pilot_data, key=lambda x: -x.confidence)
+
+# Find high_threshold: highest confidence where
+# precision >= target for all docs above threshold
+high_threshold = find_precision_cutoff(
+sorted_data, target_precision
+)
+
+# Find low_threshold: confidence below which
+# accuracy < 50% (not worth manual review)
+low_threshold = find_accuracy_floor(sorted_data, floor=0.50)
+
+return high_threshold, low_threshold
+\end{lstlisting}
+
+\paragraph{Justification of \texttt{target\_precision = 0.95}.}
+The AP workflow routes any invoice below the high threshold to
+two-person manual review (Chapter~5), which is tolerant of 5\,\%
+false-positive auto-accepts from a \emph{business-risk} standpoint:
+the downstream VAT engine (Chapter~4) independently validates
+tax-ID and amount fields, and the reconciliation step catches
+posting errors before payment is released. The 97\,\% soundness
+threshold reported in the referenced OCR evaluation paper is
+appropriate for \emph{unsupervised} pipelines; because our pipeline
+has a manual review backstop, 95\,\% provides the right
+precision/recall trade-off (empirically validated in the pilot
+success criteria below). A sensitivity analysis at 93\,\%, 95\,\%,
+and 97\,\% must be produced as part of the pilot report; the final
+threshold is the largest value in \{0.93, 0.95, 0.97\} for which
+the success criteria in Section~\ref{sec:pilot-success} hold.
+
+\subsection{Translation quality gate calibration}
+\label{sec:pilot-translation}
+
+Using the same pilot corpus, the Arabic$\to$English translation
+quality gate (currently Levenshtein distance $\le$0.30 against the
+model's re-translation, calibrated on three documents) is
+re-calibrated:
+
+\begin{enumerate}
+\item For each ground-truthed pilot document, run the
+Arabic$\to$English$\to$Arabic round-trip translation and
+compute the normalized Levenshtein distance against the
+source Arabic.
+\item Compute the field-level translation accuracy against the
+human ground truth (exact match on numeric fields, BLEU-4
+$\ge$0.6 on free-text fields).
+\item Determine the Levenshtein threshold $\tau^{*}$ that
+maximises the F1 between ``round-trip gate passed'' and
+``field-level translation accurate'' across the 200 pilot
+documents.
+\item Report the per-country threshold and the 95\,\% bootstrap
+CI ($\tau^{*}_{\mathrm{lower}}, \tau^{*}_{\mathrm{upper}}$).
+Deploy using the conservative upper bound.
+\end{enumerate}
+
+\noindent
+The translation calibration adds no additional ground-truth effort
+(the human transcriptions already contain the English fields) and
+extends the pilot timeline by one week (added to
+Section~\ref{sec:pilot-timeline}).
+
+\subsection{Confidence interval calculation}
+
+Bootstrap sampling (1,000 iterations) determines confidence intervals:
+\begin{itemize}
+\item Report 95\% CI for high threshold
+\item Report 95\% CI for low threshold
+\item Use upper bound of CI for conservative deployment
+\end{itemize}
+
+\section{Success criteria}\label{sec:pilot-success}
+
+The pilot succeeds when all of the following are true:
+\begin{enumerate}
+\item $\geq$200 documents processed (50 per country minimum)
+\item Inter-rater agreement $\kappa > 0.9$ (categorical fields)
+and CER $\le$1\,\% (free-text fields)
+\item 95\,\% CI width $\leq \pm 5\,\%$ for all thresholds
+\item High threshold achieves $\geq$95\,\% precision
+\item Low threshold correctly rejects $\geq$90\,\% of unusable documents
+\item Translation gate F1 $\geq$0.85 at the selected Levenshtein
+threshold (see Section~\ref{sec:pilot-translation})
+\end{enumerate}
+
+\section{Fallback procedure}
+
+If the pilot fails success criteria:
+\begin{enumerate}
+\item Increase sample size by 50\% and repeat
+\item If still failing, segment by document type and calibrate separately
+\item If per-type calibration fails, default to manual review for all
+documents from that country until more data is collected
+\end{enumerate}
+
+\section{Timeline}\label{sec:pilot-timeline}
+
+\begin{table}[htbp]
+\centering
+\caption{OCR and translation pilot timeline.}
+\label{tab:pilot-timeline}
+\footnotesize
+\begin{tabularx}{\linewidth}{@{}l l l@{}}
+\toprule
+\textbf{Phase} & \textbf{Duration} & \textbf{Deliverable} \\ \midrule
+Document selection & Week 1 & 300 documents identified \\
+Ground truth creation & Weeks 2--5 & All documents transcribed (200 min) \\
+OCR processing & Week 6 & Confidence scores recorded \\
+Translation round-trip & Week 6 & Levenshtein distances recorded \\
+Threshold calibration & Week 7 & Per-country OCR + translation thresholds \\
+Validation & Week 8 & Held-out set validation \\
+\textbf{Total} & \textbf{8 weeks} & Production-ready thresholds \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\paragraph{Ground-truth effort justification.}
+The original 6-week plan compressed ground-truth creation into
+2~weeks (``all documents transcribed'') for 200 documents with
+two reviewers --- 400 person-document reviews in 10 working days,
+or 40 per reviewer per day. Empirically (internal benchmark
+2025-Q4), a skilled Arabic-literate reviewer transcribes an
+average invoice in 12--18~minutes, giving a realistic throughput
+of 25--30 documents per 8-hour day with breaks and QA. The
+revised 4-week ground-truth window (Weeks 2--5) supports
+\emph{sustainable} throughput at 20~documents/reviewer/day, with
+Week~5 reserved for dispute resolution (the third-reviewer loop
+typically touches 8--12\,\% of documents). Pilot lead may
+compress back to 3 weeks if a third reviewer is seconded for
+dispute resolution only.
+
+\section{Ownership}
+
+\begin{table}[htbp]
+\centering
+\caption{Pilot roles and responsibilities.}
+\label{tab:pilot-roles}
+\footnotesize
+\begin{tabularx}{\linewidth}{@{}l X@{}}
+\toprule
+\textbf{Role} & \textbf{Responsibility} \\ \midrule
+Pilot Lead & Overall coordination, success criteria validation \\
+Data Analyst & Sample selection, threshold calibration \\
+QA Reviewers (2) & Ground truth creation, inter-rater agreement \\
+ML Engineer & OCR pipeline configuration, metrics collection \\
+Product Owner & Go/no-go decision, fallback approval \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\section{Post-pilot monitoring}
+
+After threshold deployment:
+\begin{enumerate}
+\item Monthly accuracy review on random 50-document sample
+\item Alert if accuracy drops $>$5\% from pilot baseline
+\item Annual recalibration with new 200-document sample
+\item Per-country threshold adjustment if document mix changes
+\end{enumerate}
+\chapter{Project Roadmap}\label{ch:ap-roadmap}
+
+\section*{Scope of this chapter}
+\addcontentsline{toc}{section}{Scope of this chapter}
+
+This chapter is the roadmap for the \textbf{Arabic invoice processing}
+project. It is a project-level artefact, not a programme plan. Other
+SAP OSS Finance projects (Trial Balance, Simula, Regulations) run on
+the same platform, workspaces, and backends, but each owns its own
+roadmap, business case, and go/no-go decision. This chapter adopts the
+MoSCoW prioritisation and sequence-based critical path that the four
+projects share so that artefacts can be compared at a glance; it does
+not assert coupling between their go-live moments.
+
+\paragraph{Sequence, not dates.}
+The milestones and dependency graph below express \emph{order} and
+\emph{prerequisite} relationships, not calendar dates. This is
+deliberate. Implementation teams must know what depends on what, and
+where the schedule can absorb slippage (the Should/Could items); a
+date column would harden targets into commitments they were never
+meant to be. Dates, when set, live in the project steering packet and
+the ticketing system, not in this specification.
+
+\section{MoSCoW classification}\label{sec:ap-moscow}
+
+Every milestone below carries one of four priorities. The mapping is
+contractual: a milestone's priority determines what happens when it is
+dropped, de-scoped, or slips.
+
+\begin{table}[htbp]
+\centering
+\caption{MoSCoW prioritisation (shared across the four SAP OSS Finance
+projects).}
+\label{tab:ap-moscow}
+\footnotesize
+\begin{tabularx}{\linewidth}{@{}l l X@{}}
+\toprule
+\textbf{Priority} & \textbf{Meaning} & \textbf{Allowance} \\ \midrule
+\textbf{Must} (\textbf{M}) & Non-negotiable for v1.0. Without this milestone, the release does not ship. & None. Missing a Must halts the release; see the kill-switch in \cref{sec:ap-kill-switch}. \\
+\textbf{Should} (\textbf{S}) & Important but not vital. Ship without it only with sponsor sign-off; document the deviation in the business-case refresh. & May slip by one rollout wave; two consecutive slips escalate to GFAIC. \\
+\textbf{Could} (\textbf{C}) & Desirable enhancement. Included if Must and Should items are on track. & May be dropped to v1.1 at project steering's discretion. \\
+\textbf{Won't} (\textbf{W}) & Explicitly out of v1.0 scope. Listed so the boundary is legible. & Not eligible for v1.0 planning at all. \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\noindent
+The critical path of this project is the chain of Must items in
+\cref{tab:ap-milestones}; the Should and Could items are where the
+schedule and scope can absorb delivery risk without a release slip.
+
+\section{Dependency graph}\label{sec:ap-dependency-graph}
+
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}[
+node distance=5mm and 10mm,
+must/.style={draw,rounded corners=2pt,align=center,font=\scriptsize,
+fill=apred!20,draw=apred!70,
+minimum height=7mm,minimum width=32mm},
+should/.style={draw,rounded corners=2pt,align=center,font=\scriptsize,
+fill=apblue!12,draw=apblue!50,
+minimum height=7mm,minimum width=32mm},
+could/.style={draw,rounded corners=2pt,align=center,font=\scriptsize,
+fill=apgreen!12,draw=apgreen!50,dotted,
+minimum height=7mm,minimum width=32mm},
+dep/.style={-{Latex[length=2mm]},thick},
+soft/.style={-{Latex[length=2mm]},thick,dashed}
+]
+\node[must] (m01) {M01 AP-ENG-001 \\ \scriptsize OCR pipeline};
+\node[must,below=of m01] (m02) {M02 AP-ENG-002 \\ \scriptsize VAT engine};
+\node[must,below=of m02] (m03) {M03 AP-PILOT-PREP \\ \scriptsize 200 pilot docs};
+\node[must,right=14mm of m02] (m04) {M04 REG-INTG-AP-001 \\ \scriptsize identity wiring};
+\node[must,right=14mm of m04] (m05) {M05 AP-PILOT-001 \\ \scriptsize thresholds set};
+\node[must,below=of m05] (m06) {M06 AP-BETA-001 \\ \scriptsize Saudi beta};
+\node[must,below=of m06] (m07) {M07 AP-PARALLEL-001 \\ \scriptsize parallel-run gate};
+\node[must,below=of m07] (m08) {M08 AP-GA-001 \\ \scriptsize Saudi GA};
+\node[should,right=14mm of m08] (s01) {S01 AP-WAVE-002 \\ \scriptsize Egypt};
+\node[should,above=of s01] (s02) {S02 AP-WAVE-003 \\ \scriptsize Bahrain};
+\node[should,above=of s02] (s03) {S03 AP-WAVE-004 \\ \scriptsize Qatar};
+\node[could,above=of s03] (c01) {C01 AP-V2-EXPLORE \\ \scriptsize multilingual};
+
+\draw[dep] (m01) -- (m02);
+\draw[dep] (m01) -- (m03);
+\draw[dep] (m02) -- (m04);
+\draw[dep] (m03) -- (m05);
+\draw[dep] (m04) -- (m05);
+\draw[dep] (m05) -- (m06);
+\draw[dep] (m06) -- (m07);
+\draw[dep] (m07) -- (m08);
+\draw[dep] (m08) -- (s01);
+\draw[dep] (s01) -- (s02);
+\draw[dep] (s02) -- (s03);
+\draw[soft] (s03) -- (c01);
+\end{tikzpicture}
+\caption{Arabic AP dependency graph. Red nodes are Must (critical
+path); blue are Should (country-wave allowance); dotted green are
+Could (discretionary). Solid arrows are hard prerequisites; dashed
+arrows indicate conditional starts (the target is unlocked when the
+upstream completes \emph{and} the multilingual volume trigger in
+\cref{sec:ap-v2-trigger} fires).}
+\label{fig:ap-dependency-graph}
+\end{figure}
+
+\section{Project milestones}\label{sec:ap-milestones}
+
+\begin{table}[htbp]
+\centering
+\caption{Arabic AP v1.0 project milestones in dependency order.
+Priority: M=Must (critical path), S=Should, C=Could, W=Won't.}
+\label{tab:ap-milestones}
+\footnotesize
+\begin{tabularx}{\linewidth}{@{}l l l l X@{}}
+\toprule
+\textbf{ID} & \textbf{Prereq} & \textbf{Pri.} & \textbf{Ticket} & \textbf{Milestone} \\ \midrule
+M01 & ---       & M & AP-ENG-001         & OCR pipeline (Tesseract + Arabic model) passes the fixtures in \cref{ch:testing}. \\
+M02 & M01       & M & AP-ENG-002         & VAT engine unit tests pass (\cref{ch:vat}); country-configurable rates.\\
+M03 & M01       & M & AP-PILOT-PREP      & 200 pilot documents sampled and ground-truth annotation complete (\cref{ch:ocr-pilot}). \\
+M04 & M02       & M & REG-INTG-AP-001    & Identity-attribution wiring (reserve/complete) live in UAT. \\
+M05 & M03, M04  & M & AP-PILOT-001       & Pilot complete; OCR and translation thresholds calibrated per country. \\
+M06 & M05       & M & AP-BETA-001        & Beta cycle: Saudi Arabia only, two-person manual review on top of AI. \\
+M07 & M06       & M & AP-PARALLEL-001    & Beta parallel-run gate passes. \\
+M08 & M07       & M & AP-GA-001          & GA sign-off; Saudi Arabia goes live. \\
+M09 & M08       & M & AP-BC-REFRESH      & Business-case refresh and compliance attestation (first cycle after GA; then annual). \\
+S01 & M08       & S & AP-WAVE-002        & Rollout wave 2: Egypt onboarded via country-params. \\
+S02 & S01       & S & AP-WAVE-003        & Rollout wave 3: Bahrain onboarded. \\
+S03 & S02       & S & AP-WAVE-004        & Rollout wave 4: Qatar onboarded (full v1.0 scope). \\
+C01 & S03 + \cref{sec:ap-v2-trigger} trigger & C & AP-V2-EXPLORE & v2.0 multilingual expansion scoped (Hebrew, Farsi) if volume justifies. \\
+C02 & M08       & C & AP-PROMPT-TUNE     & Quarterly translation-prompt retraining from accept/edit telemetry. \\
+W01 & ---       & W & AP-V1-MULTILINGUAL & Non-Arabic-script languages are \emph{not} in v1.0 scope. \\
+W02 & ---       & W & AP-V1-ONE-PERSON   & One-person review is \emph{not} in v1.0 scope; relaxed only after full-rollout gate sustained. \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\noindent
+The Must chain (M01 $\to$ M02/M03 $\to$ M04 $\to$ M05 $\to$ M06 $\to$
+M07 $\to$ M08 $\to$ M09) is the critical path. The Should items
+(S01--S03) are the primary \emph{schedule allowance}: if Must items
+run hot, country waves can slip without affecting v1.0 sign-off. The
+Could items are the \emph{scope allowance}: they may be cut to v1.1
+without renegotiation.
+
+\section{Launch tiers and exit gates}\label{sec:ap-launch-tiers}
+
+The project walks the four-tier ladder shared across SAP OSS Finance
+projects. A tier is exited only when the named exit gate is satisfied;
+slippage requires sponsor sign-off.
+
+\begin{table}[htbp]
+\centering
+\caption{Arabic AP launch tiers. The exit gate defines the MoSCoW
+items that must be closed to exit the tier.}
+\label{tab:ap-launch-tiers}
+\footnotesize
+\begin{tabularx}{\linewidth}{@{}l l X@{}}
+\toprule
+\textbf{Tier} & \textbf{Scope} & \textbf{Exit gate (references MoSCoW IDs)} \\ \midrule
+Alpha & Engineering only, DEV + UAT, fixture documents only. & M01, M02, M03 closed; all acceptance criteria in \cref{ch:testing} pass on the pilot fixture; reproducibility of OCR and VAT outputs confirmed on two consecutive runs. \\
+Beta  & One country (Saudi Arabia), two-person manual review on top of AI. & M04, M05, M06, M07 closed; pilot success criteria (\cref{sec:pilot-success}) met; parallel-run gate passes for one full cycle; no open SEV1/SEV2; audit coverage $=$ 100\,\% of in-scope actions. \\
+GA (limited) & Three countries (Saudi Arabia plus the next two waves). & M08 closed; Beta gate sustained for two consecutive cycles; S01 closed; country-onboarding runbook exercised end-to-end; kill-switch green; per-country thresholds calibrated. \\
+Full rollout & All four countries in v1.0 scope (SA, EG, BH, QA). & S02 and S03 closed; two quarterly reviews sustained; M09 complete; business-case refresh complete; two-person review may be relaxed to one-person for documents above the high threshold. \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\section{Kill-switch conditions}\label{sec:ap-kill-switch}
+
+The kill-switch is a pre-committed rulebook: a tripped condition enters
+the action column without further debate. GFAIC and sponsor are
+notified within 24 hours. The conditions are evaluated continuously
+(on every cycle) and do not carry dates.
+
+\begin{table}[htbp]
+\centering
+\caption{Arabic AP kill-switch.}
+\label{tab:ap-kill-switch}
+\footnotesize
+\begin{tabularx}{\linewidth}{@{}l l X@{}}
+\toprule
+\textbf{Condition} & \textbf{Evaluation} & \textbf{Action} \\ \midrule
+Pilot F1 on the translation gate $<$\,0.70 on three of four countries & on M05 close and any recalibration & \textbf{Redesign}: narrow v1.0 to best-performing countries only; full rollout paused. \\
+Posted-VAT error rate $>$\,0.5\,\% over any cycle in Beta or GA & per cycle & \textbf{Halt onboarding}; incident-review before next wave; re-calibrate thresholds. \\
+Two-person review sustains $>$\,20\,\% edit rate for three consecutive cycles in GA & per cycle & \textbf{Redesign prompt layer}; commentary drafts gated behind flag until edit rate $\le$\,15\,\%. \\
+Audit-coverage gap (missed \texttt{reserve/complete} pair) detected in production & continuous & \textbf{Pause GA onboarding}; remediate before next wave. \\
+Any MAS MGF or country-VAT regulator finding attributable to AP specifically & continuous & \textbf{Halt rollout}; remediate before next wave. \\
+Shared-platform dependency in \cref{tab:ap-shared-deps} declared red by its owner project & continuous & \textbf{Pause downstream Must}; re-plan at next steering. \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\section{Shared-platform dependencies}\label{sec:ap-shared-deps}
+
+This project depends on four shared-platform components. Each is owned
+by a sibling project (Regulations) or by shared infra, and is tracked
+here only as a dependency, not a commitment this project can
+unilaterally adjust. Sequence is expressed in terms of the Must item
+that first consumes the dependency, not in calendar time.
+
+\begin{table}[htbp]
+\centering
+\caption{Shared-platform dependencies.}
+\label{tab:ap-shared-deps}
+\footnotesize
+\begin{tabularx}{\linewidth}{@{}l l l X@{}}
+\toprule
+\textbf{Component} & \textbf{Owner} & \textbf{First consumed by} & \textbf{Impact if late} \\ \midrule
+Audit service (reserve/complete, immutable storage) & Regulations project & M04 (REG-INTG-AP-001) & No Beta gate possible without this; AP GA slips in lockstep with the audit service. \\
+Unified schema registry (\path{docs/schema/}) & Shared infra & M01 & Already \texttt{migration.status=complete}; no remaining risk. \\
+vLLM hosting (\texttt{vllm-only} policy) & Shared platform & M02 & Graceful-degradation ladder defined in the Regulations spec provides fallback; slip tolerable. \\
+Tesseract + Arabic OCR model & Shared platform & M01 & No substitute available; slip blocks all subsequent Must items. \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\noindent
+Shared-platform dependencies are surfaced at monthly steering. If any
+upstream owner declares \textbf{amber} or \textbf{red} on a component
+in \cref{tab:ap-shared-deps}, the affected downstream Must milestone
+is re-planned at the following steering.
+
+\section{v2.0 expansion trigger}\label{sec:ap-v2-trigger}
+
+The Could item C01 (AP-V2-EXPLORE) is unlocked only when all of the
+following are observed on production data from S03 (Qatar onboarded):
+
+\begin{itemize}
+\item aggregate non-Arabic-script document volume $\ge\,15$\,\% of
+total Arabic AP volume for two consecutive quarters;
+\item translation-gate F1 on Arabic above the Beta threshold
+sustained for the same window;
+\item business-case refresh (M09) explicitly budgets the v2.0
+programme.
+\end{itemize}
+
+\noindent
+If any of the three conditions fails, C01 remains in the Could column
+and is re-evaluated at the next business-case refresh.
+
+\section{Governance and business-case cadence}\label{sec:ap-governance}
+
+\paragraph{Project governance.}
+The Arabic AP project reports monthly to a project steering (AP
+Product Owner, Tax Controller, AI Engineer) and quarterly to the
+cross-project GFAIC. Monthly steering accepts or rejects amber/red
+signals on Must items; GFAIC reviews compliance posture and any
+cross-project dependencies.
+
+\paragraph{Business-case refresh (M09).}
+The business case that authorises this project is refreshed on the
+following rhythm:
+
+\begin{itemize}
+\item \textbf{Mandatory refresh}: at the first cycle after GA, and
+annually thereafter (ticket AP-BC-REFRESH, priority M in
+\cref{tab:ap-milestones}). Refresh packet includes country
+volume assumptions, unit economics,
+FTE leverage realised vs.\ forecast, and a deviation statement
+against the baseline.
+\item \textbf{Trigger-based refresh}: any of
+\begin{itemize}
+\item country monthly volume changes by $\ge\,20$\,\% from
+forecast (either direction);
+\item per-invoice run cost changes by $\ge\,30$\,\% (OCR
+throughput, vLLM licensing, GPU price);
+\item new country-specific VAT regulation or MAS MGF pillar
+materially affecting scope;
+\item any kill-switch in \cref{tab:ap-kill-switch} is tripped.
+\end{itemize}
+\item \textbf{Owner}: AP Product Owner. Approval routed through the
+project steering and filed at
+\path{docs/arabic/business-case/refresh-history.yaml}.
+\end{itemize}
+\chapter{Agent Implementation Instructions}\label{ch:agent-impl}
+
+\section{Purpose and audience}
+This chapter is the self-contained, intent-based instruction set for
+implementing the \emph{Arabic AP invoice processing} domain inside the
+unified SAP OSS platform. It is written for LLM-driven and human
+implementation agents who will extend existing services to realise the
+specification. It assumes only this PDF; every platform decision,
+integration contract, and governance obligation the Arabic workstream
+depends on is restated here so that no companion document is required.
+Existing chapters~\ref{ch:overview}--\ref{ch:ap-roadmap} remain the
+normative source for the Arabic domain itself; this chapter tells
+future agents \emph{how} to build what those chapters describe,
+\emph{where} to put it in the codebase, and \emph{how} it plugs into
+the wider platform.
+
+% !TEX root = ../master.tex
+% =============================================================================
+% MASTER PLATFORM CORE: Shared Intent-Based Instructions (Union)
+% World-Class Version: HITL Gates, Process Integrity, and Sequence Logic
+% =============================================================================
+
+\section{Rules of Engagement for AI Agents}
+\label{sec:agent-rules}
+
+To ensure safety and architectural integrity, all implementation agents must adhere to the following Prime Directives:
+
+\begin{enumerate}[label=\textsc{rule}-\arabic*:, leftmargin=2cm]
+\item \textbf{Credential Protection.} Never log, print, or commit secrets. Use the \texttt{.secrets.example} pattern for all new integrations.
+\item \textbf{Context Efficiency.} Prioritize surgical edits. Request only the minimum required file ranges to satisfy the task intent.
+\item \textbf{Test-Driven Implementation.} No code is complete without a corresponding fixture in \texttt{tests/fixtures/} and a passing validation run.
+\item \textbf{Self-Correction.} If a schema validation fails, the agent must diagnose the root cause (hallucination vs. schema drift) before re-attempting implementation.
+\end{enumerate}
+
+\section{Platform Overview --- One Codebase, One Instance}
+\label{sec:agent-platform-overview}
+
+\subsection{Integration Stance}
+The SAP OSS platform is delivered as a single codebase that runs as a single logical instance. All cross-cutting concerns are hosted by existing services.
+
+\begin{adrbox}{{One Codebase, One Instance}}
+To minimize integration latency and eliminate distributed-system failure modes (e.g., partial partitions), we mandate a single logical instance. All cross-domain orchestration happens via the MCP Gateway layer.
+\end{adrbox}
+
+\subsection{Platform Integration Map}
+\label{sec:platform-map}
+
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}[
+node distance=2.5cm,
+auto,
+block/.style={rectangle, draw, rounded corners, fill=sapblue!10, text width=6em, text centered, minimum height=3em, font=\scriptsize},
+regs/.style={rectangle, draw, rounded corners, fill=sapgrey!20, text width=7em, text centered, minimum height=4em, thick, dotted, font=\scriptsize}
+]
+\node (arabic) [block] {Arabic AP};
+\node (tb) [block, below of=arabic] {Trial Balance};
+\node (simula) [block, right of=arabic, node distance=5.5cm] {Simula Training};
+\node (regs) [regs, below of=simula] {Regulations (Runtime Wrapper)};
+
+\draw [->, thick] (arabic) -- node [align=left, font=\tiny] {Posted\\Invoices} (tb);
+\draw [->, thick, dashed] (simula) -- node [align=left, font=\tiny, near start] {Training\\Examples} (arabic);
+\draw [->, thick, dashed] (simula) -- node [align=left, font=\tiny, near start] {Training\\Examples} (tb);
+\draw [->, thick] (regs) -| node [font=\tiny, near end, xshift=-1cm] {Governance Gate} (arabic);
+\draw [->, thick] (regs) -| node [font=\tiny, near end, xshift=-1cm] {Audit \& Identity} (tb);
+\end{tikzpicture}
+\caption{Cross-domain interaction and unified data flow map. Detailed governance logic is defined in \cref{reg:ch:mgf}.}
+\end{figure}
+
+\section{Transactional Sequence Diagrams}
+\label{sec:agent-sequences}
+
+Implementation agents must adhere to the temporal logic defined below. Every cross-domain request MUST be brokered by the Regulations Wrapper.
+
+\subsection{Universal Governance Handshake}
+This sequence applies to \textbf{all} platform service calls.
+
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}[x=1cm, y=-0.8cm, font=\scriptsize]
+% Lifelines
+\draw[thick] (0,0) -- (0,7) node[below] {Persona (UI)};
+\draw[thick] (3,0) -- (3,7) node[below] {MCP Gateway};
+\draw[thick] (6,0) -- (6,7) node[below] {Regs Wrapper};
+\draw[thick] (9,0) -- (9,7) node[below] {Domain Service};
+
+% Interaction
+\draw[->, >=latex] (0,1) -- node[above] {1. Request + Identity} (3,1);
+\draw[->, >=latex] (3,2) -- node[above] {2. Validate (Pillar 1)} (6,2);
+\draw[<-, >=latex] (3,3) -- node[above] {3. Auth/Allow Decision} (6,3);
+\draw[->, >=latex] (3,4) -- node[above] {4. Execute Tool} (9,4);
+\draw[->, >=latex] (9,5) -- node[above] {5. Log Evidence (Pillar 2)} (6,5);
+\draw[<-, >=latex] (0,6) -- node[above] {6. Response + Audit ID} (3,6);
+
+\node[draw, fill=yellow!10, text width=2.5cm, align=center] at (4.5,0.2) {MAS MGF Gate};
+\end{tikzpicture}
+\caption{Standard platform handshake for governed tool execution. Audit schemas are detailed in \cref{reg:ch:identity}.}
+\end{figure}
+
+\subsection{Arabic AP Golden Path}
+Temporal flow for invoice processing with Arabic context.
+
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}[x=1cm, y=-0.6cm, font=\tiny]
+\draw[thick] (0,0) -- (0,8) node[below] {Intake};
+\draw[thick] (2.5,0) -- (2.5,8) node[below] {OCR};
+\draw[thick] (5,0) -- (5,8) node[below] {VAT Engine};
+\draw[thick] (7.5,0) -- (7.5,8) node[below] {Workflow};
+\draw[thick] (10,0) -- (10,8) node[below] {Human (HITL)};
+
+\draw[->] (0,1) -- node[above] {Extract} (2.5,1);
+\draw[->] (2.5,2) -- node[above] {Translate} (5,2);
+\draw[->] (5,3) -- node[above] {Evaluate} (5,4); % Internal loop
+\draw[->] (5,5) -- node[above] {\textsc{Hold} Notification} (10,5);
+\draw[<-] (5,6) -- node[above] {Manual Release} (10,6);
+\draw[->] (5,7) -- node[above] {Final Posting} (7.5,7);
+\end{tikzpicture}
+\caption{Arabic AP sequence: Scanned PDF to Release. VAT rules are specified in \cref{ar:ch:vat}.}
+\end{figure}
+
+\section{Compute and Resource Alignment}
+\label{sec:hardware-profiles}
+
+AI algorithms are calibrated for the reference infrastructure established in the domain chapters:
+
+\begin{table}[htbp]
+\centering
+\footnotesize
+\caption{Infrastructure Reference Profiles.}
+\label{tab:hardware-profiles}
+\begin{tabularx}{\textwidth}{@{}l X X@{}}
+\toprule
+\textbf{Workload} & \textbf{Reference Hardware} & \textbf{Performance Target} \\
+\midrule
+LLM Inference & NVIDIA L40S (48GB) & AWQ 4-bit / p95 < 2s \\
+Embeddings & NVIDIA A100 (40/80GB) & FP16 / p99 < 500ms \\
+Simula Training & NVIDIA A100 SXM4 cluster & BF16 throughput parity \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\section{Human-in-the-Loop (HITL) Critical Gates}
+\label{sec:hitl-gates}
+
+The following "Four-Eyes" gates are mandatory. AI agents must implement the "Awaiting Sign-off" state for these actions:
+\begin{itemize}
+\item \textbf{VAT Release:} No invoice marked as \textsc{hold} can be released without human review (see \cref{ar:ch:ap}).
+\item \textbf{Anomaly Override:} Statistical outliers ($3\sigma$) cannot be dismissed by AI; only "Confirmed" or "Triaged" by human (see \cref{tb:ch:controls}).
+\item \textbf{Journal Posting:} Agents may \emph{draft} journal entries, but only the Financial Controller persona can \emph{commit} to S/4HANA (see \cref{tb:ch:controls-engine}).
+\end{itemize}
+
+\section{Registry Integrity \& Live Status}
+\label{sec:registry-integrity}
+
+Before initiating any schema-dependent task, implementation agents must verify the live status of the Unified Schema Registry (see \cref{sim:chap:schema}).
+\begin{adrbox}{Registry First}
+If \texttt{docs/schema/registry.json} is out of sync with the codebase, the agent must halt and emit a \textsc{schema-mismatch} event.
+\end{adrbox}
+
+\section{Master Implementation Manifest (Union)}
+Implementation runs in three waves across the entire platform.
+
+\subsection*{Wave 1 --- Foundations}
+\begin{itemize}
+\item \textbf{Simula:} Implement HANA schema extraction pipeline (MCP discovery). See \cref{sim:chap:extraction}.
+\item \textbf{Regulations:} Implement MAS MGF Pillar 1 logic (Tool allow-list). See \cref{reg:ch:mgf}.
+\item \textbf{Arabic:} Implement Invoice Intake \& OCR Gateway. See \cref{ar:ch:ai}.
+\item \textbf{Trial Balance:} Implement identity-attribution wiring. See \cref{reg:ch:identity}.
+\end{itemize}
+
+\subsection*{Wave 2 --- Core Domain Build-out}
+\begin{itemize}
+\item \textbf{Trial Balance:} Implement Controls \& Commentary Engine (3$\sigma$ anomaly logic). See \cref{tb:ch:ai,tb:ch:controls-engine}.
+\item \textbf{Arabic:} Implement multi-country VAT Engine (Saudi, UAE, Bahrain, Oman). See \cref{ar:ch:vat,ar:ch:vat-impl}.
+\item \textbf{Simula:} Implement Taxonomy Generation \& Agentic Data Synthesis. See \cref{sim:chap:taxonomy,sim:chap:generator}.
+\item \textbf{Trial Balance:} Realise 28-state BPMN workflow (\texttt{tb-review-glo}). See \cref{tb:ch:workflow}.
+\end{itemize}
+
+\subsection*{Wave 3 --- Hardening}
+\begin{itemize}
+\item \textbf{Regulations:} Implement Per-Request Identity Attribution. See \cref{reg:ch:identity}.
+\item \textbf{Trial Balance:} Deliver Human Review Dashboard. See \cref{tb:ch:review-dashboard}.
+\item \textbf{Simula:} Deliver test fixtures and testing at 85\% coverage. See \cref{sim:ch:test-fixtures,sim:ch:testing}.
+\item \textbf{Regulations:} Wire Emergent-Capability monitoring. See \cref{reg:ch:monitoring}.
+\end{itemize}
+
+\section{Governance Obligations (MAS MGF)}
+The regulations domain wraps all service calls at runtime. Agents must implement the following hooks in every domain:
+\begin{itemize}
+\item \textbf{Pillar 1:} Tool allow-list enforcement (deny-by-default).
+\item \textbf{Pillar 2:} Traceability via the identity attribution envelope.
+\item \textbf{Pillar 3:} Metric emission to the monitoring sink.
+\end{itemize}
+Detailed pillar requirements are defined in \cref{reg:ch:mgf}.
+
+\section{FMEA: Failure Mode and Effects Analysis for AI}
+\label{sec:fmea-ai}
+
+The following analysis identifies critical AI failure modes within the Arabic AP pipeline and their deterministic mitigations.
+
+\begin{table}[htbp]
+\centering
+\footnotesize
+\caption{FMEA for Arabic AP AI Pipeline.}
+\label{tab:arabic-fmea}
+\begin{tabularx}{\textwidth}{@{}l X X X@{}}
+\toprule
+\textbf{Failure Mode} & \textbf{Symptom} & \textbf{Impact} & \textbf{Technical Mitigation} \\
+\midrule
+OCR Character Drift & Misreading '5' as '6' in currency fields. & High (Financial) & Cross-field arithmetic validation (Net + VAT == Gross). \\
+Translation Ambiguity & 'Invoice' translated as 'Note' (misclassification). & Medium (Routing) & Metadata-tagging based on ZATCA QR-code extraction. \\
+LLM Field Extraction & Extracting 'Address' into 'Vendor Name'. & Medium (Data Qual.) & Confidence-score threshold check per field. \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\section{This domain in context}
+\label{sec:agent-domain-context}
+Arabic AP is the highest-volume transactional workstream among the
+four domains. Its primary persona is the AP Clerk, whose working view
+is the approval queue surfaced through the shared workspace shell and
+gated by AP entitlements. The domain's entry points are document
+intake (email, SFTP, upload) producing raw invoice artefacts; its
+exit points are (a)~a posted AP document in SAP S/4HANA with a signed
+approval record, and (b)~a VAT compliance checklist emitted to the
+audit store. Every artefact is validated against the Arabic-owned
+schemas in \texttt{structured/schema/} before it leaves the service.
+The domain depends on the horizontal regulations wrapper for runtime
+governance and on Simula for the training corpus used by the OCR,
+field-extraction, and translation models described in
+chapter~\ref{ch:ai}.
+
+\section{Schema contribution}
+\label{sec:agent-schema-contrib}
+Arabic AP owns the schemas catalogued in chapter~\ref{ch:schema}. The
+canonical set is the invoice record (see~\ref{tab:invoice-fields}),
+the VAT compliance checklist (see~\ref{tab:checklist-fields}), and the
+payment instruction record. These schemas live under
+\texttt{docs/latex/specs/arabic/} as normative text and under
+\texttt{structured/schema/} as the JSON Schema artefacts consumed at
+runtime. Registration in the unified registry is additive: each
+schema is listed in
+\texttt{src/intelligence/ai-core-pal/data\_products/registry.yaml}
+with its URI, owning domain (\texttt{arabic}), security class
+(\texttt{confidential}), and LLM routing
+(\texttt{vllm-only}), following the ODPS~4.1 pattern. Simula consumes
+these schemas directly as inputs to its extraction pipeline; it does
+not transform them. The \texttt{requirement.schema.json} files owned
+by TB and regulations remain distinct from anything Arabic owns and
+are not merged with it.
+
+\section{Persona and MCP allow-list}
+\label{sec:agent-persona}
+\begin{itemize}
+\item \textbf{Persona id:} \texttt{ap-clerk}.
+\item \textbf{Roles:} invoice intake, VAT review, approval
+progression, exception handling.
+\item \textbf{Entitlements:} read/write on the Arabic invoice
+record; read on the VAT rule set; advance transitions on the
+\texttt{po-eproc} and \texttt{direct-ap} state machines defined
+in chapter~\ref{ch:ap}; evidence-write on the control catalogue
+in~\ref{tab:controls}.
+\item \textbf{UI route:} \texttt{/ap/\{tenant\}/queue} on the shared
+workspace shell; surfaced only to callers whose entitlement set
+includes \texttt{ap-clerk}.
+\item \textbf{MCP tool allow-list:}
+\texttt{invoice.intake}, \texttt{invoice.ocr},
+\texttt{invoice.extract-fields},
+\texttt{invoice.translate-ar-en}, \texttt{vat.validate},
+\texttt{vat.calculate}, \texttt{ap.workflow.advance},
+\texttt{ap.workflow.park}. All other MCP tools are denied by
+default per MAS MGF pillar~1.
+\end{itemize}
+
+\section{Implementation tasks for this domain}
+\label{sec:agent-tasks}
+The tasks below are intent-based: each task states the outcome a
+future agent must achieve and the location in the existing codebase
+where the work belongs. None of them contains code; each task binds
+to the Arabic chapters that define the required behaviour.
+
+\subsection*{Task A1 --- OCR and translation calibration}
+\textbf{Intent.} Bring Arabic OCR and Arabic--English translation up
+to the precision/recall targets in chapter~\ref{ch:ocr-pilot}.
+
+\begin{adrbox}{Why Tesseract + Custom Post-Processor?}
+We chose Tesseract 5.0 for the baseline due to local-hosting requirements, but added a custom 'Arabic-Context' post-processor to handle the right-to-left layout drift in scanned PDF tables.
+\end{adrbox}
+
+\textbf{In-scope.} Running the pilot sample defined
+in~\ref{tab:pilot-sample}; publishing per-field thresholds for
+accept/review/reject; wiring the thresholds into the pipeline stages
+of chapter~\ref{ch:ai}.
+\textbf{Out-of-scope.} Choosing a new OCR engine; altering the
+canonical invoice schema.
+\textbf{Paths to extend.} OCR and extraction code colocated with the
+pipeline stages referenced in chapter~\ref{ch:ai}; fixture store
+referenced in chapter~\ref{ch:testing}.
+\textbf{Definition of done.} Pilot report committed; thresholds
+checked in as configuration; the stage-3 field extractor rejects
+records below threshold and routes them to human review.
+
+\textbf{Autonomous Verification (Agent Logic):}
+\begin{lstlisting}[language=jsonx]
+// Verify Task A1
+{
+"test_fixture": "tests/fixtures/arabic/invoice_sample_01.png",
+"expected_outcome": "ocr_confidence > 0.88",
+"validation_command": "make test-arabic-ocr"
+}
+\end{lstlisting}
+
+\textbf{Verification.} \texttt{make spec-arabic} builds cleanly and
+the Arabic test suite described in chapter~\ref{ch:testing} passes
+end-to-end on the calibration fixtures.
+
+\subsection*{Task A2 --- Multi-country VAT engine}
+\textbf{Intent.} Implement the VAT compliance engine specified in
+chapter~\ref{ch:vat} and detailed in chapter~\ref{ch:vat-impl}.
+\textbf{In-scope.} Per-country rule modules for Saudi Arabia (ZATCA),
+UAE, Bahrain (NBR), and Oman; registration validation, calculation,
+activity lookup, and checklist emission; the canonical decision
+function in~\ref{fig:ksa-decision}.
+\textbf{Out-of-scope.} VAT rules for countries outside the in-scope
+list in~\ref{tab:countries}.
+\textbf{Paths to extend.} The VAT module layout referenced
+in~\ref{fig:vat-arch}; API contracts in chapter~\ref{ch:vat-impl}.
+\textbf{Definition of done.} Every rule cited
+in~\ref{tab:ksa-rules} has a callable check; the checklist record is
+emitted per invoice and validates against
+\texttt{vat-checklist.schema.json}.
+\textbf{Verification.} Unit tests for each country module (see
+chapter~\ref{ch:testing}) pass; the VAT calculation API contract
+sample in chapter~\ref{ch:vat-impl} returns the expected response.
+
+\subsection*{Task A3 --- AP approval workflow}
+\textbf{Intent.} Realise the AP workflow and approval engine in
+chapter~\ref{ch:ap}, including the \texttt{po-eproc} and
+\texttt{direct-ap} state machines.
+\textbf{In-scope.} Workflow-selection logic in~\ref{fig:workflow-select};
+state transitions in~\ref{fig:po-eproc}; park, reroute, and escalate
+actions with evidence records.
+\textbf{Out-of-scope.} SAP S/4HANA AP posting internals;
+non-Bahrain delegations.
+\textbf{Paths to extend.} Workflow engine hosted in the gateway
+service; evidence store colocated with the control catalogue.
+\textbf{Definition of done.} Each state in the state-machine diagram
+is reachable from a deterministic predecessor; transitions are audit
+logged with the persona id of the acting user; the golden regression
+set in chapter~\ref{ch:controls} executes without human intervention.
+\textbf{Verification.} Workflow unit tests pass; the approval queue
+UI surfaces the correct entitlements for \texttt{ap-clerk}.
+
+\subsection*{Task A4 --- Bahrain DOI seven controls}
+\textbf{Intent.} Evidence the seven Bahrain Delegation of Invoicing
+controls required in chapter~\ref{ch:controls}.
+\textbf{In-scope.} Control enforcement map in~\ref{fig:controls-map};
+the seven rows of the control catalogue in~\ref{tab:controls} that
+concern the Bahrain DOI; evidence emission per control.
+\textbf{Out-of-scope.} Introducing controls for other delegations.
+\textbf{Paths to extend.} Control catalogue file referenced in
+chapter~\ref{ch:controls}; evidence store.
+\textbf{Definition of done.} Running the workflow on the Bahrain
+golden sample triggers every control; each control writes an
+evidence record conforming to the Arabic schema set.
+\textbf{Verification.} Traceability matrix in chapter~\ref{ch:controls}
+is complete; the testing chapter's acceptance suite passes.
+
+\subsection*{Task A5 --- Testing and golden regression set}
+\textbf{Intent.} Deliver the testing specification in
+chapter~\ref{ch:testing} at the coverage targets
+in~\ref{tab:arabic-coverage}.
+\textbf{In-scope.} Invoice and OCR fixtures; unit, integration, and
+regression suites; CI wiring.
+\textbf{Out-of-scope.} Performance benchmarking infrastructure beyond
+what chapter~\ref{ch:testing} defines.
+\textbf{Paths to extend.} Test directory colocated with the Arabic
+service code; fixture store used by Simula as training input.
+\textbf{Definition of done.} Coverage meets the thresholds
+in~\ref{tab:arabic-coverage}; CI gates block regressions; the
+regression golden set is reproducible from fixture seeds.
+\textbf{Verification.} \texttt{make spec-arabic} remains green; the
+Arabic test entry points listed in chapter~\ref{ch:testing} all run.
+
+
+\section{Governance obligations applied to this domain}
+\label{sec:agent-governance}
+The regulations domain wraps Arabic AP at runtime. Four obligations
+apply without exception; each is stated as a concrete hook in the
+Arabic codebase.
+
+\begin{itemize}
+\item \textbf{MAS MGF four pillars} (see regulations
+chapter~3 in \texttt{docs/latex/specs/regulations/chapters/03-mgf-framework.tex}).
+Pillar~1 (assess and bound): every Arabic MCP tool is declared in
+the allow-list in \S\ref{sec:agent-persona}, deny-by-default.
+Pillar~2 (design and deploy): the pipeline stages in
+chapter~\ref{ch:ai} are traceable end-to-end via the
+per-request identity attribution described below. Pillar~3
+(operate and monitor) and pillar~4 (govern and disclose) are
+satisfied by emitting the evidence records produced by the
+Arabic control catalogue (chapter~\ref{ch:controls}) into the
+shared governance store.
+\item \textbf{Identity attribution} (regulations chapter~10,
+\texttt{10-identity-attribution.tex}). Every MCP call and every
+workflow transition carries the persona id, agent id, request
+id, and tenant id. The gateway is the attachment point; Arabic
+code propagates the identity envelope without mutating it.
+\item \textbf{Emergent-capability monitoring} (regulations
+chapter~8, \texttt{08-monitoring-spec.tex}). OCR, extraction,
+translation, and VAT calculation are instrumented with the
+monitoring metrics specified in that chapter; metrics flow to
+the monitoring sink defined there.
+\item \textbf{Conformance tooling} (regulations chapter~6,
+\texttt{06-conformance-tooling.tex}). The Arabic service exposes
+AI Verify 2.0 plug-in hooks and Moonshot CI/CD 1.1.0 benchmark
+entry points as required by that chapter.
+\end{itemize}
+
+\section{Cross-spec integration --- full detail}
+\label{sec:agent-integration}
+
+\subsection{With Arabic AP}
+Arabic AP exports the invoice record, VAT compliance checklist, and
+payment instruction schemas under \texttt{structured/schema/}
+(chapter~\ref{ch:schema}); registers the MCP tools enumerated in
+\S\ref{sec:agent-persona}; and applies the four governance hooks in
+\S\ref{sec:agent-governance} to every call it serves. External
+consumers (TB, regulations, Simula) see Arabic only through these
+contracts; there are no private back-channels.
+
+\subsection{With Trial Balance}
+Arabic AP produces posted AP records and VAT checklists that feed
+the TB close. TB consumes them as evidence inputs to its
+commentary engine, not as schema merges: the Arabic invoice schema
+and the TB control record remain distinct URIs in the unified
+registry. Integration point: TB's ingestion stage calls the
+Arabic MCP tool \texttt{invoice.extract-fields} with read-only
+entitlements; the response is validated against
+\texttt{invoice.schema.json} before TB accepts it.
+
+\subsection{With Regulations}
+Regulations wraps Arabic at runtime. Every Arabic MCP call is
+brokered through the regulations governance gate, which applies
+pillars~1--4 of MAS MGF, attaches the identity envelope, and routes
+emergent-capability metrics to the monitoring store. The Arabic
+service code does not call regulations directly; the gateway layer
+enforces this. Conformance tests defined in regulations
+chapter~5 (empirical evidence) and chapter~6 (conformance tooling)
+execute against the Arabic service as part of the platform CI gate.
+
+\subsection{With Simula}
+Simula consumes Arabic's schemas as training input. The contract is
+schema-in, \texttt{TrainingExample}-out: Simula reads
+\texttt{invoice.schema.json}, \texttt{vat-checklist.schema.json}, and
+the Arabic fixture store; it produces \texttt{TrainingExample}
+records. Simula does not call Arabic MCP tools at runtime and does
+not share state with the Arabic workflow. No cross-domain
+operational envelope is introduced.
+
+\section{Wave assignment and sequencing}
+\label{sec:agent-waves}
+Implementation runs in three waves.
+
+\begin{itemize}
+\item \textbf{Wave 1 --- foundations.} Unified schema registry
+entry; persona-gated surface for the AP Clerk; identity
+attribution envelope flowing through the gateway. Prerequisites:
+the regulations chapter~10 identity schema must be frozen.
+\item \textbf{Wave 2 --- Arabic core build-out.} Tasks A1--A4 above.
+Prerequisites: Wave~1 complete; Simula training fixtures
+available from Simula Wave~1 (extraction pipeline).
+\item \textbf{Wave 3 --- hardening and conformance.} Task A5
+and full conformance-tooling hook-up. Prerequisites: Wave~2
+complete; regulations Wave~2 conformance tooling integrated;
+monitoring sink live.
+\end{itemize}
+
+Arabic occupies Wave~2 for its core build-out and Wave~3 for its
+testing and conformance surfaces.
+
+\section{Acceptance criteria (platform-wide)}
+\label{sec:agent-acceptance}
+When all four chapter~12 instruction sets are implemented, the
+platform satisfies the following invariants:
+
+\begin{enumerate}
+\item \textbf{One instance.} A single codebase runs a single
+logical instance; no domain ships as a separate product.
+\item \textbf{Persona-gated surfaces.} The four personas each
+reach a tailored UI on the shared shell; no route, MCP tool, or
+data product is visible outside its persona's entitlement set.
+\item \textbf{Unified registry.} Every schema in use is listed in
+the ODPS~4.1 registry under its owning domain; validators
+resolve \texttt{\$ref}s through the unified registry only.
+\item \textbf{No schema merges.} The two
+\texttt{requirement.schema.json} files in TB and regulations
+remain distinct; no cross-domain composite schemas are produced.
+\item \textbf{No cross-domain operational envelope.} Runtime
+orchestration stays within each domain's service; only Simula
+consumes other domains' outputs, and only as training input.
+\item \textbf{Governance wraps all three non-regulations domains.}
+Arabic, TB, and Simula service calls pass through the
+regulations runtime wrapper without exception.
+\end{enumerate}
+
+\section{References}
+\label{sec:agent-references}
+Within-spec references:
+chapter~\ref{ch:overview} (overview),
+chapter~\ref{ch:schema} (data schema),
+chapter~\ref{ch:ai} (AI pipeline),
+chapter~\ref{ch:vat} (VAT compliance engine),
+chapter~\ref{ch:ap} (AP workflow),
+chapter~\ref{ch:controls} (controls and testing),
+chapter~\ref{ch:references} (references),
+chapter~\ref{ch:vat-impl} (VAT implementation),
+chapter~\ref{ch:testing} (testing specification),
+chapter~\ref{ch:ocr-pilot} (OCR pilot),
+chapter~\ref{ch:ap-roadmap} (project roadmap).
+
+Peer chapter~12 instruction sets for the other three domains (each
+is self-contained; consult directly when operating in that domain):
+\begin{itemize}
+\item Trial Balance:
+\texttt{docs/latex/specs/tb/chapters/12-implementation-instructions.tex}.
+\item Regulations:
+\texttt{docs/latex/specs/regulations/chapters/12-implementation-instructions.tex}.
+\item Simula:
+\texttt{docs/latex/specs/simula/chapters/12-implementation-instructions.tex}.
+\end{itemize}
+
+Shared platform artefacts:
+\begin{itemize}
+\item ODPS~4.1 registry:
+\texttt{src/intelligence/ai-core-pal/data\_products/registry.yaml}.
+\item Schema pipeline and resolver:
+\texttt{src/intelligence/schema\_pipeline/}.
+\item Training pipeline (Simula):
+\texttt{src/training/pipeline/}.
+\item Shared workspace shell:
+\texttt{generativeUI/training-webcomponents-ngx}.
+\end{itemize}
+
+% --- Incorporated Universal Chapters ---
+\chapter{Global Wave-Dependency Manifest}
+\label{ch:global-dependencies}
+
+\section{Critical Path Visualization (Waves 1--3)}
+The following chart defines the normative sequencing for implementation agents. A task in a later wave cannot be marked \textsc{complete} until its prerequisites in an earlier wave are validated.
+
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}[
+node distance=1.5cm,
+auto,
+wavebox/.style={rectangle, draw, rounded corners, fill=sapmidnight!10, text width=10em, text centered, minimum height=3em, font=\scriptsize\bfseries},
+dep/.style={->, >=latex, thick, sapblue},
+critical/.style={->, >=latex, very thick, sapamber}
+]
+% --- Wave 1: Foundations ---
+\node (r1) [wavebox, fill=sapgrey!20] {\textcolor{sapmidnight}{REG-W1: Identity \& Audit Schema}};
+\node (s1) [wavebox, below of=r1, yshift=-0.5cm] {SIM-W1: HANA Extraction Pipeline};
+\node (a1) [wavebox, below of=s1, yshift=-0.5cm] {ARA-W1: Invoice Intake \& OCR};
+\node (t1) [wavebox, below of=a1, yshift=-0.5cm] {TB-W1: Identity Wiring};
+
+% --- Wave 2: Core Build-out ---
+\node (r2) [wavebox, right of=r1, xshift=4.5cm, fill=sapmidnight!20] {\textcolor{sapmidnight}{REG-W2: Governance Runtime}};
+\node (s2) [wavebox, right of=s1, xshift=4.5cm] {SIM-W2: Taxonomy \& Synthesis};
+\node (a2) [wavebox, right of=a1, xshift=4.5cm] {ARA-W2: Multi-Country VAT};
+\node (t2) [wavebox, right of=t1, xshift=4.5cm] {TB-W2: Controls \& Workflow};
+
+% --- Wave 3: Hardening ---
+\node (r3) [wavebox, right of=r2, xshift=4.5cm, fill=sapmidnight!30] {\textcolor{sapmidnight}{REG-W3: Conformance Suite}};
+\node (s3) [wavebox, right of=s2, xshift=4.5cm] {SIM-W3: 85\% Coverage Test};
+\node (a3) [wavebox, right of=a2, xshift=4.5cm] {ARA-W3: Calibration Pilot};
+\node (t3) [wavebox, right of=t2, xshift=4.5cm] {TB-W3: HITL Dashboard};
+
+% --- Cross-Domain Dependencies (The Critical Path) ---
+\draw [critical] (r1) -- node [above, font=\tiny, align=center] {Identity Envelope\\Invariants} (a1.north east);
+\draw [critical] (r1) -- (t1.north east);
+\draw [dep] (s1.east) -- node [above, font=\tiny, xshift=-0.5cm] {Training Fixtures} (t2.west);
+\draw [dep] (s1.east) -- (a2.west);
+\draw [dep] (r2.south) -- node [left, font=\tiny, yshift=0.3cm] {Policy Gate} (a2.north);
+\draw [dep] (t2.east) -- node [above, font=\tiny] {Audit Evidence} (r3.west);
+
+% --- Wave Transitions ---
+\draw [->, dashed, sapgrey] (r1.east) -- (r2.west);
+\draw [->, dashed, sapgrey] (r2.east) -- (r3.west);
+
+% --- Legend ---
+\node[draw, sapamber, very thick, label=right:\scriptsize Critical Prerequisite] at (0,-7.5) {};
+\node[draw, sapblue, thick, label=right:\scriptsize Data Dependency, xshift=4cm] at (0,-7.5) {};
+
+\end{tikzpicture}
+\caption{Cross-specification dependency graph: The blueprint for platform rollout.}
+\end{figure}
+
+\section{Inter-Domain Prerequisite Matrix}
+
+\begin{table}[htbp]
+\centering
+\footnotesize
+\caption{Normative Cross-Domain Prerequisites.}
+\label{tab:prerequisites}
+\begin{tabularx}{\textwidth}{@{}l l l X@{}}
+\toprule
+\textbf{Target Task} & \textbf{Prerequisite} & \textbf{Ref ID} & \textbf{Rationale} \\
+\midrule
+\rowcolor{sapmidnight!5}
+\textbf{ARA-W1} & REG-W1 (Identity) & \texttt{REG-IDENTITY-01} & Invoice intake must be audit-traced from Day 1. \\
+\textbf{TB-W2}  & SIM-W1 (Extraction) & \texttt{SIM-EXTRACT-01} & Anomaly detection requires HANA schema metadata. \\
+\rowcolor{sapmidnight!5}
+\textbf{REG-W2} & SIM-W1 (Registry) & \texttt{SIM-REGISTRY-01} & Governance monitoring relies on the schema registry. \\
+\textbf{ARA-W2} & REG-W2 (Pillar 1) & \texttt{REG-MGF-P1} & VAT release is an HITL gate governed by MAS Pillar 1. \\
+\rowcolor{sapmidnight!5}
+\textbf{TB-W3}  & ARA-W2 (Posted Invoices) & \texttt{ARA-AP-POST} & Review dashboard depends on posted AP data from Arabic domain. \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\begin{adrbox}{Dependency Enforcement}
+Implementation agents are strictly forbidden from "Fast-Forwarding" into Wave 2 if Wave 1 critical prerequisites (marked in \textcolor{sapamber}{\textbf{Gold}}) are in a \textsc{gap} or \textsc{partial} state.
+\end{adrbox}
+
+
+
+\end{document}

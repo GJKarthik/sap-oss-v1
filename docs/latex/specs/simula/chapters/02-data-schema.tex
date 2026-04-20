@@ -1,7 +1,7 @@
-\section{Canonical Data Schema}
+\chapter{Canonical Data Schema}
 \label{chap:schema}
 
-\subsection{Layout of \texttt{src/training/pipeline/}}
+\section{Layout of \texttt{src/training/pipeline/}}
 
 \begin{table}[H]
 \centering
@@ -21,7 +21,7 @@
 \end{tabularx}
 \end{table}
 
-\subsection{Training Example Record}
+\section{Training Example Record}
 
 Each generated training example is a JSON object with the following structure:
 
@@ -41,7 +41,7 @@ class TrainingExample:
     generation_metadata: dict  # Timestamps, model, etc.
 \end{lstlisting}
 
-\subsection{Schema Registry}
+\section{Schema Registry}
 
 The \texttt{SchemaRegistry} holds table and column metadata extracted from HANA:
 
@@ -63,7 +63,7 @@ class TableSchema:
     description: str = ""
 \end{lstlisting}
 
-\subsection{Taxonomy Structure}
+\section{Taxonomy Structure}
 
 Taxonomies are hierarchical trees where each node represents a factor of variation:
 
@@ -94,7 +94,7 @@ class Taxonomy:
     total_nodes: int
 \end{lstlisting}
 
-\subsection{Enumerations}
+\section{Enumerations}
 
 \begin{table}[H]
 \centering
@@ -110,7 +110,7 @@ class Taxonomy:
 \end{tabular}
 \end{table}
 
-\subsection{Unified Schema Registry}
+\section{Unified Schema Registry}
 
 As of 18 April 2026, all schemas in this specification are published in the
 unified schema registry at \path{docs/schema/}. Migration status is

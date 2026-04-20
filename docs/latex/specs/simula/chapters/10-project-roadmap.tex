@@ -1,6 +1,6 @@
-\section{Project Roadmap}\label{sec:sim-roadmap}
+\chapter{Project Roadmap}\label{sec:sim-roadmap}
 
-\subsection*{Scope of this chapter}
+\section*{Scope of this chapter}
 \addcontentsline{toc}{subsection}{Scope of this chapter}
 
 This chapter is the roadmap for the \textbf{Simula training-data
@@ -12,7 +12,7 @@ Simula is a \emph{supplier} to those projects: it generates reference
 training corpora they consume, so its critical path is sequenced
 before theirs, but its sign-off is independent.
 
-\paragraph{Sequence, not dates.}
+\subsubsection{Sequence, not dates.}
 The milestones and dependency graph below express \emph{order} and
 \emph{prerequisite} relationships, not calendar dates. This is
 deliberate. Implementation teams must know what depends on what, and
@@ -21,7 +21,7 @@ date column would harden targets into commitments they were never
 meant to be. Dates, when set, live in the project steering packet and
 the ticketing system, not in this specification.
 
-\subsection{MoSCoW classification}\label{sec:sim-moscow}
+\section{MoSCoW classification}\label{sec:sim-moscow}
 
 Every milestone below carries one of four priorities. The mapping is
 contractual: a milestone's priority determines what happens when it is
@@ -49,7 +49,7 @@ The critical path of this project is the chain of Must items in
 \cref{tab:sim-milestones}; the Should and Could items are where the
 schedule and scope can absorb delivery risk without a release slip.
 
-\subsection{Dependency graph}\label{sec:sim-dependency-graph}
+\section{Dependency graph}\label{sec:sim-dependency-graph}
 
 \begin{figure}[htbp]
 \centering
@@ -97,7 +97,7 @@ fires).}
 \label{fig:sim-dependency-graph}
 \end{figure}
 
-\subsection{Project milestones}\label{sec:sim-milestones}
+\section{Project milestones}\label{sec:sim-milestones}
 
 \begin{table}[htbp]
 \centering
@@ -135,7 +135,7 @@ generations can slip without affecting Simula v1.2 sign-off. The Could
 items are the \emph{scope allowance}: they may be cut to v1.3 without
 renegotiation.
 
-\subsection{Launch tiers and exit gates}\label{sec:sim-launch-tiers}
+\section{Launch tiers and exit gates}\label{sec:sim-launch-tiers}
 
 The project walks the four-tier ladder shared across SAP OSS Finance
 projects. A tier is exited only when the named exit gate is satisfied;
@@ -158,7 +158,7 @@ Full rollout & All three current consumers (TB, AP, Regulations). & S02 closed; 
 \end{tabularx}
 \end{table}
 
-\subsection{Kill-switch conditions}\label{sec:sim-kill-switch}
+\section{Kill-switch conditions}\label{sec:sim-kill-switch}
 
 The kill-switch is a pre-committed rulebook: a tripped condition enters
 the action column without further debate. GFAIC and sponsor are
@@ -182,7 +182,7 @@ Shared-platform dependency in \cref{tab:sim-shared-deps} declared red by its own
 \end{tabularx}
 \end{table}
 
-\subsection{Shared-platform dependencies}\label{sec:sim-shared-deps}
+\section{Shared-platform dependencies}\label{sec:sim-shared-deps}
 
 This project depends on three shared-platform components. Each is
 tracked here only as a dependency, not a commitment this project can
@@ -198,7 +198,7 @@ that first consumes the dependency, not in calendar time.
 \toprule
 \textbf{Component} & \textbf{Owner} & \textbf{First consumed by} & \textbf{Impact if late} \\ \midrule
 Unified schema registry (\path{docs/schema/}) & Shared infra & M03 & Already \texttt{migration.status=complete}; no remaining risk. \\
-vLLM TurboQuant hosting (\texttt{vllm-only} policy) & Shared platform & M03 & Graceful-degradation ladder (\cref{sec:degradation-ladder} of the Regulations spec) provides fallback; batch-generation slip tolerable. \\
+vLLM TurboQuant hosting (\texttt{vllm-only} policy) & Shared platform & M03 & Graceful-degradation ladder defined in the Regulations spec provides fallback; batch-generation slip tolerable. \\
 HANA Cloud spatial extensions & Shared infra & M05 & No substitute; slip blocks spatial-policy certification and downstream consumer runs. \\
 \bottomrule
 \end{tabularx}
@@ -210,7 +210,7 @@ upstream owner declares \textbf{amber} or \textbf{red} on a component
 in \cref{tab:sim-shared-deps}, the affected downstream Must milestone
 is re-planned at the following steering.
 
-\subsection{v1.3 expansion trigger}\label{sec:sim-v13-trigger}
+\section{v1.3 expansion trigger}\label{sec:sim-v13-trigger}
 
 The Could item C01 (SIM-V13-EXPLORE) is unlocked only when all of the
 following are observed after two consecutive consumer corpus
@@ -229,16 +229,16 @@ generations under v1.2:
 If any of the three conditions fails, C01 remains in the Could column
 and is re-evaluated at the next business-case refresh.
 
-\subsection{Governance and business-case cadence}\label{sec:sim-governance}
+\section{Governance and business-case cadence}\label{sec:sim-governance}
 
-\paragraph{Project governance.}
+\subsubsection{Project governance.}
 The Simula project reports monthly to a project steering (Studio AI
 Lead, Training Data PM, Pipeline Engineer) and quarterly to the
 cross-project GFAIC. Monthly steering accepts or rejects amber/red
 signals on Must items; GFAIC reviews compliance posture and any
 cross-project dependencies (especially consumer-project risk).
 
-\paragraph{Business-case refresh (M08).}
+\subsubsection{Business-case refresh (M08).}
 The business case that authorises this project is refreshed on the
 following rhythm:
 
@@ -246,7 +246,7 @@ following rhythm:
   \item \textbf{Mandatory refresh}: at the first cycle after release,
         and annually thereafter (ticket SIM-BC-REFRESH, priority M in
         \cref{tab:sim-milestones}). Refresh packet includes consumer
-        demand assumptions, unit economics (\cref{sec:sim-unit-economics}),
+        demand assumptions, unit economics,
         GPU cost realised vs.\ forecast, and a deviation statement
         against the baseline.
   \item \textbf{Trigger-based refresh}: any of

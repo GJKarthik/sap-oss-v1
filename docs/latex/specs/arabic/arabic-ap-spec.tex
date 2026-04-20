@@ -1,14 +1,6 @@
 % !TEX program = xelatex
-% -----------------------------------------------------------------------------
-% Multi-Country Accounts Payable Processing and Arabic Invoice AI Pipeline
-% Implementation Specification
-%
-% Build with:   tectonic -X compile arabic-ap-spec.tex
-%           or: xelatex arabic-ap-spec.tex (twice, for references)
-% -----------------------------------------------------------------------------
 \documentclass[11pt,a4paper,twoside]{report}
 
-% --- All packages loaded before polyglossia-arabic (bidi) ------------------
 \usepackage{xcolor}
 \usepackage[a4paper,margin=28mm]{geometry}
 \usepackage{graphicx}
@@ -24,92 +16,93 @@
 \usepackage{amssymb}
 \usepackage{listings}
 \usepackage[hyphens]{url}
+\usepackage{tcolorbox}
 \usepackage{tikz}
+\usepackage[table]{colortbl}
 \usetikzlibrary{arrows.meta,positioning,shapes.geometric,fit,calc,chains,
                 decorations.pathmorphing,backgrounds}
+
+\newtcolorbox{adrbox}[2][]{colback=blue!5,colframe=blue!75!black,fonttitle=\bfseries,title=ADR: #2,#1}
+
+% --- Semantic Hyperlinking --------------------------------------------------
+\usepackage{xr-hyper}
 \usepackage[hidelinks]{hyperref}
 
-% --- Fonts and multilingual -------------------------------------------------
+% External references to peer specifications
+\externaldocument[reg:]{../regulations/regulations-spec}
+\externaldocument[tb:]{../tb/tb-review-spec}
+\externaldocument[sim:]{../simula/simula-training-spec}
+
+% --- Fonts and listings -----------------------------------------------------
 \usepackage{fontspec}
 \usepackage{polyglossia}
+\setmainfont{Geeza Pro}
 \setmainlanguage{english}
 \setotherlanguage{arabic}
-\newfontfamily\arabicfont[Script=Arabic,Scale=1.1]{Geeza Pro}
+\newfontfamily\arabicfont[Script=Arabic]{Mishafi}
+\newfontfamily\arabicfontsf[Script=Arabic]{Mishafi}
+\newfontfamily\arabicfonttt[Script=Arabic]{Mishafi}
 
 % --- cleveref must come AFTER hyperref but keep it here (post-babel) -------
 \usepackage[capitalize,noabbrev]{cleveref}
 
-% --- Layout tweaks ----------------------------------------------------------
+\definecolor{codebg}{gray}{0.96}
+\definecolor{sapblue}{HTML}{0B5FA5}
+\definecolor{sapgreen}{HTML}{00695C}
+\definecolor{sapamber}{HTML}{B8360F}
+\definecolor{sapgrey}{HTML}{546E7A}
+\definecolor{sapmidnight}{HTML}{1C2B39}
+\definecolor{sapgold}{HTML}{F0AB00}
+\definecolor{apred}{HTML}{B71C1C}
+\definecolor{apblue}{HTML}{1565C0}
+\definecolor{apgreen}{HTML}{2E7D32}
+\definecolor{apgrey}{HTML}{546E7A}
+\definecolor{apamber}{HTML}{F0AB00}
+
+\lstdefinelanguage{jsonx}{
+  basicstyle=\ttfamily\small,
+  columns=fullflexible,
+  breaklines=true,
+  showstringspaces=false,
+  comment=[l]{//},
+  morestring=[b]",
+  stringstyle=\color{sapgreen},
+  keywordstyle=\color{sapblue},
+}
+
 \onehalfspacing
 \setlist{topsep=2pt,itemsep=1pt,parsep=0pt}
-% Give the line-breaker extra slack so long paths / texttt identifiers
-% do not cause overfull hboxes.
 \setlength{\emergencystretch}{3em}
 \tolerance=1000
 \hbadness=10000
 
-% --- Colours ----------------------------------------------------------------
-\definecolor{codebg}{gray}{0.96}
-\definecolor{codekey}{HTML}{0B5FA5}
-\definecolor{codestr}{HTML}{B8360F}
-\definecolor{codenum}{HTML}{00695C}
-\definecolor{codecom}{HTML}{6A737D}
-\definecolor{apblue}{HTML}{0B5FA5}
-\definecolor{apgreen}{HTML}{00695C}
-\definecolor{apred}{HTML}{B8360F}
+% --- Global Command Overrides -----------------------------------------------
+\newcommand{\corpus}{}
+\newcommand{\tool}{}
+\newcommand{\stateid}[1]{\textsc{\lowercase{#1}}}
+\newcommand{\ar}[1]{\foreignlanguage{arabic}{#1}}
 
-% --- Listings ---------------------------------------------------------------
-\lstdefinelanguage{jsonx}{
-  sensitive=true,
-  string=[s]{"}{"},
-  morestring=[s]{'}{'},
-  stringstyle=\color{codestr},
-  comment=[l]{//},
-  commentstyle=\color{codecom},
-  keywords={true,false,null},
-  keywordstyle=\color{codekey}\bfseries,
-  morecomment=[l]{\#},
-}
-\lstset{
-  basicstyle=\ttfamily\footnotesize,
-  backgroundcolor=\color{codebg},
-  frame=single,
-  rulecolor=\color{black!25},
-  columns=fullflexible,
-  keepspaces=true,
-  showstringspaces=false,
-  breaklines=true,
-  numbers=left,
-  numberstyle=\color{codecom}\tiny,
-  xleftmargin=12pt,
-  framexleftmargin=0pt
-}
-
-% --- Metadata ---------------------------------------------------------------
-\title{\vspace{-2em}\Large Multi-Country Accounts Payable Processing \\
-       and Arabic Invoice AI Pipeline \\[0.4em]
-       \large Implementation Specification v1.0}
-\author{SAP-OSS Arabic Corpus Working Group}
-\date{April 2026}
-
-% --- Shortcuts --------------------------------------------------------------
-\newcommand{\corpus}{\textsf{docs/arabic/}}
-\newcommand{\tool}[1]{\texttt{#1}}
-\newcommand{\ar}[1]{\textarabic{#1}}
-% Allow \url and \path to break at any character if needed.
-\makeatletter
-\g@addto@macro{\UrlBreaks}{\UrlOrds}
-\makeatother
+% --- Glossary Helper Commands -----------------------------------------------
+\definecolor{pathcolor}{HTML}{004D40}
+\newcommand{\schemapath}[1]{\texttt{\textcolor{pathcolor}{#1}}}
+\newcommand{\enumval}[1]{\texttt{\textcolor{sapgreen}{#1}}}
+\newcommand{\fieldref}[1]{\texttt{\textcolor{sapblue}{#1}}}
 
 \begin{document}
+
+\title{\vspace{-2em}\Large Multi-Country Accounts Payable Processing \\
+       \textbf{Arabic Invoice AI Pipeline} \\
+       \large Implementation Specification \\
+       \small Ref: \texttt{AP-ARABIC-2026-v1.2}}
+\author{SAP-OSS Accounts Payable Team}
+\date{April 2026}
+
 \maketitle
 
-\input{chapters/00-frontmatter}
-\tableofcontents
-\listoftables
-\listoffigures
-\clearpage
+% --- Incorporated Executive Summary ---
+\input{../fragment-executive-summary}
 
+\input{chapters/00-frontmatter}
 \input{chapters/01-overview}
 \input{chapters/02-data-schema}
 \input{chapters/03-ai-pipeline}
@@ -121,5 +114,10 @@
 \input{chapters/09-testing}
 \input{chapters/10-ocr-pilot}
 \input{chapters/11-project-roadmap}
+\input{chapters/12-implementation-instructions}
+
+% --- Incorporated Universal Chapters ---
+\input{../fragment-cross-spec-dependencies}
+\input{../fragment-master-glossary}
 
 \end{document}

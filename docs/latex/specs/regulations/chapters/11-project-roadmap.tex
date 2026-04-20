@@ -109,7 +109,7 @@ Priority: M=Must (critical path), S=Should, C=Could, W=Won't.}
 \begin{tabularx}{\linewidth}{@{}l l l l X@{}}
 \toprule
 \textbf{ID} & \textbf{Prereq} & \textbf{Pri.} & \textbf{Ticket} & \textbf{Milestone} \\ \midrule
-M01 & ---       & M & REG-ENG-001        & Agent index and MGF framework specification complete; conformance tooling passes the fixtures in \cref{ch:conformance}. \\
+M01 & ---       & M & REG-ENG-001        & Agent index and MGF framework specification complete; conformance tooling passes the fixtures in \cref{ch:tooling}. \\
 M02 & M01       & M & REG-AUDIT-001      & Audit service (reserve/complete, immutable storage) live in UAT; SEV1/SEV2 clean. \\
 M03 & M02       & M & REG-IDENT-001      & Identity attribution wiring (\cref{ch:identity}) live in UAT; REG-MGF-2.1.2-002 compliance upgraded from \textit{missing} to \textit{partial}. \\
 M04 & M01       & M & REG-MON-001        & Monitoring spec operational: circuit breaker plus graceful-degradation ladder (\cref{sec:degradation-ladder}). \\
@@ -249,7 +249,7 @@ following rhythm:
         annually thereafter (ticket REG-BC-REFRESH, priority M in
         \cref{tab:reg-milestones}). Refresh packet includes consumer
         integration load assumptions, unit economics
-        (\cref{sec:reg-unit-economics}), platform operating cost
+        and platform operating cost
         realised vs.\ forecast, and a deviation statement against the
         baseline.
   \item \textbf{Trigger-based refresh}: any of

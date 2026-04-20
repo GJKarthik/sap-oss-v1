@@ -1,15 +1,15 @@
-\section{Evaluation Framework}
+\chapter{Evaluation Framework}
 \label{chap:evaluation}
 
 This section specifies the evaluation components required for Simula methodology
 compliance, as described in Sections 2.3, 3.1, and 3.3 of the research paper.
 
-\subsection{Calibrated Complexity Scoring (Algorithm 3)}
+\section{Calibrated Complexity Scoring (Algorithm 3)}
 
 Raw per-sample complexity scores are noisy due to model overconfidence.
 The complexity calibrator uses batch-wise relative scoring with Elo ranking.
 
-\subsubsection{Elo Rating Algorithm}
+\subsection{Elo Rating Algorithm}
 
 The Elo update follows the standard formula (Elo \& Sloan, 1978), adapted for
 complexity comparisons. Given two examples $a$ and $b$ with ratings $R_a$ and
@@ -49,7 +49,7 @@ def _update_elo(self, id_a: str, id_b: str, outcome_a: float) -> None:
     self._scores[id_b].elo_rating = rating_b + K * ((1 - outcome_a) - expected_b)
 \end{lstlisting}
 
-\subsubsection{Usage}
+\subsection{Usage}
 
 \begin{lstlisting}[language=Python,caption={Complexity calibrator usage}]
 from src.training.pipeline import (
@@ -85,7 +85,7 @@ calibrator.export_scores("complexity_elo_scores.json")
 at 64k samples (Figure 7), but can \emph{hurt} performance when the teacher model
 is weak (LEXam case).
 
-\subsection{Taxonomic Coverage Evaluation}
+\section{Taxonomic Coverage Evaluation}
 
 The coverage evaluator measures Level Ratio Coverage---the proportion of unique
 taxonomy nodes covered at each level:
@@ -116,7 +116,7 @@ print(f"Under-covered nodes: {gaps}")
 evaluator.export_all_reports(reports, "coverage_report.json")
 \end{lstlisting}
 
-\subsection{Embedding-Based Diversity Metrics}
+\section{Embedding-Based Diversity Metrics}
 
 Following Yu et al. (2023), diversity is measured via cosine distance in embedding
 space. \textbf{Global diversity} is the average pairwise distance across the dataset.
@@ -146,7 +146,7 @@ low_ids, high_ids = analyzer.identify_outliers(report)
 \textbf{Key insight:} Global and Local diversification have \emph{additive} effects
 (Figure 4). Optimizing only one is insufficient.
 
-\subsection{Critic Calibration Validation}
+\section{Critic Calibration Validation}
 
 The critic validator measures $p(y)$ and $p(y_{\text{corrupt}})$ to ensure the
 double-critic is properly calibrated:
@@ -174,7 +174,7 @@ print(f"Calibrated: {report.is_well_calibrated}")
 \textbf{Key insight:} Critic effectiveness degrades with task complexity (Figure 3b).
 For effective rejection sampling, we need $p(y) > 0.8$ and $p(y_{\text{corrupt}}) < 0.3$.
 
-\subsection{Student-Teacher Gap Analysis}
+\section{Student-Teacher Gap Analysis}
 
 The paper shows that downstream performance saturates when the student bridges
 approximately 83\% of the teacher-student gap (Section 4.3):
@@ -193,9 +193,9 @@ print(f"Expected saturation: {expected:.1%}")  # ~65%
 print(config.training.gap_analysis())
 \end{lstlisting}
 
-\subsection{Adaptive Features (v1.2)}
+\section{Adaptive Features (v1.2)}
 
-\subsubsection{Adaptive Complexity Ratio (Figure 7)}
+\subsection{Adaptive Complexity Ratio (Figure 7)}
 
 The paper shows that complex data can hurt performance when the teacher model is weak
 (LEXam case). The adaptive complexity feature automatically reduces the complexity
@@ -215,7 +215,7 @@ def get_adaptive_complexity_ratio(self, teacher_accuracy: float | None) -> float
     return self.complexity_ratio
 \end{lstlisting}
 
-\subsubsection{Adaptive Critic Thresholding (Figure 3b)}
+\subsection{Adaptive Critic Thresholding (Figure 3b)}
 
 Critic effectiveness degrades with complexity. The adaptive threshold increases
 the acceptance bar for high-complexity examples:
@@ -232,7 +232,7 @@ def get_adaptive_critic_threshold(self, complexity_score: float | None) -> float
     return self.critic_threshold
 \end{lstlisting}
 
-\subsubsection{Automatic Coverage Gap Filling}
+\subsection{Automatic Coverage Gap Filling}
 
 When coverage evaluation identifies under-represented taxonomy nodes, the system
 can automatically generate additional examples to fill gaps:
@@ -252,7 +252,7 @@ additional = await fill_coverage_gaps(
 examples.extend(additional)
 \end{lstlisting}
 
-\subsubsection{Diversity Optimizer}
+\subsection{Diversity Optimizer}
 
 The diversity optimizer adjusts sampling weights to balance global and local diversity:
 
@@ -275,7 +275,7 @@ print(f"Local gap:  {adjustment.local_diversity_gap:.3f}")
 new_weights = optimizer.update_weights(diversity_report, coverage_by_taxonomy)
 \end{lstlisting}
 
-\subsubsection{Taxonomy Quality Gate (Section B.1, Table 2)}
+\subsection{Taxonomy Quality Gate (Section B.1, Table 2)}
 
 Generated taxonomies can be validated against expert references:
 
@@ -293,7 +293,7 @@ print(f"Soundness: {report.soundness:.1%}")        # Should be > 90%
 evaluator.validate_taxonomy(generated_taxonomy, report=report)
 \end{lstlisting}
 
-\subsection{Evaluation Environment Variables}
+\section{Evaluation Environment Variables}
 
 \begin{table}[H]
 \centering
@@ -334,13 +334,13 @@ evaluator.validate_taxonomy(generated_taxonomy, report=report)
 % WORKED EXAMPLE: END-TO-END WALKTHROUGH
 % =============================================================================
 \newpage
-\section*{Worked Example: Trial Balance Domain}
+\chapter*{Worked Example: Trial Balance Domain}
 \addcontentsline{toc}{section}{Worked Example}
 
 This section demonstrates an end-to-end walkthrough of the Simula pipeline for the
 Trial Balance domain, showing actual inputs, intermediate outputs, and final results.
 
-\subsection*{Step 1: Schema Extraction}
+\section*{Step 1: Schema Extraction}
 
 \textbf{Input:} HANA schemas \texttt{PAL\_STORE.TB\_VARIANCES}, \texttt{PAL\_STORE.GL\_BALANCES}
 
@@ -374,7 +374,7 @@ Trial Balance domain, showing actual inputs, intermediate outputs, and final res
 }
 \end{lstlisting}
 
-\subsection*{Step 2: Factor Identification}
+\section*{Step 2: Factor Identification}
 
 \textbf{LLM Output:} 4 factors identified for Trial Balance domain
 
@@ -389,7 +389,7 @@ Trial Balance domain, showing actual inputs, intermediate outputs, and final res
 }
 \end{lstlisting}
 
-\subsection*{Step 3: Taxonomy Generation}
+\section*{Step 3: Taxonomy Generation}
 
 \textbf{Parameters:} depth=3, best\_of\_n=5
 
@@ -412,7 +412,7 @@ query\_type & aggregation & sum, count, avg, max, min & 5 \\
 
 \textbf{Total across all 4 factors:} 52 leaf nodes
 
-\subsection*{Step 4: Mix Sampling and Meta-Prompt Generation}
+\section*{Step 4: Mix Sampling and Meta-Prompt Generation}
 
 \textbf{Sample mix:} \texttt{[aggregation/sum, MoM, by\_department]}
 
@@ -422,7 +422,7 @@ variances by department, comparing month-over-month changes,
 for the Trial Balance review process."
 \end{lstlisting}
 
-\subsection*{Step 5: Example Generation}
+\section*{Step 5: Example Generation}
 
 \begin{lstlisting}[language=Python,caption={Generated training example}]
 {
@@ -445,7 +445,7 @@ for the Trial Balance review process."
 }
 \end{lstlisting}
 
-\subsection*{Step 6: Evaluation Metrics}
+\section*{Step 6: Evaluation Metrics}
 
 After generating 10,247 examples for Trial Balance in the reference
 run of 2025-11-15 (commit \texttt{b8d40a1},
@@ -475,7 +475,7 @@ High complexity split & 38\% & 40\% \\
 \end{tabular}
 \end{table}
 
-\paragraph{Reproducibility.}
+\subsubsection{Reproducibility.}
 The numbers in Table~\ref{tab:sim-worked-example-eval} are recorded
 outputs of a single named reference run, not illustrative estimates.
 Re-running the command below on the reference hardware with seed
@@ -511,7 +511,7 @@ metrics (small drift is expected due to non-deterministic GPU kernels;
 set \texttt{--deterministic} to force CPU-side critic/diversity
 computation).
 
-\subsection*{Step 7: Output Files}
+\section*{Step 7: Output Files}
 
 \begin{lstlisting}[language=bash,caption={Final output artifacts}]
 data/training/trial_balance/
@@ -530,10 +530,10 @@ data/training/trial_balance/
 % CHAPTER 8: REFERENCES
 % =============================================================================
 \newpage
-\section{References}
+\chapter{References}
 \label{chap:references}
 
-\subsection{Source Documents}
+\section{Source Documents}
 
 \begin{table}[H]
 \centering
@@ -549,7 +549,7 @@ Arabic AP Spec & \texttt{docs/arabic/structured/} (external) \\
 \end{tabularx}
 \end{table}
 
-\subsection{Implementation Files}
+\section{Implementation Files}
 
 \begin{table}[H]
 \centering
@@ -573,7 +573,7 @@ Arabic AP Spec & \texttt{docs/arabic/structured/} (external) \\
 \end{tabularx}
 \end{table}
 
-\subsection{Tools}
+\section{Tools}
 
 \begin{table}[H]
 \centering

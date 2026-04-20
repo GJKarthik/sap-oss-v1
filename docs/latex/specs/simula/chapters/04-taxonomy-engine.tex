@@ -1,7 +1,7 @@
-\section{Taxonomy Generation Engine}
+\chapter{Taxonomy Generation Engine}
 \label{chap:taxonomy}
 
-\subsection{Algorithm 1: Reasoning-Driven Taxonomy Generation}
+\section{Algorithm 1: Reasoning-Driven Taxonomy Generation}
 
 The taxonomy builder implements Algorithm~1 from the Simula research paper. Given a
 dataset description $y$ and target depth $D$, it produces a set of taxonomies
@@ -32,7 +32,7 @@ $\mathcal{T} = \{T_i\}_{i=0}^{K}$ that map the conceptual space.
 \label{fig:taxonomy-stages}
 \end{figure}
 
-\subsection{Step 1: Factor Identification}
+\section{Step 1: Factor Identification}
 
 Given schema metadata, the LLM proposes factors of variation:
 
@@ -52,7 +52,7 @@ USER:   Schema context:
         Output JSON: {"factors": [{"name": "...", "description": "..."}]}
 \end{lstlisting}
 
-\subsection{Step 2: Breadth-First Expansion}
+\section{Step 2: Breadth-First Expansion}
 
 Each factor is expanded into a taxonomy tree. For each node, the LLM proposes children:
 
@@ -78,7 +78,7 @@ async def _expand_node(
     return refined
 \end{lstlisting}
 
-\subsection{Step 3: Best-of-N Proposal}
+\section{Step 3: Best-of-N Proposal}
 
 Multiple proposals are generated to increase coverage:
 
@@ -103,7 +103,7 @@ diversity compared to varying temperature across samples. Empirical testing sugg
 this is acceptable for taxonomy generation where structural diversity (prompt variation) 
 dominates over sampling diversity. v2 will evaluate temperature annealing ($T \in [0.6, 1.0]$).
 
-\subsection{Step 4: Critic Refinement}
+\section{Step 4: Critic Refinement}
 
 The critic evaluates and refines the proposed children:
 
@@ -124,7 +124,7 @@ USER:   Parent node: {parent.name} - {parent.description}
         Output JSON with refined children list.
 \end{lstlisting}
 
-\subsection{Step 5: Level Planning}
+\section{Step 5: Level Planning}
 
 After completing a level, a plan is generated for the next level:
 
@@ -145,7 +145,7 @@ async def _plan_next_level(
     return response.content
 \end{lstlisting}
 
-\subsection{Worked Example: Trial Balance Taxonomy}
+\section{Worked Example: Trial Balance Taxonomy}
 
 \begin{table}[H]
 \centering

@@ -1,0 +1,146 @@
+% =============================================================================
+% Chapter 13: Cross-Specification Dependencies
+% Simula Training Data Framework Specification
+% =============================================================================
+
+\chapter{Cross-Specification Dependencies}
+\label{ch:cross-spec}
+
+This chapter documents how the Simula Training Data Framework specification
+integrates with the other three SAP OSS specifications. All dependencies
+are traceable to \texttt{docs/schema/registry.json} (v1.2.0).
+
+% -----------------------------------------------------------------------------
+\section{Architecture Position}
+\label{sec:arch-position}
+
+The Simula specification occupies the \textbf{training infrastructure} position
+in the four-domain architecture:
+
+\begin{itemize}
+  \item \textbf{Upstream}: Arabic AP (consumes invoice schemas)
+  \item \textbf{Upstream}: Trial Balance (consumes TB/PL extract schemas)
+  \item \textbf{Horizontal}: Regulations (training data governance)
+  \item \textbf{Downstream}: Training JSONL $\rightarrow$ Model fine-tuning
+\end{itemize}
+
+% -----------------------------------------------------------------------------
+\section{Schema Dependencies}
+\label{sec:schema-deps}
+
+\subsection{Schemas Owned by Simula}
+
+\begin{tabularx}{\linewidth}{@{}l l X@{}}
+\toprule
+\textbf{Schema} & \textbf{Status} & \textbf{Purpose} \\
+\midrule
+taxonomy.schema.json & stable & Factor tree structure \\
+training-example.schema.json & stable & Training JSONL format \\
+hana-schema-entry.schema.json & stable & HANA metadata cache \\
+config.schema.json & stable & Pipeline configuration \\
+meta-prompt.schema.json & stable & Generation prompts \\
+\bottomrule
+\end{tabularx}
+
+\subsection{Schemas Consumed from Other Domains}
+
+\begin{tabularx}{\linewidth}{@{}l l X@{}}
+\toprule
+\textbf{Schema} & \textbf{Source} & \textbf{Usage} \\
+\midrule
+invoice.schema.json & arabic & Training for invoice field extraction \\
+vat-checklist.schema.json & arabic & Training for VAT classification \\
+tb-extract.schema.json & tb & Training for account analysis \\
+pl-extract.schema.json & tb & Training for P\&L commentary \\
+base-types.yaml & common & Shared type definitions \\
+enums.yaml & common & Complexity levels, verdicts \\
+requirement.schema.json & regulations & Training data compliance \\
+\bottomrule
+\end{tabularx}
+
+% -----------------------------------------------------------------------------
+\section{Regulations Integration}
+\label{sec:reg-integration}
+
+Simula training data generation is governed by Regulations:
+
+\subsection{Pillar 1: Training Data Bounds}
+
+\begin{itemize}
+  \item No PII in generated training examples
+  \item Synthetic data only---no production data extraction
+  \item Complexity distribution balanced (easy/medium/hard)
+\end{itemize}
+
+\subsection{Pillar 2: Human Accountability}
+
+\begin{itemize}
+  \item Schema extraction requires DBA approval
+  \item Training corpus sign-off by domain SME
+  \item Double-critic verdicts logged for audit
+\end{itemize}
+
+\subsection{Pillar 3: Technical Controls}
+
+\begin{itemize}
+  \item Drift monitoring: Training data quality metrics per Regulations Ch.8
+  \item SQL syntax validation gate (see Algorithm 3)
+  \item Conformance testing: AI Verify hooks per Regulations Ch.6
+\end{itemize}
+
+\subsection{Pillar 4: Data Provenance}
+
+\begin{itemize}
+  \item Schema lineage tracking per Regulations Ch.7
+  \item Training corpus versioning with SBOM integration
+\end{itemize}
+
+% -----------------------------------------------------------------------------
+\section{Arabic AP Integration}
+\label{sec:arabic-integration}
+
+Simula consumes Arabic AP schemas for training data generation:
+
+\begin{itemize}
+  \item \textbf{invoice.schema.json} $\rightarrow$ Invoice field extraction training
+  \item \textbf{vat-checklist.schema.json} $\rightarrow$ VAT category classification
+  \item \textbf{Schema extraction} from HANA tables: BKPF, BSEG, LFA1
+  \item Cross-reference: See Arabic AP specification Chapter 2 (Data Schema)
+\end{itemize}
+
+% -----------------------------------------------------------------------------
+\section{Trial Balance Integration}
+\label{sec:tb-integration}
+
+Simula consumes TB schemas for training data generation:
+
+\begin{itemize}
+  \item \textbf{tb-extract.schema.json} $\rightarrow$ Account analysis training
+  \item \textbf{pl-extract.schema.json} $\rightarrow$ P\&L commentary training
+  \item \textbf{variance-record.schema.json} $\rightarrow$ Variance explanation training
+  \item \textbf{Schema extraction} from HANA tables: ACDOCA, BSEG, SKB1
+  \item Cross-reference: See TB specification Chapter 2 (Data Schema)
+\end{itemize}
+
+% -----------------------------------------------------------------------------
+\section{Cross-Reference Summary}
+\label{sec:xref-summary}
+
+\begin{longtable}{@{}p{3.5cm}p{4cm}p{5cm}@{}}
+\toprule
+\textbf{Target Spec} & \textbf{Chapter} & \textbf{Integration Point} \\
+\midrule
+\endhead
+Regulations & Ch.3 (MGF Framework) & Training data governance \\
+Regulations & Ch.6 (Conformance) & AI Verify/Moonshot hooks \\
+Regulations & Ch.7 (Corpus) & Schema lineage tracking \\
+Regulations & Ch.8 (Monitoring) & Training quality metrics \\
+\midrule
+Arabic AP & Ch.2 (Data Schema) & Invoice schema consumption \\
+Arabic AP & Ch.4 (VAT Engine) & VAT category training data \\
+\midrule
+Trial Balance & Ch.2 (Data Schema) & TB/PL schema consumption \\
+Trial Balance & Ch.3 (AI Pipeline) & Variance analysis training \\
+\bottomrule
+\caption{Simula cross-specification references}
+\end{longtable}

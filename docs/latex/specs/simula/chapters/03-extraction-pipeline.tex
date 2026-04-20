@@ -1,7 +1,7 @@
-\section{HANA Schema Extraction Pipeline}
+\chapter{HANA Schema Extraction Pipeline}
 \label{chap:extraction}
 
-\subsection{Pipeline at a Glance}
+\section{Pipeline at a Glance}
 
 \begin{figure}[H]
 \centering
@@ -27,7 +27,7 @@
 \label{fig:extraction-pipeline}
 \end{figure}
 
-\subsection{Stage 1 --- MCP Discovery}
+\section{Stage 1 --- MCP Discovery}
 
 The extractor connects to the AI Core PAL MCP server and discovers available tools:
 
@@ -53,7 +53,7 @@ async def connect(self) -> None:
 \textbf{Precondition.} The MCP server must expose at least one of: \texttt{execute\_sql},
 \texttt{hana\_tables}, or \texttt{list\_tables}.
 
-\subsection{Stage 2 --- Table Enumeration}
+\section{Stage 2 --- Table Enumeration}
 
 Tables are discovered via the \texttt{hana\_tables} MCP tool or by querying
 \texttt{SYS.TABLES}:
@@ -77,7 +77,7 @@ async def _discover_tables(self, schema: str) -> list[str]:
         return [row["TABLE_NAME"] for row in result]
 \end{lstlisting}
 
-\subsection{Stage 3 --- Column Extraction}
+\section{Stage 3 --- Column Extraction}
 
 For each table, column metadata is extracted from \texttt{SYS.TABLE\_COLUMNS}:
 
@@ -92,7 +92,7 @@ WHERE SCHEMA_NAME = ? AND TABLE_NAME = ?
 ORDER BY POSITION
 \end{lstlisting}
 
-\subsection{Stage 4 --- Registry Population}
+\section{Stage 4 --- Registry Population}
 
 Extracted metadata is normalized and stored in the \texttt{SchemaRegistry}:
 
@@ -120,7 +120,7 @@ async def extract_table_schema(
     )
 \end{lstlisting}
 
-\subsection{Stage 5 --- JSON Export}
+\section{Stage 5 --- JSON Export}
 
 The registry exports to JSON for caching and debugging:
 

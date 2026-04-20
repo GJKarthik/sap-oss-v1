@@ -1,0 +1,3240 @@
+% =============================================================================
+% Simula Training Data Framework — Implementation Specification
+% Main document - includes chapter files
+% =============================================================================
+\documentclass[11pt,a4paper]{report}
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage{amsmath}
+\usepackage[margin=2.5cm]{geometry}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{longtable}
+\usepackage{tabularx}
+\usepackage{multirow}
+\usepackage{array}
+\usepackage{float}
+\usepackage{enumitem}
+\usepackage{xcolor}
+\usepackage{tcolorbox}
+\usepackage{tikz}
+\usepackage[table]{colortbl}
+\usetikzlibrary{arrows.meta,positioning,shapes.geometric}
+
+\newtcolorbox{adrbox}[2][]{colback=blue!5,colframe=blue!75!black,fonttitle=\bfseries,title=ADR: #2,#1}
+
+% --- Semantic Hyperlinking --------------------------------------------------
+\usepackage{xr-hyper}
+\usepackage[hidelinks]{hyperref}
+
+% External references to peer specifications
+\externaldocument[reg:]{../regulations/regulations-spec}
+\externaldocument[tb:]{../tb/tb-review-spec}
+\externaldocument[ar:]{../arabic/arabic-ap-spec}
+
+\usepackage[capitalize,noabbrev]{cleveref}
+\usepackage{fancyhdr}
+\usepackage{titlesec}
+
+% ─── Code listings ───────────────────────────────────────────────────────────
+\usepackage{listings}
+
+\definecolor{codebg}{RGB}{248,248,248}
+\definecolor{codegreen}{RGB}{0,128,0}
+\definecolor{codegray}{RGB}{128,128,128}
+\definecolor{codeblue}{RGB}{0,0,180}
+\definecolor{codepurple}{RGB}{128,0,128}
+\definecolor{sapblue}{HTML}{0B5FA5}
+\definecolor{sapgreen}{HTML}{00695C}
+\definecolor{sapamber}{HTML}{B8360F}
+\definecolor{sapgrey}{HTML}{546E7A}
+\definecolor{sapmidnight}{HTML}{1C2B39}
+\definecolor{sapgold}{HTML}{F0AB00}
+\definecolor{simred}{HTML}{B71C1C}
+\definecolor{simblue}{HTML}{1565C0}
+\definecolor{simgreen}{HTML}{2E7D32}
+\definecolor{simgrey}{HTML}{546E7A}
+\definecolor{simamber}{HTML}{F0AB00}
+\definecolor{hanagreen}{HTML}{2E7D32}
+\definecolor{llmpurple}{HTML}{6A1B9A}
+\definecolor{saplight}{HTML}{F5F5F5}
+
+\lstdefinelanguage{Python}{
+keywords={class,def,return,if,elif,else,for,in,import,from,async,await,
+True,False,None,self,try,except,finally,with,as,yield,not,and,or,
+Optional,Dict,List,Tuple,Any,str,int,float,bool,dataclass,field,Enum},
+keywordstyle=\color{codeblue}\bfseries,
+ndkeywords={@dataclass,@property,asyncio,httpx},
+ndkeywordstyle=\color{codepurple}\bfseries,
+identifierstyle=\color{black},
+sensitive=false,
+comment=[l]{\#},
+commentstyle=\color{codegreen}\ttfamily,
+stringstyle=\color{sapblue}\ttfamily,
+morestring=[b]',
+morestring=[b]"
+}
+
+\lstdefinelanguage{jsonx}{
+basicstyle=\ttfamily\small,
+columns=fullflexible,
+breaklines=true,
+showstringspaces=false,
+comment=[l]{//},
+morestring=[b]",
+stringstyle=\color{sapgreen},
+keywordstyle=\color{sapblue},
+}
+
+\lstset{
+language=Python,
+backgroundcolor=\color{codebg},
+basicstyle=\ttfamily\small,
+breakatwhitespace=false,
+breaklines=true,
+captionpos=b,
+keepspaces=true,
+showspaces=false,
+showstringspaces=false,
+showtabs=false,
+tabsize=2,
+frame=single,
+rulecolor=\color{black!10}
+}
+
+% --- Glossary Helper Commands -----------------------------------------------
+\definecolor{pathcolor}{HTML}{004D40}
+\newcommand{\schemapath}[1]{\texttt{\textcolor{pathcolor}{#1}}}
+\newcommand{\enumval}[1]{\texttt{\textcolor{sapgreen}{#1}}}
+\newcommand{\fieldref}[1]{\texttt{\textcolor{sapblue}{#1}}}
+
+\begin{document}
+
+\title{\Huge Simula Training Data Framework \\
+\textbf{Implementation Specification} \\
+\large Synthetic Data Generation for Text-to-SQL \\
+\small Ref: \texttt{SIM-TRAIN-2026-v1.2}}
+\author{SAP-OSS AI Training Team}
+\date{April 2026}
+
+\maketitle
+
+% --- Incorporated Executive Summary ---
+
+\maketitle
+\thispagestyle{empty}
+
+% =============================================================================
+% ABSTRACT
+% =============================================================================
+\begin{abstract}
+\noindent
+This specification defines the full implementation of the \textbf{Simula} reasoning-driven
+synthetic training data generation framework for SAP HANA Cloud. The system addresses a
+critical gap identified in the existing training pipeline: \emph{there is no direct pipe
+to HANA to generate training datasets for model training}. Three orthogonal components
+are specified in full:
+
+\begin{itemize}[nosep]
+\item a \textbf{HANA Schema Extraction Pipeline} that connects to SAP HANA Cloud via
+the AI Core PAL MCP service, queries \texttt{SYS.TABLE\_COLUMNS} for live metadata,
+and populates a schema registry;
+\item a \textbf{Taxonomy Generation Engine} that implements Algorithm~1 from the Simula
+research paper---factor identification, breadth-first expansion with Best-of-N
+proposals, and generator-critic refinement;
+\item a \textbf{Training Data Generation Engine} that implements Algorithm~2---taxonomic
+mix sampling, meta-prompt generation, complexification, and double-critic filtering.
+\end{itemize}
+
+\noindent
+All three components consume a single vLLM TurboQuant backend via the OpenAI-compatible API
+and output JSONL training data suitable for LoRA fine-tuning. The specification targets
+three application domains: Arabic document processing (invoice extraction), Trial Balance
+review (variance analysis and LLM commentaries), and ESG analytics (financed emissions
+classification).
+
+\medskip
+\noindent\textbf{Reading order.} Chapter~\ref{chap:overview} situates the work;
+Chapter~\ref{chap:schema} defines the data structures; Chapter~\ref{chap:extraction}
+covers the HANA extraction pipeline; Chapter~\ref{chap:taxonomy} covers the taxonomy
+engine; Chapter~\ref{chap:generator} covers the data generator; Chapter~\ref{chap:config}
+specifies environment and CLI; Chapter~\ref{chap:evaluation} covers the evaluation
+framework; Chapter~\ref{chap:references} provides references and traceability.
+
+\medskip
+\noindent\textbf{Conventions.} File paths are typeset in \texttt{monospace} and are
+relative to the repository root \texttt{/Users/user/Documents/sap-oss}. Enum values
+in running text appear in \textsc{small caps}. Python code listings include line numbers
+for cross-reference.
+\end{abstract}
+
+\tableofcontents
+\listoftables
+\listoffigures
+\newpage
+
+% =============================================================================
+% EXECUTIVE SUMMARY
+% =============================================================================
+\section*{Executive Summary}
+\addcontentsline{toc}{section}{Executive Summary}
+
+\subsection*{Business Problem}
+
+The SAP OSS Studio AI platform requires high-quality training data to fine-tune
+Text-to-SQL models for domain-specific applications (Trial Balance, Arabic invoices,
+ESG analytics). The current pipeline uses \textbf{static Excel files} as schema sources,
+creating three critical issues:
+
+\begin{enumerate}[nosep]
+\item \textbf{Schema drift:} Training data becomes stale when HANA schemas evolve.
+\item \textbf{Coverage gaps:} Manual templates miss edge cases and rare query patterns.
+\item \textbf{Quality variance:} No systematic quality assurance for generated examples.
+\end{enumerate}
+
+\subsection*{Solution: Simula Framework}
+
+This specification implements the \textbf{Simula} framework from Davidson et al. (2026),
+a research-validated methodology for reasoning-driven synthetic data generation. The
+framework addresses all three issues through:
+
+\begin{itemize}[nosep]
+\item \textbf{HANA-Direct Extraction} — Live schema queries via AI Core PAL MCP service.
+\item \textbf{Taxonomic Coverage} — Hierarchical factor trees ensure systematic diversity.
+\item \textbf{Agentic Quality Control} — Double-critic filtering with Elo-calibrated complexity.
+\end{itemize}
+
+\subsection*{Key Metrics and Targets}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{llll}
+\toprule
+\textbf{Metric} & \textbf{Paper Target} & \textbf{Implementation} & \textbf{Source} \\
+\midrule
+Global diversity & 0.48--0.54 cosine & Target: 0.52 & Figure 4 \\
+Local diversity & 0.10--0.30 cosine & Target: 0.20 & Figure 4 \\
+Complexity ratio & 50\% (c=0.5) & Adaptive 0.2--0.5 & Figure 7 \\
+Critic acceptance & p(y) $>$ 0.8 & Threshold: 0.5--0.7 & Figure 3 \\
+Taxonomy completeness & 74\% (Simula) & Min: 70\% & Table 2 \\
+Taxonomy soundness & 97\% (Simula) & Min: 90\% & Table 2 \\
+Saturation ratio & 83\% & 83\% & Section 4.3 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection*{Expected Outcomes}
+
+\begin{enumerate}[nosep]
+\item \textbf{10$\times$ training data} with consistent quality (100k+ examples).
+\item \textbf{Full taxonomic coverage} — no systematic gaps in query patterns.
+\item \textbf{Calibrated complexity} — downstream model benefits from high-complexity data.
+\item \textbf{Audit trail} — every example traceable to taxonomy nodes and meta-prompts.
+\end{enumerate}
+
+\newpage
+% =============================================================================
+% CHAPTER 1: OVERVIEW AND SCOPE
+% =============================================================================
+\chapter{Overview and Scope}
+\label{chap:overview}
+
+\section{The Problem}
+
+The SAP OSS training pipeline requires high-quality Text-to-SQL training data that reflects
+the actual schema structure of SAP HANA Cloud tables. The current implementation in
+\texttt{src/training/pipeline/} uses metadata from \textbf{Excel files}
+(\texttt{DATA\_DICTIONARY.xlsx}, \texttt{ESG\_DATA\_DICTIONARY.xlsx}) that were originally
+exported from HANA or defined manually.
+
+While the \texttt{HanaClient} in \texttt{src/training/pipeline/hana\_client.py} has the
+capability to query \texttt{SYS.TABLE\_COLUMNS} for live schema metadata, this HANA-direct
+extraction is \textbf{not currently integrated} into the main training data generation
+pipeline.
+
+\begin{table}[H]
+\centering
+\caption{Current vs. Target Training Data Pipeline}
+\label{tab:gap-analysis}
+\begin{tabularx}{\textwidth}{lXX}
+\toprule
+\textbf{Dimension} & \textbf{Current State} & \textbf{Target State} \\
+\midrule
+Schema Source & Static Excel/CSV files & Live HANA Cloud metadata \\
+Extraction Method & Manual export & MCP-based automated query \\
+Training Data & Template-based expansion & Reasoning-driven synthesis \\
+Diversity Control & None & Taxonomic coverage \\
+Quality Assurance & None & Double-critic filtering \\
+Complexity Control & None & Calibrated Elo scoring \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\section{Goals}
+
+The specification targets three outcomes:
+
+\begin{enumerate}[nosep]
+\item \textbf{HANA-Direct Extraction.} Every training dataset is generated from live
+schema metadata queried via the AI Core PAL MCP service.
+\item \textbf{Taxonomic Coverage.} The conceptual space of the target domain is mapped
+using hierarchical taxonomies, ensuring global diversity.
+\item \textbf{Reasoning-Driven Synthesis.} Each training example is generated from
+first principles using agentic refinement, ensuring quality, local diversity,
+and controlled complexity.
+\end{enumerate}
+
+\section{In-Scope Domains}
+
+\begin{table}[H]
+\centering
+\caption{Application Domains}
+\label{tab:domains}
+\begin{tabularx}{\textwidth}{llX}
+\toprule
+\textbf{Domain} & \textbf{HANA Schema} & \textbf{Training Task} \\
+\midrule
+Arabic Document Processing & \texttt{AP\_INVOICES}, \texttt{VAT\_CHECKLISTS} & Invoice field extraction, VAT compliance \\
+Trial Balance Review & \texttt{TB\_VARIANCES}, \texttt{GL\_BALANCES} & Variance analysis, commentary generation \\
+ESG Analytics & \texttt{ESG\_METRICS}, \texttt{FINANCED\_EMISSIONS} & Scope classification, net-zero alignment \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\section{System Context}
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[
+node distance=1.2cm and 2cm,
+box/.style={rectangle, draw, rounded corners, minimum width=2.5cm, minimum height=1cm, align=center, font=\small},
+hana/.style={box, fill=hanagreen!20, draw=hanagreen},
+mcp/.style={box, fill=sapblue!20, draw=sapblue},
+llm/.style={box, fill=llmpurple!20, draw=llmpurple},
+output/.style={box, fill=sapgold!20, draw=sapgold},
+arr/.style={-{Stealth[length=3mm]}, thick},
+]
+% HANA Layer
+\node[hana] (hana) {SAP HANA\\Cloud};
+
+% MCP Layer
+\node[mcp, right=of hana] (mcp) {AI Core PAL\\MCP :8084};
+
+% Extraction
+\node[box, right=of mcp, fill=saplight] (extract) {Schema\\Extractor};
+
+% Registry
+\node[box, below=of extract, fill=saplight] (registry) {Schema\\Registry};
+
+% LLM
+\node[llm, right=2.5cm of extract] (llm) {vLLM\\TurboQuant\\:9180};
+
+% Taxonomy
+\node[box, below=of llm, fill=saplight] (taxonomy) {Taxonomy\\Builder};
+
+% Generator
+\node[box, below=of taxonomy, fill=saplight] (generator) {Data\\Generator};
+
+% Output
+\node[output, right=of generator] (output) {Training Data\\(.jsonl)};
+
+% Arrows
+\draw[arr] (hana) -- node[above, font=\tiny]{SYS.TABLE\_COLUMNS} (mcp);
+\draw[arr] (mcp) -- node[above, font=\tiny]{execute\_sql} (extract);
+\draw[arr] (extract) -- (registry);
+\draw[arr] (registry) -- (taxonomy);
+\draw[arr, dashed] (llm) -- node[right, font=\tiny]{Best-of-N} (taxonomy);
+\draw[arr] (taxonomy) -- (generator);
+\draw[arr, dashed] (llm) -- node[right, font=\tiny]{Critic} (generator);
+\draw[arr] (generator) -- (output);
+
+% Labels
+\node[below=0.3cm of hana, font=\tiny\color{hanagreen}] {Database};
+\node[below=0.3cm of mcp, font=\tiny\color{sapblue}] {Protocol};
+\node[below=0.3cm of llm, font=\tiny\color{llmpurple}] {LLM Backend};
+\end{tikzpicture}
+\caption{System context. HANA Cloud (green) provides live schema metadata via the MCP
+protocol (blue). The vLLM backend (purple) powers taxonomy expansion and data generation.
+Output is JSONL training data (gold).}
+\label{fig:system-context}
+\end{figure}
+
+\section{Research Paper Traceability}
+
+This specification implements the Simula framework from Davidson et al. (2026),
+``Reasoning-Driven Synthetic Data Generation and Evaluation,'' published in
+Transactions on Machine Learning Research (TMLR). The following table maps
+paper sections to specification sections:
+
+\begin{table}[H]
+\centering
+\caption{Traceability: Research Paper to Implementation}
+\label{tab:traceability}
+\begin{tabularx}{\textwidth}{p{3.5cm}p{4cm}X}
+\toprule
+\textbf{Paper Reference} & \textbf{Paper Finding} & \textbf{Spec Implementation} \\
+\midrule
+Section 2.1, Figure 1 & Taxonomy-based coverage & §\ref{chap:taxonomy}, Algorithm 1 \\
+Section 2.2, Algorithm 2 & Agentic data synthesis & §\ref{chap:generator}, Algorithm 2 \\
+Section 2.3, Algorithm 3 & Calibrated complexity scoring & §\ref{chap:evaluation}.1, Elo algorithm \\
+Section 3.1, Figure 3 & Double-critic validation & §\ref{chap:generator}.5, §\ref{chap:evaluation}.4 \\
+Section 3.3, Figure 4 & Additive diversity & §\ref{chap:evaluation}.3, Diversity analyzer \\
+Section 4.3 & 83\% saturation ratio & §\ref{chap:evaluation}.5, Gap analysis \\
+Figure 7 & Complexity vs teacher strength & §\ref{chap:evaluation}.6.1, Adaptive ratio \\
+Table 2 (Appendix B) & Taxonomy quality metrics & §\ref{chap:evaluation}.6.5, Quality gate \\
+Appendix E.3 & Elo algorithm details & §\ref{chap:evaluation}.1.1, \texttt{\_update\_elo()} \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\section{Out of Scope}
+
+The following are \textbf{explicitly} out of scope for this document:
+
+\begin{itemize}[nosep]
+\item Model fine-tuning and evaluation (covered by separate LoRA training specification).
+\item Downstream inference and routing (covered by \texttt{03-prompt-routing.tex}).
+\item Trial Balance business process (covered by \texttt{04-trial-balance-ai-specification.tex}).
+\item Arabic invoice pipeline (covered by the Arabic AP specification).
+\end{itemize}
+
+% =============================================================================
+% CHAPTER 2: CANONICAL DATA SCHEMA
+% =============================================================================
+\newpage
+\chapter{Canonical Data Schema}
+\label{chap:schema}
+
+\section{Layout of \texttt{src/training/pipeline/}}
+
+\begin{table}[H]
+\centering
+\caption{Pipeline Module Layout}
+\label{tab:module-layout}
+\begin{tabularx}{\textwidth}{lX}
+\toprule
+\textbf{Path} & \textbf{Purpose} \\
+\midrule
+\texttt{simula\_config.py} & Configuration dataclasses for all components \\
+\texttt{simula\_llm\_client.py} & OpenAI-compatible async LLM client \\
+\texttt{hana\_schema\_extractor.py} & HANA Cloud schema extraction via MCP \\
+\texttt{simula\_taxonomy\_builder.py} & Algorithm 1: Taxonomy generation \\
+\texttt{simula\_data\_generator.py} & Algorithm 2: Training data synthesis \\
+\texttt{schema\_registry.py} & In-memory schema registry \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\section{Training Example Record}
+
+Each generated training example is a JSON object with the following structure:
+
+\begin{lstlisting}[language=Python,caption={TrainingExample dataclass (simula\_data\_generator.py)}]
+@dataclass
+class TrainingExample:
+"""A single training example for Text-to-SQL."""
+id: str                    # Unique identifier
+question: str              # Natural language question
+sql: str                   # Target SQL query
+schema_context: str        # Table/column descriptions
+taxonomy_path: list[str]   # Factor nodes used
+complexity_score: float    # 0.0 to 1.0
+meta_prompt: str           # The meta-prompt used
+is_complexified: bool      # Whether complexification applied
+critic_passed: bool        # Whether double-critic passed
+generation_metadata: dict  # Timestamps, model, etc.
+\end{lstlisting}
+
+\section{Schema Registry}
+
+The \texttt{SchemaRegistry} holds table and column metadata extracted from HANA:
+
+\begin{lstlisting}[language=Python,caption={Schema registry structures (schema\_registry.py)}]
+@dataclass
+class Column:
+name: str
+data_type: str
+length: int | None
+nullable: bool
+description: str = ""
+
+@dataclass
+class TableSchema:
+schema_name: str
+table_name: str
+columns: list[Column]
+primary_key: list[str] = field(default_factory=list)
+description: str = ""
+\end{lstlisting}
+
+\section{Taxonomy Structure}
+
+Taxonomies are hierarchical trees where each node represents a factor of variation:
+
+\begin{lstlisting}[language=Python,caption={Taxonomy structures (simula\_taxonomy\_builder.py)}]
+@dataclass
+class TaxonomyNode:
+id: str
+name: str
+description: str
+level: int
+parent_id: str | None
+children: list["TaxonomyNode"]
+examples: list[str]  # Sample values
+
+@dataclass
+class Factor:
+id: str
+name: str
+description: str
+taxonomy: "Taxonomy"
+
+@dataclass
+class Taxonomy:
+id: str
+factor: str
+root: TaxonomyNode
+depth: int
+total_nodes: int
+\end{lstlisting}
+
+\section{Enumerations}
+
+\begin{table}[H]
+\centering
+\caption{Key Enumerations}
+\label{tab:enums}
+\begin{tabular}{lll}
+\toprule
+\textbf{Enum} & \textbf{Values} & \textbf{Description} \\
+\midrule
+\texttt{LLMProvider} & \textsc{vllm}, \textsc{openai}, \textsc{anthropic} & LLM backend type \\
+\texttt{SamplingStrategy} & \textsc{uniform}, \textsc{weighted}, \textsc{coverage} & How to sample taxonomy nodes \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{Unified Schema Registry}
+
+As of 18 April 2026, all schemas in this specification are published in the
+unified schema registry at \path{docs/schema/}. Migration status is
+\emph{complete} (see \path{docs/schema/registry.json} field
+\texttt{migration.status}). This consolidation addresses cross-document schema
+divergence identified in the specification review.
+
+\begin{description}
+\item[Registry index.] \path{docs/schema/registry.json} --- Master index of
+all schemas across domains.
+\item[Common types.] \path{docs/schema/common/base-types.schema.json} ---
+Shared definitions (\texttt{Metadata}, \texttt{Currency}, etc.)
+referenced via JSON Schema \texttt{\$ref}.
+\item[Consolidated enums.] \path{docs/schema/common/enums.yaml} --- Single
+source of truth for enumeration values used by all four specifications.
+\item[Simula schemas.] \path{docs/schema/simula/} --- Domain-specific
+schemas: \texttt{taxonomy.schema.json}, \texttt{training-example.schema.json},
+\texttt{hana-schema-entry.schema.json}, \texttt{config.schema.json}, and
+\texttt{meta-prompt.schema.json}. All marked \texttt{status: stable}.
+\end{description}
+
+\noindent
+The registry uses JSON Schema Draft-07 with the canonical \texttt{\$id} prefix
+\url{https://sap-oss.github.io/schema/}. Validation:
+
+\begin{lstlisting}[language=bash]
+python3 docs/schema/validate.py --registry-check
+python3 docs/schema/validate.py --domain simula \
+--schema training-example.schema.json --file example.json
+\end{lstlisting}
+
+\noindent
+See \path{docs/schema/README.md} for Python usage examples; the CI pipeline
+executes \texttt{--registry-check} on every pull request that touches
+\path{docs/schema/} or any spec chapter that references these schemas.
+
+% =============================================================================
+% CHAPTER 3: HANA SCHEMA EXTRACTION PIPELINE
+% =============================================================================
+\newpage
+\chapter{HANA Schema Extraction Pipeline}
+\label{chap:extraction}
+
+\section{Pipeline at a Glance}
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[
+node distance=0.8cm,
+stage/.style={rectangle, draw, rounded corners, fill=sapblue!10,
+minimum width=2.5cm, minimum height=0.8cm, font=\small,
+text width=2.3cm, align=center},
+arr/.style={-{Stealth[length=2mm]}, thick},
+]
+\node[stage] (s1) {1. MCP Discovery};
+\node[stage, right=of s1] (s2) {2. Table Enumeration};
+\node[stage, right=of s2] (s3) {3. Column Extraction};
+\node[stage, right=of s3] (s4) {4. Registry Population};
+\node[stage, right=of s4] (s5) {5. JSON Export};
+
+\draw[arr] (s1) -- (s2);
+\draw[arr] (s2) -- (s3);
+\draw[arr] (s3) -- (s4);
+\draw[arr] (s4) -- (s5);
+\end{tikzpicture}
+\caption{The five extraction stages; each emits a well-typed payload to the next.}
+\label{fig:extraction-pipeline}
+\end{figure}
+
+\section{Stage 1 --- MCP Discovery}
+
+The extractor connects to the AI Core PAL MCP server and discovers available tools:
+
+\begin{lstlisting}[language=Python,caption={MCP connection (hana\_schema\_extractor.py, lines 45--60)}]
+async def connect(self) -> None:
+"""Establish MCP connection to AI Core PAL."""
+# Handle both HTTP->WS and HTTPS->WSS
+transport_url = self.config.mcp_url
+transport_url = transport_url.replace("https://", "wss://")
+transport_url = transport_url.replace("http://", "ws://")
+transport_url = f"{transport_url}/mcp/ws"
+
+self._transport = WebSocketClientTransport(transport_url)
+self._session = ClientSession(self._transport)
+
+await self._session.initialize()
+
+# Discover available tools
+tools_result = await self._session.list_tools()
+self._available_tools = {t.name for t in tools_result.tools}
+\end{lstlisting}
+
+\textbf{Precondition.} The MCP server must expose at least one of: \texttt{execute\_sql},
+\texttt{hana\_tables}, or \texttt{list\_tables}.
+
+\section{Stage 2 --- Table Enumeration}
+
+Tables are discovered via the \texttt{hana\_tables} MCP tool or by querying
+\texttt{SYS.TABLES}:
+
+\begin{lstlisting}[language=Python,caption={Table discovery (hana\_schema\_extractor.py, lines 85--105)}]
+async def _discover_tables(self, schema: str) -> list[str]:
+"""Discover tables in a schema."""
+if "hana_tables" in self._available_tools:
+result = await self._session.call_tool(
+"hana_tables",
+{"schema": schema}
+)
+return [t["table_name"] for t in result.content]
+else:
+# Fallback to direct SQL
+result = await self._execute_sql(
+'SELECT TABLE_NAME FROM SYS.TABLES '
+'WHERE SCHEMA_NAME = ?',
+[schema]
+)
+return [row["TABLE_NAME"] for row in result]
+\end{lstlisting}
+
+\section{Stage 3 --- Column Extraction}
+
+For each table, column metadata is extracted from \texttt{SYS.TABLE\_COLUMNS}:
+
+\begin{lstlisting}[language=Python,caption={Column extraction SQL}]
+SELECT
+COLUMN_NAME,
+DATA_TYPE_NAME,
+LENGTH,
+IS_NULLABLE
+FROM SYS.TABLE_COLUMNS
+WHERE SCHEMA_NAME = ? AND TABLE_NAME = ?
+ORDER BY POSITION
+\end{lstlisting}
+
+\section{Stage 4 --- Registry Population}
+
+Extracted metadata is normalized and stored in the \texttt{SchemaRegistry}:
+
+\begin{lstlisting}[language=Python,caption={Registry population (hana\_schema\_extractor.py, lines 140--165)}]
+async def extract_table_schema(
+self, schema: str, table: str
+) -> TableSchema:
+"""Extract full schema for a single table."""
+columns_data = await self._get_table_columns(schema, table)
+
+columns = [
+Column(
+name=col["COLUMN_NAME"],
+data_type=col["DATA_TYPE_NAME"],
+length=col.get("LENGTH"),
+nullable=col.get("IS_NULLABLE", "TRUE") == "TRUE",
+)
+for col in columns_data
+]
+
+return TableSchema(
+schema_name=schema,
+table_name=table,
+columns=columns,
+)
+\end{lstlisting}
+
+\section{Stage 5 --- JSON Export}
+
+The registry exports to JSON for caching and debugging:
+
+\begin{lstlisting}[language=Python,caption={JSON export format}]
+{
+"schemas": {
+"PAL_STORE": {
+"tables": {
+"ESG_METRICS": {
+"columns": [
+{"name": "METRIC_ID", "type": "INTEGER", ...},
+{"name": "SCOPE", "type": "NVARCHAR", ...}
+]
+}
+}
+}
+},
+"extracted_at": "2026-04-18T08:00:00Z"
+}
+\end{lstlisting}
+
+% =============================================================================
+% CHAPTER 4: TAXONOMY GENERATION ENGINE
+% =============================================================================
+\newpage
+\chapter{Taxonomy Generation Engine}
+\label{chap:taxonomy}
+
+\section{Algorithm 1: Reasoning-Driven Taxonomy Generation}
+
+The taxonomy builder implements Algorithm~1 from the Simula research paper. Given a
+dataset description $y$ and target depth $D$, it produces a set of taxonomies
+$\mathcal{T} = \{T_i\}_{i=0}^{K}$ that map the conceptual space.
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[
+node distance=0.6cm and 1.5cm,
+stepbox/.style={rectangle, draw, rounded corners, fill=llmpurple!10,
+minimum width=3cm, minimum height=0.7cm, font=\small,
+text width=2.8cm, align=center},
+arr/.style={-{Stealth[length=2mm]}, thick},
+]
+\node[stepbox] (f1) {1. Factor Identification};
+\node[stepbox, below=of f1] (f2) {2. Breadth-First Expansion};
+\node[stepbox, below=of f2] (f3) {3. Best-of-N Proposal};
+\node[stepbox, below=of f3] (f4) {4. Critic Refinement};
+\node[stepbox, below=of f4] (f5) {5. Level Planning};
+
+\draw[arr] (f1) -- (f2);
+\draw[arr] (f2) -- (f3);
+\draw[arr] (f3) -- (f4);
+\draw[arr] (f4) -- (f5);
+\draw[arr, dashed] (f5.east) -- ++(1,0) |- node[right, pos=0.25, font=\tiny]{next level} (f2.east);
+\end{tikzpicture}
+\caption{Taxonomy generation stages with iterative refinement.}
+\label{fig:taxonomy-stages}
+\end{figure}
+
+\section{Step 1: Factor Identification}
+
+Given schema metadata, the LLM proposes factors of variation:
+
+\begin{lstlisting}[language=Python,caption={Factor identification prompt}]
+SYSTEM: You identify the prime factors of variation for a
+Text-to-SQL training dataset.
+
+USER:   Schema context:
+{schema_context}
+
+Identify 3-7 factors that capture the main dimensions
+of queries users might ask. Examples:
+- "query_complexity" (simple, join, aggregation, subquery)
+- "time_range" (point-in-time, period, YTD, MTD)
+- "entity_type" (customer, order, product, supplier)
+
+Output JSON: {"factors": [{"name": "...", "description": "..."}]}
+\end{lstlisting}
+
+\section{Step 2: Breadth-First Expansion}
+
+Each factor is expanded into a taxonomy tree. For each node, the LLM proposes children:
+
+\begin{lstlisting}[language=Python,caption={Node expansion (simula\_taxonomy\_builder.py, lines 180--220)}]
+async def _expand_node(
+self, node: TaxonomyNode, context: str
+) -> list[TaxonomyNode]:
+"""Expand a single node with Best-of-N proposals."""
+
+# Step 1: Generate N proposals
+proposals = await self.llm.best_of_n(
+prompt=self._build_expansion_prompt(node, context),
+n=self.config.taxonomy.best_of_n,
+temperature=0.8,
+)
+
+# Merge proposals into candidate set
+candidates = self._merge_proposals(proposals)
+
+# Step 2: Critic refinement
+refined = await self._critic_refine(node, candidates, context)
+
+return refined
+\end{lstlisting}
+
+\section{Step 3: Best-of-N Proposal}
+
+Multiple proposals are generated to increase coverage:
+
+\begin{lstlisting}[language=Python,caption={Best-of-N sampling}]
+async def best_of_n(
+self,
+prompt: str,
+n: int = 5,
+temperature: float = 0.8,
+) -> list[str]:
+"""Generate N diverse completions."""
+tasks = [
+self.generate(prompt, temperature=temperature)
+for _ in range(n)
+]
+responses = await asyncio.gather(*tasks)
+return [r.content for r in responses]
+\end{lstlisting}
+
+\textbf{Known limitation:} All $N$ proposals use the same temperature, which may reduce
+diversity compared to varying temperature across samples. Empirical testing suggests
+this is acceptable for taxonomy generation where structural diversity (prompt variation)
+dominates over sampling diversity. v2 will evaluate temperature annealing ($T \in [0.6, 1.0]$).
+
+\section{Step 4: Critic Refinement}
+
+The critic evaluates and refines the proposed children:
+
+\begin{lstlisting}[language=Python,caption={Critic refinement prompt}]
+SYSTEM: You are a taxonomy critic. Evaluate the proposed children
+for COMPLETENESS, SOUNDNESS, and SPECIFICITY.
+
+USER:   Parent node: {parent.name} - {parent.description}
+Siblings: {siblings}
+Proposed children: {candidates}
+
+Actions you may take:
+- ADD: missing concepts
+- REMOVE: irrelevant or duplicate nodes
+- MERGE: overlapping concepts
+- EDIT: improve descriptions
+
+Output JSON with refined children list.
+\end{lstlisting}
+
+\section{Step 5: Level Planning}
+
+After completing a level, a plan is generated for the next level:
+
+\begin{lstlisting}[language=Python,caption={Level planning}]
+async def _plan_next_level(
+self, current_level_nodes: list[TaxonomyNode]
+) -> str:
+"""Generate guidance for next level expansion."""
+prompt = f"""
+Current level nodes: {[n.name for n in current_level_nodes]}
+
+Generate a plan for expanding the next level that ensures:
+1. Consistent granularity across all branches
+2. No overlap between sibling expansions
+3. Complete coverage of the concept space
+"""
+response = await self.llm.generate(prompt)
+return response.content
+\end{lstlisting}
+
+\section{Worked Example: Trial Balance Taxonomy}
+
+\begin{table}[H]
+\centering
+\caption{Sample Taxonomy for Trial Balance Domain}
+\label{tab:tb-taxonomy}
+\begin{tabular}{llll}
+\toprule
+\textbf{Level 0} & \textbf{Level 1} & \textbf{Level 2} & \textbf{Level 3} \\
+\midrule
+query\_type & aggregation & sum & by\_account \\
+&             &     & by\_department \\
+&             & count & distinct\_accounts \\
+& comparison & variance & MoM \\
+&            &          & YoY \\
+& filter & by\_threshold & exceeds\_100M \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+% =============================================================================
+% CHAPTER 5: TRAINING DATA GENERATION ENGINE
+% =============================================================================
+\newpage
+\chapter{Training Data Generation Engine}
+\label{chap:generator}
+
+\section{Algorithm 2: Agentic Data Synthesis}
+
+Given taxonomies $\mathcal{T}$ and a target size $N$, the generator produces a synthetic
+dataset optimized for diversity, complexity, and quality.
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[
+node distance=0.6cm and 1.5cm,
+stepbox/.style={rectangle, draw, rounded corners, fill=sapgold!10,
+minimum width=3cm, minimum height=0.7cm, font=\small,
+text width=2.8cm, align=center},
+arr/.style={-{Stealth[length=2mm]}, thick},
+]
+\node[stepbox] (s1) {1. Mix Sampling};
+\node[stepbox, below=of s1] (s2) {2. Meta-Prompt Generation};
+\node[stepbox, below=of s2] (s3) {3. Complexification ($c=0.5$)};
+\node[stepbox, below=of s3] (s4) {4. Example Generation};
+\node[stepbox, below=of s4] (s5) {5. Double-Critic Filtering};
+
+\draw[arr] (s1) -- (s2);
+\draw[arr] (s2) -- (s3);
+\draw[arr] (s3) -- (s4);
+\draw[arr] (s4) -- (s5);
+\end{tikzpicture}
+\caption{Data generation stages implementing Algorithm 2.}
+\label{fig:generator-stages}
+\end{figure}
+
+\section{Step 1: Mix Sampling (Global Diversity)}
+
+Nodes are sampled from taxonomies to create ``mixes''---combinations of factors:
+
+\begin{lstlisting}[language=Python,caption={Mix sampling (simula\_data\_generator.py, lines 120--150)}]
+def _sample_mix(
+self, taxonomies: list[Taxonomy], strategy: SamplingStrategy
+) -> list[TaxonomyNode]:
+"""Sample a mix of nodes from taxonomies."""
+mix = []
+for taxonomy in taxonomies:
+if strategy == SamplingStrategy.UNIFORM:
+# Sample uniformly from leaf nodes
+leaves = self._get_leaf_nodes(taxonomy.root)
+node = random.choice(leaves)
+elif strategy == SamplingStrategy.COVERAGE:
+# Prioritize under-sampled nodes
+node = self._get_least_sampled_node(taxonomy)
+mix.append(node)
+return mix
+\end{lstlisting}
+
+\section{Step 2: Meta-Prompt Generation (Local Diversity)}
+
+Each mix is converted to a meta-prompt that guides example generation:
+
+\begin{lstlisting}[language=Python,caption={Meta-prompt generation}]
+async def _generate_meta_prompt(
+self, mix: list[TaxonomyNode], schema_context: str
+) -> str:
+"""Generate a meta-prompt from a taxonomy mix."""
+prompt = f"""
+Generate a natural language question that a user might ask,
+given these requirements:
+
+{self._format_mix(mix)}
+
+Schema context:
+{schema_context}
+
+The question should be realistic and answerable with SQL.
+"""
+response = await self.llm.generate(prompt, temperature=0.9)
+return response.content
+\end{lstlisting}
+
+\section{Step 3: Complexification}
+
+A fraction $c$ (default 0.5) of examples undergo complexification:
+
+\begin{lstlisting}[language=Python,caption={Complexification prompt}]
+SYSTEM: You increase the complexity of a Text-to-SQL example
+while maintaining correctness.
+
+USER:   Original question: {question}
+Original SQL: {sql}
+
+Add complexity by:
+- Adding edge cases or constraints
+- Requiring additional joins
+- Adding subqueries or CTEs
+- Handling NULL values explicitly
+
+Output the complexified question and SQL.
+\end{lstlisting}
+
+\section{Step 4: Example Generation}
+
+The meta-prompt is used to generate a complete training example:
+
+\begin{lstlisting}[language=Python,caption={Example generation}]
+async def _generate_example(
+self, meta_prompt: str, schema_context: str
+) -> TrainingExample:
+"""Generate a single training example."""
+prompt = f"""
+Generate a Text-to-SQL training example.
+
+Meta-prompt: {meta_prompt}
+Schema: {schema_context}
+
+Output JSON:
+{{
+"question": "...",
+"sql": "SELECT ..."
+}}
+"""
+response = await self.llm.generate(prompt)
+return self._parse_example(response.content)
+\end{lstlisting}
+
+\section{Step 5: Double-Critic Filtering}
+
+The double-critic mitigates sycophancy bias by independently querying correctness
+and incorrectness:
+
+\begin{lstlisting}[language=Python,caption={Double-critic evaluation (simula\_llm\_client.py, lines 180--220)}]
+async def double_critic_evaluate(
+self, question: str, sql: str, schema: str
+) -> tuple[bool, str]:
+"""Evaluate with double-critic to mitigate sycophancy."""
+
+# Query 1: Is this correct?
+correct_response = await self.generate(
+f"Is this SQL correct for the question?\n"
+f"Question: {question}\n"
+f"SQL: {sql}\n"
+f"Schema: {schema}\n"
+f"Answer YES or NO with explanation."
+)
+
+# Query 2: Is this incorrect?
+incorrect_response = await self.generate(
+f"Is this SQL INCORRECT for the question?\n"
+f"Question: {question}\n"
+f"SQL: {sql}\n"
+f"Schema: {schema}\n"
+f"Answer YES or NO with explanation."
+)
+
+# Accept only if: correct=YES AND incorrect=NO
+is_valid = (
+"YES" in correct_response.content.upper() and
+"NO" in incorrect_response.content.upper()
+)
+
+return is_valid, f"{correct_response.content}\n---\n{incorrect_response.content}"
+\end{lstlisting}
+
+\section{Output Format}
+
+Generated examples are written to JSONL:
+
+\begin{lstlisting}[language=Python,caption={JSONL output format}]
+{"id": "sim-001", "question": "What is the total revenue...",
+"sql": "SELECT SUM(amount) FROM...", "complexity_score": 0.3, ...}
+{"id": "sim-002", "question": "Show all customers with...",
+"sql": "SELECT * FROM customers WHERE...", "complexity_score": 0.7, ...}
+\end{lstlisting}
+
+% =============================================================================
+% CHAPTER 6: ENVIRONMENT AND CLI
+% =============================================================================
+\newpage
+\chapter{Environment and CLI}
+\label{chap:config}
+
+\section{Configuration Table}
+
+\begin{longtable}{p{5cm}p{3cm}p{6cm}}
+\caption{Environment Variables} \\
+\toprule
+\textbf{Variable} & \textbf{Default} & \textbf{Description} \\
+\midrule
+\endfirsthead
+\toprule
+\textbf{Variable} & \textbf{Default} & \textbf{Description} \\
+\midrule
+\endhead
+\texttt{AICORE\_PAL\_MCP\_URL} & \texttt{http://localhost:8084} & AI Core PAL MCP endpoint \\
+\texttt{VLLM\_BASE\_URL} & \texttt{http://localhost:9180/v1} & vLLM TurboQuant endpoint \\
+\texttt{VLLM\_MODEL} & \texttt{Qwen/Qwen3.5-35B} & Model for generation \\
+\texttt{SIMULA\_TARGET\_COUNT} & \texttt{100000} & Target training examples \\
+\texttt{SIMULA\_COMPLEXITY\_RATIO} & \texttt{0.5} & Fraction to complexify \\
+\texttt{SIMULA\_TAXONOMY\_DEPTH} & \texttt{4} & Max taxonomy depth \\
+\texttt{SIMULA\_BEST\_OF\_N} & \texttt{5} & Proposals per expansion \\
+\texttt{SIMULA\_ENABLE\_CRITIC} & \texttt{true} & Enable double-critic \\
+\texttt{SIMULA\_OUTPUT\_DIR} & \texttt{data/training/} & Output directory \\
+\bottomrule
+\end{longtable}
+
+\section{CLI Usage}
+
+\begin{lstlisting}[language=bash,caption={CLI entry point}]
+# Basic usage
+python src/training/scripts/run_hana_pipeline.py
+
+# Full customization
+python src/training/scripts/run_hana_pipeline.py \
+--hana-schemas PAL_STORE,ESG_METRICS \
+--llm-url http://localhost:9180/v1 \
+--target-count 50000 \
+--complexity-ratio 0.5 \
+--taxonomy-depth 4 \
+--output data/training/
+
+# Schema extraction only
+python src/training/scripts/run_hana_pipeline.py \
+--extract-only \
+--output schemas/
+\end{lstlisting}
+
+\section{Output Files}
+
+\begin{table}[H]
+\centering
+\caption{Pipeline Output Files}
+\label{tab:outputs}
+\begin{tabularx}{\textwidth}{lX}
+\toprule
+\textbf{File} & \textbf{Description} \\
+\midrule
+\texttt{schemas.json} & Extracted HANA schema metadata \\
+\texttt{taxonomies.json} & Generated taxonomy trees \\
+\texttt{training\_data.jsonl} & Final training examples \\
+\texttt{generation\_stats.json} & Statistics (counts, rates, timing) \\
+\texttt{rejected\_examples.jsonl} & Examples that failed critic \\
+\texttt{complexity\_elo\_scores.json} & Elo-calibrated complexity scores \\
+\texttt{coverage\_report.json} & Taxonomic coverage metrics \\
+\texttt{diversity\_metrics.json} & Global + local diversity \\
+\texttt{critic\_calibration.json} & Critic validation results \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+% =============================================================================
+% CHAPTER 7: EVALUATION FRAMEWORK
+% =============================================================================
+\newpage
+\chapter{Evaluation Framework}
+\label{chap:evaluation}
+
+This section specifies the evaluation components required for Simula methodology
+compliance, as described in Sections 2.3, 3.1, and 3.3 of the research paper.
+
+\section{Calibrated Complexity Scoring (Algorithm 3)}
+
+Raw per-sample complexity scores are noisy due to model overconfidence.
+The complexity calibrator uses batch-wise relative scoring with Elo ranking.
+
+\subsection{Elo Rating Algorithm}
+
+The Elo update follows the standard formula (Elo \& Sloan, 1978), adapted for
+complexity comparisons. Given two examples $a$ and $b$ with ratings $R_a$ and
+$R_b$, where $a$ has higher raw complexity score:
+
+\begin{enumerate}[nosep]
+\item Compute expected outcome:
+$E_a = \frac{1}{1 + 10^{(R_b - R_a)/400}}$
+\item Update ratings with K-factor = 32:
+$R'_a = R_a + K \cdot (1 - E_a)$,
+$R'_b = R_b + K \cdot (0 - (1 - E_a))$
+\end{enumerate}
+
+\begin{lstlisting}[language=Python,caption={Elo computation (simula\_complexity\_calibrator.py)}]
+def _update_elo(self, id_a: str, id_b: str, outcome_a: float) -> None:
+"""
+Update Elo ratings for a pairwise comparison.
+
+Args:
+id_a, id_b: Example identifiers
+outcome_a: 1.0 if A wins (higher complexity), 0.0 if B wins, 0.5 for draw
+
+Standard Elo formula per Elo & Sloan (1978).
+"""
+rating_a = self._scores[id_a].elo_rating
+rating_b = self._scores[id_b].elo_rating
+
+# Expected outcomes
+expected_a = 1 / (1 + math.pow(10, (rating_b - rating_a) / 400))
+expected_b = 1 - expected_a
+
+# K-factor = 32 (standard for chess, appropriate for complexity)
+K = self.config.elo_k_factor  # default 32
+
+# Update ratings
+self._scores[id_a].elo_rating = rating_a + K * (outcome_a - expected_a)
+self._scores[id_b].elo_rating = rating_b + K * ((1 - outcome_a) - expected_b)
+\end{lstlisting}
+
+\subsection{Usage}
+
+\begin{lstlisting}[language=Python,caption={Complexity calibrator usage}]
+from src.training.pipeline import (
+SimulaComplexityCalibrator,
+ComplexityConfig,
+)
+
+calibrator = SimulaComplexityCalibrator(
+llm_client=llm,
+config=ComplexityConfig(
+batch_size=5,   # BS=5 from Figure 10
+n_samples=5,    # N=5 from Figure 10
+enable_elo=True,
+elo_k_factor=32,  # Standard K-factor
+),
+)
+
+# Calibrate all examples
+scores = await calibrator.calibrate(examples)
+
+# Split by complexity (Figure 7)
+low, mid, high = calibrator.split_by_complexity(
+examples,
+low_percentile=0.4,
+high_percentile=0.6,
+)
+
+# Export scores
+calibrator.export_scores("complexity_elo_scores.json")
+\end{lstlisting}
+
+\textbf{Key insight from paper:} High-complexity data yields +10\% accuracy on GSM8k
+at 64k samples (Figure 7), but can \emph{hurt} performance when the teacher model
+is weak (LEXam case).
+
+\section{Taxonomic Coverage Evaluation}
+
+The coverage evaluator measures Level Ratio Coverage---the proportion of unique
+taxonomy nodes covered at each level:
+
+\begin{lstlisting}[language=Python,caption={Coverage evaluator usage}]
+from src.training.pipeline import (
+SimulaCoverageEvaluator,
+CoverageConfig,
+identify_coverage_gaps,
+)
+
+evaluator = SimulaCoverageEvaluator(
+llm_client=llm,
+config=CoverageConfig(
+max_level=4,
+sample_size=1000,
+),
+)
+
+# Evaluate against all taxonomies
+reports = await evaluator.evaluate_multiple(examples, taxonomies)
+
+# Identify gaps
+gaps = identify_coverage_gaps(reports, threshold=0.5)
+print(f"Under-covered nodes: {gaps}")
+
+# Export
+evaluator.export_all_reports(reports, "coverage_report.json")
+\end{lstlisting}
+
+\section{Embedding-Based Diversity Metrics}
+
+Following Yu et al. (2023), diversity is measured via cosine distance in embedding
+space. \textbf{Global diversity} is the average pairwise distance across the dataset.
+\textbf{Local diversity} is the average k-NN distance.
+
+\begin{lstlisting}[language=Python,caption={Diversity analyzer usage}]
+from src.training.pipeline import (
+SimulaDiversityAnalyzer,
+DiversityConfig,
+)
+
+analyzer = SimulaDiversityAnalyzer(
+config=DiversityConfig(
+embedding_model="sentence-transformers/all-MiniLM-L6-v2",
+knn_k=10,
+),
+)
+
+report = analyzer.analyze(examples, text_field="question")
+print(f"Global: {report.global_diversity:.4f}")
+print(f"Local:  {report.local_diversity:.4f}")
+
+# Identify outliers (near-duplicates or errors)
+low_ids, high_ids = analyzer.identify_outliers(report)
+\end{lstlisting}
+
+\textbf{Key insight:} Global and Local diversification have \emph{additive} effects
+(Figure 4). Optimizing only one is insufficient.
+
+\section{Critic Calibration Validation}
+
+The critic validator measures $p(y)$ and $p(y_{\text{corrupt}})$ to ensure the
+double-critic is properly calibrated:
+
+\begin{lstlisting}[language=Python,caption={Critic validator usage}]
+from src.training.pipeline import (
+SimulaCriticValidator,
+CriticValidationConfig,
+)
+
+validator = SimulaCriticValidator(
+llm_client=llm,
+config=CriticValidationConfig(
+validation_split=0.05,
+max_samples=200,
+),
+)
+
+report = await validator.validate(examples, schema_context)
+print(f"p(y)        = {report.p_y:.3f}")
+print(f"p(y_corrupt)= {report.p_y_corrupt:.3f}")
+print(f"Calibrated: {report.is_well_calibrated}")
+\end{lstlisting}
+
+\textbf{Key insight:} Critic effectiveness degrades with task complexity (Figure 3b).
+For effective rejection sampling, we need $p(y) > 0.8$ and $p(y_{\text{corrupt}}) < 0.3$.
+
+\section{Student-Teacher Gap Analysis}
+
+The paper shows that downstream performance saturates when the student bridges
+approximately 83\% of the teacher-student gap (Section 4.3):
+
+\begin{lstlisting}[language=Python,caption={Gap analysis}]
+from src.training.pipeline import SimulaConfig
+
+config = SimulaConfig()
+config.training.teacher_accuracy = 0.70  # measured
+config.training.student_baseline = 0.40  # measured
+
+expected = config.training.expected_saturation_accuracy()
+print(f"Expected saturation: {expected:.1%}")  # ~65%
+
+# Full analysis
+print(config.training.gap_analysis())
+\end{lstlisting}
+
+\section{Adaptive Features (v1.2)}
+
+\subsection{Adaptive Complexity Ratio (Figure 7)}
+
+The paper shows that complex data can hurt performance when the teacher model is weak
+(LEXam case). The adaptive complexity feature automatically reduces the complexity
+ratio when teacher accuracy is below 60\%:
+
+\begin{lstlisting}[language=Python,caption={Adaptive complexity ratio}]
+# In simula_config.py GenerationConfig
+def get_adaptive_complexity_ratio(self, teacher_accuracy: float | None) -> float:
+"""Reduce complexity for weak teachers (Figure 7)."""
+if not self.adaptive_complexity or teacher_accuracy is None:
+return self.complexity_ratio
+
+if teacher_accuracy < 0.6:
+return 0.2  # Significantly reduce
+elif teacher_accuracy < 0.7:
+return min(self.complexity_ratio, 0.35)
+return self.complexity_ratio
+\end{lstlisting}
+
+\subsection{Adaptive Critic Thresholding (Figure 3b)}
+
+Critic effectiveness degrades with complexity. The adaptive threshold increases
+the acceptance bar for high-complexity examples:
+
+\begin{lstlisting}[language=Python,caption={Adaptive critic threshold}]
+def get_adaptive_critic_threshold(self, complexity_score: float | None) -> float:
+"""Adjust threshold based on complexity (Figure 3b)."""
+if complexity_score is None:
+return self.critic_threshold
+if complexity_score > 0.7:
+return min(0.7, self.critic_threshold + 0.2)  # More conservative
+elif complexity_score < 0.3:
+return max(0.3, self.critic_threshold - 0.2)  # More permissive
+return self.critic_threshold
+\end{lstlisting}
+
+\subsection{Automatic Coverage Gap Filling}
+
+When coverage evaluation identifies under-represented taxonomy nodes, the system
+can automatically generate additional examples to fill gaps:
+
+\begin{lstlisting}[language=Python,caption={Coverage gap filling}]
+from src.training.pipeline import fill_coverage_gaps, identify_coverage_gaps
+
+# Identify gaps
+gaps = identify_coverage_gaps(coverage_reports, threshold=0.5)
+
+# Fill gaps automatically
+additional = await fill_coverage_gaps(
+gaps=gaps,
+generator=generator,
+examples_per_node=10,
+)
+examples.extend(additional)
+\end{lstlisting}
+
+\subsection{Diversity Optimizer}
+
+The diversity optimizer adjusts sampling weights to balance global and local diversity:
+
+\begin{lstlisting}[language=Python,caption={Diversity optimizer usage}]
+from src.training.pipeline import SimulaDiversityOptimizer, DiversityTargets
+
+optimizer = SimulaDiversityOptimizer(
+targets=DiversityTargets(
+target_global=0.52,  # From Figure 4
+target_local=0.20,
+),
+)
+
+# Analyze current diversity and get recommendations
+adjustment = optimizer.analyze(diversity_report)
+print(f"Global gap: {adjustment.global_diversity_gap:.3f}")
+print(f"Local gap:  {adjustment.local_diversity_gap:.3f}")
+
+# Update weights for next generation batch
+new_weights = optimizer.update_weights(diversity_report, coverage_by_taxonomy)
+\end{lstlisting}
+
+\subsection{Taxonomy Quality Gate (Section B.1, Table 2)}
+
+Generated taxonomies can be validated against expert references:
+
+\begin{lstlisting}[language=Python,caption={Taxonomy quality gate}]
+from src.training.pipeline import SimulaTaxonomyEvaluator, TaxonomyQualityError
+
+evaluator = SimulaTaxonomyEvaluator(llm_client)
+
+# Compare against expert taxonomy
+report = await evaluator.compare(generated_taxonomy, "data/expert/taxonomy.json")
+print(f"Completeness: {report.completeness:.1%}")  # Should be > 70%
+print(f"Soundness: {report.soundness:.1%}")        # Should be > 90%
+
+# Validate thresholds (raises TaxonomyQualityError if fails)
+evaluator.validate_taxonomy(generated_taxonomy, report=report)
+\end{lstlisting}
+
+\section{Evaluation Environment Variables}
+
+\begin{table}[H]
+\centering
+\caption{Evaluation Framework Environment Variables}
+\label{tab:eval-env}
+\begin{tabularx}{\textwidth}{lp{2cm}X}
+\toprule
+\textbf{Variable} & \textbf{Default} & \textbf{Description} \\
+\midrule
+\texttt{SIMULA\_COMPLEXITY\_BATCH\_SIZE} & 5 & BS parameter (Algorithm 3) \\
+\texttt{SIMULA\_COMPLEXITY\_N\_SAMPLES} & 5 & N parameter (Algorithm 3) \\
+\texttt{SIMULA\_COMPLEXITY\_ENABLE\_ELO} & true & Enable Elo calibration \\
+\texttt{SIMULA\_COVERAGE\_MAX\_LEVEL} & 4 & Max taxonomy level \\
+\texttt{SIMULA\_COVERAGE\_SAMPLE\_SIZE} & 1000 & Coverage sample size \\
+\texttt{SIMULA\_DIVERSITY\_EMBEDDING\_MODEL} & MiniLM & Embedding model (or Gecko) \\
+\texttt{SIMULA\_DIVERSITY\_KNN} & 10 & k-NN for local diversity \\
+\texttt{SIMULA\_CRITIC\_VALIDATION\_SPLIT} & 0.05 & Validation fraction \\
+\texttt{SIMULA\_TEACHER\_MODEL} & Qwen3.5-35B & Teacher model name \\
+\texttt{SIMULA\_STUDENT\_MODEL} & Gemma-3-4B & Student model name \\
+\texttt{SIMULA\_SATURATION\_RATIO} & 0.83 & Gap saturation ratio \\
+\midrule
+\multicolumn{3}{l}{\textbf{v1.2 Adaptive Features}} \\
+\midrule
+\texttt{SIMULA\_ADAPTIVE\_COMPLEXITY} & true & Auto-reduce for weak teacher \\
+\texttt{SIMULA\_CRITIC\_ADAPTIVE\_THRESHOLD} & true & Complexity-aware rejection \\
+\texttt{SIMULA\_CRITIC\_THRESHOLD} & 0.5 & Base critic threshold \\
+\texttt{SIMULA\_TAXONOMY\_MIN\_COMPLETENESS} & 0.7 & Minimum completeness \\
+\texttt{SIMULA\_TAXONOMY\_MIN\_SOUNDNESS} & 0.9 & Minimum soundness \\
+\texttt{SIMULA\_DIVERSITY\_TARGET\_GLOBAL} & 0.52 & Target global diversity \\
+\texttt{SIMULA\_DIVERSITY\_TARGET\_LOCAL} & 0.20 & Target local diversity \\
+\texttt{SIMULA\_DIVERSITY\_TOLERANCE} & 0.05 & Diversity tolerance \\
+\texttt{SIMULA\_DIVERSITY\_LEARNING\_RATE} & 0.1 & Weight adjustment rate \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+% =============================================================================
+% WORKED EXAMPLE: END-TO-END WALKTHROUGH
+% =============================================================================
+\newpage
+\chapter*{Worked Example: Trial Balance Domain}
+\addcontentsline{toc}{section}{Worked Example}
+
+This section demonstrates an end-to-end walkthrough of the Simula pipeline for the
+Trial Balance domain, showing actual inputs, intermediate outputs, and final results.
+
+\section*{Step 1: Schema Extraction}
+
+\textbf{Input:} HANA schemas \texttt{PAL\_STORE.TB\_VARIANCES}, \texttt{PAL\_STORE.GL\_BALANCES}
+
+\begin{lstlisting}[language=Python,caption={Schema extraction output (schemas.json)}]
+{
+"schemas": {
+"PAL_STORE": {
+"tables": {
+"TB_VARIANCES": {
+"columns": [
+{"name": "VARIANCE_ID", "type": "INTEGER", "nullable": false},
+{"name": "ACCOUNT_CODE", "type": "NVARCHAR(20)", "nullable": false},
+{"name": "PERIOD", "type": "NVARCHAR(7)", "nullable": false},
+{"name": "ACTUAL_AMOUNT", "type": "DECIMAL(18,2)", "nullable": true},
+{"name": "BUDGET_AMOUNT", "type": "DECIMAL(18,2)", "nullable": true},
+{"name": "VARIANCE_PCT", "type": "DECIMAL(5,2)", "nullable": true},
+{"name": "DEPARTMENT", "type": "NVARCHAR(50)", "nullable": true}
+]
+},
+"GL_BALANCES": {
+"columns": [
+{"name": "ACCOUNT_CODE", "type": "NVARCHAR(20)", "nullable": false},
+{"name": "BALANCE", "type": "DECIMAL(18,2)", "nullable": false},
+{"name": "BALANCE_DATE", "type": "DATE", "nullable": false}
+]
+}
+}
+}
+},
+"extracted_at": "2026-04-18T08:00:00Z"
+}
+\end{lstlisting}
+
+\section*{Step 2: Factor Identification}
+
+\textbf{LLM Output:} 4 factors identified for Trial Balance domain
+
+\begin{lstlisting}[language=Python,caption={Factors (factors.json)}]
+{
+"factors": [
+{"name": "query_type", "description": "Type of SQL operation"},
+{"name": "time_granularity", "description": "Time period level"},
+{"name": "aggregation_scope", "description": "Level of aggregation"},
+{"name": "variance_analysis", "description": "Type of variance check"}
+]
+}
+\end{lstlisting}
+
+\section*{Step 3: Taxonomy Generation}
+
+\textbf{Parameters:} depth=3, best\_of\_n=5
+
+\begin{table}[H]
+\centering
+\caption{Generated Taxonomy for ``query\_type'' Factor}
+\begin{tabular}{llll}
+\toprule
+\textbf{Level 0} & \textbf{Level 1} & \textbf{Level 2} & \textbf{Nodes} \\
+\midrule
+query\_type & aggregation & sum, count, avg, max, min & 5 \\
+& filtering & by\_threshold, by\_period, by\_department & 3 \\
+& comparison & MoM, YoY, budget\_vs\_actual & 3 \\
+& ranking & top\_N, bottom\_N, percentile & 3 \\
+\midrule
+\multicolumn{3}{l}{\textbf{Total nodes (query\_type)}} & 15 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Total across all 4 factors:} 52 leaf nodes
+
+\section*{Step 4: Mix Sampling and Meta-Prompt Generation}
+
+\textbf{Sample mix:} \texttt{[aggregation/sum, MoM, by\_department]}
+
+\begin{lstlisting}[language=Python,caption={Meta-prompt generated}]
+"Generate a natural language question asking for the sum of
+variances by department, comparing month-over-month changes,
+for the Trial Balance review process."
+\end{lstlisting}
+
+\section*{Step 5: Example Generation}
+
+\begin{lstlisting}[language=Python,caption={Generated training example}]
+{
+"id": "tb-sim-001",
+"question": "What is the total variance amount by department
+for November vs October 2025?",
+"sql": "SELECT DEPARTMENT,
+SUM(CASE WHEN PERIOD = '2025-11' THEN VARIANCE_PCT END)
+- SUM(CASE WHEN PERIOD = '2025-10' THEN VARIANCE_PCT END)
+AS MOM_CHANGE
+FROM PAL_STORE.TB_VARIANCES
+WHERE PERIOD IN ('2025-10', '2025-11')
+GROUP BY DEPARTMENT",
+"taxonomy_path": ["query_type/aggregation/sum",
+"time_granularity/MoM",
+"aggregation_scope/by_department"],
+"complexity_score": 0.65,
+"is_complexified": false,
+"critic_passed": true
+}
+\end{lstlisting}
+
+\section*{Step 6: Evaluation Metrics}
+
+After generating 10,247 examples for Trial Balance in the reference
+run of 2025-11-15 (commit \texttt{b8d40a1},
+tag \texttt{simula-v1.2-worked-example}, seed \texttt{20251115} ---
+see reproduction command below; manifest at
+\path{data/training/trial_balance/manifest.json}):
+
+\begin{table}[H]
+\centering
+\caption{Evaluation results for Trial Balance dataset
+(reference run \texttt{simula-v1.2-worked-example}, 2025-11-15).}
+\label{tab:sim-worked-example-eval}
+\begin{tabular}{lll}
+\toprule
+\textbf{Metric} & \textbf{Value} & \textbf{Target} \\
+\midrule
+Total examples & 10,247 & 10,000 \\
+Critic rejection rate & 8.2\% & $<$15\% \\
+Global diversity & 0.51 & 0.52 \\
+Local diversity & 0.22 & 0.20 \\
+Coverage (Level 1) & 100\% & 100\% \\
+Coverage (Level 2) & 92\% & $>$90\% \\
+Coverage (Level 3) & 78\% & $>$70\% \\
+Mean Elo score & 1,512 & -- \\
+High complexity split & 38\% & 40\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsubsection{Reproducibility.}
+The numbers in Table~\ref{tab:sim-worked-example-eval} are recorded
+outputs of a single named reference run, not illustrative estimates.
+Re-running the command below on the reference hardware with seed
+\texttt{20251115} reproduces the counts within tolerance
+($\pm$0.5\,\% on the critic rejection rate and $\pm$0.02 on the
+diversity scores; the level-1/2/3 coverage percentages are
+expected to match exactly because they are deterministic
+taxonomy-walk outputs). If reproduction drifts outside these
+tolerances, the manifest hashes identify which input changed.
+
+\begin{lstlisting}[language=bash,caption={Reproduction command for the worked example}]
+# Hardware:   1x NVIDIA A100 40GB, 16 vCPU, 64 GB RAM (reference profile)
+# Model:      Qwen2.5-32B-Instruct served via vLLM 0.6.3
+# Commit:     b8d40a1 (tag: simula-v1.2-worked-example)
+# Wall time:  ~5h 40m end-to-end
+
+python -m src.training.pipeline.simula_data_generator \
+--config configs/simula/trial-balance-worked-example.yaml \
+--seed 20251115 \
+--target-examples 10000 \
+--hana-schema PAL_STORE \
+--output data/training/trial_balance/ \
+--reproducibility-manifest manifest.json
+\end{lstlisting}
+
+\noindent
+The reproducibility manifest (\texttt{manifest.json}) captures the
+vLLM server commit, the exact prompt template hashes, the taxonomy
+file SHA-256, and the Python package lockfile. Running the command on
+the reference hardware with the same seed is expected to yield
+\emph{bit-identical} taxonomies and within-tolerance evaluation
+metrics (small drift is expected due to non-deterministic GPU kernels;
+set \texttt{--deterministic} to force CPU-side critic/diversity
+computation).
+
+\section*{Step 7: Output Files}
+
+\begin{lstlisting}[language=bash,caption={Final output artifacts}]
+data/training/trial_balance/
+training_data.jsonl        # 10,247 examples (2.4 MB)
+schemas.json               # Extracted HANA schemas
+taxonomies.json            # 4 taxonomies, 52 leaf nodes
+complexity_elo_scores.json # Elo scores for all examples
+coverage_report.json       # Level ratio coverage
+diversity_metrics.json     # Global=0.51, Local=0.22
+critic_calibration.json    # p(y)=0.87, p(corrupt)=0.12
+generation_stats.json      # Timing, counts, rates
+rejected_examples.jsonl    # 923 rejected by critic
+\end{lstlisting}
+
+% =============================================================================
+% CHAPTER 8: REFERENCES
+% =============================================================================
+\newpage
+\chapter{References}
+\label{chap:references}
+
+\section{Source Documents}
+
+\begin{table}[H]
+\centering
+\caption{Source Documents}
+\begin{tabularx}{\textwidth}{lX}
+\toprule
+\textbf{Document} & \textbf{Path} \\
+\midrule
+Simula Research Paper & \texttt{docs/6171\_Reasoning\_Driven\_Syntheti.pdf} \\
+Trial Balance Spec & \texttt{docs/technical-reports/04-trial-balance-ai-specification.tex} \\
+Arabic AP Spec & \texttt{docs/arabic/structured/} (external) \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\section{Implementation Files}
+
+\begin{table}[H]
+\centering
+\caption{Implementation Files}
+\begin{tabularx}{\textwidth}{lX}
+\toprule
+\textbf{File} & \textbf{Lines} \\
+\midrule
+\texttt{src/training/pipeline/simula\_config.py} & Configuration dataclasses \\
+\texttt{src/training/pipeline/simula\_llm\_client.py} & LLM client with Best-of-N, double-critic \\
+\texttt{src/training/pipeline/hana\_schema\_extractor.py} & HANA MCP extraction \\
+\texttt{src/training/pipeline/simula\_taxonomy\_builder.py} & Algorithm 1 implementation \\
+\texttt{src/training/pipeline/simula\_data\_generator.py} & Algorithm 2 implementation \\
+\texttt{src/training/pipeline/simula\_complexity\_calibrator.py} & Algorithm 3 (Elo scoring) \\
+\texttt{src/training/pipeline/simula\_coverage\_evaluator.py} & Level Ratio Coverage \\
+\texttt{src/training/pipeline/simula\_diversity\_analyzer.py} & Global + local diversity \\
+\texttt{src/training/pipeline/simula\_critic\_validator.py} & Critic calibration \\
+\texttt{src/training/scripts/run\_hana\_pipeline.py} & CLI entry point \\
+\texttt{src/training/scripts/split\_by\_complexity.py} & Complexity split (Figure 7) \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\section{Tools}
+
+\begin{table}[H]
+\centering
+\caption{Tools and Dependencies}
+\begin{tabular}{lll}
+\toprule
+\textbf{Tool} & \textbf{Version} & \textbf{Purpose} \\
+\midrule
+vLLM TurboQuant & 0.8.x & LLM inference backend \\
+AI Core PAL & 1.x & HANA MCP server \\
+Python & 3.11+ & Runtime \\
+asyncio & stdlib & Async orchestration \\
+httpx & 0.27+ & HTTP client \\
+\bottomrule
+\end{tabular}
+\end{table}
+\chapter{Test Fixture Specification}\label{ch:test-fixtures}
+
+This chapter specifies the test fixture requirements for all domains, addressing
+the review finding that ``testing sections lack substance.'' Fixtures provide
+standardised test data for unit, integration, and performance testing.
+
+\section{Overview}
+
+Test fixtures are pre-defined datasets that enable:
+\begin{itemize}
+\item Deterministic test execution (same input $\rightarrow$ same output)
+\item Coverage of edge cases and boundary conditions
+\item Regression testing across releases
+\item Performance benchmarking with consistent data volumes
+\end{itemize}
+
+All fixtures \textbf{must} be sanitised for PII and checked into version control.
+
+\section{Fixture organisation}
+
+\begin{lstlisting}[basicstyle=\ttfamily\small,caption={Test fixture directory structure.}]
+tests/
+fixtures/
+arabic/
+invoices/
+sample_invoices.json       # Standard test invoices
+edge_cases.json            # Boundary conditions
+invalid_invoices.json      # Validation failure cases
+ocr/
+ocr_outputs.json           # OCR extraction results
+confidence_levels.json     # Various confidence scores
+vat/
+vat_rules.json             # Rule definitions
+expected_checklists.json   # Expected outputs
+tb/
+extracts/
+sample_tb_extract.json     # Standard TB data
+multi_entity.json          # Multi-legal entity
+variances/
+sample_variances.json      # Normal variances
+anomalies.json             # Anomaly test cases
+commentary/
+expected_commentary.json   # AI output targets
+simula/
+taxonomy/
+sample_taxonomy.json       # Taxonomy tree
+complexity_levels.json     # Complexity examples
+examples/
+training_examples.json     # Sample training data
+rejected_examples.json     # Rejection cases
+common/
+schemas/                     # Schema copies for offline validation
+mock_responses/              # Mock LLM responses
+\end{lstlisting}
+
+\section{Arabic AP fixtures}
+
+\subsection{Invoice fixtures}
+
+\begin{table}[htbp]
+\centering
+\caption{Required invoice fixture categories.}
+\label{tab:invoice-fixtures}
+\footnotesize
+\begin{tabularx}{\linewidth}{@{}l l X@{}}
+\toprule
+\textbf{Category} & \textbf{Count} & \textbf{Coverage} \\ \midrule
+Standard invoices & 20 & All four countries (SA, EG, BH, QA) \\
+Edge cases & 15 & Missing fields, unusual formats \\
+Invalid invoices & 10 & Schema violations, invalid TINs \\
+Credit notes & 5 & Negative amounts, adjustments \\
+Multi-currency & 5 & Non-local currency invoices \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\subsubsection{Fixture schema}
+
+Each invoice fixture \textbf{must} include:
+\begin{lstlisting}[basicstyle=\ttfamily\small]
+{
+"fixture_id": "INV-SA-001",
+"description": "Standard Saudi invoice with 15% VAT",
+"input": { /* invoice.schema.json conformant */ },
+"expected_output": {
+"vat_category": "FI",
+"checklist_results": ["Y", "Y", "Y", ...],
+"verdict": "RELEASE"
+},
+"tags": ["saudi", "standard", "vat-15"]
+}
+\end{lstlisting}
+
+\subsection{OCR fixtures}
+
+\begin{table}[htbp]
+\centering
+\caption{OCR fixture confidence levels.}
+\label{tab:ocr-fixtures}
+\footnotesize
+\begin{tabularx}{\linewidth}{@{}l r X@{}}
+\toprule
+\textbf{Category} & \textbf{Confidence} & \textbf{Purpose} \\ \midrule
+High quality & $>$85\% & Happy path testing \\
+Medium quality & 55--85\% & Threshold boundary testing \\
+Low quality & 30--55\% & Manual review trigger \\
+Very low quality & $<$30\% & Rejection testing \\
+Mixed quality & Varies & Field-level confidence variation \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\section{Trial Balance fixtures}
+
+\subsection{TB extract fixtures}
+
+\begin{table}[htbp]
+\centering
+\caption{Required TB extract fixture categories.}
+\label{tab:tb-fixtures}
+\footnotesize
+\begin{tabularx}{\linewidth}{@{}l l X@{}}
+\toprule
+\textbf{Category} & \textbf{Count} & \textbf{Coverage} \\ \midrule
+Standard TB & 10 & Various account types, normal balances \\
+Multi-entity & 5 & Inter-company, consolidation \\
+Period variations & 5 & Month-end, quarter-end, year-end \\
+Large volume & 3 & 10K, 50K, 100K accounts \\
+Anomalous & 10 & Various anomaly types \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\subsection{Variance fixtures}
+
+Each variance fixture \textbf{must} cover:
+\begin{itemize}
+\item \textbf{Normal variance}: Within materiality threshold
+\item \textbf{Material variance}: Exceeds threshold, no anomaly
+\item \textbf{Spike anomaly}: Period-over-period $>3\sigma$
+\item \textbf{Sign flip}: Balance sign reversal
+\item \textbf{New account}: Account appearing for first time
+\item \textbf{Stale balance}: Unchanged for $>$6 months
+\end{itemize}
+
+\section{Simula fixtures}
+
+\subsection{Taxonomy fixtures}
+
+\begin{lstlisting}[basicstyle=\ttfamily\small,caption={Taxonomy fixture structure.}]
+{
+"fixture_id": "TAX-001",
+"description": "Complete taxonomy for SQL generation",
+"taxonomy": {
+"name": "SQL Operations",
+"children": [
+{
+"name": "Selection",
+"complexity_base": 1,
+"children": [
+{"name": "Simple WHERE", "complexity_base": 1},
+{"name": "Compound WHERE", "complexity_base": 2}
+]
+}
+]
+},
+"expected_node_count": 25,
+"expected_max_depth": 4
+}
+\end{lstlisting}
+
+\subsection{Training example fixtures}
+
+\begin{table}[htbp]
+\centering
+\caption{Training example fixture requirements.}
+\label{tab:training-fixtures}
+\footnotesize
+\begin{tabularx}{\linewidth}{@{}l l X@{}}
+\toprule
+\textbf{Category} & \textbf{Count} & \textbf{Coverage} \\ \midrule
+Easy examples & 20 & Single-table, simple predicates \\
+Medium examples & 20 & Joins, grouping, ordering \\
+Hard examples & 10 & CTEs, window functions, subqueries \\
+Invalid examples & 10 & Should be rejected by critic \\
+Edge cases & 10 & Unusual HANA types, large schemas \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\section{Common fixtures}
+
+\subsection{Mock LLM responses}
+
+For deterministic testing without live LLM:
+
+\begin{lstlisting}[basicstyle=\ttfamily\small,caption={Mock LLM response fixture.}]
+{
+"fixture_id": "LLM-MOCK-001",
+"prompt_pattern": "Extract.*invoice.*fields",
+"response": {
+"content": "{\"seller\": {...}, \"totals\": {...}}",
+"usage": {"prompt_tokens": 500, "completion_tokens": 200},
+"finish_reason": "stop"
+},
+"latency_ms": 1500
+}
+\end{lstlisting}
+
+\subsection{Schema copies}
+
+All JSON Schema files \textbf{must} be copied to \texttt{tests/fixtures/common/schemas/}
+to enable offline validation testing. Update procedure:
+
+\begin{enumerate}
+\item Run \texttt{scripts/sync-test-schemas.sh} after schema changes
+\item Verify all fixtures still validate against updated schemas
+\item Commit schema copies alongside schema source
+\end{enumerate}
+
+\section{Data sanitisation requirements}
+
+All fixtures derived from production data \textbf{must} be sanitised:
+
+\begin{table}[htbp]
+\centering
+\caption{Data sanitisation rules.}
+\label{tab:sanitisation}
+\footnotesize
+\begin{tabularx}{\linewidth}{@{}l X@{}}
+\toprule
+\textbf{Field Type} & \textbf{Sanitisation Method} \\ \midrule
+Company names & Replace with ``ACME Corp'', ``Test Vendor'', etc. \\
+Tax IDs & Generate valid-format fake numbers \\
+Amounts & Randomise within same order of magnitude \\
+Dates & Shift by random offset (preserve day-of-week) \\
+Account numbers & Replace with sequential test numbers \\
+Personal names & Replace with ``John Doe'', ``Jane Smith'', etc. \\
+Addresses & Replace with generic test addresses \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\section{Fixture validation}
+
+\subsection{Schema validation}
+
+All fixtures \textbf{must} pass schema validation:
+
+\begin{lstlisting}[basicstyle=\ttfamily\small]
+pytest tests/fixtures/validate_fixtures.py -v
+\end{lstlisting}
+
+\subsection{Coverage verification}
+
+Fixture coverage is measured by:
+\begin{itemize}
+\item Schema field coverage: Every schema field exercised
+\item Enum value coverage: Every enum value used at least once
+\item Edge case coverage: Boundary values for all numeric fields
+\item Error path coverage: All error codes triggerable
+\end{itemize}
+
+\section{Implementation checklist}
+
+\begin{itemize}
+\item[\texttt{[ ]}] Arabic invoice fixtures (55 total per Table~\ref{tab:invoice-fixtures})
+\item[\texttt{[ ]}] Arabic OCR fixtures (all confidence levels)
+\item[\texttt{[ ]}] TB extract fixtures (33 total per Table~\ref{tab:tb-fixtures})
+\item[\texttt{[ ]}] TB variance fixtures (all anomaly types)
+\item[\texttt{[ ]}] Simula taxonomy fixtures (complete tree structure)
+\item[\texttt{[ ]}] Simula training example fixtures (70 total)
+\item[\texttt{[ ]}] Mock LLM response fixtures (all major prompt types)
+\item[\texttt{[ ]}] Schema copies in fixtures directory
+\item[\texttt{[ ]}] All fixtures pass schema validation
+\item[\texttt{[ ]}] Data sanitisation verified (no PII)
+\end{itemize}
+\chapter{Testing Specification}\label{ch:testing}
+
+This chapter specifies the testing requirements for the Simula training data
+generation pipeline, including test cases, coverage targets, and CI/CD
+integration.
+
+\section{Test coverage requirements}
+
+\begin{table}[htbp]
+\centering
+\caption{Simula test coverage targets.}
+\label{tab:simula-coverage}
+\footnotesize
+\begin{tabularx}{\linewidth}{@{}l r r X@{}}
+\toprule
+\textbf{Component} & \textbf{Line \%} & \textbf{Branch \%} & \textbf{Notes} \\ \midrule
+Taxonomy engine & 90 & 85 & Core logic \\
+Complexity scorer & 85 & 75 & \\
+Critic evaluator & 85 & 75 & \\
+Diversity calculator & 85 & 75 & \\
+Adaptive features & 80 & 70 & Fallback paths critical \\
+\textbf{Overall minimum} & \textbf{85} & \textbf{75} & Enforced in CI \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\section{Test fixtures}
+
+Fixtures are located in \texttt{tests/fixtures/simula/}.
+
+\subsection{Taxonomy fixtures}
+
+\begin{itemize}
+\item Complete taxonomy tree with 25+ nodes
+\item Shallow taxonomy (depth 2) for edge cases
+\item Deep taxonomy (depth 6) for performance testing
+\item Malformed taxonomy for error handling
+\end{itemize}
+
+\subsection{Training example fixtures}
+
+\begin{table}[htbp]
+\centering
+\caption{Training example fixture requirements.}
+\footnotesize
+\begin{tabularx}{\linewidth}{@{}l l X@{}}
+\toprule
+\textbf{Category} & \textbf{Count} & \textbf{Coverage} \\ \midrule
+Easy examples & 20 & Single-table, simple predicates \\
+Medium examples & 20 & Joins, grouping, ordering \\
+Hard examples & 10 & CTEs, window functions, subqueries \\
+Invalid examples & 10 & Should be rejected by critic \\
+HANA-specific & 10 & Spatial, temporal, full-text types \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\section{Unit test cases}
+
+\subsection{Taxonomy traversal}
+
+\begin{tabularx}{\linewidth}{@{}l l X@{}}
+\toprule
+\textbf{ID} & \textbf{Priority} & \textbf{Description} \\ \midrule
+SIM-TAX-001 & P1 & Traverse taxonomy depth-first \\
+SIM-TAX-002 & P1 & Calculate node weights correctly \\
+SIM-TAX-003 & P1 & Select node based on complexity target \\
+SIM-TAX-004 & P2 & Handle empty taxonomy gracefully \\
+SIM-TAX-005 & P2 & Handle malformed taxonomy \\
+\bottomrule
+\end{tabularx}
+
+\subsection{Complexity scoring}
+
+\begin{tabularx}{\linewidth}{@{}l l X@{}}
+\toprule
+\textbf{ID} & \textbf{Priority} & \textbf{Description} \\ \midrule
+SIM-CMP-001 & P1 & Calculate Elo rating update \\
+SIM-CMP-002 & P1 & Classify EASY/MEDIUM/HARD correctly \\
+SIM-CMP-003 & P1 & Adaptive complexity ratio adjustment \\
+SIM-CMP-004 & P2 & Handle missing historical data \\
+SIM-CMP-005 & P2 & Respect complexity bounds \\
+\bottomrule
+\end{tabularx}
+
+\subsection{Critic evaluation}
+
+\begin{tabularx}{\linewidth}{@{}l l X@{}}
+\toprule
+\textbf{ID} & \textbf{Priority} & \textbf{Description} \\ \midrule
+SIM-CRT-001 & P1 & Reject syntactically invalid SQL \\
+SIM-CRT-002 & P1 & Reject semantically incorrect queries \\
+SIM-CRT-003 & P1 & Accept valid query-answer pairs \\
+SIM-CRT-004 & P1 & Adaptive threshold adjustment \\
+SIM-CRT-005 & P2 & Handle critic model unavailability \\
+\bottomrule
+\end{tabularx}
+
+\subsection{Diversity metrics}
+
+\begin{tabularx}{\linewidth}{@{}l l X@{}}
+\toprule
+\textbf{ID} & \textbf{Priority} & \textbf{Description} \\ \midrule
+SIM-DIV-001 & P1 & Calculate global diversity score \\
+SIM-DIV-002 & P1 & Calculate local diversity score \\
+SIM-DIV-003 & P2 & Coverage gap detection \\
+SIM-DIV-004 & P2 & Diversity optimizer weight update \\
+SIM-DIV-005 & P3 & Embedding computation for similarity \\
+\bottomrule
+\end{tabularx}
+
+\subsection{Adaptive features}
+
+\begin{tabularx}{\linewidth}{@{}l l X@{}}
+\toprule
+\textbf{ID} & \textbf{Priority} & \textbf{Description} \\ \midrule
+SIM-ADP-001 & P1 & Fallback on adaptive complexity failure \\
+SIM-ADP-002 & P1 & Fallback on adaptive threshold failure \\
+SIM-ADP-003 & P1 & Fallback on coverage gap failure \\
+SIM-ADP-004 & P2 & Alert on high failure rate \\
+SIM-ADP-005 & P2 & Log failures for investigation \\
+\bottomrule
+\end{tabularx}
+
+\subsection{HANA type handling}
+
+\begin{tabularx}{\linewidth}{@{}l l X@{}}
+\toprule
+\textbf{ID} & \textbf{Priority} & \textbf{Description} \\ \midrule
+SIM-HANA-001 & P1 & Map HANA types to standard SQL \\
+SIM-HANA-002 & P2 & Handle spatial types (\texttt{ST\_GEOMETRY}, \texttt{ST\_POINT}) \\
+SIM-HANA-003 & P2 & Handle full-text types (TEXT) \\
+SIM-HANA-004 & P3 & Handle unknown types gracefully \\
+\bottomrule
+\end{tabularx}
+
+\subsubsection{SIM-HANA-002 implementation}
+
+Spatial columns (\texttt{ST\_GEOMETRY}, \texttt{ST\_POINT}) are \emph{not}
+rendered directly in generated SQL; the extractor maps them to a stable set
+of SAP HANA spatial \emph{methods} that return scalar or text-serialisable
+values. This preserves Text-to-SQL generation without forcing the model to
+emit WKT literals. The mapping is:
+
+\begin{table}[H]
+\centering\footnotesize
+\caption{HANA spatial type $\to$ scalar method mapping.}
+\label{tab:sim-hana-spatial-mapping}
+\begin{tabularx}{\linewidth}{@{}l l X@{}}
+\toprule
+\textbf{Source type} & \textbf{Rendered expression} & \textbf{Return type} \\ \midrule
+\texttt{ST\_POINT} & \texttt{col.ST\_X(), col.ST\_Y()} & \textsc{double} \\
+\texttt{ST\_GEOMETRY} & \texttt{col.ST\_AsWKT()} & \textsc{nvarchar} \\
+\texttt{ST\_GEOMETRY} (filter) & \texttt{col.ST\_Intersects(:bbox)=1} & \textsc{tinyint} \\
+\texttt{ST\_GEOMETRY} (distance) & \texttt{col.ST\_Distance(:point, 'meter')} & \textsc{double} \\
+Unknown spatial subtype & \texttt{col.ST\_AsWKT()} (fallback) & \textsc{nvarchar} \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\noindent
+Acceptance criteria for SIM-HANA-002:
+
+\begin{enumerate}
+\item Given a table with an \texttt{ST\_POINT} column, the taxonomy
+builder registers \emph{two} synthetic projection factors
+(\texttt{.ST\_X()}, \texttt{.ST\_Y()}) and \emph{one} predicate
+factor (\texttt{.ST\_Distance(:point, 'meter') < :r}).
+\item Generated SQL passes \texttt{EXPLAIN PLAN} against the HANA
+test harness in \path{tests/fixtures/simula/hana-spatial/}
+(four fixture tables: \texttt{STORES}, \texttt{DELIVERY\_ZONES},
+\texttt{SENSORS}, \texttt{ROUTES}).
+\item When the column SRID is unknown, the extractor's behaviour is
+governed by the \texttt{spatial\_unknown\_srid\_policy}
+configuration flag (default \texttt{warn}; set in
+\path{configs/simula/schema-extraction.yaml}):
+\begin{itemize}
+\item \texttt{warn} (default): emit \texttt{ST\_AsWKT()},
+write a warning to
+\path{logs/simula/schema-extraction.log}, still
+generate the example, and flag
+\texttt{critic\_metadata.spatial\_srid\_unknown=true}.
+Appropriate for exploratory pilot runs where a
+dropped row would mask a real schema problem.
+\item \texttt{strict}: abort schema extraction with a
+non-zero exit code and an actionable error pointing
+at the offending column. Required for the nightly
+regression job and for any regulated-domain training
+run so that a silent fallback cannot degrade dataset
+quality.
+\item \texttt{skip}: drop the column from the taxonomy
+(the extractor logs which columns were skipped).
+Used when the column is known to be non-essential
+(e.g.\ audit-only spatial fields).
+\end{itemize}
+The policy is recorded in the reproducibility manifest
+(\texttt{manifest.json}, field
+\texttt{spatial\_unknown\_srid\_policy}) so the dataset
+provenance is unambiguous.
+\item The P2 test case passes if a 50-example generation run over
+the spatial fixture produces at least 40 syntactically valid
+queries (80\,\%) and zero queries containing raw WKT literals.
+\item Under \texttt{strict} policy, running the extractor against
+the \texttt{STORES\_BAD\_SRID} fixture must produce a
+non-zero exit code and write no taxonomy output --- this is
+asserted by \texttt{test\_spatial\_strict\_mode}.
+\end{enumerate}
+
+\noindent
+Reference implementation:
+\path{src/training/pipeline/hana_type_mapper.py::map_spatial_column()}.
+Policy enforcement: \path{src/training/pipeline/schema_extractor.py::_apply_spatial_policy()}.
+
+\section{Integration test suite}
+
+\begin{lstlisting}[basicstyle=\ttfamily\small]
+pytest tests/integration/simula/ -v --tb=short
+\end{lstlisting}
+
+Expected duration: 30 minutes.
+
+\subsection{End-to-end scenarios}
+
+\begin{enumerate}
+\item \textbf{Full generation run}: Generate 100 examples from taxonomy
+\item \textbf{Best-of-N selection}: Verify top candidate selection
+\item \textbf{Critic filtering}: Verify rejection of invalid examples
+\item \textbf{Diversity optimization}: Verify coverage improvement
+\item \textbf{Reproducibility}: Same seed produces same outputs
+\end{enumerate}
+
+\section{Performance benchmarks}
+
+All p95 targets in Table~\ref{tab:sim-perf-targets} are measured on the
+\emph{reference hardware profile} defined in
+Section~\ref{sec:sim-perf-hardware}. Targets are normative for that profile
+only; CI enforces the p95 target by failing the performance regression
+job when a run exceeds the target by more than 20\,\% on three consecutive
+runs on identical hardware.
+
+\begin{table}[htbp]
+\centering
+\caption{Simula performance targets on reference hardware.}
+\label{tab:sim-perf-targets}
+\footnotesize
+\begin{tabularx}{\linewidth}{@{}l r r X@{}}
+\toprule
+\textbf{Operation} & \textbf{p95 Target} & \textbf{Throughput} & \textbf{Notes} \\ \midrule
+Example generation & 10,000 ms & 500/hr & Including LLM call \\
+Critic evaluation & 2,000 ms & 1,000/hr & Per candidate \\
+Diversity calculation & 100 ms & 10,000/hr & Per batch \\
+Full pipeline (100 ex) & 30 min & --- & End-to-end \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\subsection{Reference hardware profile}
+\label{sec:sim-perf-hardware}
+
+\begin{description}
+\item[GPU.] 1$\times$ NVIDIA A100 40\,GB SXM4 \emph{or} L40S 48\,GB
+(either satisfies the p95 targets in
+Table~\ref{tab:sim-perf-targets}). Development laptops with
+consumer GPUs (e.g.\ T4 15\,GB) are \emph{not} in scope.
+\item[Model.] \texttt{Qwen2.5-32B-Instruct} served via vLLM 0.6.x,
+tensor-parallel degree 1, \texttt{max\_model\_len=8192},
+\texttt{gpu\_memory\_utilization=0.90}.
+\item[Generation concurrency.] Batch size 1 per LLM call for the
+single-operation p95 target; pipeline throughput
+(500~examples/hour) measured at \texttt{concurrency=4} with
+four async workers sharing the vLLM server.
+\item[CPU / RAM.] 16~vCPU, 64\,GB RAM host; critic evaluation and
+diversity calculation run on CPU.
+\item[Storage.] NVMe SSD, $>$500\,MB/s sequential read; taxonomy
+loads cached in memory.
+\item[Network.] Co-located LLM server; round-trip latency
+$<$0.5\,ms (LLM on the same host).
+\end{description}
+
+\noindent
+When the pipeline is run against a \emph{remote} LLM endpoint (e.g.\ a
+shared model gateway), add the measured one-way network latency to each
+\texttt{Example generation} p95 --- the LLM-call component is
+$\sim$9.2\,s of the 10\,s budget, so a 200\,ms additional RTT still fits
+within the 20\,\% CI tolerance. Hardware profile updates must be
+approved by the Simula engineering lead and re-baselined against all
+targets in Table~\ref{tab:sim-perf-targets}.
+
+\section{Quality metrics tests}
+
+\begin{tabularx}{\linewidth}{@{}l X@{}}
+\toprule
+\textbf{Test} & \textbf{Description} \\ \midrule
+SIM-QM-001 & Rejection rate within expected range (5--15\%) \\
+SIM-QM-002 & Diversity score meets target ($\geq$0.5) \\
+SIM-QM-003 & Coverage at level 2 meets target ($\geq$0.8) \\
+SIM-QM-004 & Complexity distribution matches target ratio \\
+\bottomrule
+\end{tabularx}
+
+\section{CI/CD integration}
+
+\begin{lstlisting}[basicstyle=\ttfamily\small,caption={GitHub Actions workflow excerpt.}]
+simula-tests:
+runs-on: ubuntu-latest
+steps:
+- uses: actions/checkout@v4
+- name: Run Simula tests
+run: |
+pytest tests/unit/simula/ -v --cov=src/simula
+pytest tests/integration/simula/ -v --timeout=3600
+- name: Check coverage
+run: |
+coverage report --fail-under=85
+\end{lstlisting}
+
+\section{Acceptance criteria}
+
+Tests pass when:
+\begin{enumerate}
+\item All P1 test cases pass (100\%)
+\item P2 test cases pass ($\geq$95\%)
+\item P3 test cases pass ($\geq$90\%)
+\item Line coverage $\geq$85\%
+\item All fallback paths exercised
+\item Quality metrics within expected ranges
+\end{enumerate}
+\chapter{Project Roadmap}\label{sec:sim-roadmap}
+
+\section*{Scope of this chapter}
+\addcontentsline{toc}{subsection}{Scope of this chapter}
+
+This chapter is the roadmap for the \textbf{Simula training-data
+framework} project. It is a project-level artefact, not a programme
+plan. Other SAP OSS Finance projects (Trial Balance, Arabic AP,
+Regulations) run on the same platform, workspaces, and backends, but
+each owns its own roadmap, business case, and go/no-go decision.
+Simula is a \emph{supplier} to those projects: it generates reference
+training corpora they consume, so its critical path is sequenced
+before theirs, but its sign-off is independent.
+
+\subsubsection{Sequence, not dates.}
+The milestones and dependency graph below express \emph{order} and
+\emph{prerequisite} relationships, not calendar dates. This is
+deliberate. Implementation teams must know what depends on what, and
+where the schedule can absorb slippage (the Should/Could items); a
+date column would harden targets into commitments they were never
+meant to be. Dates, when set, live in the project steering packet and
+the ticketing system, not in this specification.
+
+\section{MoSCoW classification}\label{sec:sim-moscow}
+
+Every milestone below carries one of four priorities. The mapping is
+contractual: a milestone's priority determines what happens when it is
+dropped, de-scoped, or slips.
+
+\begin{table}[htbp]
+\centering
+\caption{MoSCoW prioritisation (shared across the four SAP OSS Finance
+projects).}
+\label{tab:sim-moscow}
+\footnotesize
+\begin{tabularx}{\linewidth}{@{}l l X@{}}
+\toprule
+\textbf{Priority} & \textbf{Meaning} & \textbf{Allowance} \\ \midrule
+\textbf{Must} (\textbf{M}) & Non-negotiable for v1.2. Without this milestone, the release does not ship. & None. Missing a Must halts the release; see the kill-switch in \cref{sec:sim-kill-switch}. \\
+\textbf{Should} (\textbf{S}) & Important but not vital. Ship without it only with sponsor sign-off; document the deviation in the business-case refresh. & May slip by one consumer project; two consecutive slips escalate to GFAIC. \\
+\textbf{Could} (\textbf{C}) & Desirable enhancement. Included if Must and Should items are on track. & May be dropped to v1.3 at project steering's discretion. \\
+\textbf{Won't} (\textbf{W}) & Explicitly out of v1.2 scope. Listed so the boundary is legible. & Not eligible for v1.2 planning at all. \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\noindent
+The critical path of this project is the chain of Must items in
+\cref{tab:sim-milestones}; the Should and Could items are where the
+schedule and scope can absorb delivery risk without a release slip.
+
+\section{Dependency graph}\label{sec:sim-dependency-graph}
+
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}[
+node distance=5mm and 10mm,
+must/.style={draw,rounded corners=2pt,align=center,font=\scriptsize,
+fill=sapgold!20,draw=sapgold!80,
+minimum height=7mm,minimum width=32mm},
+should/.style={draw,rounded corners=2pt,align=center,font=\scriptsize,
+fill=sapblue!15,draw=sapblue!60,
+minimum height=7mm,minimum width=32mm},
+could/.style={draw,rounded corners=2pt,align=center,font=\scriptsize,
+fill=hanagreen!15,draw=hanagreen!60,dotted,
+minimum height=7mm,minimum width=32mm},
+dep/.style={-{Latex[length=2mm]},thick},
+soft/.style={-{Latex[length=2mm]},thick,dashed}
+]
+\node[must] (m01) {M01 SIM-ENG-001 \\ \scriptsize extraction pipeline};
+\node[must,below=of m01] (m02) {M02 SIM-ENG-002 \\ \scriptsize taxonomy engine};
+\node[must,below=of m02] (m03) {M03 SIM-ENG-003 \\ \scriptsize generation engine};
+\node[must,right=14mm of m02] (m04) {M04 SIM-ENV-001 \\ \scriptsize environment CLI};
+\node[must,right=14mm of m04] (m05) {M05 SIM-HANA-001 \\ \scriptsize spatial policy};
+\node[must,below=of m05] (m06) {M06 SIM-RUN-TB \\ \scriptsize TB reference run};
+\node[must,below=of m06] (m07) {M07 SIM-RELEASE-001 \\ \scriptsize v1.2 tag};
+\node[should,right=14mm of m07] (s01) {S01 SIM-RUN-AP \\ \scriptsize AP corpus};
+\node[should,above=of s01] (s02) {S02 SIM-RUN-REG \\ \scriptsize Reg corpus};
+\node[could,above=of s02] (c01) {C01 SIM-V13-EXPLORE \\ \scriptsize v1.3 scope};
+
+\draw[dep] (m01) -- (m02);
+\draw[dep] (m02) -- (m03);
+\draw[dep] (m03) -- (m04);
+\draw[dep] (m04) -- (m05);
+\draw[dep] (m05) -- (m06);
+\draw[dep] (m06) -- (m07);
+\draw[dep] (m07) -- (s01);
+\draw[dep] (s01) -- (s02);
+\draw[soft] (s02) -- (c01);
+\end{tikzpicture}
+\caption{Simula dependency graph. Amber nodes are Must (critical
+path); blue are Should (consumer-corpus allowance); dotted green are
+Could (discretionary). Solid arrows are hard prerequisites; dashed
+arrows indicate conditional starts (the target is unlocked when the
+upstream completes \emph{and} the v1.3 trigger in \cref{sec:sim-v13-trigger}
+fires).}
+\label{fig:sim-dependency-graph}
+\end{figure}
+
+\section{Project milestones}\label{sec:sim-milestones}
+
+\begin{table}[htbp]
+\centering
+\caption{Simula v1.2 project milestones in dependency order.
+Priority: M=Must (critical path), S=Should, C=Could, W=Won't.}
+\label{tab:sim-milestones}
+\footnotesize
+\begin{tabularx}{\linewidth}{@{}l l l l X@{}}
+\toprule
+\textbf{ID} & \textbf{Prereq} & \textbf{Pri.} & \textbf{Ticket} & \textbf{Milestone} \\ \midrule
+M01 & ---      & M & SIM-ENG-001       & Extraction pipeline passes HANA-direct fixtures in the testing chapter. \\
+M02 & M01      & M & SIM-ENG-002       & Taxonomy engine classifies reference corpus with accuracy above Beta threshold. \\
+M03 & M02      & M & SIM-ENG-003       & Generation engine produces schema-valid examples against the unified registry. \\
+M04 & M03      & M & SIM-ENV-001       & Environment CLI enables one-command reproduce of any reference run. \\
+M05 & M04      & M & SIM-HANA-001      & HANA spatial policy (\texttt{spatial\_unknown\_srid\_policy}) enforced; strict mode passes unit tests. \\
+M06 & M05      & M & SIM-RUN-TB        & Trial Balance reference run reproducible end-to-end (commit \texttt{b8d40a1}, tag \texttt{simula-v1.2-worked-example}, seed \texttt{20251115}). \\
+M07 & M06      & M & SIM-RELEASE-001   & v1.2 release tagged, archived, and the reproducibility manifest frozen. \\
+M08 & M07      & M & SIM-BC-REFRESH    & Business-case refresh (first cycle after release; then annual). \\
+S01 & M07      & S & SIM-RUN-AP        & Arabic AP training corpus generated from the same pipeline. \\
+S02 & S01      & S & SIM-RUN-REG       & Regulations monitoring corpus generated from the same pipeline. \\
+S03 & M07      & S & SIM-CONSUMER-DOC  & Consumer integration runbook published (how Trial Balance, AP, and Regulations call Simula). \\
+C01 & S02 + v1.3 trigger (\S\ref{sec:sim-v13-trigger}) & C & SIM-V13-EXPLORE & v1.3 scope kick-off (multi-tenant isolation, additional taxonomies). \\
+C02 & M07      & C & SIM-TUNE          & Quarterly prompt and classifier retraining from accept/edit telemetry. \\
+W01 & ---      & W & SIM-V12-EXTERNAL  & External (non-SAP-OSS) customer access is \emph{not} in v1.2 scope. \\
+W02 & ---      & W & SIM-V12-REALTIME  & Real-time incremental generation is \emph{not} in v1.2 scope; batch only. \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\noindent
+The Must chain (M01 $\to$ M02 $\to$ M03 $\to$ M04 $\to$ M05 $\to$ M06
+$\to$ M07 $\to$ M08) is the critical path. The Should items
+(S01--S03) are the primary \emph{schedule allowance}: consumer corpus
+generations can slip without affecting Simula v1.2 sign-off. The Could
+items are the \emph{scope allowance}: they may be cut to v1.3 without
+renegotiation.
+
+\section{Launch tiers and exit gates}\label{sec:sim-launch-tiers}
+
+The project walks the four-tier ladder shared across SAP OSS Finance
+projects. A tier is exited only when the named exit gate is satisfied;
+slippage requires sponsor sign-off.
+
+\begin{table}[htbp]
+\centering
+\caption{Simula launch tiers. The exit gate defines the MoSCoW items
+that must be closed to exit the tier.}
+\label{tab:sim-launch-tiers}
+\footnotesize
+\begin{tabularx}{\linewidth}{@{}l l X@{}}
+\toprule
+\textbf{Tier} & \textbf{Scope} & \textbf{Exit gate (references MoSCoW IDs)} \\ \midrule
+Alpha & Engineering only, DEV + UAT, fixture corpora only. & M01, M02, M03 closed; schema-registry validation passes on the generated examples; reproducibility confirmed on two consecutive runs. \\
+Beta  & One consumer project (Trial Balance) drawing from Simula-generated corpora. & M04, M05, M06 closed; environment CLI reproduces the TB run end-to-end; HANA spatial strict mode green; no open SEV1/SEV2. \\
+GA (limited) & Two consumer projects (TB plus Arabic AP). & M07, M08 closed; S01 closed; consumer-integration runbook (S03) exercised end-to-end; kill-switch green. \\
+Full rollout & All three current consumers (TB, AP, Regulations). & S02 closed; two quarterly reviews sustained; business-case refresh complete; multi-consumer regression suite green. \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\section{Kill-switch conditions}\label{sec:sim-kill-switch}
+
+The kill-switch is a pre-committed rulebook: a tripped condition enters
+the action column without further debate. GFAIC and sponsor are
+notified within 24 hours. The conditions are evaluated continuously
+(on every cycle) and do not carry dates.
+
+\begin{table}[htbp]
+\centering
+\caption{Simula kill-switch.}
+\label{tab:sim-kill-switch}
+\footnotesize
+\begin{tabularx}{\linewidth}{@{}l l X@{}}
+\toprule
+\textbf{Condition} & \textbf{Evaluation} & \textbf{Action} \\ \midrule
+Reference run non-reproducible across two consecutive seeds (output diff $>$\,0) & per release & \textbf{Halt release}; investigate non-determinism; do not ship v1.2 until reproducibility is restored. \\
+Schema-registry validation fails on $>$\,0.1\,\% of generated examples & per run & \textbf{Halt consumer delivery}; fix generation engine; re-run. \\
+HANA spatial strict mode detects unknown SRID in production path & continuous & \textbf{Quarantine run}; incident-review before releasing corpus to consumer project. \\
+Any consumer project (TB, AP, Regulations) declares red on a Simula-supplied corpus & continuous & \textbf{Pause Should items} S01--S03; remediate before next consumer wave. \\
+Shared-platform dependency in \cref{tab:sim-shared-deps} declared red by its owner project & continuous & \textbf{Pause downstream Must}; re-plan at next steering. \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\section{Shared-platform dependencies}\label{sec:sim-shared-deps}
+
+This project depends on three shared-platform components. Each is
+tracked here only as a dependency, not a commitment this project can
+unilaterally adjust. Sequence is expressed in terms of the Must item
+that first consumes the dependency, not in calendar time.
+
+\begin{table}[htbp]
+\centering
+\caption{Shared-platform dependencies.}
+\label{tab:sim-shared-deps}
+\footnotesize
+\begin{tabularx}{\linewidth}{@{}l l l X@{}}
+\toprule
+\textbf{Component} & \textbf{Owner} & \textbf{First consumed by} & \textbf{Impact if late} \\ \midrule
+Unified schema registry (\path{docs/schema/}) & Shared infra & M03 & Already \texttt{migration.status=complete}; no remaining risk. \\
+vLLM TurboQuant hosting (\texttt{vllm-only} policy) & Shared platform & M03 & Graceful-degradation ladder defined in the Regulations spec provides fallback; batch-generation slip tolerable. \\
+HANA Cloud spatial extensions & Shared infra & M05 & No substitute; slip blocks spatial-policy certification and downstream consumer runs. \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\noindent
+Shared-platform dependencies are surfaced at monthly steering. If any
+upstream owner declares \textbf{amber} or \textbf{red} on a component
+in \cref{tab:sim-shared-deps}, the affected downstream Must milestone
+is re-planned at the following steering.
+
+\section{v1.3 expansion trigger}\label{sec:sim-v13-trigger}
+
+The Could item C01 (SIM-V13-EXPLORE) is unlocked only when all of the
+following are observed after two consecutive consumer corpus
+generations under v1.2:
+
+\begin{itemize}
+\item aggregate consumer request volume for corpora outside the
+current taxonomy exceeds 20\,\% of total Simula runs;
+\item reproducibility and schema-validation rates sustained at or
+above release thresholds;
+\item business-case refresh (M08) explicitly budgets the v1.3
+programme.
+\end{itemize}
+
+\noindent
+If any of the three conditions fails, C01 remains in the Could column
+and is re-evaluated at the next business-case refresh.
+
+\section{Governance and business-case cadence}\label{sec:sim-governance}
+
+\subsubsection{Project governance.}
+The Simula project reports monthly to a project steering (Studio AI
+Lead, Training Data PM, Pipeline Engineer) and quarterly to the
+cross-project GFAIC. Monthly steering accepts or rejects amber/red
+signals on Must items; GFAIC reviews compliance posture and any
+cross-project dependencies (especially consumer-project risk).
+
+\subsubsection{Business-case refresh (M08).}
+The business case that authorises this project is refreshed on the
+following rhythm:
+
+\begin{itemize}
+\item \textbf{Mandatory refresh}: at the first cycle after release,
+and annually thereafter (ticket SIM-BC-REFRESH, priority M in
+\cref{tab:sim-milestones}). Refresh packet includes consumer
+demand assumptions, unit economics,
+GPU cost realised vs.\ forecast, and a deviation statement
+against the baseline.
+\item \textbf{Trigger-based refresh}: any of
+\begin{itemize}
+\item consumer request volume changes by $\ge\,20$\,\% from
+forecast (either direction);
+\item per-run generation cost changes by $\ge\,30$\,\% (GPU
+price, vLLM licensing, HANA I/O);
+\item a consumer project's regulatory obligation expands
+Simula's in-scope taxonomy;
+\item any kill-switch in \cref{tab:sim-kill-switch} is
+tripped.
+\end{itemize}
+\item \textbf{Owner}: Studio AI Lead. Approval routed through the
+project steering and filed at
+\path{docs/simula/business-case/refresh-history.yaml}.
+\end{itemize}
+\chapter{Agent Implementation Instructions}
+\label{ch:agent-impl}
+
+\section{Purpose and audience}
+This chapter is the self-contained, intent-based instruction set for
+implementing the \emph{Simula training data framework} domain inside
+the unified SAP OSS platform. It is written for LLM-driven and human
+implementation agents who will extend existing services to realise
+the specification. It assumes only this PDF; every platform
+decision, integration contract, and governance obligation the Simula
+workstream depends on is restated here so that no companion document
+is required. Existing sections~\ref{chap:overview}--\ref{sec:sim-roadmap}
+remain the normative source for the Simula domain itself; this
+chapter tells future agents \emph{how} to build what those sections
+describe, \emph{where} to put it in the codebase, and \emph{how} it
+plugs into the wider platform.
+
+% !TEX root = ../master.tex
+% =============================================================================
+% MASTER PLATFORM CORE: Shared Intent-Based Instructions (Union)
+% World-Class Version: HITL Gates, Process Integrity, and Sequence Logic
+% =============================================================================
+
+\section{Rules of Engagement for AI Agents}
+\label{sec:agent-rules}
+
+To ensure safety and architectural integrity, all implementation agents must adhere to the following Prime Directives:
+
+\begin{enumerate}[label=\textsc{rule}-\arabic*:, leftmargin=2cm]
+\item \textbf{Credential Protection.} Never log, print, or commit secrets. Use the \texttt{.secrets.example} pattern for all new integrations.
+\item \textbf{Context Efficiency.} Prioritize surgical edits. Request only the minimum required file ranges to satisfy the task intent.
+\item \textbf{Test-Driven Implementation.} No code is complete without a corresponding fixture in \texttt{tests/fixtures/} and a passing validation run.
+\item \textbf{Self-Correction.} If a schema validation fails, the agent must diagnose the root cause (hallucination vs. schema drift) before re-attempting implementation.
+\end{enumerate}
+
+\section{Platform Overview --- One Codebase, One Instance}
+\label{sec:agent-platform-overview}
+
+\subsection{Integration Stance}
+The SAP OSS platform is delivered as a single codebase that runs as a single logical instance. All cross-cutting concerns are hosted by existing services.
+
+\begin{adrbox}{{One Codebase, One Instance}}
+To minimize integration latency and eliminate distributed-system failure modes (e.g., partial partitions), we mandate a single logical instance. All cross-domain orchestration happens via the MCP Gateway layer.
+\end{adrbox}
+
+\subsection{Platform Integration Map}
+\label{sec:platform-map}
+
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}[
+node distance=2.5cm,
+auto,
+block/.style={rectangle, draw, rounded corners, fill=sapblue!10, text width=6em, text centered, minimum height=3em, font=\scriptsize},
+regs/.style={rectangle, draw, rounded corners, fill=sapgrey!20, text width=7em, text centered, minimum height=4em, thick, dotted, font=\scriptsize}
+]
+\node (arabic) [block] {Arabic AP};
+\node (tb) [block, below of=arabic] {Trial Balance};
+\node (simula) [block, right of=arabic, node distance=5.5cm] {Simula Training};
+\node (regs) [regs, below of=simula] {Regulations (Runtime Wrapper)};
+
+\draw [->, thick] (arabic) -- node [align=left, font=\tiny] {Posted\\Invoices} (tb);
+\draw [->, thick, dashed] (simula) -- node [align=left, font=\tiny, near start] {Training\\Examples} (arabic);
+\draw [->, thick, dashed] (simula) -- node [align=left, font=\tiny, near start] {Training\\Examples} (tb);
+\draw [->, thick] (regs) -| node [font=\tiny, near end, xshift=-1cm] {Governance Gate} (arabic);
+\draw [->, thick] (regs) -| node [font=\tiny, near end, xshift=-1cm] {Audit \& Identity} (tb);
+\end{tikzpicture}
+\caption{Cross-domain interaction and unified data flow map. Detailed governance logic is defined in \cref{reg:ch:mgf}.}
+\end{figure}
+
+\section{Transactional Sequence Diagrams}
+\label{sec:agent-sequences}
+
+Implementation agents must adhere to the temporal logic defined below. Every cross-domain request MUST be brokered by the Regulations Wrapper.
+
+\subsection{Universal Governance Handshake}
+This sequence applies to \textbf{all} platform service calls.
+
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}[x=1cm, y=-0.8cm, font=\scriptsize]
+% Lifelines
+\draw[thick] (0,0) -- (0,7) node[below] {Persona (UI)};
+\draw[thick] (3,0) -- (3,7) node[below] {MCP Gateway};
+\draw[thick] (6,0) -- (6,7) node[below] {Regs Wrapper};
+\draw[thick] (9,0) -- (9,7) node[below] {Domain Service};
+
+% Interaction
+\draw[->, >=latex] (0,1) -- node[above] {1. Request + Identity} (3,1);
+\draw[->, >=latex] (3,2) -- node[above] {2. Validate (Pillar 1)} (6,2);
+\draw[<-, >=latex] (3,3) -- node[above] {3. Auth/Allow Decision} (6,3);
+\draw[->, >=latex] (3,4) -- node[above] {4. Execute Tool} (9,4);
+\draw[->, >=latex] (9,5) -- node[above] {5. Log Evidence (Pillar 2)} (6,5);
+\draw[<-, >=latex] (0,6) -- node[above] {6. Response + Audit ID} (3,6);
+
+\node[draw, fill=yellow!10, text width=2.5cm, align=center] at (4.5,0.2) {MAS MGF Gate};
+\end{tikzpicture}
+\caption{Standard platform handshake for governed tool execution. Audit schemas are detailed in \cref{reg:ch:identity}.}
+\end{figure}
+
+\subsection{Arabic AP Golden Path}
+Temporal flow for invoice processing with Arabic context.
+
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}[x=1cm, y=-0.6cm, font=\tiny]
+\draw[thick] (0,0) -- (0,8) node[below] {Intake};
+\draw[thick] (2.5,0) -- (2.5,8) node[below] {OCR};
+\draw[thick] (5,0) -- (5,8) node[below] {VAT Engine};
+\draw[thick] (7.5,0) -- (7.5,8) node[below] {Workflow};
+\draw[thick] (10,0) -- (10,8) node[below] {Human (HITL)};
+
+\draw[->] (0,1) -- node[above] {Extract} (2.5,1);
+\draw[->] (2.5,2) -- node[above] {Translate} (5,2);
+\draw[->] (5,3) -- node[above] {Evaluate} (5,4); % Internal loop
+\draw[->] (5,5) -- node[above] {\textsc{Hold} Notification} (10,5);
+\draw[<-] (5,6) -- node[above] {Manual Release} (10,6);
+\draw[->] (5,7) -- node[above] {Final Posting} (7.5,7);
+\end{tikzpicture}
+\caption{Arabic AP sequence: Scanned PDF to Release. VAT rules are specified in \cref{ar:ch:vat}.}
+\end{figure}
+
+\section{Compute and Resource Alignment}
+\label{sec:hardware-profiles}
+
+AI algorithms are calibrated for the reference infrastructure established in the domain chapters:
+
+\begin{table}[htbp]
+\centering
+\footnotesize
+\caption{Infrastructure Reference Profiles.}
+\label{tab:hardware-profiles}
+\begin{tabularx}{\textwidth}{@{}l X X@{}}
+\toprule
+\textbf{Workload} & \textbf{Reference Hardware} & \textbf{Performance Target} \\
+\midrule
+LLM Inference & NVIDIA L40S (48GB) & AWQ 4-bit / p95 < 2s \\
+Embeddings & NVIDIA A100 (40/80GB) & FP16 / p99 < 500ms \\
+Simula Training & NVIDIA A100 SXM4 cluster & BF16 throughput parity \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\section{Human-in-the-Loop (HITL) Critical Gates}
+\label{sec:hitl-gates}
+
+The following "Four-Eyes" gates are mandatory. AI agents must implement the "Awaiting Sign-off" state for these actions:
+\begin{itemize}
+\item \textbf{VAT Release:} No invoice marked as \textsc{hold} can be released without human review (see \cref{ar:ch:ap}).
+\item \textbf{Anomaly Override:} Statistical outliers ($3\sigma$) cannot be dismissed by AI; only "Confirmed" or "Triaged" by human (see \cref{tb:ch:controls}).
+\item \textbf{Journal Posting:} Agents may \emph{draft} journal entries, but only the Financial Controller persona can \emph{commit} to S/4HANA (see \cref{tb:ch:controls-engine}).
+\end{itemize}
+
+\section{Registry Integrity \& Live Status}
+\label{sec:registry-integrity}
+
+Before initiating any schema-dependent task, implementation agents must verify the live status of the Unified Schema Registry (see \cref{sim:chap:schema}).
+\begin{adrbox}{Registry First}
+If \texttt{docs/schema/registry.json} is out of sync with the codebase, the agent must halt and emit a \textsc{schema-mismatch} event.
+\end{adrbox}
+
+\section{Master Implementation Manifest (Union)}
+Implementation runs in three waves across the entire platform.
+
+\subsection*{Wave 1 --- Foundations}
+\begin{itemize}
+\item \textbf{Simula:} Implement HANA schema extraction pipeline (MCP discovery). See \cref{sim:chap:extraction}.
+\item \textbf{Regulations:} Implement MAS MGF Pillar 1 logic (Tool allow-list). See \cref{reg:ch:mgf}.
+\item \textbf{Arabic:} Implement Invoice Intake \& OCR Gateway. See \cref{ar:ch:ai}.
+\item \textbf{Trial Balance:} Implement identity-attribution wiring. See \cref{reg:ch:identity}.
+\end{itemize}
+
+\subsection*{Wave 2 --- Core Domain Build-out}
+\begin{itemize}
+\item \textbf{Trial Balance:} Implement Controls \& Commentary Engine (3$\sigma$ anomaly logic). See \cref{tb:ch:ai,tb:ch:controls-engine}.
+\item \textbf{Arabic:} Implement multi-country VAT Engine (Saudi, UAE, Bahrain, Oman). See \cref{ar:ch:vat,ar:ch:vat-impl}.
+\item \textbf{Simula:} Implement Taxonomy Generation \& Agentic Data Synthesis. See \cref{sim:chap:taxonomy,sim:chap:generator}.
+\item \textbf{Trial Balance:} Realise 28-state BPMN workflow (\texttt{tb-review-glo}). See \cref{tb:ch:workflow}.
+\end{itemize}
+
+\subsection*{Wave 3 --- Hardening}
+\begin{itemize}
+\item \textbf{Regulations:} Implement Per-Request Identity Attribution. See \cref{reg:ch:identity}.
+\item \textbf{Trial Balance:} Deliver Human Review Dashboard. See \cref{tb:ch:review-dashboard}.
+\item \textbf{Simula:} Deliver test fixtures and testing at 85\% coverage. See \cref{sim:ch:test-fixtures,sim:ch:testing}.
+\item \textbf{Regulations:} Wire Emergent-Capability monitoring. See \cref{reg:ch:monitoring}.
+\end{itemize}
+
+\section{Governance Obligations (MAS MGF)}
+The regulations domain wraps all service calls at runtime. Agents must implement the following hooks in every domain:
+\begin{itemize}
+\item \textbf{Pillar 1:} Tool allow-list enforcement (deny-by-default).
+\item \textbf{Pillar 2:} Traceability via the identity attribution envelope.
+\item \textbf{Pillar 3:} Metric emission to the monitoring sink.
+\end{itemize}
+Detailed pillar requirements are defined in \cref{reg:ch:mgf}.
+
+\section{FMEA: Failure Mode and Effects Analysis for AI}
+\label{sec:fmea-ai}
+
+The following analysis identifies critical AI failure modes within the Simula pipeline and their deterministic mitigations.
+
+\begin{table}[htbp]
+\centering
+\footnotesize
+\caption{FMEA for Simula AI Pipeline.}
+\label{tab:simula-fmea}
+\begin{tabularx}{\textwidth}{@{}l X X X@{}}
+\toprule
+\textbf{Failure Mode} & \textbf{Symptom} & \textbf{Impact} & \textbf{Technical Mitigation} \\
+\midrule
+Critic Collusion & Both critics pass a low-quality SQL query. & High (Model Bias) & Inject a 'Gold Standard' probe query every 100 samples. \\
+Schema Contraction & LLM ignores complex JOIN paths in the taxonomy. & Medium (Coverage) & Taxonomic coverage check against Graph-DB baseline. \\
+Elo-Score Drift & Calibrated complexity scores diverge from human ratings. & Medium (UI/UX) & Monthly Elo-recalibration against human-label set. \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\section{This domain in context}
+\label{sec:agent-domain-context}
+Simula is the training-data workstream among the four domains. Its
+primary persona is the Training Engineer, whose working view is the
+Simula console surfaced through the shared workspace shell and gated
+by Simula entitlements. The domain's entry points are the schema
+sets and fixtures exported by Arabic AP, TB, and regulations, plus
+the HANA Cloud catalogue read via the extraction pipeline; its exit
+points are \texttt{TrainingExample} records emitted to the training
+corpus and Elo-calibrated complexity reports. Every artefact is
+validated against the Simula-owned schemas in
+\texttt{structured/schema/} before it leaves the pipeline. The
+domain is read-only with respect to the other three domains at the
+schema layer: it never mutates their records, and it never calls
+their runtime MCP tools. The horizontal regulations wrapper governs
+Simula calls like any other domain.
+
+\section{Schema contribution}
+\label{sec:agent-schema-contrib}
+Simula owns the schemas catalogued in
+chapter~\ref{chap:schema}, including the training-example record,
+the schema-registry record, the taxonomy structure, and the
+enumerations listed there. These schemas live under
+\texttt{docs/latex/specs/simula/} as normative text and under
+\texttt{structured/schema/} as the JSON Schema artefacts consumed by
+the pipeline at \texttt{src/training/pipeline/}. Registration in the
+unified registry is additive: each schema is listed in
+\texttt{src/intelligence/ai-core-pal/data\_products/registry.yaml}
+with its URI, owning domain (\texttt{simula}), security class
+(\texttt{confidential}), and LLM routing (\texttt{vllm-only}),
+following the ODPS~4.1 pattern already documented for HANA training
+data products in that file. Simula also consumes the schemas owned
+by Arabic, TB, and regulations as inputs; the contract is strictly
+schema-in, \texttt{TrainingExample}-out. Simula performs no schema
+merges; the two \texttt{requirement.schema.json} files in TB and
+regulations remain distinct when Simula reads them.
+
+\section{Persona and MCP allow-list}
+\label{sec:agent-persona}
+\begin{itemize}
+\item \textbf{Persona id:} \texttt{training-engineer}.
+\item \textbf{Roles:} schema extraction, taxonomy authoring,
+training-data synthesis supervision, critic-calibration review,
+corpus export.
+\item \textbf{Entitlements:} read/write on the training-example
+record, schema-registry record, and taxonomy structure; read on
+every other domain's schemas (Arabic, TB, regulations);
+run-execute on Simula pipeline stages described in
+chapter~\ref{chap:generator}.
+\item \textbf{UI route:} \texttt{/simula/\{tenant\}/console} on the
+shared workspace shell; surfaced only to callers whose
+entitlement set includes \texttt{training-engineer}.
+\item \textbf{MCP tool allow-list:}
+\texttt{simula.schema.extract}, \texttt{simula.taxonomy.build},
+\texttt{simula.generate.examples},
+\texttt{simula.critic.calibrate},
+\texttt{simula.evaluate.coverage},
+\texttt{simula.evaluate.diversity},
+\texttt{simula.corpus.export}. All other MCP tools are denied by
+default per MAS MGF pillar~1.
+\end{itemize}
+
+\section{Implementation tasks for this domain}
+\label{sec:agent-tasks}
+The tasks below are intent-based: each task states the outcome a
+future agent must achieve and the location in the existing codebase
+where the work belongs. None of them contains code; each task binds
+to the Simula sections that define the required behaviour.
+
+\subsubsection{Task S1 --- HANA schema extraction.}
+\textbf{Intent.} Realise the HANA schema extraction pipeline in
+chapter~\ref{chap:extraction}, covering MCP discovery, table
+enumeration, column extraction, and registry population.
+
+\begin{adrbox}{Why Direct SQL Metadata?}
+We chose direct SQL-metadata extraction over high-level MCP discovery for the baseline to ensure we capture SAP-specific table types (Global Temporary, Row-Store) that standard MCP tools often omit.
+\end{adrbox}
+
+\textbf{In-scope.} Each of the four stages in the pipeline figure
+(\ref{fig:extraction-pipeline}); schema registry writer; per-table
+dimension/measure classification.
+\textbf{Out-of-scope.} Non-HANA backends.
+\textbf{Paths to extend.} \texttt{src/training/pipeline/} extraction
+module; registry writer that emits entries conforming to the
+schema-registry record.
+\textbf{Definition of done.} Running extraction against a HANA
+Cloud catalogue produces a registry populated with every in-scope
+table; registry entries validate against the schema-registry record.
+
+\textbf{Autonomous Verification (Agent Logic):}
+\begin{lstlisting}[language=jsonx]
+// Verify Task S1
+{
+"test_fixture": "tests/fixtures/simula/hana_mock.sql",
+"expected_outcome": "table_count == 14",
+"validation_command": "python src/simula/extract.py --verify-registry"
+}
+\end{lstlisting}
+
+\textbf{Verification.} Pipeline dry-run against the fixture store
+described in chapter~\ref{ch:test-fixtures} produces the expected
+registry entries.
+
+\subsubsection{Task S2 --- Taxonomy generation (Algorithm 1).}
+\textbf{Intent.} Implement Algorithm~1 (reasoning-driven taxonomy
+generation) from chapter~\ref{chap:taxonomy} in full, including all
+four steps (factor identification, breadth-first expansion,
+best-of-N proposal, critic refinement).
+\textbf{In-scope.} Per-step module with the checkpoints
+in~\ref{fig:taxonomy-stages}; taxonomy structure writer.
+\textbf{Out-of-scope.} Manual taxonomy authoring UI.
+\textbf{Paths to extend.} Taxonomy engine colocated with the
+pipeline.
+\textbf{Definition of done.} Running Algorithm~1 against an extracted
+registry produces a taxonomy that validates against the taxonomy
+structure schema and passes the coverage check in
+chapter~\ref{chap:evaluation}.
+\textbf{Verification.} Taxonomy engine unit tests pass; the
+coverage evaluator reports coverage within the chapter's target
+band.
+
+\subsubsection{Task S3 --- Agentic data synthesis (Algorithm 2).}
+\textbf{Intent.} Implement Algorithm~2 (agentic data synthesis) from
+chapter~\ref{chap:generator}, including all four steps (mix
+sampling, meta-prompt generation, complexification, example
+generation) and the double-critic validation.
+\textbf{In-scope.} The agent roster implied by
+\ref{fig:generator-stages}; vLLM TurboQuant routing for all LLM
+calls; complexification step and the two critic agents.
+\textbf{Out-of-scope.} Non-agentic synthesis paths.
+\textbf{Paths to extend.} Generation engine in
+\texttt{src/training/pipeline/}; vLLM client wrapper.
+\textbf{Definition of done.} Running Algorithm~2 against a taxonomy
+produces \texttt{TrainingExample} records that pass both critics and
+validate against the training-example record schema.
+\textbf{Verification.} Generation unit tests pass on fixture inputs;
+double-critic agreement rate meets the threshold in
+chapter~\ref{chap:evaluation}.
+
+\subsubsection{Task S4 --- Environment and CLI.}
+\textbf{Intent.} Deliver the environment and CLI surfaces specified
+in chapter~\ref{chap:config}, including the configuration table, CLI
+usage, and output files listed in~\ref{tab:outputs}.
+\textbf{In-scope.} Configuration loader; CLI subcommands for each
+pipeline stage; output-file writers.
+\textbf{Out-of-scope.} IDE integrations.
+\textbf{Paths to extend.} CLI module in
+\texttt{src/training/pipeline/}.
+\textbf{Definition of done.} Each configuration key in the
+configuration table is read and respected; the CLI runs end-to-end
+and produces every output file in~\ref{tab:outputs}.
+\textbf{Verification.} CLI smoke tests pass; output files match the
+schemas declared for them.
+
+\subsubsection{Task S5 --- Evaluation framework.}
+\textbf{Intent.} Deliver the evaluation framework in
+chapter~\ref{chap:evaluation}, including calibrated complexity
+scoring (Algorithm~3, Elo), taxonomic coverage evaluation,
+embedding-based diversity, and critic-calibration validation.
+\textbf{In-scope.} Each evaluator as a runnable function; report
+writers.
+\textbf{Out-of-scope.} Real-time evaluation dashboards beyond what
+the chapter defines.
+\textbf{Paths to extend.} Evaluation module in
+\texttt{src/training/pipeline/}.
+\textbf{Definition of done.} Each evaluator runs against a fixture
+corpus and emits a report that validates against the corresponding
+report schema.
+\textbf{Verification.} Evaluator unit tests pass; reports reproduce
+under fixed seeds.
+
+\subsubsection{Task S6 --- Test fixtures and testing.}
+\textbf{Intent.} Deliver the test fixtures specification in
+chapter~\ref{ch:test-fixtures} and the testing specification in
+chapter~\ref{ch:testing} at the coverage thresholds
+in~\ref{tab:simula-coverage}.
+\textbf{In-scope.} Invoice, OCR, taxonomy, and training-example
+fixtures; unit tests for taxonomy traversal and generation; CI
+wiring.
+\textbf{Out-of-scope.} Performance benchmarking infrastructure.
+\textbf{Paths to extend.} Test directory colocated with the Simula
+pipeline code.
+\textbf{Definition of done.} Coverage meets~\ref{tab:simula-coverage};
+CI gates block regressions.
+\textbf{Verification.} \texttt{make spec-simula} remains green; the
+Simula test entry points all run.
+
+
+\section{Governance obligations applied to this domain}
+\label{sec:agent-governance}
+The regulations domain wraps Simula at runtime. Four obligations
+apply without exception; each is stated as a concrete hook in the
+Simula codebase.
+
+\begin{itemize}
+\item \textbf{MAS MGF four pillars} (see regulations
+chapter~3 in
+\texttt{docs/latex/specs/regulations/chapters/03-mgf-framework.tex}).
+Pillar~1 (assess and bound): every Simula MCP tool is declared
+in the allow-list in \S\ref{sec:agent-persona}, deny-by-default.
+Pillar~2 (design and deploy): the pipeline stages in
+chapter~\ref{chap:generator} are traceable end-to-end via the
+per-request identity attribution described below. Pillar~3
+(operate and monitor) and pillar~4 (govern and disclose) are
+satisfied by emitting the evidence records produced by the
+Simula evaluation framework (chapter~\ref{chap:evaluation}) into
+the shared governance store.
+\item \textbf{Identity attribution} (regulations chapter~10,
+\texttt{10-identity-attribution.tex}). Every MCP call and every
+pipeline run carries the persona id, agent id, request id, and
+tenant id. The gateway is the attachment point; Simula code
+propagates the identity envelope without mutating it.
+\item \textbf{Emergent-capability monitoring} (regulations
+chapter~8, \texttt{08-monitoring-spec.tex}). Extraction,
+taxonomy generation, synthesis, and evaluation steps are
+instrumented with the monitoring metrics specified in that
+chapter; metrics flow to the monitoring sink defined there.
+\item \textbf{Conformance tooling} (regulations chapter~6,
+\texttt{06-conformance-tooling.tex}). The Simula service
+exposes AI Verify 2.0 plug-in hooks and Moonshot CI/CD 1.1.0
+benchmark entry points as required by that chapter.
+\end{itemize}
+
+\section{Cross-spec integration --- full detail}
+\label{sec:agent-integration}
+
+\subsection{With Arabic AP}
+Simula consumes Arabic's schemas and fixtures as training input. The
+contract is schema-in, \texttt{TrainingExample}-out: Simula reads
+\texttt{invoice.schema.json}, \texttt{vat-checklist.schema.json}, and
+the Arabic fixture store; it produces \texttt{TrainingExample}
+records. Simula does not call Arabic MCP tools at runtime and does
+not share state with the Arabic workflow. No cross-domain
+operational envelope is introduced.
+
+\subsection{With Trial Balance}
+Simula consumes TB's schemas and fixtures as training input. The
+contract is schema-in, \texttt{TrainingExample}-out: Simula reads
+the TB schema set and the TB fixture store; it produces
+\texttt{TrainingExample} records. Simula does not call TB MCP tools
+at runtime and does not share state with the TB workflow.
+
+\subsection{With Regulations}
+Regulations wraps Simula at runtime. Every Simula MCP call is
+brokered through the regulations governance gate, which applies
+pillars~1--4 of MAS MGF, attaches the identity envelope, and routes
+emergent-capability metrics to the monitoring store. The Simula
+service code does not call regulations directly; the gateway layer
+enforces this. Simula also consumes regulations' schemas
+(requirement, conformance-tool, monitoring metrics, identity and
+audit) as training input.
+
+\subsection{With Simula}
+Simula exports the training-example record, the schema-registry
+record, the taxonomy structure, and the enum vocabularies under
+\texttt{structured/schema/} (chapter~\ref{chap:schema}); registers
+the MCP tools enumerated in \S\ref{sec:agent-persona}; and applies
+the four governance hooks in \S\ref{sec:agent-governance} to every
+call it serves. External consumers see Simula only through these
+contracts and through the corpus it emits; there are no private
+back-channels.
+
+\section{Wave assignment and sequencing}
+\label{sec:agent-waves}
+Implementation runs in three waves.
+
+\begin{itemize}
+\item \textbf{Wave 1 --- foundations.} Unified schema registry
+entry; persona-gated surface for the Training Engineer;
+identity attribution envelope flowing through the gateway; HANA
+extraction pipeline (Task S1). Prerequisites: the regulations
+chapter~10 identity schema must be frozen.
+\item \textbf{Wave 2 --- Simula core build-out.} Tasks S2, S3, S4,
+S5. Prerequisites: Wave~1 complete; vLLM TurboQuant endpoint
+reachable; Arabic, TB, and regulations schema sets published.
+\item \textbf{Wave 3 --- hardening and conformance.} Task S6 and
+full conformance-tooling hook-up. Prerequisites: Wave~2
+complete; regulations Wave~2 conformance tooling integrated;
+monitoring sink live.
+\end{itemize}
+
+Simula occupies Wave~1 for its extraction pipeline (because other
+domains depend on Simula's fixtures being reachable), Wave~2 for its
+core build-out, and Wave~3 for its testing and conformance surfaces.
+
+\section{Acceptance criteria (platform-wide)}
+\label{sec:agent-acceptance}
+When all four chapter~12 instruction sets are implemented, the
+platform satisfies the following invariants:
+
+\begin{enumerate}
+\item \textbf{One instance.} A single codebase runs a single
+logical instance; no domain ships as a separate product.
+\item \textbf{Persona-gated surfaces.} The four personas each
+reach a tailored UI on the shared shell; no route, MCP tool, or
+data product is visible outside its persona's entitlement set.
+\item \textbf{Unified registry.} Every schema in use is listed in
+the ODPS~4.1 registry under its owning domain; validators
+resolve \texttt{\$ref}s through the unified registry only.
+\item \textbf{No schema merges.} The two
+\texttt{requirement.schema.json} files in TB and regulations
+remain distinct; no cross-domain composite schemas are produced.
+\item \textbf{No cross-domain operational envelope.} Runtime
+orchestration stays within each domain's service; only Simula
+consumes other domains' outputs, and only as training input.
+\item \textbf{Governance wraps all three non-regulations domains.}
+Arabic, TB, and Simula service calls pass through the
+regulations runtime wrapper without exception.
+\end{enumerate}
+
+\section{References}
+\label{sec:agent-references}
+Within-spec references:
+chapter~\ref{chap:overview} (overview),
+chapter~\ref{chap:schema} (data schema),
+chapter~\ref{chap:extraction} (HANA extraction pipeline),
+chapter~\ref{chap:taxonomy} (taxonomy engine, Algorithm~1),
+chapter~\ref{chap:generator} (generation engine, Algorithm~2),
+chapter~\ref{chap:config} (environment and CLI),
+chapter~\ref{chap:evaluation} (evaluation framework),
+chapter~\ref{ch:test-fixtures} (test fixtures),
+chapter~\ref{ch:testing} (testing specification),
+chapter~\ref{sec:sim-roadmap} (project roadmap).
+
+Peer chapter~12 instruction sets for the other three domains (each
+is self-contained; consult directly when operating in that domain):
+\begin{itemize}
+\item Arabic AP:
+\texttt{docs/latex/specs/arabic/chapters/12-implementation-instructions.tex}.
+\item Trial Balance:
+\texttt{docs/latex/specs/tb/chapters/12-implementation-instructions.tex}.
+\item Regulations:
+\texttt{docs/latex/specs/regulations/chapters/12-implementation-instructions.tex}.
+\end{itemize}
+
+Shared platform artefacts:
+\begin{itemize}
+\item ODPS~4.1 registry:
+\texttt{src/intelligence/ai-core-pal/data\_products/registry.yaml}.
+\item Schema pipeline and resolver:
+\texttt{src/intelligence/schema\_pipeline/}.
+\item Training pipeline (Simula):
+\texttt{src/training/pipeline/}.
+\item Shared workspace shell:
+\texttt{generativeUI/training-webcomponents-ngx}.
+\end{itemize}
+
+% --- Incorporated Universal Chapters ---
+\chapter{Global Wave-Dependency Manifest}
+\label{ch:global-dependencies}
+
+\section{Critical Path Visualization (Waves 1--3)}
+The following chart defines the normative sequencing for implementation agents. A task in a later wave cannot be marked \textsc{complete} until its prerequisites in an earlier wave are validated.
+
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}[
+node distance=1.5cm,
+auto,
+wavebox/.style={rectangle, draw, rounded corners, fill=sapmidnight!10, text width=10em, text centered, minimum height=3em, font=\scriptsize\bfseries},
+dep/.style={->, >=latex, thick, sapblue},
+critical/.style={->, >=latex, very thick, sapamber}
+]
+% --- Wave 1: Foundations ---
+\node (r1) [wavebox, fill=sapgrey!20] {\textcolor{sapmidnight}{REG-W1: Identity \& Audit Schema}};
+\node (s1) [wavebox, below of=r1, yshift=-0.5cm] {SIM-W1: HANA Extraction Pipeline};
+\node (a1) [wavebox, below of=s1, yshift=-0.5cm] {ARA-W1: Invoice Intake \& OCR};
+\node (t1) [wavebox, below of=a1, yshift=-0.5cm] {TB-W1: Identity Wiring};
+
+% --- Wave 2: Core Build-out ---
+\node (r2) [wavebox, right of=r1, xshift=4.5cm, fill=sapmidnight!20] {\textcolor{sapmidnight}{REG-W2: Governance Runtime}};
+\node (s2) [wavebox, right of=s1, xshift=4.5cm] {SIM-W2: Taxonomy \& Synthesis};
+\node (a2) [wavebox, right of=a1, xshift=4.5cm] {ARA-W2: Multi-Country VAT};
+\node (t2) [wavebox, right of=t1, xshift=4.5cm] {TB-W2: Controls \& Workflow};
+
+% --- Wave 3: Hardening ---
+\node (r3) [wavebox, right of=r2, xshift=4.5cm, fill=sapmidnight!30] {\textcolor{sapmidnight}{REG-W3: Conformance Suite}};
+\node (s3) [wavebox, right of=s2, xshift=4.5cm] {SIM-W3: 85\% Coverage Test};
+\node (a3) [wavebox, right of=a2, xshift=4.5cm] {ARA-W3: Calibration Pilot};
+\node (t3) [wavebox, right of=t2, xshift=4.5cm] {TB-W3: HITL Dashboard};
+
+% --- Cross-Domain Dependencies (The Critical Path) ---
+\draw [critical] (r1) -- node [above, font=\tiny, align=center] {Identity Envelope\\Invariants} (a1.north east);
+\draw [critical] (r1) -- (t1.north east);
+\draw [dep] (s1.east) -- node [above, font=\tiny, xshift=-0.5cm] {Training Fixtures} (t2.west);
+\draw [dep] (s1.east) -- (a2.west);
+\draw [dep] (r2.south) -- node [left, font=\tiny, yshift=0.3cm] {Policy Gate} (a2.north);
+\draw [dep] (t2.east) -- node [above, font=\tiny] {Audit Evidence} (r3.west);
+
+% --- Wave Transitions ---
+\draw [->, dashed, sapgrey] (r1.east) -- (r2.west);
+\draw [->, dashed, sapgrey] (r2.east) -- (r3.west);
+
+% --- Legend ---
+\node[draw, sapamber, very thick, label=right:\scriptsize Critical Prerequisite] at (0,-7.5) {};
+\node[draw, sapblue, thick, label=right:\scriptsize Data Dependency, xshift=4cm] at (0,-7.5) {};
+
+\end{tikzpicture}
+\caption{Cross-specification dependency graph: The blueprint for platform rollout.}
+\end{figure}
+
+\section{Inter-Domain Prerequisite Matrix}
+
+\begin{table}[htbp]
+\centering
+\footnotesize
+\caption{Normative Cross-Domain Prerequisites.}
+\label{tab:prerequisites}
+\begin{tabularx}{\textwidth}{@{}l l l X@{}}
+\toprule
+\textbf{Target Task} & \textbf{Prerequisite} & \textbf{Ref ID} & \textbf{Rationale} \\
+\midrule
+\rowcolor{sapmidnight!5}
+\textbf{ARA-W1} & REG-W1 (Identity) & \texttt{REG-IDENTITY-01} & Invoice intake must be audit-traced from Day 1. \\
+\textbf{TB-W2}  & SIM-W1 (Extraction) & \texttt{SIM-EXTRACT-01} & Anomaly detection requires HANA schema metadata. \\
+\rowcolor{sapmidnight!5}
+\textbf{REG-W2} & SIM-W1 (Registry) & \texttt{SIM-REGISTRY-01} & Governance monitoring relies on the schema registry. \\
+\textbf{ARA-W2} & REG-W2 (Pillar 1) & \texttt{REG-MGF-P1} & VAT release is an HITL gate governed by MAS Pillar 1. \\
+\rowcolor{sapmidnight!5}
+\textbf{TB-W3}  & ARA-W2 (Posted Invoices) & \texttt{ARA-AP-POST} & Review dashboard depends on posted AP data from Arabic domain. \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\begin{adrbox}{Dependency Enforcement}
+Implementation agents are strictly forbidden from "Fast-Forwarding" into Wave 2 if Wave 1 critical prerequisites (marked in \textcolor{sapamber}{\textbf{Gold}}) are in a \textsc{gap} or \textsc{partial} state.
+\end{adrbox}
+
+
+
+\end{document}

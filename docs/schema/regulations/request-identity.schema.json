@@ -1,0 +1,68 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://sap-oss.github.io/schema/regulations/request-identity.schema.json",
+  "title": "Request Identity",
+  "description": "Schema for per-request identity records attributing agent actions to initiating users (Chapter 10 §10.2.2)",
+  "type": "object",
+  "required": [
+    "request_id",
+    "correlation_id",
+    "initiating_user",
+    "timestamp",
+    "source_system"
+  ],
+  "properties": {
+    "request_id": {
+      "type": "string",
+      "description": "Unique request identifier (e.g., req-20260418-001234)"
+    },
+    "correlation_id": {
+      "type": "string",
+      "description": "Correlation/session identifier spanning related requests"
+    },
+    "initiating_user": {
+      "type": "object",
+      "required": [
+        "user_id",
+        "user_type",
+        "authentication_method",
+        "roles"
+      ],
+      "properties": {
+        "user_id": {
+          "type": "string",
+          "description": "Stable identifier of the initiating user"
+        },
+        "user_type": {
+          "type": "string",
+          "enum": ["human", "service", "system"],
+          "description": "Classification of the initiating principal"
+        },
+        "authentication_method": {
+          "type": "string",
+          "description": "Authentication method used (e.g., oauth2_sso)"
+        },
+        "roles": {
+          "type": "array",
+          "items": {"type": "string"},
+          "description": "Roles/entitlements held at the time of request"
+        }
+      },
+      "description": "Identity of the user or principal that initiated the request"
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO 8601 timestamp when the request was received"
+    },
+    "source_system": {
+      "type": "string",
+      "description": "System that issued the request (e.g., tb-review-dashboard)"
+    },
+    "source_ip": {
+      "type": "string",
+      "format": "ipv4",
+      "description": "Originating IP address of the request (optional)"
+    }
+  }
+}

@@ -1,7 +1,7 @@
-\section{Overview and Scope}
+\chapter{Overview and Scope}
 \label{chap:overview}
 
-\subsection{The Problem}
+\section{The Problem}
 
 The SAP OSS training pipeline requires high-quality Text-to-SQL training data that reflects
 the actual schema structure of SAP HANA Cloud tables. The current implementation in
@@ -32,7 +32,7 @@ Complexity Control & None & Calibrated Elo scoring \\
 \end{tabularx}
 \end{table}
 
-\subsection{Goals}
+\section{Goals}
 
 The specification targets three outcomes:
 
@@ -46,7 +46,7 @@ The specification targets three outcomes:
           and controlled complexity.
 \end{enumerate}
 
-\subsection{In-Scope Domains}
+\section{In-Scope Domains}
 
 \begin{table}[H]
 \centering
@@ -63,7 +63,7 @@ ESG Analytics & \texttt{ESG\_METRICS}, \texttt{FINANCED\_EMISSIONS} & Scope clas
 \end{tabularx}
 \end{table}
 
-\subsection{System Context}
+\section{System Context}
 
 \begin{figure}[H]
 \centering
@@ -121,7 +121,7 @@ Output is JSONL training data (gold).}
 \label{fig:system-context}
 \end{figure}
 
-\subsection{Research Paper Traceability}
+\section{Research Paper Traceability}
 
 This specification implements the Simula framework from Davidson et al. (2026),
 ``Reasoning-Driven Synthetic Data Generation and Evaluation,'' published in
@@ -149,7 +149,7 @@ Appendix E.3 & Elo algorithm details & §\ref{chap:evaluation}.1.1, \texttt{\_up
 \end{tabularx}
 \end{table}
 
-\subsection{Out of Scope}
+\section{Out of Scope}
 
 The following are \textbf{explicitly} out of scope for this document:
 

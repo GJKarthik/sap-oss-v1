@@ -113,13 +113,13 @@ Priority: M=Must (critical path), S=Should, C=Could, W=Won't.}
 \begin{tabularx}{\linewidth}{@{}l l l l X@{}}
 \toprule
 \textbf{ID} & \textbf{Prereq} & \textbf{Pri.} & \textbf{Ticket} & \textbf{Milestone} \\ \midrule
-M01 & ---       & M & AP-ENG-001         & OCR pipeline (Tesseract + Arabic model) passes the fixtures in \cref{ch:ap-testing}. \\
-M02 & M01       & M & AP-ENG-002         & VAT engine unit tests pass (\cref{ch:vat-engine}); country-configurable rates.\\
+M01 & ---       & M & AP-ENG-001         & OCR pipeline (Tesseract + Arabic model) passes the fixtures in \cref{ch:testing}. \\
+M02 & M01       & M & AP-ENG-002         & VAT engine unit tests pass (\cref{ch:vat}); country-configurable rates.\\
 M03 & M01       & M & AP-PILOT-PREP      & 200 pilot documents sampled and ground-truth annotation complete (\cref{ch:ocr-pilot}). \\
 M04 & M02       & M & REG-INTG-AP-001    & Identity-attribution wiring (reserve/complete) live in UAT. \\
 M05 & M03, M04  & M & AP-PILOT-001       & Pilot complete; OCR and translation thresholds calibrated per country. \\
 M06 & M05       & M & AP-BETA-001        & Beta cycle: Saudi Arabia only, two-person manual review on top of AI. \\
-M07 & M06       & M & AP-PARALLEL-001    & Beta parallel-run gate passes (\cref{sec:ap-parallel-run}). \\
+M07 & M06       & M & AP-PARALLEL-001    & Beta parallel-run gate passes. \\
 M08 & M07       & M & AP-GA-001          & GA sign-off; Saudi Arabia goes live. \\
 M09 & M08       & M & AP-BC-REFRESH      & Business-case refresh and compliance attestation (first cycle after GA; then annual). \\
 S01 & M08       & S & AP-WAVE-002        & Rollout wave 2: Egypt onboarded via country-params. \\
@@ -156,7 +156,7 @@ items that must be closed to exit the tier.}
 \begin{tabularx}{\linewidth}{@{}l l X@{}}
 \toprule
 \textbf{Tier} & \textbf{Scope} & \textbf{Exit gate (references MoSCoW IDs)} \\ \midrule
-Alpha & Engineering only, DEV + UAT, fixture documents only. & M01, M02, M03 closed; all acceptance criteria in \cref{ch:ap-testing} pass on the pilot fixture; reproducibility of OCR and VAT outputs confirmed on two consecutive runs. \\
+Alpha & Engineering only, DEV + UAT, fixture documents only. & M01, M02, M03 closed; all acceptance criteria in \cref{ch:testing} pass on the pilot fixture; reproducibility of OCR and VAT outputs confirmed on two consecutive runs. \\
 Beta  & One country (Saudi Arabia), two-person manual review on top of AI. & M04, M05, M06, M07 closed; pilot success criteria (\cref{sec:pilot-success}) met; parallel-run gate passes for one full cycle; no open SEV1/SEV2; audit coverage $=$ 100\,\% of in-scope actions. \\
 GA (limited) & Three countries (Saudi Arabia plus the next two waves). & M08 closed; Beta gate sustained for two consecutive cycles; S01 closed; country-onboarding runbook exercised end-to-end; kill-switch green; per-country thresholds calibrated. \\
 Full rollout & All four countries in v1.0 scope (SA, EG, BH, QA). & S02 and S03 closed; two quarterly reviews sustained; M09 complete; business-case refresh complete; two-person review may be relaxed to one-person for documents above the high threshold. \\
@@ -207,7 +207,7 @@ that first consumes the dependency, not in calendar time.
 \textbf{Component} & \textbf{Owner} & \textbf{First consumed by} & \textbf{Impact if late} \\ \midrule
 Audit service (reserve/complete, immutable storage) & Regulations project & M04 (REG-INTG-AP-001) & No Beta gate possible without this; AP GA slips in lockstep with the audit service. \\
 Unified schema registry (\path{docs/schema/}) & Shared infra & M01 & Already \texttt{migration.status=complete}; no remaining risk. \\
-vLLM hosting (\texttt{vllm-only} policy) & Shared platform & M02 & Graceful-degradation ladder (\cref{sec:degradation-ladder} of the Regulations spec) provides fallback; slip tolerable. \\
+vLLM hosting (\texttt{vllm-only} policy) & Shared platform & M02 & Graceful-degradation ladder defined in the Regulations spec provides fallback; slip tolerable. \\
 Tesseract + Arabic OCR model & Shared platform & M01 & No substitute available; slip blocks all subsequent Must items. \\
 \bottomrule
 \end{tabularx}
@@ -254,7 +254,7 @@ following rhythm:
   \item \textbf{Mandatory refresh}: at the first cycle after GA, and
         annually thereafter (ticket AP-BC-REFRESH, priority M in
         \cref{tab:ap-milestones}). Refresh packet includes country
-        volume assumptions, unit economics (\cref{sec:ap-unit-economics}),
+        volume assumptions, unit economics,
         FTE leverage realised vs.\ forecast, and a deviation statement
         against the baseline.
   \item \textbf{Trigger-based refresh}: any of
