@@ -14,13 +14,13 @@ PYTHON ?= python3
 
 # ── Composite targets ────────────────────────────────────────────────────────
 
-.PHONY: all build test lint format clean help
+.PHONY: all build test lint format clean help test-clinerules
 
 all: build test lint ## Build everything, run all tests, then lint
 
 build: build-ui ## Build Angular UI
 
-test: test-python test-pipeline test-ui ## Run all test suites
+test: test-python test-pipeline test-ui test-clinerules ## Run all test suites
 
 lint: lint-python lint-ui ## Lint all code
 
@@ -37,6 +37,9 @@ test-python: ## Run ModelOpt Python tests with pytest
 
 test-pipeline: ## Run text-to-SQL pipeline tests
 	$(PYTHON) -m pytest $(PIPELINE_DIR)/tests/ -v --tb=short
+
+test-clinerules: ## Validate training .clinerules files
+	$(PYTHON) -m pytest tests/test_clinerules_contracts.py -v --tb=short
 
 lint-python: ## Lint Python with ruff
 	$(PYTHON) -m ruff check $(MODELOPT_DIR)/api/ $(PIPELINE_DIR)/ --config pyproject.toml 2>/dev/null || \
@@ -146,4 +149,3 @@ version: ## Show project version
 help: ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | \
 		awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-18s\033[0m %s\n", $$1, $$2}'
-
