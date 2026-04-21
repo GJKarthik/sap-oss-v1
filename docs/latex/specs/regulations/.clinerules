@@ -1,0 +1,178 @@
+# =============================================================================
+# .clinerules - AI Regulations Compliance Specification
+# Enterprise AI Governance & Regulatory Alignment
+# =============================================================================
+# This specification defines compliance requirements for enterprise AI systems
+# against global regulatory frameworks (EU AI Act, Singapore MGF, etc.).
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# SPECIFICATION OVERVIEW
+# -----------------------------------------------------------------------------
+
+## Purpose
+
+The AI Regulations Compliance specification defines:
+- **Regulatory Mapping**: Alignment with global AI governance frameworks
+- **Risk Classification**: AI system risk categorization
+- **Compliance Controls**: Required controls and documentation
+- **Audit Requirements**: Evidence and traceability needs
+
+## Key Regulatory Frameworks
+
+| Framework | Jurisdiction | Focus |
+|-----------|--------------|-------|
+| EU AI Act | European Union | Risk-based AI regulation |
+| Singapore MGF | Singapore | Model governance framework |
+| NIST AI RMF | United States | AI risk management |
+| ISO/IEC 42001 | International | AI management systems |
+
+## Key Documents
+
+| Document | Purpose |
+|----------|---------|
+| `regulations-spec.tex` | Main specification document |
+| `chapters/03-regulatory-mapping.tex` | Framework alignment tables |
+| `chapters/05-risk-classification.tex` | Risk tier definitions |
+| `references.bib` | Bibliography and citations |
+
+# -----------------------------------------------------------------------------
+# RELATED ARTIFACTS
+# -----------------------------------------------------------------------------
+
+## Schemas
+
+| Schema | Purpose |
+|--------|---------|
+| `docs/schema/regulations/compliance-checklist.schema.json` | Compliance verification |
+| `docs/schema/regulations/risk-tier.schema.json` | Risk classification |
+| `docs/schema/regulations/audit-evidence.schema.json` | Audit trail requirements |
+
+## Source Documents
+
+| Document | Location |
+|----------|----------|
+| EU AI Act Text | `docs/regulations/eu-ai-act/` |
+| Singapore MGF | `docs/regulations/mgf-for-agentic-ai.pdf` |
+| AI Agent Index | `docs/regulations/2025-AI-Agent-Index.pdf` |
+| AIVerify Framework | `docs/regulations/aiverify-main/` |
+
+## Implementation
+
+| Code Path | Purpose |
+|-----------|---------|
+| `src/intelligence/config/governance/` | Governance configuration |
+| `scripts/sbom-lineage/` | SBOM and lineage tracking |
+
+# -----------------------------------------------------------------------------
+# SPEC-DRIFT SYNCHRONIZATION RULES
+# -----------------------------------------------------------------------------
+
+## Critical Sync Points
+
+1. **Risk Tier Definitions**
+   - Spec Chapter 5 ↔ `risk-tier.schema.json`
+   - Risk level changes affect all dependent systems
+
+2. **Compliance Checklist Items**
+   - Spec Chapter 7 ↔ `compliance-checklist.schema.json`
+   - New requirements must be added to both
+
+3. **Audit Trail Requirements**
+   - Spec Chapter 9 ↔ `audit-evidence.schema.json`
+   - Evidence field changes need schema update
+
+## Regulatory Source Traceability
+
+When adding compliance requirements:
+
+1. **Quote source text verbatim** - Use exact regulatory language
+2. **Include article/section reference** - E.g., "EU AI Act, Article 52(1)"
+3. **Document interpretation rationale** - Explain how requirement applies
+4. **Link to machine-readable source** - Reference extracted MD files
+
+## Pre-Change Checklist
+
+Before modifying this specification:
+
+- [ ] Run `make audit-spec-drift-domain DOMAIN=regulations`
+- [ ] Verify regulatory source documents are current
+- [ ] Check cross-references to other specs (simula, tb, arabic)
+- [ ] Review compliance impact on existing systems
+
+## Post-Change Checklist
+
+After modifying this specification:
+
+- [ ] Update `docs/schema/regulations/*.schema.json` if requirements changed
+- [ ] Update compliance checklists in dependent specs
+- [ ] Run `make audit-spec-drift` to verify synchronization
+- [ ] Update `docs/summaries/regulations-summary.md`
+
+# -----------------------------------------------------------------------------
+# REQUIREMENT ID CONVENTIONS
+# -----------------------------------------------------------------------------
+
+| Category | Prefix | Example |
+|----------|--------|---------|
+| EU AI Act | REG-EU | REG-EU-001 |
+| Singapore MGF | REG-SG | REG-SG-001 |
+| NIST RMF | REG-NIST | REG-NIST-001 |
+| Cross-cutting | REG-CC | REG-CC-001 |
+| Audit | REG-AUD | REG-AUD-001 |
+
+# -----------------------------------------------------------------------------
+# RISK TIER DEFINITIONS (Authoritative)
+# -----------------------------------------------------------------------------
+
+These risk tiers are authoritative - all systems MUST classify according to these:
+
+| Tier | Description | Examples | Controls Required |
+|------|-------------|----------|-------------------|
+| Prohibited | Unacceptable risk | Social scoring, manipulation | Not permitted |
+| High-Risk | Significant impact | HR decisions, credit scoring | Full compliance |
+| Limited | Moderate transparency | Chatbots, content generation | Disclosure required |
+| Minimal | Low risk | Spam filters, recommendations | Basic documentation |
+
+# -----------------------------------------------------------------------------
+# CITATION FORMAT
+# -----------------------------------------------------------------------------
+
+When citing regulatory requirements:
+
+```latex
+\begin{tcolorbox}[colback=blue!5,colframe=blue!70,title=Regulatory Requirement]
+\textbf{Source:} EU AI Act, Article 52(1) \\
+\textbf{Text:} ``\textit{Providers shall ensure that AI systems intended to interact 
+with natural persons are designed and developed in such a way that natural persons 
+are informed that they are interacting with an AI system...}'' \\
+\textbf{Applicability:} All customer-facing AI systems
+\end{tcolorbox}
+```
+
+# -----------------------------------------------------------------------------
+# DRIFT DETECTION COMMANDS
+# -----------------------------------------------------------------------------
+
+```bash
+# Full audit for regulations domain
+make audit-spec-drift-domain DOMAIN=regulations
+
+# Check schema validity
+python3 docs/schema/validate.py --domain regulations
+
+# Verify source document currency
+ls -la docs/regulations/
+```
+
+# -----------------------------------------------------------------------------
+# VERSION HISTORY
+# -----------------------------------------------------------------------------
+
+| Version | Date | Changes |
+|---------|------|---------|
+| 1.0.0 | 2026-04-21 | Initial .clinerules for Regulations spec |
+
+# =============================================================================
+# END OF .clinerules
+# =============================================================================

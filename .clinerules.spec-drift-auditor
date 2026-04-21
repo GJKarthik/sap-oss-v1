@@ -1,0 +1,415 @@
+# =============================================================================
+# Spec-Drift Auditor Agent Rules
+# Path: .clinerules.spec-drift-auditor
+# =============================================================================
+# This agent monitors the repository for specification drift - situations where
+# code, schemas, or specifications become out of sync with each other.
+#
+# The agent is invoked on every commit/push and during CI/CD pipelines to ensure
+# that the normative specifications remain aligned with implementation reality.
+# =============================================================================
+
+Purpose
+- Prevent specification drift across LaTeX specs, JSON schemas, and implementation code.
+- Ensure that changes to any governed artifact trigger appropriate reviews and updates to related artifacts.
+- Maintain full traceability between business requirements, technical specifications, data contracts, and runtime behavior.
+- Provide actionable audit findings with clear evidence and remediation paths.
+
+Mission
+- Watch every commit and PR for changes to governed artifacts.
+- Analyze changed files against the spec-code mapping registry.
+- Identify impacted related artifacts that may need updates.
+- Generate drift reports with severity classification.
+- Block merges when critical drift is detected.
+- Create follow-up issues for non-critical drift.
+
+# -----------------------------------------------------------------------------
+# SOURCE OF TRUTH
+# -----------------------------------------------------------------------------
+
+Normative References
+- Spec-Code Mapping Registry:
+  - `docs/schema/spec-code-mapping.yaml`
+- Schema Registry:
+  - `docs/schema/registry.json`
+- Specification Roots:
+  - `docs/latex/specs/simula/`
+  - `docs/latex/specs/tb/`
+  - `docs/latex/specs/tb-hitl/`
+  - `docs/latex/specs/arabic/`
+  - `docs/latex/specs/arabic-hitl/`
+  - `docs/latex/specs/regulations/`
+  - `docs/latex/specs/clinerules-agents/`
+- Schema Roots:
+  - `docs/schema/common/`
+  - `docs/schema/simula/`
+  - `docs/schema/tb/`
+  - `docs/schema/arabic/`
+  - `docs/schema/regulations/`
+- Implementation Roots:
+  - `src/training/`
+  - `src/intelligence/`
+  - `src/generativeUI/`
+
+# -----------------------------------------------------------------------------
+# DRIFT DETECTION RULES
+# -----------------------------------------------------------------------------
+
+## Artifact Categories
+
+Category 1 - Specifications (Normative Authority)
+- Files: `docs/latex/specs/**/*.tex`
+- Authority: Business and technical requirements
+- Changes to specs SHOULD trigger review of related schemas and code
+- Specs define WHAT must be true
+
+Category 2 - Schemas (Data Contracts)
+- Files: `docs/schema/**/*.schema.json`, `docs/schema/**/*.yaml`
+- Authority: Data structure and validation rules
+- Changes to schemas MUST be reflected in specs (if spec-documented)
+- Changes to schemas MUST be reflected in consuming code
+- Schemas define WHAT data looks like
+
+Category 3 - Implementation Code (Runtime Behavior)
+- Files: `src/**/*.py`, `src/**/*.ts`, `src/**/*.tsx`
+- Authority: None - code implements specs and schemas
+- Changes to code SHOULD NOT introduce undocumented behavior
+- Changes to code MAY trigger spec/schema updates if behavior changes
+- Code defines HOW things work
+
+Category 4 - Agent Rule Packs (.clinerules)
+- Files: `**/.clinerules*`
+- Authority: Agent operational contracts
+- Changes MUST be documented in clinerules-agents spec
+- Changes SHOULD follow lifecycle states (DRAFT -> REVIEW -> ACTIVE)
+
+## Drift Types
+
+DRIFT-001: Schema-Spec Drift
+- Condition: Schema field added/removed/changed without corresponding spec update
+- Detection: Compare schema `$id` and fields against spec data model sections
+- Severity: HIGH (field removal), MEDIUM (field addition)
+- Required Action: Update spec data model chapter
+
+DRIFT-002: Code-Schema Drift
+- Condition: Code references schema fields that don't exist, or ignores required fields
+- Detection: Parse code for schema field references, validate against schema
+- Severity: CRITICAL (missing required field), HIGH (extra fields), MEDIUM (type mismatch)
+- Required Action: Update code to match schema, or update schema with RFC
+
+DRIFT-003: Code-Spec Drift
+- Condition: Code behavior contradicts spec requirement
+- Detection: Compare spec requirements against code implementation
+- Severity: CRITICAL (contradicts MUST requirement), HIGH (contradicts SHOULD)
+- Required Action: Fix code or RFC spec change
+
+DRIFT-004: Version Drift
+- Condition: Schema version, spec version, or registry version out of sync
+- Detection: Compare version fields across related artifacts
+- Severity: HIGH (major version mismatch), MEDIUM (minor version mismatch)
+- Required Action: Synchronize versions across artifacts
+
+DRIFT-005: Cross-Domain Drift
+- Condition: Shared enum or base type changed without updating all consumers
+- Detection: Trace shared artifact consumers from mapping registry
+- Severity: CRITICAL (enum value removed), HIGH (enum value added)
+- Required Action: Update all consuming domains, or RFC with deprecation
+
+DRIFT-006: Threshold Drift
+- Condition: Code uses different threshold than spec documents
+- Detection: Extract numeric thresholds from spec, compare to code constants
+- Severity: HIGH (quality gate threshold), MEDIUM (informational threshold)
+- Required Action: Align code to spec, or update spec with rationale
+
+DRIFT-007: State Machine Drift
+- Condition: Workflow states in code differ from spec state machine
+- Detection: Extract state names and transitions from code and spec
+- Severity: CRITICAL (state removed), HIGH (state added), MEDIUM (transition changed)
+- Required Action: Synchronize state machine across spec and code
+
+DRIFT-008: API Contract Drift
+- Condition: API endpoint, request, or response differs from spec
+- Detection: Compare OpenAPI/code against spec API sections
+- Severity: CRITICAL (breaking change), HIGH (additive change)
+- Required Action: Update spec API documentation
+
+# -----------------------------------------------------------------------------
+# AUDIT TRIGGERS
+# -----------------------------------------------------------------------------
+
+## On Every Commit (Pre-Commit Hook)
+
+Run lightweight checks:
+1. Identify changed files
+2. Classify changes by artifact category
+3. Look up related artifacts in spec-code mapping
+4. Check if related artifacts are also changed
+5. If not, emit WARNING with list of potentially impacted artifacts
+
+## On Every PR (CI Pipeline)
+
+Run full audit:
+1. All pre-commit checks
+2. Schema validation against JSON Schema meta-schema
+3. Spec structure validation (LaTeX compilation check)
+4. Cross-reference validation between changed files
+5. Version consistency check
+6. Generate drift report
+
+## On Main Branch Push
+
+Run comprehensive audit:
+1. All PR checks
+2. Full spec-code mapping validation
+3. Schema registry integrity check
+4. Cross-domain impact analysis
+5. Historical drift comparison
+6. Update audit log
+
+## On Release Tag
+
+Run release audit:
+1. All main branch checks
+2. Version bump validation
+3. CHANGELOG verification
+4. Migration guide completeness
+5. Archive drift report with release
+
+# -----------------------------------------------------------------------------
+# AUDIT REPORT FORMAT
+# -----------------------------------------------------------------------------
+
+Drift Report Structure:
+```yaml
+report_id: "DRIFT-AUDIT-{timestamp}"
+trigger: "pre-commit|pr|push|release"
+commit_sha: "{sha}"
+branch: "{branch}"
+changed_files: [...]
+findings:
+  - id: "DRIFT-{type}-{seq}"
+    type: "DRIFT-001|DRIFT-002|..."
+    severity: "CRITICAL|HIGH|MEDIUM|LOW"
+    source_file: "{path}"
+    related_artifacts:
+      - path: "{path}"
+        type: "spec|schema|code"
+        status: "not_updated|possibly_stale"
+    evidence:
+      source_content: "{excerpt}"
+      expected_content: "{excerpt}"
+    remediation:
+      action: "{description}"
+      suggested_files: [...]
+    blocking: true|false
+summary:
+  critical_count: N
+  high_count: N
+  medium_count: N
+  low_count: N
+  blocking: true|false
+```
+
+# -----------------------------------------------------------------------------
+# BLOCKING CONDITIONS
+# -----------------------------------------------------------------------------
+
+## Conditions That MUST Block Merge
+
+1. Any CRITICAL severity finding
+2. Schema field removed without deprecation notice in spec
+3. MUST requirement violated by code
+4. Shared enum value removed without RFC
+5. State machine state removed without migration
+6. API breaking change without version bump
+7. Schema validation failure
+
+## Conditions That SHOULD Block Merge (Configurable)
+
+1. Any HIGH severity finding
+2. More than 3 MEDIUM severity findings
+3. Version inconsistency across artifacts
+4. Missing spec update for new code feature
+
+## Conditions That Generate Warning Only
+
+1. MEDIUM or LOW severity findings (when under threshold)
+2. Spec updated but code not yet updated (follow-up issue created)
+3. Informational threshold changes
+
+# -----------------------------------------------------------------------------
+# REMEDIATION WORKFLOW
+# -----------------------------------------------------------------------------
+
+## When Drift Is Detected
+
+1. Agent generates drift report
+2. For CRITICAL/HIGH: PR is blocked with clear error message
+3. For MEDIUM: Warning comment added to PR with remediation suggestions
+4. For LOW: Note added to PR, no action required
+
+## Remediation Options
+
+Option A: Update Related Artifact In Same PR
+- Preferred for schema-spec drift
+- Preferred for code-schema drift
+- Add commits to address drift, re-run audit
+
+Option B: Create Follow-Up Issue
+- Acceptable for spec updates when code changes are urgent
+- Issue MUST be linked in PR description
+- Issue MUST be assigned and have milestone
+- Issue MUST be resolved within one sprint
+
+Option C: Request RFC For Spec Change
+- Required when code intentionally diverges from spec
+- RFC MUST document rationale
+- RFC MUST have spec owner approval
+- Spec MUST be updated before code ships
+
+Option D: Add Drift Exception
+- Only for temporary exceptions with clear expiration
+- Exception MUST be documented in `docs/schema/drift-exceptions.yaml`
+- Exception MUST have owner and expiration date
+- Exception MUST be reviewed monthly
+
+# -----------------------------------------------------------------------------
+# INTEGRATION POINTS
+# -----------------------------------------------------------------------------
+
+## Pre-Commit Hook Integration
+
+```bash
+# In .git/hooks/pre-commit or via pre-commit framework
+scripts/spec-drift/audit.py --mode pre-commit --changed-files $(git diff --cached --name-only)
+```
+
+## GitHub Actions Integration
+
+```yaml
+# In .github/workflows/spec-drift-audit.yml
+- name: Run Spec Drift Audit
+  run: |
+    python3 scripts/spec-drift/audit.py \
+      --mode pr \
+      --base-ref ${{ github.base_ref }} \
+      --head-ref ${{ github.head_ref }} \
+      --output-format github-actions
+```
+
+## Makefile Integration
+
+```makefile
+# In Makefile
+.PHONY: audit-spec-drift
+audit-spec-drift:
+	python3 scripts/spec-drift/audit.py --mode full --output-format console
+```
+
+# -----------------------------------------------------------------------------
+# EVIDENCE COLLECTION
+# -----------------------------------------------------------------------------
+
+## For Schema-Spec Drift
+
+Evidence Required:
+- Schema field definition (from JSON Schema)
+- Spec data model section (from LaTeX)
+- Diff showing what changed
+- Timestamp of last known sync
+
+Collection Method:
+1. Parse schema for field names and types
+2. Parse spec for data model tables
+3. Compare field lists
+4. Report mismatches with line numbers
+
+## For Code-Schema Drift
+
+Evidence Required:
+- Code file and line number
+- Schema reference in code
+- Expected schema structure
+- Actual code usage
+
+Collection Method:
+1. Find schema imports/references in code
+2. Extract field access patterns
+3. Validate against schema definition
+4. Report invalid accesses
+
+## For Code-Spec Drift
+
+Evidence Required:
+- Spec requirement ID and text
+- Code implementation
+- Behavioral difference
+
+Collection Method:
+1. Extract spec requirements with IDs
+2. Map requirements to code modules (from mapping registry)
+3. Analyze code for compliance
+4. Report violations with requirement IDs
+
+# -----------------------------------------------------------------------------
+# KNOWN ISSUE REGISTRY
+# -----------------------------------------------------------------------------
+
+SPEC-DRIFT-KI-001: LaTeX parsing limitations
+- Some complex LaTeX structures may not parse correctly
+- Workaround: Use structured comments for machine-readable extraction
+- Status: Accepted limitation
+
+SPEC-DRIFT-KI-002: Cross-file reference tracking
+- Indirect references through multiple files may not be detected
+- Workaround: Keep mapping registry comprehensive
+- Status: Enhancement planned
+
+SPEC-DRIFT-KI-003: Dynamic code patterns
+- Reflection, metaprogramming, dynamic field access hard to trace
+- Workaround: Document dynamic patterns in .clinerules
+- Status: Manual review required
+
+# -----------------------------------------------------------------------------
+# AUDIT AGENT OPERATIONAL RULES
+# -----------------------------------------------------------------------------
+
+1. Always read spec-code-mapping.yaml before auditing
+2. Always read schema registry before validating schemas
+3. Never assume drift without evidence
+4. Always provide remediation path
+5. Never block without explanation
+6. Always log audit results
+7. Never modify source files (audit only)
+8. Always respect drift exceptions
+9. Always check exception expiration dates
+10. Never report on files outside governed paths
+
+# -----------------------------------------------------------------------------
+# METRIC TRACKING
+# -----------------------------------------------------------------------------
+
+Metrics To Track:
+- drift_findings_per_commit (by severity)
+- drift_resolution_time (median, P95)
+- drift_by_domain (simula, tb, arabic, regulations)
+- drift_by_type (DRIFT-001 through DRIFT-008)
+- false_positive_rate (manual review feedback)
+- blocked_prs_count (per week)
+- exceptions_active (current count)
+- exceptions_expired (needing cleanup)
+
+# -----------------------------------------------------------------------------
+# COMPLETION STANDARD
+# -----------------------------------------------------------------------------
+
+The spec-drift auditor is correct when:
+- No specification can drift from implementation without detection
+- No schema can diverge from spec without warning
+- No code can contradict spec requirements without blocking
+- All drift is tracked, evidenced, and remediated
+- Audit history is preserved for compliance review
+
+# =============================================================================
+# END OF .clinerules.spec-drift-auditor
+# =============================================================================

@@ -282,11 +282,79 @@ Before approval, verify:
 | P2-1 | Kill-switch automation | Platform Team | 8 weeks | 🟡 Planned |
 
 # -----------------------------------------------------------------------------
+# SPEC-DRIFT PREVENTION
+# -----------------------------------------------------------------------------
+
+## Spec-Drift Audit Agent
+
+This repository includes an automated spec-drift auditor that monitors for 
+synchronization between LaTeX specifications, JSON schemas, and implementation code.
+
+### Quick Commands
+
+```bash
+# Run full spec-drift audit
+make audit-spec-drift
+
+# Audit specific domain
+make audit-spec-drift-domain DOMAIN=simula
+
+# Quick check on changed files
+make audit-spec-drift-quick
+
+# Install pre-commit hook
+make audit-install-hook
+
+# Review drift exceptions
+make audit-exceptions-review
+```
+
+### Key Files
+
+| File | Purpose |
+|------|---------|
+| `.clinerules.spec-drift-auditor` | Agent rules for drift detection |
+| `docs/schema/spec-code-mapping.yaml` | Mapping between specs, schemas, and code |
+| `docs/schema/drift-exceptions.yaml` | Approved drift exceptions |
+| `scripts/spec-drift/audit.py` | Audit script implementation |
+| `.github/workflows/spec-drift-audit.yml` | CI/CD integration |
+
+### Drift Types
+
+| Code | Description | Severity |
+|------|-------------|----------|
+| DRIFT-001 | Schema-Spec Drift | HIGH/MEDIUM |
+| DRIFT-002 | Code-Schema Drift | CRITICAL/HIGH |
+| DRIFT-003 | Code-Spec Drift | CRITICAL/HIGH |
+| DRIFT-004 | Version Drift | HIGH/MEDIUM |
+| DRIFT-005 | Cross-Domain Drift | CRITICAL/HIGH |
+| DRIFT-006 | Threshold Drift | HIGH/MEDIUM |
+| DRIFT-007 | State Machine Drift | CRITICAL/HIGH |
+| DRIFT-008 | API Contract Drift | CRITICAL/HIGH |
+
+### Before Merging PRs
+
+1. Check for spec-drift audit results in PR comments
+2. Address any CRITICAL or HIGH severity findings
+3. For intentional drift, add exception in `docs/schema/drift-exceptions.yaml`
+4. Ensure related artifacts are updated in the same PR
+
+### Adding New Specs/Schemas
+
+When adding new specifications or schemas:
+
+1. Update `docs/schema/spec-code-mapping.yaml` with the new artifact
+2. Define relationships to related schemas and code
+3. Specify sync rules for the new artifact
+4. Run `make audit-check-mapping` to validate the registry
+
+# -----------------------------------------------------------------------------
 # VERSION HISTORY
 # -----------------------------------------------------------------------------
 
 | Version | Date | Changes |
 |---------|------|---------|
+| 1.1.0 | 2026-04-21 | Added spec-drift prevention section |
 | 1.0.0 | 2026-04-20 | Initial .clinerules for TB-HITL specification |
 
 # =============================================================================

@@ -28,6 +28,7 @@
 #   make technical-reports-docx  # export technical reports to Word
 #   make technical-reports-export # PDF + DOCX for technical reports
 #   make specs-all               # compile all domain specs to PDF
+#   make spec-clinerules-agents  # compile the .clinerules supplement to PDF
 #   make specs-export            # PDF + DOCX for all specs
 #   make sbom-check              # verify generated .tex files are up-to-date (CI)
 # ════════════════════════════════════════════════════════════════════════════
@@ -46,6 +47,8 @@ SPECS_LATEX  := $(LATEX_DIR)/specs
 # Output directories
 PDF_DIR      := docs/pdf
 DOCX_DIR     := docs/docx
+LATEX_ENGINE := $(shell if command -v xelatex >/dev/null 2>&1; then echo xelatex; elif command -v lualatex >/dev/null 2>&1; then echo lualatex; else echo ""; fi)
+TECTONIC     := $(shell command -v tectonic 2>/dev/null)
 
 TECH_REPORTS_TEX := $(wildcard $(TR_LATEX)/*.tex)
 
@@ -58,7 +61,8 @@ TECH_REPORTS_TEX := $(wildcard $(TR_LATEX)/*.tex)
         sbom-add-spdx-headers sbom-add-spdx-headers-dry-run \
         sbom-ml-lineage sbom-slsa \
         sbom-vuln-offline sbom-sarif sbom-full-audit sbom-parity \
-        spec-arabic spec-tb spec-regulations spec-simula specs-all specs-docx specs-export
+        spec-arabic spec-tb spec-regulations spec-simula spec-clinerules-agents \
+        specs-all specs-docx specs-export
 
 # ── Step 1: collect git lineage JSON ────────────────────────────────────────
 scripts/sbom-lineage/lineage.json:
@@ -296,45 +300,80 @@ sbom-parity: sbom-full-audit sbom-sarif sbom-risk-report
 # Arabic AP Invoice Processing Specification
 spec-arabic:
 	@mkdir -p $(PDF_DIR)/specs
-	@command -v pdflatex >/dev/null 2>&1 || (echo "ERROR: pdflatex not found."; exit 1)
-	cd $(SPECS_LATEX)/arabic && pdflatex -interaction=nonstopmode arabic-ap-spec.tex > /dev/null && \
-	  pdflatex -interaction=nonstopmode arabic-ap-spec.tex > /dev/null && \
-	  mv arabic-ap-spec.pdf ../../../pdf/specs/
+	@if [ -n "$(LATEX_ENGINE)" ]; then \
+	  cd $(SPECS_LATEX)/arabic && $(LATEX_ENGINE) -interaction=nonstopmode arabic-ap-spec.tex > /dev/null && \
+	    $(LATEX_ENGINE) -interaction=nonstopmode arabic-ap-spec.tex > /dev/null && \
+	    mv arabic-ap-spec.pdf ../../../pdf/specs/; \
+	elif [ -n "$(TECTONIC)" ]; then \
+	  cd $(SPECS_LATEX)/arabic && $(TECTONIC) --outdir ../../../pdf/specs arabic-ap-spec.tex > /dev/null; \
+	else \
+	  echo "ERROR: xelatex, lualatex, or tectonic not found."; exit 1; \
+	fi
 	@rm -f $(SPECS_LATEX)/arabic/*.aux $(SPECS_LATEX)/arabic/*.log $(SPECS_LATEX)/arabic/*.toc $(SPECS_LATEX)/arabic/*.out
 	@echo "PDF: $(PDF_DIR)/specs/arabic-ap-spec.pdf"
 
 # Trial Balance Review Specification
 spec-tb:
 	@mkdir -p $(PDF_DIR)/specs
-	@command -v pdflatex >/dev/null 2>&1 || (echo "ERROR: pdflatex not found."; exit 1)
-	cd $(SPECS_LATEX)/tb && pdflatex -interaction=nonstopmode tb-review-spec.tex > /dev/null && \
-	  pdflatex -interaction=nonstopmode tb-review-spec.tex > /dev/null && \
-	  mv tb-review-spec.pdf ../../../pdf/specs/
+	@if [ -n "$(LATEX_ENGINE)" ]; then \
+	  cd $(SPECS_LATEX)/tb && $(LATEX_ENGINE) -interaction=nonstopmode tb-review-spec.tex > /dev/null && \
+	    $(LATEX_ENGINE) -interaction=nonstopmode tb-review-spec.tex > /dev/null && \
+	    mv tb-review-spec.pdf ../../../pdf/specs/; \
+	elif [ -n "$(TECTONIC)" ]; then \
+	  cd $(SPECS_LATEX)/tb && $(TECTONIC) --outdir ../../../pdf/specs tb-review-spec.tex > /dev/null; \
+	else \
+	  echo "ERROR: xelatex, lualatex, or tectonic not found."; exit 1; \
+	fi
 	@rm -f $(SPECS_LATEX)/tb/*.aux $(SPECS_LATEX)/tb/*.log $(SPECS_LATEX)/tb/*.toc $(SPECS_LATEX)/tb/*.out
 	@echo "PDF: $(PDF_DIR)/specs/tb-review-spec.pdf"
 
 # AI Regulations Compliance Specification
 spec-regulations:
 	@mkdir -p $(PDF_DIR)/specs
-	@command -v pdflatex >/dev/null 2>&1 || (echo "ERROR: pdflatex not found."; exit 1)
-	cd $(SPECS_LATEX)/regulations && pdflatex -interaction=nonstopmode regulations-spec.tex > /dev/null && \
-	  pdflatex -interaction=nonstopmode regulations-spec.tex > /dev/null && \
-	  mv regulations-spec.pdf ../../../pdf/specs/
+	@if [ -n "$(LATEX_ENGINE)" ]; then \
+	  cd $(SPECS_LATEX)/regulations && $(LATEX_ENGINE) -interaction=nonstopmode regulations-spec.tex > /dev/null && \
+	    $(LATEX_ENGINE) -interaction=nonstopmode regulations-spec.tex > /dev/null && \
+	    mv regulations-spec.pdf ../../../pdf/specs/; \
+	elif [ -n "$(TECTONIC)" ]; then \
+	  cd $(SPECS_LATEX)/regulations && $(TECTONIC) --outdir ../../../pdf/specs regulations-spec.tex > /dev/null; \
+	else \
+	  echo "ERROR: xelatex, lualatex, or tectonic not found."; exit 1; \
+	fi
 	@rm -f $(SPECS_LATEX)/regulations/*.aux $(SPECS_LATEX)/regulations/*.log $(SPECS_LATEX)/regulations/*.toc $(SPECS_LATEX)/regulations/*.out
 	@echo "PDF: $(PDF_DIR)/specs/regulations-spec.pdf"
 
 # Simula Training Data Framework Specification
 spec-simula:
 	@mkdir -p $(PDF_DIR)/specs
-	@command -v pdflatex >/dev/null 2>&1 || (echo "ERROR: pdflatex not found."; exit 1)
-	cd $(SPECS_LATEX)/simula && pdflatex -interaction=nonstopmode simula-training-spec.tex > /dev/null && \
-	  pdflatex -interaction=nonstopmode simula-training-spec.tex > /dev/null && \
-	  mv simula-training-spec.pdf ../../../pdf/specs/
+	@if [ -n "$(LATEX_ENGINE)" ]; then \
+	  cd $(SPECS_LATEX)/simula && $(LATEX_ENGINE) -interaction=nonstopmode simula-training-spec.tex > /dev/null && \
+	    $(LATEX_ENGINE) -interaction=nonstopmode simula-training-spec.tex > /dev/null && \
+	    mv simula-training-spec.pdf ../../../pdf/specs/; \
+	elif [ -n "$(TECTONIC)" ]; then \
+	  cd $(SPECS_LATEX)/simula && $(TECTONIC) --outdir ../../../pdf/specs simula-training-spec.tex > /dev/null; \
+	else \
+	  echo "ERROR: xelatex, lualatex, or tectonic not found."; exit 1; \
+	fi
 	@rm -f $(SPECS_LATEX)/simula/*.aux $(SPECS_LATEX)/simula/*.log $(SPECS_LATEX)/simula/*.toc $(SPECS_LATEX)/simula/*.out
 	@echo "PDF: $(PDF_DIR)/specs/simula-training-spec.pdf"
 
-# All specs (4 domain areas: Arabic, TB, Regulations, Simula)
-specs-all: spec-arabic spec-tb spec-regulations spec-simula
+# .clinerules Agent Swarm Supplementary Specification
+spec-clinerules-agents:
+	@mkdir -p $(PDF_DIR)/specs
+	@if [ -n "$(LATEX_ENGINE)" ]; then \
+	  cd $(SPECS_LATEX)/clinerules-agents && $(LATEX_ENGINE) -interaction=nonstopmode clinerules-agents-spec.tex > /dev/null && \
+	    $(LATEX_ENGINE) -interaction=nonstopmode clinerules-agents-spec.tex > /dev/null && \
+	    mv clinerules-agents-spec.pdf ../../../pdf/specs/; \
+	elif [ -n "$(TECTONIC)" ]; then \
+	  cd $(SPECS_LATEX)/clinerules-agents && $(TECTONIC) --outdir ../../../pdf/specs clinerules-agents-spec.tex > /dev/null; \
+	else \
+	  echo "ERROR: xelatex, lualatex, or tectonic not found."; exit 1; \
+	fi
+	@rm -f $(SPECS_LATEX)/clinerules-agents/*.aux $(SPECS_LATEX)/clinerules-agents/*.log $(SPECS_LATEX)/clinerules-agents/*.toc $(SPECS_LATEX)/clinerules-agents/*.out
+	@echo "PDF: $(PDF_DIR)/specs/clinerules-agents-spec.pdf"
+
+# All specs (4 domain areas plus 1 supplementary agent spec)
+specs-all: spec-arabic spec-tb spec-regulations spec-simula spec-clinerules-agents
 	@echo "All specification PDFs compiled to $(PDF_DIR)/specs/"
 
 # Export specs to Word (requires pandoc, run from spec dir to resolve \input)
@@ -345,8 +384,100 @@ specs-docx:
 	cd $(SPECS_LATEX)/tb && pandoc tb-review-spec.tex -o ../../../docx/specs/tb-review-spec.docx --from=latex
 	cd $(SPECS_LATEX)/regulations && pandoc regulations-spec.tex -o ../../../docx/specs/regulations-spec.docx --from=latex
 	cd $(SPECS_LATEX)/simula && pandoc simula-training-spec.tex -o ../../../docx/specs/simula-training-spec.docx --from=latex
+	cd $(SPECS_LATEX)/clinerules-agents && pandoc clinerules-agents-spec.tex -o ../../../docx/specs/clinerules-agents-spec.docx --from=latex
 	@echo "DOCX exports: $(DOCX_DIR)/specs/*.docx"
 
 # Combined: PDF + DOCX for all specs
 specs-export: specs-all specs-docx
 	@echo "All specifications exported to $(PDF_DIR)/specs/ and $(DOCX_DIR)/specs/"
+
+
+# ════════════════════════════════════════════════════════════════════════════
+# Spec-Drift Audit Pipeline
+# ════════════════════════════════════════════════════════════════════════════
+# Prevents specification drift between LaTeX docs, JSON schemas, and code.
+# See .clinerules.spec-drift-auditor for full documentation.
+#
+# Quick start:
+#   make audit-spec-drift         # run full drift audit
+#   make audit-spec-drift-domain  # audit specific domain (DOMAIN=simula)
+#   make audit-spec-drift-quick   # quick check on changed files
+#   make audit-install-hook       # install pre-commit hook
+# ════════════════════════════════════════════════════════════════════════════
+
+SPEC_DRIFT_SCRIPT := scripts/spec-drift/audit.py
+SPEC_DRIFT_MAPPING := docs/schema/spec-code-mapping.yaml
+AUDIT_LOG_DIR := docs/audit-logs
+
+.PHONY: audit-spec-drift audit-spec-drift-domain audit-spec-drift-quick \
+        audit-spec-drift-json audit-spec-drift-yaml \
+        audit-install-hook audit-check-mapping audit-list-domains \
+        audit-exceptions-review
+
+# ── Full spec-drift audit (all domains) ──────────────────────────────────────
+audit-spec-drift:
+	@echo "Running full spec-drift audit..."
+	@mkdir -p $(AUDIT_LOG_DIR)
+	python3 $(SPEC_DRIFT_SCRIPT) --mode full --output-format console
+
+# ── Audit specific domain ────────────────────────────────────────────────────
+# Usage: make audit-spec-drift-domain DOMAIN=simula
+audit-spec-drift-domain:
+	@if [ -z "$(DOMAIN)" ]; then \
+	  echo "Usage: make audit-spec-drift-domain DOMAIN=<domain>"; \
+	  echo "Available domains: simula, tb, tb-hitl, arabic, regulations, clinerules-agents"; \
+	  exit 1; \
+	fi
+	@echo "Running spec-drift audit for domain: $(DOMAIN)"
+	python3 $(SPEC_DRIFT_SCRIPT) --mode full --domain $(DOMAIN) --output-format console
+
+# ── Quick audit on changed files (for local dev) ─────────────────────────────
+audit-spec-drift-quick:
+	@echo "Running quick spec-drift audit on changed files..."
+	@CHANGED=$$(git diff --name-only HEAD); \
+	if [ -z "$$CHANGED" ]; then \
+	  echo "No changed files to audit."; \
+	else \
+	  python3 $(SPEC_DRIFT_SCRIPT) --mode pre-commit --changed-files $$CHANGED --output-format console --no-fail-on-blocking; \
+	fi
+
+# ── Audit with JSON output (for CI integration) ──────────────────────────────
+audit-spec-drift-json:
+	@mkdir -p $(AUDIT_LOG_DIR)
+	python3 $(SPEC_DRIFT_SCRIPT) --mode full --output-format json \
+	  --output-file $(AUDIT_LOG_DIR)/latest-audit.json
+	@echo "JSON report: $(AUDIT_LOG_DIR)/latest-audit.json"
+
+# ── Audit with YAML output ───────────────────────────────────────────────────
+audit-spec-drift-yaml:
+	@mkdir -p $(AUDIT_LOG_DIR)
+	python3 $(SPEC_DRIFT_SCRIPT) --mode full --output-format yaml \
+	  --output-file $(AUDIT_LOG_DIR)/latest-audit.yaml
+	@echo "YAML report: $(AUDIT_LOG_DIR)/latest-audit.yaml"
+
+# ── Install pre-commit hook ──────────────────────────────────────────────────
+audit-install-hook:
+	@echo "Installing spec-drift pre-commit hook..."
+	@chmod +x scripts/spec-drift/pre-commit-hook.sh
+	@ln -sf ../../scripts/spec-drift/pre-commit-hook.sh .git/hooks/pre-commit
+	@echo "Pre-commit hook installed. It will run on every commit."
+
+# ── Validate spec-code mapping registry ──────────────────────────────────────
+audit-check-mapping:
+	@echo "Validating spec-code mapping registry..."
+	@python3 scripts/spec-drift/check_mapping.py
+
+# ── List available domains ───────────────────────────────────────────────────
+audit-list-domains:
+	@echo "Available domains for spec-drift audit:"
+	@python3 scripts/spec-drift/check_mapping.py domains
+
+# ── Review drift exceptions ──────────────────────────────────────────────────
+audit-exceptions-review:
+	@echo "Current drift exceptions:"
+	@python3 scripts/spec-drift/check_mapping.py exceptions
+
+# ── CI gate: fail on blocking drift ──────────────────────────────────────────
+audit-spec-drift-ci:
+	@echo "Running spec-drift audit (CI mode - fails on blocking issues)..."
+	python3 $(SPEC_DRIFT_SCRIPT) --mode full --output-format console --fail-on-blocking

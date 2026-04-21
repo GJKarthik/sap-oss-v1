@@ -1,0 +1,200 @@
+# =============================================================================
+# .clinerules - TB-HITL Business Requirements Traceability Specification
+# Trial Balance Human-in-the-Loop Requirements & Lineage
+# =============================================================================
+# This specification provides business requirements traceability for the
+# Trial Balance HITL system with full source document lineage.
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# SPECIFICATION OVERVIEW
+# -----------------------------------------------------------------------------
+
+## Purpose
+
+The TB-HITL specification provides:
+- **Requirements Traceability**: Full lineage from source documents to implementation
+- **Business Rules**: Derived business logic with source citations
+- **Acceptance Criteria**: Measurable verification criteria
+- **Gap Analysis**: Implementation gaps and remediation plans
+
+## Relationship to TB Spec
+
+| Aspect | tb/ Spec | tb-hitl/ Spec |
+|--------|----------|---------------|
+| Focus | Technical design | Business requirements |
+| Audience | Developers | Business owners, auditors |
+| Traceability | Implementation | Source documents |
+| Primary Use | Build reference | Compliance & audit |
+
+## Key Documents
+
+| Document | Purpose |
+|----------|---------|
+| `tb-hitl-spec.tex` | Main specification document |
+| `chapters/04-business-requirements.tex` | Derived requirements |
+| `chapters/14-traceability-matrix.tex` | Full traceability |
+| `chapters/00-visual-traceability-map.tex` | Visual lineage |
+
+# -----------------------------------------------------------------------------
+# RELATED ARTIFACTS
+# -----------------------------------------------------------------------------
+
+## Source Documents (Governing)
+
+| Document ID | Document | Location |
+|-------------|----------|----------|
+| TB-BC-001 | Trial Balance Business Case | `docs/tb/Business case - Trial Balance (2).doc` |
+| TB-DOI-001 | DOI for TB Process | `docs/tb/DOI for Trial Balance Process.docx` |
+| TB-BPMN-001 | TB Process Operations | `docs/tb/Operation of Month End Close Controls*.pdf` |
+| BSS-BC-001 | BSS Risk Assessment | `docs/tb/Business case - BSS Risk Assessment (2).doc` |
+
+## Machine-Readable Extractions
+
+| Extraction | Location |
+|------------|----------|
+| Business Case MD | `docs/tb/machine-readable/tb-business-case.md` |
+| DOI MD | `docs/tb/machine-readable/tb-doi.md` |
+| BPMN MD | `docs/tb/machine-readable/tb-bpmn.md` |
+
+## Related Specifications
+
+| Spec | Relationship |
+|------|--------------|
+| `docs/latex/specs/tb/` | Technical design (implements this) |
+| `docs/schema/tb/` | Data contracts (validates against this) |
+
+# -----------------------------------------------------------------------------
+# REQUIREMENT DERIVATION RULES
+# -----------------------------------------------------------------------------
+
+## Source Citation Standards
+
+When deriving requirements from source documents:
+
+1. **Always quote source text verbatim**
+   - Use italics for quoted text
+   - Preserve exact wording from source document
+   - Do NOT paraphrase unless explicitly noted
+
+2. **Include precise location references**
+   - Format: "TB-BC-001, Section X, Paragraph Y, Page Z (Lines N-M in extracted MD)"
+   - Include line numbers from machine-readable extraction
+   - Reference employee/author ID when known
+
+3. **Document derivation rationale**
+   - Explain how business text became technical requirement
+   - Note any interpretation or clarification applied
+   - Link to approval record if interpretation was discussed
+
+## Citation Format (LaTeX)
+
+```latex
+\begin{tcolorbox}[colback=sourcegreen!5,colframe=sourcegreen!70,title=Source Quotation]
+\textit{``Exact quoted text from source document...''}
+\end{tcolorbox}
+
+\begin{tabularx}{\textwidth}{@{}lX@{}}
+\toprule
+\textbf{Attribute} & \textbf{Value} \\
+\midrule
+\textbf{Requirement ID} & TB-REQ-XXnn \\
+\textbf{MoSCoW Priority} & MUST/SHOULD/COULD/WON'T \\
+\textbf{Source Document} & Full document name \\
+\textbf{Source ID} & TB-BC-001/TB-BPMN-001/etc. \\
+\textbf{Source Location} & Section, Paragraph, Page (Lines) \\
+\bottomrule
+\end{tabularx}
+```
+
+# -----------------------------------------------------------------------------
+# SPEC-DRIFT SYNCHRONIZATION RULES
+# -----------------------------------------------------------------------------
+
+## Critical Sync Points
+
+1. **Requirements → Technical Spec**
+   - TB-HITL requirements ↔ TB spec implementation
+   - New requirements need corresponding technical design
+
+2. **Requirements → Schema**
+   - Acceptance criteria ↔ Schema validation rules
+   - Data constraints must be specified in both
+
+3. **Requirements → Test Cases**
+   - Acceptance criteria → Test implementations
+   - Every AC-* must have corresponding test
+
+## Pre-Change Checklist
+
+Before modifying this specification:
+
+- [ ] Run `make audit-spec-drift-domain DOMAIN=tb-hitl`
+- [ ] Check source document is still current
+- [ ] Verify requirement doesn't conflict with existing ones
+- [ ] Confirm acceptance criteria are measurable
+
+## Post-Change Checklist
+
+After modifying this specification:
+
+- [ ] Update traceability matrix (Chapter 14)
+- [ ] Update related TB technical spec if needed
+- [ ] Update schemas if data requirements changed
+- [ ] Run `make audit-spec-drift` to verify synchronization
+
+# -----------------------------------------------------------------------------
+# REQUIREMENT ID CONVENTIONS
+# -----------------------------------------------------------------------------
+
+| Category | Prefix | Example |
+|----------|--------|---------|
+| Executive Summary | TB-REQ-ES | TB-REQ-ES01 |
+| Scope | TB-REQ-SC | TB-REQ-SC01 |
+| Process Step | TB-REQ-PS | TB-REQ-PS01 |
+| AI Augmentation | TB-REQ-AI | TB-REQ-AI01 |
+| BSS Risk | BSS-REQ | BSS-REQ-01 |
+
+## Acceptance Criteria IDs
+
+Format: `AC-<REQ-ID>-<NUMBER>`
+
+Example: `AC-ES01-1`, `AC-ES01-2`, `AC-PS03-1`
+
+# -----------------------------------------------------------------------------
+# MoSCoW PRIORITIZATION
+# -----------------------------------------------------------------------------
+
+| Priority | Definition | v1.0 Impact |
+|----------|------------|-------------|
+| **MUST** | Non-negotiable for v1.0 | Blocks release |
+| **SHOULD** | Important but can slip | Creates tech debt |
+| **COULD** | Nice to have | Deferred to v1.1 |
+| **WON'T** | Explicitly out of scope | Documented exclusion |
+
+# -----------------------------------------------------------------------------
+# DRIFT DETECTION COMMANDS
+# -----------------------------------------------------------------------------
+
+```bash
+# Full audit for tb-hitl domain
+make audit-spec-drift-domain DOMAIN=tb-hitl
+
+# Check source document currency
+ls -la docs/tb/machine-readable/
+
+# Verify requirement coverage
+grep -c "TB-REQ-" docs/latex/specs/tb-hitl/chapters/*.tex
+```
+
+# -----------------------------------------------------------------------------
+# VERSION HISTORY
+# -----------------------------------------------------------------------------
+
+| Version | Date | Changes |
+|---------|------|---------|
+| 1.0.0 | 2026-04-21 | Initial .clinerules for TB-HITL spec |
+
+# =============================================================================
+# END OF .clinerules
+# =============================================================================
