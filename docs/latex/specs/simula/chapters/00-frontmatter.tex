@@ -1,115 +1,276 @@
-\maketitle
-\thispagestyle{empty}
-
 % =============================================================================
-% ABSTRACT
+% CHAPTER 0: FRONTMATTER
+% Executive Summary, Document Conventions, and Reading Guide
 % =============================================================================
-\begin{abstract}
-\noindent
-This specification defines the full implementation of the \textbf{Simula} reasoning-driven
-synthetic training data generation framework for SAP HANA Cloud. The system addresses a
-critical gap identified in the existing training pipeline: \emph{there is no direct pipe
-to HANA to generate training datasets for model training}. Three orthogonal components
-are specified in full:
+\chapter*{Frontmatter}
+\addcontentsline{toc}{chapter}{Frontmatter}
 
-\begin{itemize}[nosep]
-    \item a \textbf{HANA Schema Extraction Pipeline} that connects to SAP HANA Cloud via
-          the AI Core PAL MCP service, queries \texttt{SYS.TABLE\_COLUMNS} for live metadata,
-          and populates a schema registry;
-    \item a \textbf{Taxonomy Generation Engine} that implements Algorithm~1 from the Simula
-          research paper---factor identification, breadth-first expansion with Best-of-N
-          proposals, and generator-critic refinement;
-    \item a \textbf{Training Data Generation Engine} that implements Algorithm~2---taxonomic
-          mix sampling, meta-prompt generation, complexification, and double-critic filtering.
-\end{itemize}
-
-\noindent
-All three components consume a single vLLM TurboQuant backend via the OpenAI-compatible API
-and output JSONL training data suitable for LoRA fine-tuning. The specification targets
-three application domains: Arabic document processing (invoice extraction), Trial Balance
-review (variance analysis and LLM commentaries), and ESG analytics (financed emissions
-classification).
-
-\medskip
-\noindent\textbf{Reading order.} Chapter~\ref{chap:overview} situates the work;
-Chapter~\ref{chap:schema} defines the data structures; Chapter~\ref{chap:extraction}
-covers the HANA extraction pipeline; Chapter~\ref{chap:taxonomy} covers the taxonomy
-engine; Chapter~\ref{chap:generator} covers the data generator; Chapter~\ref{chap:config}
-specifies environment and CLI; Chapter~\ref{chap:evaluation} covers the evaluation
-framework; Chapter~\ref{chap:references} provides references and traceability.
-
-\medskip
-\noindent\textbf{Conventions.} File paths are typeset in \texttt{monospace} and are
-relative to the repository root \texttt{/Users/user/Documents/sap-oss}. Enum values
-in running text appear in \textsc{small caps}. Python code listings include line numbers
-for cross-reference.
-\end{abstract}
-
-\tableofcontents
-\listoftables
-\listoffigures
-\newpage
-
-% =============================================================================
+% -----------------------------------------------------------------------------
 % EXECUTIVE SUMMARY
-% =============================================================================
+% -----------------------------------------------------------------------------
 \section*{Executive Summary}
 \addcontentsline{toc}{section}{Executive Summary}
 
-\subsection*{Business Problem}
+This specification defines the \textbf{Simula Training Data Framework}—a comprehensive system for generating high-quality synthetic training data to enhance SAP AI agents' reasoning capabilities. The framework transforms production schemas and business logic into structured training examples suitable for supervised fine-tuning (SFT) and reinforcement learning (GRPO).
 
-The SAP OSS Studio AI platform requires high-quality training data to fine-tune 
-Text-to-SQL models for domain-specific applications (Trial Balance, Arabic invoices, 
-ESG analytics). The current pipeline uses \textbf{static Excel files} as schema sources,
-creating three critical issues:
-
-\begin{enumerate}[nosep]
-    \item \textbf{Schema drift:} Training data becomes stale when HANA schemas evolve.
-    \item \textbf{Coverage gaps:} Manual templates miss edge cases and rare query patterns.
-    \item \textbf{Quality variance:} No systematic quality assurance for generated examples.
+\begin{tcolorbox}[colback=sapblue!10,colframe=sapblue,title=\faIcon{bullseye} Primary Objectives]
+\begin{enumerate}[leftmargin=*]
+    \item \textbf{Schema-Driven Generation}: Extract taxonomy from HANA Cloud schemas via MCP
+    \item \textbf{Multi-Turn Reasoning}: Generate progressive reasoning chains with verification
+    \item \textbf{Quality Assurance}: Implement double-critic filtering and diversity scoring
+    \item \textbf{SAP Integration}: Native compatibility with AI Core, BTP, and GRC platforms
 \end{enumerate}
+\end{tcolorbox}
 
-\subsection*{Solution: Simula Framework}
+\subsection*{Key Deliverables}
 
-This specification implements the \textbf{Simula} framework from Davidson et al. (2026),
-a research-validated methodology for reasoning-driven synthetic data generation. The
-framework addresses all three issues through:
-
-\begin{itemize}[nosep]
-    \item \textbf{HANA-Direct Extraction} — Live schema queries via AI Core PAL MCP service.
-    \item \textbf{Taxonomic Coverage} — Hierarchical factor trees ensure systematic diversity.
-    \item \textbf{Agentic Quality Control} — Double-critic filtering with Elo-calibrated complexity.
+\begin{itemize}
+    \item \textbf{TrainingExample Schema}: Canonical data model for all generated examples
+    \item \textbf{Taxonomy Builder}: Algorithm for extracting domain concepts from HANA schemas
+    \item \textbf{Generation Engine}: Multi-turn reasoning generator with critic validation
+    \item \textbf{Evaluation Framework}: Elo-based quality scoring and coverage metrics
+    \item \textbf{CLI Tools}: Reproducible pipeline for dataset generation
 \end{itemize}
 
-\subsection*{Key Metrics and Targets}
+% -----------------------------------------------------------------------------
+% DOCUMENT CONVENTIONS
+% -----------------------------------------------------------------------------
+\section*{Document Conventions}
+\addcontentsline{toc}{section}{Document Conventions}
 
-\begin{table}[H]
+\subsection*{Requirement Classification}
+
+All requirements use MoSCoW prioritization:
+
+\begin{table}[h]
 \centering
-\begin{tabular}{llll}
+\begin{tabular}{@{}llp{8cm}@{}}
 \toprule
-\textbf{Metric} & \textbf{Paper Target} & \textbf{Implementation} & \textbf{Source} \\
+\textbf{Priority} & \textbf{Symbol} & \textbf{Definition} \\
 \midrule
-Global diversity & 0.48--0.54 cosine & Target: 0.52 & Figure 4 \\
-Local diversity & 0.10--0.30 cosine & Target: 0.20 & Figure 4 \\
-Complexity ratio & 50\% (c=0.5) & Adaptive 0.2--0.5 & Figure 7 \\
-Critic acceptance & p(y) $>$ 0.8 & Threshold: 0.5--0.7 & Figure 3 \\
-Taxonomy completeness & 74\% (Simula) & Min: 70\% & Table 2 \\
-Taxonomy soundness & 97\% (Simula) & Min: 90\% & Table 2 \\
-Saturation ratio & 83\% & 83\% & Section 4.3 \\
+MUST & \faIcon{exclamation-circle} & Non-negotiable for v1.0 release \\
+SHOULD & \faIcon{check-circle} & Important but can slip to v1.1 \\
+COULD & \faIcon{question-circle} & Nice to have if time permits \\
+WON'T & \faIcon{times-circle} & Explicitly deferred (this phase) \\
 \bottomrule
 \end{tabular}
+\caption{MoSCoW Priority Definitions}
 \end{table}
 
-\subsection*{Expected Outcomes}
+\subsection*{Colored Boxes}
 
-\begin{enumerate}[nosep]
-    \item \textbf{10$\times$ training data} with consistent quality (100k+ examples).
-    \item \textbf{Full taxonomic coverage} — no systematic gaps in query patterns.
-    \item \textbf{Calibrated complexity} — downstream model benefits from high-complexity data.
-    \item \textbf{Audit trail} — every example traceable to taxonomy nodes and meta-prompts.
+This specification uses colored boxes to highlight different types of content:
+
+\begin{sourcequote}
+\textit{``Source quotations from research papers or reference documents appear in green boxes with quotation marks.''}
+\end{sourcequote}
+
+\begin{requirement}
+Derived requirements appear in blue boxes and include formal requirement IDs.
+\end{requirement}
+
+\begin{implnote}
+Implementation notes provide technical guidance for developers in purple boxes.
+\end{implnote}
+
+\begin{warningbox}
+Warnings highlight critical constraints or potential pitfalls in red boxes.
+\end{warningbox}
+
+\begin{futurebox}
+Future enhancements (v1.3+) are marked in gold boxes to distinguish them from current scope.
+\end{futurebox}
+
+\subsection*{Requirement ID Conventions}
+
+\begin{table}[h]
+\centering
+\begin{tabular}{@{}llp{6cm}@{}}
+\toprule
+\textbf{Prefix} & \textbf{Category} & \textbf{Example} \\
+\midrule
+SIM-DATA & Data Schema & SIM-DATA-001: TrainingExample format \\
+SIM-TAX & Taxonomy Engine & SIM-TAX-001: Concept extraction \\
+SIM-GEN & Generation Engine & SIM-GEN-001: Multi-turn generation \\
+SIM-EVAL & Evaluation & SIM-EVAL-001: Elo scoring \\
+SIM-CLI & CLI/Pipeline & SIM-CLI-001: Build command \\
+SIM-INT & Integration & SIM-INT-001: HANA connectivity \\
+SIM-HANA & HANA-specific & SIM-HANA-001: Schema extraction \\
+\bottomrule
+\end{tabular}
+\caption{Requirement ID Prefixes}
+\end{table}
+
+% -----------------------------------------------------------------------------
+% HOW TO READ THIS SPECIFICATION
+% -----------------------------------------------------------------------------
+\section*{How to Read This Specification}
+\addcontentsline{toc}{section}{How to Read This Specification}
+
+This specification is organized into five parts plus appendices:
+
+\begin{enumerate}
+    \item \textbf{Part I: Introduction and Context} -- Establishes the problem domain, business requirements, and stakeholder needs
+    \item \textbf{Part II: Architecture and Core Design} -- Defines data schemas, extraction pipelines, and generation algorithms
+    \item \textbf{Part III: Quality Assurance and Evaluation} -- Covers evaluation metrics, testing, and worked examples
+    \item \textbf{Part IV: Implementation and Governance} -- Provides implementation guidance and cross-specification dependencies
+    \item \textbf{Part V: Planning and Future Evolution} -- Presents roadmaps and future enhancement plans
+    \item \textbf{Appendices} -- Contains the implementation gap review, SAP integration guide, and references
 \end{enumerate}
 
-\newpage
-% =============================================================================
-% CHAPTER 1: OVERVIEW AND SCOPE
-% =============================================================================
+% -----------------------------------------------------------------------------
+% READING GUIDE
+% -----------------------------------------------------------------------------
+\section*{Reading Guide}
+\addcontentsline{toc}{section}{Reading Guide}
+
+\subsection*{Chapter Relationship Flowchart}
+
+The following flowchart shows how the planning and future directions chapters (15--17) relate to other parts of the specification. This centralized view reduces the need to repeat integration context within each chapter.
+
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}[
+  node distance=4mm and 8mm,
+  core/.style={draw,rounded corners=2pt,align=center,font=\scriptsize,
+               fill=sapblue!15,draw=sapblue!60,
+               minimum height=8mm,minimum width=28mm},
+  plan/.style={draw,rounded corners=2pt,align=center,font=\scriptsize,
+               fill=sapgold!20,draw=sapgold!80,
+               minimum height=8mm,minimum width=28mm},
+  future/.style={draw,rounded corners=2pt,align=center,font=\scriptsize,
+               fill=gray!15,draw=gray!60,dotted,
+               minimum height=8mm,minimum width=28mm},
+  appendix/.style={draw,rounded corners=2pt,align=center,font=\scriptsize,
+               fill=red!10,draw=red!60,
+               minimum height=8mm,minimum width=28mm},
+  dep/.style={-{Latex[length=2mm]},thick},
+  soft/.style={-{Latex[length=2mm]},thick,dashed},
+  note/.style={font=\tiny\itshape,text=gray}
+]
+  % Core specification (left column)
+  \node[core] (ch02) at (0,0) {Ch.2 Business\\Requirements};
+  \node[core,below=of ch02] (ch03) {Ch.3--7 Core\\Pipeline};
+  \node[core,below=of ch03] (ch08) {Ch.8 Evaluation\\Framework};
+  \node[core,below=of ch08] (ch12) {Ch.12 Implementation\\Instructions};
+  
+  % Planning chapters (middle column)
+  \node[plan,right=18mm of ch02] (ch15) {Ch.15 Project\\Roadmap (v1.2)};
+  \node[plan,below=of ch15] (ch16) {Ch.16 Implementation\\Roadmap};
+  \node[future,below=of ch16] (ch17) {Ch.17 Future\\Directions (v1.3+)};
+  
+  % Appendices (right column)
+  \node[appendix,right=18mm of ch15] (a1) {App.A1 Gap\\Review (P0--P2)};
+  
+  % Arrows showing relationships
+  \draw[dep] (ch02) -- (ch15) node[midway,above,note] {BR reqs};
+  \draw[dep] (ch03) -- (ch15);
+  \draw[dep] (ch08) -- (ch15);
+  \draw[dep] (ch12) -- (ch15);
+  
+  \draw[dep] (ch15) -- (ch16) node[midway,right,note] {M01--M07};
+  \draw[dep] (ch16) -- (ch17) node[midway,right,note] {v1.3 trigger};
+  
+  \draw[dep] (ch15) -- (a1) node[midway,above,note] {blocks};
+  \draw[soft] (a1) -- (ch16);
+  
+\end{tikzpicture}
+\caption{Chapter relationship flowchart. Blue: core specification. Gold: planning chapters (v1.2 scope). Dotted gray: future scope (v1.3+). Red: gap review. Solid arrows: hard prerequisites. Dashed arrows: remediation dependencies.}
+\label{fig:chapter-relationships}
+\end{figure}
+
+\noindent
+\textbf{Key Reading Paths:}
+\begin{itemize}
+  \item \textbf{Understanding v1.2 scope}: Ch.2 $\to$ Ch.15 $\to$ App.A1 $\to$ Ch.16
+  \item \textbf{Gap remediation}: App.A1 (P0 gaps) $\to$ Ch.15 (milestones blocked) $\to$ Ch.16 (enterprise phases)
+  \item \textbf{Future planning}: Ch.16 (Phase 3 complete) $\to$ Ch.17 (v1.3+ enhancements)
+\end{itemize}
+
+\subsection*{Audience-Specific Paths}
+
+\begin{tcolorbox}[colback=gray!5,colframe=gray!50,title=\faIcon{user-graduate} For Project Managers / Business Owners]
+\begin{enumerate}
+    \item Frontmatter (this section)
+    \item Chapter 1: Overview and Scope
+    \item Chapter 2: Business Requirements
+    \item Chapter 15: Project Roadmap
+    \item Chapter 16: Implementation Roadmap
+\end{enumerate}
+\end{tcolorbox}
+
+\begin{tcolorbox}[colback=gray!5,colframe=gray!50,title=\faIcon{laptop-code} For Implementers / Developers]
+\begin{enumerate}
+    \item Chapter 1: Overview (full)
+    \item Chapter 3: Canonical Data Schema
+    \item Chapters 4--7: Core Pipeline (Extraction, Taxonomy, Generation, CLI)
+    \item Chapter 12: Implementation Instructions
+    \item Chapter 10: Testing Specification
+    \item Appendix B: SAP Integration Guide
+\end{enumerate}
+\end{tcolorbox}
+
+\begin{tcolorbox}[colback=gray!5,colframe=gray!50,title=\faIcon{microscope} For Quality / Evaluation Engineers]
+\begin{enumerate}
+    \item Chapter 8: Evaluation Framework
+    \item Chapter 9: Worked Example
+    \item Chapter 11: Test Fixtures
+    \item Chapter 10: Testing Specification
+    \item Appendix A: Implementation Gap Review
+\end{enumerate}
+\end{tcolorbox}
+
+\begin{tcolorbox}[colback=gray!5,colframe=gray!50,title=\faIcon{gavel} For Auditors / Compliance Officers]
+\begin{enumerate}
+    \item Chapter 1: Overview (Sections 1.3--1.5 for research traceability)
+    \item Chapter 2: Business Requirements
+    \item Chapter 14: Schema Versioning
+    \item Chapter 13: Cross-Spec Dependencies
+    \item Appendix C: References
+\end{enumerate}
+\end{tcolorbox}
+
+% -----------------------------------------------------------------------------
+% VERSION HISTORY
+% -----------------------------------------------------------------------------
+\section*{Version History}
+\addcontentsline{toc}{section}{Version History}
+
+\begin{longtable}{@{}llp{8cm}@{}}
+\toprule
+\textbf{Version} & \textbf{Date} & \textbf{Changes} \\
+\midrule
+\endhead
+1.0.0 & 2026-04-01 & Initial specification based on Simula research paper \\
+1.1.0 & 2026-04-10 & Added evaluation framework and CLI specification \\
+1.2.0 & 2026-04-21 & Added SAP integration guide, business requirements, and implementation roadmap \\
+1.2.1 & 2026-04-21 & Reorganized chapter structure for improved readability; moved business requirements early; added Part divisions; moved gap review to appendix \\
+1.2.2 & 2026-04-21 & Added Chapter Relationship Flowchart in Frontmatter (Figure~\ref{fig:chapter-relationships}); added Gap-to-Milestone mapping table in Appendix~A1 (Table~\ref{tab:gap-milestone-mapping}) \\
+\bottomrule
+\end{longtable}
+
+% -----------------------------------------------------------------------------
+% DOCUMENT SCOPE MATRIX
+% -----------------------------------------------------------------------------
+\section*{Document Scope Matrix}
+\addcontentsline{toc}{section}{Document Scope Matrix}
+
+\begin{longtable}{@{}p{4cm}p{2cm}p{2cm}p{5cm}@{}}
+\toprule
+\textbf{Topic} & \textbf{In Scope} & \textbf{Chapter(s)} & \textbf{Notes} \\
+\midrule
+\endhead
+TrainingExample schema & \faIcon{check} & 3 & Canonical data model \\
+Taxonomy extraction & \faIcon{check} & 4, 5 & Algorithm 1 \\
+Multi-turn generation & \faIcon{check} & 6 & Algorithm 2 \\
+Double-critic filtering & \faIcon{check} & 6 & Quality gate \\
+Elo-based evaluation & \faIcon{check} & 8 & Quality metrics \\
+SFT training & \faIcon{check} & 3 & Output format \\
+GRPO training & \faIcon{check} & 3 & Reward format \\
+HANA Cloud integration & \faIcon{check} & 4, App. B & MCP-based extraction \\
+Multi-modal input & \faIcon{times} & 17 & Future (v1.3+) \\
+Real-time streaming & \faIcon{times} & -- & Out of scope \\
+Model training execution & \faIcon{times} & -- & Downstream concern \\
+\bottomrule
+\caption{Document Scope Matrix}
+\end{longtable}
