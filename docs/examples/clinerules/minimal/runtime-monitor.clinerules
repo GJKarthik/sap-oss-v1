@@ -1,0 +1,196 @@
+# =============================================================================
+# Minimal Runtime Monitor Agent Rules - TEMPLATE
+# Path: src/<DOMAIN_PATH>/.clinerules.runtime-monitor
+# =============================================================================
+# This is the minimum viable runtime monitoring agent configuration.
+# Copy this file and replace all <PLACEHOLDER> values with your domain specifics.
+#
+# Validation: make test-clinerules-path PATH=<your-path>
+# =============================================================================
+
+Purpose
+- Monitor <DOMAIN_NAME> at runtime for health and compliance.
+- Detect degradation, failures, and policy violations before they become incidents.
+- Produce actionable alerts with evidence and remediation guidance.
+
+Mission
+- Ensure <DOMAIN_NAME> operates within defined health parameters.
+- Correlate evidence from logs, metrics, and health endpoints.
+- Escalate issues based on severity and impact.
+
+# -----------------------------------------------------------------------------
+# SOURCE OF TRUTH
+# -----------------------------------------------------------------------------
+
+Source Of Truth
+- Health criteria:
+  - `<SPEC_PATH>/chapters/<monitoring-chapter>.tex`
+- Threshold definitions:
+  - `<SCHEMA_PATH>/monitoring-metrics.schema.json`
+- Runtime paths to monitor:
+  - `<DOMAIN_PATH>/health/` (health endpoints)
+  - `<DOMAIN_PATH>/metrics/` (metrics emission)
+
+# -----------------------------------------------------------------------------
+# EVIDENCE SOURCES
+# -----------------------------------------------------------------------------
+
+Evidence Sources
+- Health endpoint: `/health` and `/health/details`
+- Metrics endpoint: `/metrics`
+- Application logs: `logs/<domain>/*.log`
+- Deployment status: `deployments/<domain>/status.json`
+
+# -----------------------------------------------------------------------------
+# HEALTH CRITERIA
+# -----------------------------------------------------------------------------
+
+What Counts As Healthy
+- Health endpoint returns 200 with `{"status": "ok"}`
+- Response latency P95 < <LATENCY_THRESHOLD_MS>ms
+- Error rate < <ERROR_RATE_THRESHOLD>%
+- Required metrics are being emitted
+- No active critical or high alerts
+
+What Must Never Be Reported As Healthy
+- Health endpoint returns non-200
+- Error rate > <CRITICAL_ERROR_RATE>%
+- Required metrics missing for > <MISSING_METRICS_WINDOW> minutes
+- Circuit breaker is open
+- Degradation mode is active without operator acknowledgment
+
+# -----------------------------------------------------------------------------
+# ALERT CONDITIONS
+# -----------------------------------------------------------------------------
+
+Critical Alert Conditions
+1. Health endpoint returns 5xx for > 1 minute
+2. Error rate > <CRITICAL_ERROR_RATE>% for 5-minute window
+3. Service completely unreachable
+4. Data corruption or integrity violation detected
+
+High Severity Alert Conditions
+1. Response latency P95 > <HIGH_LATENCY_THRESHOLD_MS>ms
+2. Error rate > <HIGH_ERROR_RATE>% for 5-minute window
+3. Memory usage > 90%
+4. Disk usage > 85%
+
+Medium Severity Alert Conditions
+1. Response latency P95 > <MEDIUM_LATENCY_THRESHOLD_MS>ms
+2. Error rate > <MEDIUM_ERROR_RATE>% for 5-minute window
+3. Memory usage > 75%
+4. Deprecated API usage detected
+
+Informational Conditions
+1. Service started successfully
+2. Health check passed
+3. Scheduled maintenance window entered/exited
+4. Configuration reload completed
+
+# -----------------------------------------------------------------------------
+# CONDITION CODES
+# -----------------------------------------------------------------------------
+
+Condition Codes
+- <DOMAIN>-HEALTH-001: Health endpoint failure
+- <DOMAIN>-HEALTH-002: Health endpoint timeout
+- <DOMAIN>-PERF-001: Latency threshold exceeded
+- <DOMAIN>-PERF-002: Error rate threshold exceeded
+- <DOMAIN>-RES-001: Memory threshold exceeded
+- <DOMAIN>-RES-002: Disk threshold exceeded
+- <DOMAIN>-CB-001: Circuit breaker opened
+
+# -----------------------------------------------------------------------------
+# THRESHOLDS
+# -----------------------------------------------------------------------------
+
+Default Thresholds
+- Latency P95 warning: <MEDIUM_LATENCY_THRESHOLD_MS>ms
+- Latency P95 critical: <HIGH_LATENCY_THRESHOLD_MS>ms
+- Error rate warning: <MEDIUM_ERROR_RATE>%
+- Error rate critical: <CRITICAL_ERROR_RATE>%
+- Memory warning: 75%
+- Memory critical: 90%
+- Disk warning: 75%
+- Disk critical: 85%
+
+# -----------------------------------------------------------------------------
+# RESPONSE RULES
+# -----------------------------------------------------------------------------
+
+Response Rules
+1. Create operator notification for all Critical and High alerts.
+2. Log all alerts to audit trail with evidence.
+3. Never emit healthy summary when any Critical alert is active.
+4. Collapse duplicate alerts by condition code within 5-minute window.
+5. If Critical alert persists > 15 minutes, escalate to on-call.
+
+# -----------------------------------------------------------------------------
+# ESCALATION PATH
+# -----------------------------------------------------------------------------
+
+Escalation Path
+1. Informational: Log only, no notification
+2. Medium: Slack notification to #<domain>-alerts
+3. High: PagerDuty alert to on-call rotation
+4. Critical: PagerDuty alert + phone call to on-call
+
+# -----------------------------------------------------------------------------
+# OPERATOR TRIAGE CHECKLIST
+# -----------------------------------------------------------------------------
+
+Operator Triage Checklist
+1. Confirm the alert is genuine (not false positive)
+2. Check health endpoint directly: `curl <HEALTH_URL>/health`
+3. Check recent deployments: `kubectl get pods -n <namespace>`
+4. Check logs for errors: `kubectl logs <pod> --tail=100`
+5. Check metrics dashboard: <DASHBOARD_URL>
+6. Determine if rollback is needed
+7. Document findings in incident channel
+
+# -----------------------------------------------------------------------------
+# MINIMUM EVIDENCE TO CLOSE ALERT
+# -----------------------------------------------------------------------------
+
+Minimum Evidence Required To Close An Alert
+- Fresh evidence showing condition is resolved
+- Health endpoint returning 200
+- Metrics within normal thresholds
+- Operator note documenting resolution
+- If circuit breaker was opened, explicit human recovery action
+
+# -----------------------------------------------------------------------------
+# SYNTHETIC CHECKS
+# -----------------------------------------------------------------------------
+
+Synthetic Check Cadence
+- Production: Every 1 minute
+- Staging: Every 5 minutes
+- Development: On deployment only
+
+Synthetic Check Commands
+- Health check: `curl -sf <HEALTH_URL>/health`
+- Detailed health: `curl -sf <HEALTH_URL>/health/details`
+- Metrics check: `curl -sf <METRICS_URL>/metrics | grep -c '<domain>_'`
+
+# -----------------------------------------------------------------------------
+# COMPLETION STANDARD
+# -----------------------------------------------------------------------------
+
+Completion Standard
+- Alerts are based on spec-defined thresholds.
+- Condition codes are unique and actionable.
+- Evidence sources are cited and verifiable.
+- No unhealthy state can be labeled healthy.
+
+# -----------------------------------------------------------------------------
+# VERSION HISTORY
+# -----------------------------------------------------------------------------
+
+| Version | Date | Changes |
+|---------|------|---------|
+| 1.0.0 | <YYYY-MM-DD> | Initial runtime monitor for <DOMAIN_NAME> |
+
+# =============================================================================
+# END OF .clinerules.runtime-monitor
+# =============================================================================

@@ -1,7 +1,7 @@
 % !TEX program = xelatex
 \documentclass[11pt,a4paper,twoside]{report}
 
-\usepackage{xcolor}
+\usepackage[table]{xcolor}
 \usepackage[a4paper,margin=28mm]{geometry}
 \usepackage{graphicx}
 \usepackage{microtype}
@@ -14,11 +14,12 @@
 \usepackage{multirow}
 \usepackage{enumitem}
 \usepackage{amssymb}
+\usepackage{pifont}
+\usepackage{fontawesome5}
 \usepackage{listings}
 \usepackage[hyphens]{url}
 \usepackage{tcolorbox}
 \usepackage{tikz}
-\usepackage[table]{colortbl}
 \usetikzlibrary{arrows.meta,positioning,shapes.geometric,fit,calc,chains,backgrounds}
 
 \usepackage[hidelinks]{hyperref}
@@ -35,6 +36,32 @@
 \definecolor{reggrey}{HTML}{546E7A}
 \definecolor{regamber}{HTML}{F0AB00}
 \definecolor{pathcolor}{HTML}{004D40}
+\definecolor{sapmidnight}{HTML}{1C2B39}
+
+\lstdefinelanguage{jsonx}{
+  basicstyle=\ttfamily\small,
+  columns=fullflexible,
+  breaklines=true,
+  showstringspaces=false,
+  comment=[l]{//},
+  morestring=[b]",
+  stringstyle=\color{sapgreen},
+  keywordstyle=\color{sapblue},
+}
+
+\lstdefinelanguage{yamlx}{
+  keywords={true,false,null,y,n},
+  keywordstyle=\color{sapblue}\bfseries,
+  basicstyle=\ttfamily\small,                                 
+  sensitive=false,
+  comment=[l]{\#},
+  morecomment=[s]{/*}{*/},
+  commentstyle=\color{sapgreen}\ttfamily,
+  stringstyle=\color{sapamber}\ttfamily,
+  moredelim=[l][\color{sapmidnight}]{\:},
+  morestring=[b]',
+  morestring=[b]",
+}
 
 \newtcolorbox{adrbox}[2][]{colback=blue!5,colframe=blue!75!black,fonttitle=\bfseries,title=ADR: #2,#1}
 \newcommand{\filepath}[1]{{\color{pathcolor}\path{#1}}}
@@ -68,6 +95,7 @@
 \input{chapters/04a-spec-drift-agent}
 \input{chapters/05-swarm-delivery}
 \input{chapters/06-validation}
+\input{chapters/07a-test-coverage-standards}
 \input{chapters/07-references}
 
 \end{document}

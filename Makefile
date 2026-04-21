@@ -393,6 +393,117 @@ specs-export: specs-all specs-docx
 
 
 # ════════════════════════════════════════════════════════════════════════════
+# Apple WWDC Style Specifications (Premium Design)
+# ════════════════════════════════════════════════════════════════════════════
+# Build Apple-style specs with modern typography (Inter + JetBrains Mono)
+# Requires: brew install --cask font-inter font-jetbrains-mono
+
+.PHONY: specs-apple-all spec-simula-apple spec-tb-apple spec-tb-hitl-apple \
+        spec-arabic-apple spec-regulations-apple spec-clinerules-agents-apple \
+        check-apple-fonts
+
+# Check if required fonts are installed
+check-apple-fonts:
+	@echo "Checking for required fonts..."
+	@if fc-list | grep -qi "Inter"; then \
+	  echo "✓ Inter font found"; \
+	else \
+	  echo "⚠ Inter font not found. Install with: brew install --cask font-inter"; \
+	fi
+	@if fc-list | grep -qi "JetBrains"; then \
+	  echo "✓ JetBrains Mono font found"; \
+	else \
+	  echo "⚠ JetBrains Mono not found. Install with: brew install --cask font-jetbrains-mono"; \
+	fi
+
+# Shared directory for Apple-style packages
+SHARED_LATEX := $(LATEX_DIR)/shared
+
+# Simula Training Data Framework (Apple Style)
+spec-simula-apple:
+	@mkdir -p $(PDF_DIR)/specs
+	@if [ -n "$(LATEX_ENGINE)" ]; then \
+	  cd $(SPECS_LATEX)/simula && TEXINPUTS=.:../../shared//: $(LATEX_ENGINE) -interaction=nonstopmode simula-training-spec-apple.tex && \
+	    TEXINPUTS=.:../../shared//: $(LATEX_ENGINE) -interaction=nonstopmode simula-training-spec-apple.tex && \
+	    mv simula-training-spec-apple.pdf ../../../pdf/specs/; \
+	else \
+	  echo "ERROR: xelatex or lualatex not found."; exit 1; \
+	fi
+	@rm -f $(SPECS_LATEX)/simula/*.aux $(SPECS_LATEX)/simula/*.log $(SPECS_LATEX)/simula/*.toc $(SPECS_LATEX)/simula/*.out
+	@echo "PDF: $(PDF_DIR)/specs/simula-training-spec-apple.pdf"
+
+# Trial Balance Review (Apple Style)
+spec-tb-apple:
+	@mkdir -p $(PDF_DIR)/specs
+	@if [ -n "$(LATEX_ENGINE)" ]; then \
+	  cd $(SPECS_LATEX)/tb && TEXINPUTS=.:../../shared//: $(LATEX_ENGINE) -interaction=nonstopmode tb-review-spec-apple.tex && \
+	    TEXINPUTS=.:../../shared//: $(LATEX_ENGINE) -interaction=nonstopmode tb-review-spec-apple.tex && \
+	    mv tb-review-spec-apple.pdf ../../../pdf/specs/; \
+	else \
+	  echo "ERROR: xelatex or lualatex not found."; exit 1; \
+	fi
+	@rm -f $(SPECS_LATEX)/tb/*.aux $(SPECS_LATEX)/tb/*.log $(SPECS_LATEX)/tb/*.toc $(SPECS_LATEX)/tb/*.out
+	@echo "PDF: $(PDF_DIR)/specs/tb-review-spec-apple.pdf"
+
+# TB-HITL Traceability (Apple Style)
+spec-tb-hitl-apple:
+	@mkdir -p $(PDF_DIR)/specs
+	@if [ -n "$(LATEX_ENGINE)" ]; then \
+	  cd $(SPECS_LATEX)/tb-hitl && TEXINPUTS=.:../../shared//: $(LATEX_ENGINE) -interaction=nonstopmode tb-business-requirements-traceability-apple.tex && \
+	    TEXINPUTS=.:../../shared//: $(LATEX_ENGINE) -interaction=nonstopmode tb-business-requirements-traceability-apple.tex && \
+	    mv tb-business-requirements-traceability-apple.pdf ../../../pdf/specs/; \
+	else \
+	  echo "ERROR: xelatex or lualatex not found."; exit 1; \
+	fi
+	@rm -f $(SPECS_LATEX)/tb-hitl/*.aux $(SPECS_LATEX)/tb-hitl/*.log $(SPECS_LATEX)/tb-hitl/*.toc $(SPECS_LATEX)/tb-hitl/*.out
+	@echo "PDF: $(PDF_DIR)/specs/tb-business-requirements-traceability-apple.pdf"
+
+# Arabic AP Invoice Processing (Apple Style)
+spec-arabic-apple:
+	@mkdir -p $(PDF_DIR)/specs
+	@if [ -n "$(LATEX_ENGINE)" ]; then \
+	  cd $(SPECS_LATEX)/arabic && TEXINPUTS=.:../../shared//: $(LATEX_ENGINE) -interaction=nonstopmode arabic-ap-spec-apple.tex && \
+	    TEXINPUTS=.:../../shared//: $(LATEX_ENGINE) -interaction=nonstopmode arabic-ap-spec-apple.tex && \
+	    mv arabic-ap-spec-apple.pdf ../../../pdf/specs/; \
+	else \
+	  echo "ERROR: xelatex or lualatex not found."; exit 1; \
+	fi
+	@rm -f $(SPECS_LATEX)/arabic/*.aux $(SPECS_LATEX)/arabic/*.log $(SPECS_LATEX)/arabic/*.toc $(SPECS_LATEX)/arabic/*.out
+	@echo "PDF: $(PDF_DIR)/specs/arabic-ap-spec-apple.pdf"
+
+# AI Regulations Compliance (Apple Style)
+spec-regulations-apple:
+	@mkdir -p $(PDF_DIR)/specs
+	@if [ -n "$(LATEX_ENGINE)" ]; then \
+	  cd $(SPECS_LATEX)/regulations && TEXINPUTS=.:../../shared//: $(LATEX_ENGINE) -interaction=nonstopmode regulations-spec-apple.tex && \
+	    TEXINPUTS=.:../../shared//: $(LATEX_ENGINE) -interaction=nonstopmode regulations-spec-apple.tex && \
+	    mv regulations-spec-apple.pdf ../../../pdf/specs/; \
+	else \
+	  echo "ERROR: xelatex or lualatex not found."; exit 1; \
+	fi
+	@rm -f $(SPECS_LATEX)/regulations/*.aux $(SPECS_LATEX)/regulations/*.log $(SPECS_LATEX)/regulations/*.toc $(SPECS_LATEX)/regulations/*.out
+	@echo "PDF: $(PDF_DIR)/specs/regulations-spec-apple.pdf"
+
+# .clinerules Agent Swarm (Apple Style)
+spec-clinerules-agents-apple:
+	@mkdir -p $(PDF_DIR)/specs
+	@if [ -n "$(LATEX_ENGINE)" ]; then \
+	  cd $(SPECS_LATEX)/clinerules-agents && TEXINPUTS=.:../../shared//: $(LATEX_ENGINE) -interaction=nonstopmode clinerules-agents-spec-apple.tex && \
+	    TEXINPUTS=.:../../shared//: $(LATEX_ENGINE) -interaction=nonstopmode clinerules-agents-spec-apple.tex && \
+	    mv clinerules-agents-spec-apple.pdf ../../../pdf/specs/; \
+	else \
+	  echo "ERROR: xelatex or lualatex not found."; exit 1; \
+	fi
+	@rm -f $(SPECS_LATEX)/clinerules-agents/*.aux $(SPECS_LATEX)/clinerules-agents/*.log $(SPECS_LATEX)/clinerules-agents/*.toc $(SPECS_LATEX)/clinerules-agents/*.out
+	@echo "PDF: $(PDF_DIR)/specs/clinerules-agents-spec-apple.pdf"
+
+# All Apple-style specs
+specs-apple-all: check-apple-fonts spec-simula-apple spec-tb-apple spec-tb-hitl-apple spec-arabic-apple spec-regulations-apple spec-clinerules-agents-apple
+	@echo "All Apple-style specification PDFs compiled to $(PDF_DIR)/specs/"
+	@echo "Files: *-apple.pdf"
+
+
+# ════════════════════════════════════════════════════════════════════════════
 # Spec-Drift Audit Pipeline
 # ════════════════════════════════════════════════════════════════════════════
 # Prevents specification drift between LaTeX docs, JSON schemas, and code.
@@ -481,3 +592,152 @@ audit-exceptions-review:
 audit-spec-drift-ci:
 	@echo "Running spec-drift audit (CI mode - fails on blocking issues)..."
 	python3 $(SPEC_DRIFT_SCRIPT) --mode full --output-format console --fail-on-blocking
+
+# ════════════════════════════════════════════════════════════════════════════
+# CLINERULES VALIDATION AND TOOLING
+# ════════════════════════════════════════════════════════════════════════════
+# New tools added to address review improvement areas:
+#   - Version synchronization checking
+#   - Dry-run validation mode
+#   - Example gallery validation
+# ════════════════════════════════════════════════════════════════════════════
+
+CLINERULES_SCRIPTS := scripts/clinerules
+EXAMPLES_DIR := docs/examples/clinerules
+
+.PHONY: clinerules-version-sync clinerules-version-sync-ci clinerules-dry-run \
+        clinerules-validate clinerules-validate-all clinerules-examples-test \
+        clinerules-interactive clinerules-coverage-report
+
+# ── Version Synchronization ──────────────────────────────────────────────────
+
+# Check version synchronization across all .clinerules files
+clinerules-version-sync:
+	@echo "Checking version synchronization across .clinerules files..."
+	python3 $(CLINERULES_SCRIPTS)/version_sync_checker.py --mode check --output console
+
+# Version sync check with JSON output
+clinerules-version-sync-json:
+	python3 $(CLINERULES_SCRIPTS)/version_sync_checker.py --mode check --output json
+
+# CI mode: fail on critical/high version drift
+clinerules-version-sync-ci:
+	@echo "Running version sync check (CI mode)..."
+	python3 $(CLINERULES_SCRIPTS)/version_sync_checker.py --mode check --fail-on-drift --output github-actions
+
+# Suggest fixes for version drift
+clinerules-version-fix-preview:
+	@echo "Previewing version drift fixes..."
+	python3 $(CLINERULES_SCRIPTS)/version_sync_checker.py --mode fix --dry-run
+
+# ── Dry-Run Validation ───────────────────────────────────────────────────────
+
+# Validate a specific .clinerules file
+clinerules-validate:
+ifndef PATH
+	@echo "Usage: make clinerules-validate PATH=src/domain/.clinerules"
+	@exit 1
+endif
+	python3 $(CLINERULES_SCRIPTS)/dry_run_validator.py --validate $(PATH)
+
+# Validate all .clinerules files in the repository
+clinerules-validate-all:
+	@echo "Validating all .clinerules files..."
+	@for f in $$(find . -name ".clinerules" -o -name ".clinerules.*" | grep -v ".git" | grep -v "node_modules"); do \
+		echo "Validating: $$f"; \
+		python3 $(CLINERULES_SCRIPTS)/dry_run_validator.py --validate "$$f" || true; \
+		echo ""; \
+	done
+
+# Run dry-run simulation for a task
+clinerules-dry-run:
+ifndef TASK
+	@echo "Usage: make clinerules-dry-run TASK='Add new API endpoint'"
+	@exit 1
+endif
+	python3 $(CLINERULES_SCRIPTS)/dry_run_validator.py --task "$(TASK)"
+
+# Interactive dry-run mode
+clinerules-interactive:
+	python3 $(CLINERULES_SCRIPTS)/dry_run_validator.py --interactive
+
+# Dry-run with JSON output
+clinerules-dry-run-json:
+ifndef TASK
+	@echo "Usage: make clinerules-dry-run-json TASK='Add new API endpoint'"
+	@exit 1
+endif
+	python3 $(CLINERULES_SCRIPTS)/dry_run_validator.py --task "$(TASK)" --output json
+
+# ── Examples Gallery ─────────────────────────────────────────────────────────
+
+# Validate all example .clinerules files
+clinerules-examples-test:
+	@echo "Validating example .clinerules files..."
+	@for f in $$(find $(EXAMPLES_DIR) -name "*.clinerules" 2>/dev/null); do \
+		echo "Validating example: $$f"; \
+		python3 $(CLINERULES_SCRIPTS)/dry_run_validator.py --validate "$$f" || true; \
+		echo ""; \
+	done
+	@echo "Examples validation complete."
+
+# List available examples
+clinerules-examples-list:
+	@echo "Available .clinerules examples:"
+	@find $(EXAMPLES_DIR) -name "*.clinerules" 2>/dev/null | sed 's|$(EXAMPLES_DIR)/||' | sort
+
+# ── Test Coverage ────────────────────────────────────────────────────────────
+
+# Generate coverage report for a specific domain
+clinerules-coverage-report:
+ifndef DOMAIN
+	@echo "Usage: make clinerules-coverage-report DOMAIN=intelligence"
+	@exit 1
+endif
+	@echo "Generating coverage report for $(DOMAIN)..."
+	@echo "Note: Full coverage implementation requires test harness setup."
+	@python3 $(CLINERULES_SCRIPTS)/dry_run_validator.py --validate src/$(DOMAIN)/.clinerules --output json
+
+# ── Combined CI Gate ─────────────────────────────────────────────────────────
+
+# Run all clinerules validation checks (for CI)
+clinerules-ci:
+	@echo "Running all clinerules validation checks..."
+	@echo ""
+	@echo "=== Step 1: Version Synchronization ==="
+	python3 $(CLINERULES_SCRIPTS)/version_sync_checker.py --mode check --output console || true
+	@echo ""
+	@echo "=== Step 2: Structure Validation ==="
+	@$(MAKE) clinerules-validate-all
+	@echo ""
+	@echo "=== Step 3: Examples Validation ==="
+	@$(MAKE) clinerules-examples-test
+	@echo ""
+	@echo "All clinerules checks complete."
+
+# ── Help ─────────────────────────────────────────────────────────────────────
+
+clinerules-help:
+	@echo ""
+	@echo "Clinerules Validation and Tooling Commands:"
+	@echo "────────────────────────────────────────────────────────────────────"
+	@echo ""
+	@echo "Version Synchronization:"
+	@echo "  make clinerules-version-sync        Check version sync across files"
+	@echo "  make clinerules-version-sync-json   Output version sync as JSON"
+	@echo "  make clinerules-version-sync-ci     CI mode (fails on drift)"
+	@echo "  make clinerules-version-fix-preview Preview fixes for version drift"
+	@echo ""
+	@echo "Dry-Run Validation:"
+	@echo "  make clinerules-validate PATH=...   Validate specific .clinerules"
+	@echo "  make clinerules-validate-all        Validate all .clinerules files"
+	@echo "  make clinerules-dry-run TASK='...'  Simulate task execution"
+	@echo "  make clinerules-interactive         Interactive validation mode"
+	@echo ""
+	@echo "Examples Gallery:"
+	@echo "  make clinerules-examples-list       List available examples"
+	@echo "  make clinerules-examples-test       Validate all examples"
+	@echo ""
+	@echo "CI/CD:"
+	@echo "  make clinerules-ci                  Run all validation checks"
+	@echo ""
