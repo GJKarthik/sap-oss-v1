@@ -45,8 +45,8 @@ fi
 echo "Checking files:$GOVERNED_FILES"
 
 # Run the audit script
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-AUDIT_SCRIPT="$SCRIPT_DIR/audit.py"
+REPO_ROOT="$(git rev-parse --show-toplevel)"
+AUDIT_SCRIPT="$REPO_ROOT/scripts/spec-drift/audit.py"
 
 if [ ! -f "$AUDIT_SCRIPT" ]; then
     echo -e "${YELLOW}⚠️  Warning: Audit script not found at $AUDIT_SCRIPT${NC}"
