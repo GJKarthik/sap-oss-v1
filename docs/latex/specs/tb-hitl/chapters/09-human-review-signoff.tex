@@ -1,0 +1,266 @@
+\chapter{Human Review and Sign-Off}
+\label{ch:human-review-signoff}
+
+This chapter consolidates all HITL checkpoints, defines the review process,
+and provides the sign-off documentation for the requirements traceability
+validation.
+
+% =============================================================================
+\section{HITL Checkpoint Summary}
+\label{sec:checkpoint-summary}
+
+\begin{longtable}{@{}C{1cm}L{3.5cm}L{6cm}C{2cm}@{}}
+\caption{HITL Checkpoint Summary}
+\label{tab:checkpoint-summary} \\
+\toprule
+\textbf{ID} & \textbf{Checkpoint} & \textbf{Review Criteria} & \textbf{Chapter} \\
+\midrule
+\endfirsthead
+\toprule
+\textbf{ID} & \textbf{Checkpoint} & \textbf{Review Criteria} & \textbf{Chapter} \\
+\midrule
+\endhead
+H1 & Source Completeness & All source documents listed, sizes verified, metadata accurate & \cref{ch:source-documents} \\
+H2 & Extraction Accuracy & Extracted text matches source; tables and BPMN preserved & \cref{ch:extraction-layer} \\
+H3 & Requirement Derivation & Requirements reflect source intent; quotes accurate & \cref{ch:business-requirements} \\
+H4 & Traceability Links & All links valid, bidirectional, no broken references & \cref{ch:bidirectional-traceability} \\
+H5 & Schema Alignment & Schema fields support all requirements; types correct & \cref{ch:schema-mapping} \\
+H6 & Gap Analysis & All gaps documented, owners assigned, plans feasible & \cref{ch:gap-analysis} \\
+\bottomrule
+\end{longtable}
+
+% =============================================================================
+\section{Review Process}
+\label{sec:review-process}
+
+\subsection{Review Sequence}
+
+The HITL review must be conducted in the following sequence:
+
+\begin{enumerate}
+  \item \textbf{Source Verification (H1):} Confirm all source documents exist
+        and are correctly catalogued before proceeding
+  \item \textbf{Extraction Review (H2):} Validate extraction quality by
+        sampling text against originals
+  \item \textbf{Requirement Review (H3):} Verify each requirement's derivation
+        from source evidence
+  \item \textbf{Traceability Validation (H4):} Confirm all links are valid
+        in both directions
+  \item \textbf{Schema Review (H5):} Verify schemas support all requirement
+        data elements
+  \item \textbf{Gap Closure (H6):} Review and accept gap analysis and
+        resolution plans
+\end{enumerate}
+
+\subsection{Review Roles}
+
+\begin{table}[h]
+\centering
+\caption{Review Role Assignments}
+\label{tab:review-roles}
+\begin{tabularx}{\textwidth}{@{}L{4cm}L{3.5cm}L{6cm}@{}}
+\toprule
+\textbf{Role} & \textbf{Checkpoints} & \textbf{Responsibility} \\
+\midrule
+Business Analyst & H1, H3 & Verify source completeness and requirement accuracy \\
+Technical Lead & H2, H5 & Validate extraction quality and schema alignment \\
+Solution Architect & H4 & Confirm traceability chain integrity \\
+Project Manager & H6 & Accept gap resolution plans and timelines \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+% =============================================================================
+\section{Sign-Off Register}
+\label{sec:signoff-register}
+
+\begin{table}[h]
+\centering
+\caption{HITL Checkpoint Sign-Off Register}
+\label{tab:signoff-register}
+\begin{tabularx}{\textwidth}{@{}C{1cm}L{3.5cm}C{2cm}C{2.5cm}L{3.5cm}@{}}
+\toprule
+\textbf{ID} & \textbf{Checkpoint} & \textbf{Status} & \textbf{Reviewer} & \textbf{Date / Notes} \\
+\midrule
+H1 & Source Completeness & $\square$ Pending & & \\
+H2 & Extraction Accuracy & $\square$ Pending & & \\
+H3 & Requirement Derivation & $\square$ Pending & & \\
+H4 & Traceability Links & $\square$ Pending & & \\
+H5 & Schema Alignment & $\square$ Pending & & \\
+H6 & Gap Analysis & $\square$ Pending & & \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\subsection{Sign-Off Status Legend}
+
+\begin{itemize}[noitemsep]
+  \item $\square$ \textbf{Pending} --- Not yet reviewed
+  \item $\boxtimes$ \textbf{Approved} --- Review complete, no issues
+  \item $\square$ \textbf{Conditional} --- Approved with noted exceptions
+  \item $\square$ \textbf{Rejected} --- Issues found, re-review required
+\end{itemize}
+
+% =============================================================================
+\section{Checkpoint Detail Checklists}
+\label{sec:checkpoint-checklists}
+
+\subsection{H1: Source Completeness Checklist}
+
+\begin{table}[h]
+\centering
+\caption{H1 Source Completeness Checklist}
+\begin{tabular}{@{}L{10cm}cc@{}}
+\toprule
+\textbf{Check Item} & \textbf{Pass} & \textbf{Fail} \\
+\midrule
+All 6 source documents exist at specified paths & $\square$ & $\square$ \\
+File sizes match within 1\% tolerance & $\square$ & $\square$ \\
+Document metadata (author, date, version) is accurate & $\square$ & $\square$ \\
+No additional source documents have been omitted & $\square$ & $\square$ \\
+Extraction status correctly reflects processing state & $\square$ & $\square$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{H2: Extraction Accuracy Checklist}
+
+\begin{table}[h]
+\centering
+\caption{H2 Extraction Accuracy Checklist}
+\begin{tabular}{@{}L{10cm}cc@{}}
+\toprule
+\textbf{Check Item} & \textbf{Pass} & \textbf{Fail} \\
+\midrule
+Sampled text (3+ paragraphs/doc) matches original & $\square$ & $\square$ \\
+Table formatting preserved in markdown & $\square$ & $\square$ \\
+BPMN state names match source PDF & $\square$ & $\square$ \\
+Workbook schema field names match column headers & $\square$ & $\square$ \\
+No content truncation or corruption detected & $\square$ & $\square$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{H3: Requirement Derivation Checklist}
+
+\begin{table}[h]
+\centering
+\caption{H3 Requirement Derivation Checklist}
+\begin{tabular}{@{}L{10cm}cc@{}}
+\toprule
+\textbf{Check Item} & \textbf{Pass} & \textbf{Fail} \\
+\midrule
+Each requirement accurately reflects source intent & $\square$ & $\square$ \\
+Source quotes are correctly transcribed & $\square$ & $\square$ \\
+Derivation method (direct/synthesis) correctly classified & $\square$ & $\square$ \\
+No requirements missing from source documents & $\square$ & $\square$ \\
+Requirement IDs unique and follow naming convention & $\square$ & $\square$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{H4: Traceability Links Checklist}
+
+\begin{table}[h]
+\centering
+\caption{H4 Traceability Links Checklist}
+\begin{tabular}{@{}L{10cm}cc@{}}
+\toprule
+\textbf{Check Item} & \textbf{Pass} & \textbf{Fail} \\
+\midrule
+Forward traces from all sources reach schemas & $\square$ & $\square$ \\
+Backward traces from schemas reach sources & $\square$ & $\square$ \\
+All link targets exist in target layer & $\square$ & $\square$ \\
+Bidirectional links are consistent & $\square$ & $\square$ \\
+Noted exceptions (workflow steps, audit fields) are valid & $\square$ & $\square$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{H5: Schema Alignment Checklist}
+
+\begin{table}[h]
+\centering
+\caption{H5 Schema Alignment Checklist}
+\begin{tabular}{@{}L{10cm}cc@{}}
+\toprule
+\textbf{Check Item} & \textbf{Pass} & \textbf{Fail} \\
+\midrule
+All schema fields traced to a specification & $\square$ & $\square$ \\
+Field types match specification intent & $\square$ & $\square$ \\
+Enum values correctly defined & $\square$ & $\square$ \\
+Required fields support core workflow & $\square$ & $\square$ \\
+No orphan fields without justification & $\square$ & $\square$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{H6: Gap Analysis Checklist}
+
+\begin{table}[h]
+\centering
+\caption{H6 Gap Analysis Checklist}
+\begin{tabular}{@{}L{10cm}cc@{}}
+\toprule
+\textbf{Check Item} & \textbf{Pass} & \textbf{Fail} \\
+\midrule
+All identified gaps accurately documented & $\square$ & $\square$ \\
+Gap severity ratings appropriate & $\square$ & $\square$ \\
+Resolution plans feasible with assigned owners & $\square$ & $\square$ \\
+No additional undocumented gaps exist & $\square$ & $\square$ \\
+Orphan analysis complete and accurate & $\square$ & $\square$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+% =============================================================================
+\section{Final Sign-Off}
+\label{sec:final-signoff}
+
+\subsection{Overall Traceability Assessment}
+
+\begin{table}[h]
+\centering
+\caption{Overall Traceability Assessment}
+\begin{tabular}{@{}L{6cm}C{4cm}C{3cm}@{}}
+\toprule
+\textbf{Assessment Criterion} & \textbf{Result} & \textbf{Status} \\
+\midrule
+Source document coverage & 100\% (with 2 noted gaps) & Acceptable \\
+Requirement traceability & 27/27 traced & Complete \\
+Specification coverage & 22/22 traced & Complete \\
+Schema field traceability & 44/47 (3 audit fields) & Acceptable \\
+Gap documentation & 2 gaps documented & Complete \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Sign-Off Declaration}
+
+\begin{tcolorbox}[colback=white,colframe=sapblue,title=Final Sign-Off Declaration]
+\textbf{Document:} TB-HITL Requirements Traceability Specification \\
+\textbf{Version:} 1.0 \\
+\textbf{Date:} \rule{3cm}{0.4pt}
+
+\vspace{0.5cm}
+
+I confirm that the HITL checkpoints have been reviewed and the requirements
+traceability for the Trial Balance Review process is:
+
+\vspace{0.3cm}
+$\square$ \textbf{Approved} --- All checkpoints passed \\
+$\square$ \textbf{Conditionally Approved} --- Approved with documented exceptions \\
+$\square$ \textbf{Not Approved} --- Re-work required
+
+\vspace{0.5cm}
+
+\textbf{Approver Name:} \rule{5cm}{0.4pt} \\
+\textbf{Role:} \rule{5cm}{0.4pt} \\
+\textbf{Signature:} \rule{5cm}{0.4pt} \\
+\textbf{Date:} \rule{3cm}{0.4pt}
+
+\vspace{0.3cm}
+
+\textbf{Comments:}
+\vspace{1.5cm}
+\end{tcolorbox}

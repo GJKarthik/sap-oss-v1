@@ -1,0 +1,284 @@
+% !TEX program = xelatex
+\documentclass[11pt,a4paper,twoside]{report}
+
+\usepackage{xcolor}
+\usepackage[a4paper,margin=28mm]{geometry}
+\usepackage{graphicx}
+\usepackage{microtype}
+\usepackage{setspace}
+\usepackage{parskip}
+\usepackage{booktabs}
+\usepackage{tabularx}
+\usepackage{longtable}
+\usepackage{array}
+\usepackage{multirow}
+\usepackage{enumitem}
+\usepackage{amssymb}
+\usepackage{listings}
+\usepackage[hyphens]{url}
+\usepackage{tcolorbox}
+\usepackage{tikz}
+\usepackage[table]{colortbl}
+\usetikzlibrary{arrows.meta,positioning,shapes.geometric,fit,calc,chains,
+decorations.pathmorphing,backgrounds}
+
+\newtcolorbox{adrbox}[2][]{colback=blue!5,colframe=blue!75!black,fonttitle=\bfseries,title=ADR: #2,#1}
+
+% --- Semantic Hyperlinking --------------------------------------------------
+\usepackage{xr-hyper}
+\usepackage[hidelinks]{hyperref}
+
+% External references to peer specifications
+\externaldocument[reg:]{../regulations/regulations-spec}
+\externaldocument[tb:]{../tb/tb-review-spec}
+\externaldocument[sim:]{../simula/simula-training-spec}
+\externaldocument[ar:]{../arabic/arabic-ap-spec}
+
+% --- Fonts -------------------------------------------------------------------
+\usepackage{fontspec}
+\setmainfont{Arial}
+\usepackage[capitalize,noabbrev]{cleveref}
+
+\definecolor{codebg}{gray}{0.96}
+\definecolor{sapblue}{HTML}{0B5FA5}
+\definecolor{sapgreen}{HTML}{00695C}
+\definecolor{sapamber}{HTML}{B8360F}
+\definecolor{sapgrey}{HTML}{546E7A}
+\definecolor{sapmidnight}{HTML}{1C2B39}
+\definecolor{sapgold}{HTML}{F0AB00}
+
+\onehalfspacing
+\setlist{topsep=2pt,itemsep=1pt,parsep=0pt}
+\setlength{\emergencystretch}{3em}
+\tolerance=1000
+\hbadness=10000
+
+% --- Global Command Overrides -----------------------------------------------
+\newcommand{\corpus}{}
+\newcommand{\tool}{}
+\newcommand{\stateid}[1]{\textsc{\lowercase{#1}}}
+\newcommand{\ar}[1]{#1}
+
+% --- Glossary Helper Commands -----------------------------------------------
+\definecolor{pathcolor}{HTML}{004D40}
+\newcommand{\schemapath}[1]{\texttt{\textcolor{pathcolor}{#1}}}
+\newcommand{\enumval}[1]{\texttt{\textcolor{sapgreen}{#1}}}
+\newcommand{\fieldref}[1]{\texttt{\textcolor{sapblue}{#1}}}
+
+\begin{document}
+
+\title{\Huge Arabic AP Domain \\
+\textbf{Business Requirements \& Lineage} \\
+\large HITL Traceability Specification \\
+\small Ref: \texttt{ARA-REQ-LIN-2026-v1.0}}
+\author{SAP-OSS Business Architecture Team}
+\date{April 2026}
+
+\maketitle
+
+% --- Incorporated Executive Summary ---
+
+\chapter*{Abstract}
+\addcontentsline{toc}{chapter}{Abstract}
+
+This specification defines the human-in-the-loop (HITL) traceability for the Arabic AP domain. It provides a formal mapping between raw regulatory source documents, derived business requirements, and the technical implementation specifications.
+
+The document is designed for business stakeholders, auditors, and legal reviewers to verify that the AI-augmented pipeline respects the underlying mandates of ZATCA (Saudi), NBR (Bahrain), and other regional authorities.
+\chapter{Source Material Registry}
+\label{ch:source-registry}
+
+This chapter catalogues the primary source documents used to derive the business requirements for the Arabic AP domain.
+
+\begin{longtable}{p{5cm} p{3cm} p{6cm}}
+\caption{Source Document Inventory} \\
+\toprule
+\textbf{File Name} & \textbf{Regulatory Body} & \textbf{Primary Concern} \\
+\midrule
+\endfirsthead
+\toprule
+\textbf{File Name} & \textbf{Regulatory Body} & \textbf{Primary Concern} \\
+\midrule
+\endhead
+\texttt{Accounts Payable DOI.docx} & SCB Bahrain / NBR & Delegation of Invoicing (DOI) \& Controls \\
+\texttt{Saudi - OTP Entry processing...} & ZATCA (Saudi) & VAT Q3'25 processing rules \\
+\texttt{EDAA Annual Fee Invoice...} & EDAA & Arabic/English Invoice layout (Standard) \\
+\texttt{Arabic-Simplified-Invoice.pdf} & Local Authority & Arabic-only simplified invoice structure \\
+\bottomrule
+\end{longtable}
+\chapter{Transformation Logic}
+\label{ch:transformation}
+
+\section{Compliance Lifecycle: Source to Evidence}
+The following diagram visualizes the value stream for requirements in the SAP OSS platform. It ensures that every line of code is anchored in a verified business mandate.
+
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}[
+node distance=1.5cm,
+auto,
+block/.style={rectangle, draw, rounded corners, fill=sapmidnight!5, text width=8em, text centered, minimum height=3em, font=\scriptsize},
+arrow/.style={->, >=latex, thick, sapmidnight}
+]
+\node (source) [block] {\textbf{Source Material}\\(PDF/DOCX/XLS)};
+\node (analyst) [block, right of=source, xshift=2.5cm] {\textbf{GFS Analyst}\\(Heuristic Extraction)};
+\node (req) [block, right of=analyst, xshift=2.5cm] {\textbf{Business Req}\\(BR Catalogue)};
+\node (spec) [block, below of=req, yshift=-1cm] {\textbf{Implementation Spec}\\(Ch. 12 Tasks)};
+\node (test) [block, left of=spec, xshift=-2.5cm] {\textbf{Test Evidence}\\(Verification Blocks)};
+\node (signoff) [block, left of=test, xshift=-2.5cm] {\textbf{HITL Sign-off}\\(Final Acceptance)};
+
+\draw [arrow] (source) -- (analyst);
+\draw [arrow] (analyst) -- (req);
+\draw [arrow] (req) -- (spec);
+\draw [arrow] (spec) -- (test);
+\draw [arrow] (test) -- (signoff);
+\end{tikzpicture}
+\caption{The end-to-end compliance value stream.}
+\end{figure}
+
+\section{From PDF to Machine-Readable (YAML/JSON)}
+The transformation from narrative prose to technical enforcement uses a semi-automated "Ground Truth" process. \cref{tab:artifact-linkage} maps the raw sources to their corresponding machine-readable counterparts.
+
+\begin{table}[htbp]
+\centering
+\footnotesize
+\caption{Source Material to Machine-Readable Linkage}
+\label{tab:artifact-linkage}
+\begin{tabularx}{\textwidth}{@{}l X X@{}}
+\toprule
+\textbf{Source Material (Raw)} & \textbf{Machine-Readable Artifact} & \textbf{Registry Location} \\
+\midrule
+\texttt{Accounts Payable DOI.docx} & \texttt{bh-ap-doi.json} & \texttt{structured/policies/} \\
+\texttt{Saudi - OTP Entry...} & \texttt{ksa-vat-q3.yaml} & \texttt{structured/rules/} \\
+\texttt{Specification Addendum} & \texttt{spec-addendum.yaml} & \texttt{arabic/machine-readable/} \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\subsection{Extraction Methodology}
+\begin{enumerate}
+\item \textbf{Heuristic Extraction:} Initial requirement identification by GFS Analysts based on domain knowledge.
+\item \textbf{Schema Normalization:} Mapping requirements to the \texttt{invoice.schema.json} and \texttt{vat-checklist.schema.json} defined in the technical spec.
+\item \textbf{Formalization:} Converting narrative rules (e.g., "Full tax invoice must contain TIN") into JSON-Logic predicates for automated enforcement.
+\end{enumerate}
+\chapter{Business Requirements Catalogue}
+\label{ch:requirements}
+
+\begin{longtable}{p{2cm} p{5cm} p{7cm}}
+\caption{Consolidated Business Requirements} \\
+\toprule
+\textbf{Req ID} & \textbf{Business Rule} & \textbf{Source Document Reference} \\
+\midrule
+\endfirsthead
+\toprule
+\textbf{Req ID} & \textbf{Business Rule} & \textbf{Source Document Reference} \\
+\midrule
+\endhead
+\rowcolor{sapblue!5}
+\textbf{BR-OCR-01} & Character precision for currency must exceed 99.5\%. & \texttt{Saudi - OTP Entry processing...} (p. 2) \\
+\textbf{BR-VAT-SA} & Simplified vs Full Invoice determination based on 1000 SAR threshold. & ZATCA VAT Guidelines (Implicit in Saudi OTP) \\
+\rowcolor{sapblue!5}
+\textbf{BR-DOI-07} & Evidence-based seven-control sign-off for Bahrain. & \texttt{Accounts Payable DOI.docx} (Section 4) \\
+\textbf{BR-TRN-01} & Translation must maintain semantic mapping for legal entity names. & \texttt{EDAA Annual Fee Invoice...} \\
+\bottomrule
+\end{longtable}
+\chapter{Requirement-to-Specification Lineage}
+\label{ch:lineage}
+
+\begin{longtable}{p{2cm} p{6cm} p{6cm}}
+\caption{Technical Traceability Matrix} \\
+\toprule
+\textbf{Req ID} & \textbf{Technical Implementation} & \textbf{Implementation Spec Ref} \\
+\midrule
+\rowcolor{sapamber!5}
+\textbf{BR-OCR-01} & Confidence threshold calibration pilot. & \texttt{arabic-ap-spec} Ch. 10 \\
+\textbf{BR-VAT-SA} & Rule ID \texttt{VAT-SA-SI-001} in VAT Engine. & \texttt{arabic-ap-spec} Ch. 8 \\
+\rowcolor{sapamber!5}
+\textbf{BR-DOI-07} & 28-state workflow wiring in \texttt{ap.workflow.advance}. & \texttt{arabic-ap-spec} Ch. 5 \& 6 \\
+\textbf{BR-TRN-01} & Arabic--English translation gate calibration. & \texttt{arabic-ap-spec} Ch. 3 \\
+\bottomrule
+\end{longtable}
+
+% --- Incorporated Universal Chapters ---
+\chapter{Global Wave-Dependency Manifest}
+\label{ch:global-dependencies}
+
+\section{Critical Path Visualization (Waves 1--3)}
+The following chart defines the normative sequencing for implementation agents. A task in a later wave cannot be marked \textsc{complete} until its prerequisites in an earlier wave are validated.
+
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}[
+node distance=1.5cm,
+auto,
+wavebox/.style={rectangle, draw, rounded corners, fill=sapmidnight!10, text width=10em, text centered, minimum height=3em, font=\scriptsize\bfseries},
+dep/.style={->, >=latex, thick, sapblue},
+critical/.style={->, >=latex, very thick, sapamber}
+]
+% --- Wave 1: Foundations ---
+\node (r1) [wavebox, fill=sapgrey!20] {\textcolor{sapmidnight}{REG-W1: Identity \& Audit Schema}};
+\node (s1) [wavebox, below of=r1, yshift=-0.5cm] {SIM-W1: HANA Extraction Pipeline};
+\node (a1) [wavebox, below of=s1, yshift=-0.5cm] {ARA-W1: Invoice Intake \& OCR};
+\node (t1) [wavebox, below of=a1, yshift=-0.5cm] {TB-W1: Identity Wiring};
+
+% --- Wave 2: Core Build-out ---
+\node (r2) [wavebox, right of=r1, xshift=4.5cm, fill=sapmidnight!20] {\textcolor{sapmidnight}{REG-W2: Governance Runtime}};
+\node (s2) [wavebox, right of=s1, xshift=4.5cm] {SIM-W2: Taxonomy \& Synthesis};
+\node (a2) [wavebox, right of=a1, xshift=4.5cm] {ARA-W2: Multi-Country VAT};
+\node (t2) [wavebox, right of=t1, xshift=4.5cm] {TB-W2: Controls \& Workflow};
+
+% --- Wave 3: Hardening ---
+\node (r3) [wavebox, right of=r2, xshift=4.5cm, fill=sapmidnight!30] {\textcolor{sapmidnight}{REG-W3: Conformance Suite}};
+\node (s3) [wavebox, right of=s2, xshift=4.5cm] {SIM-W3: 85\% Coverage Test};
+\node (a3) [wavebox, right of=a2, xshift=4.5cm] {ARA-W3: Calibration Pilot};
+\node (t3) [wavebox, right of=t2, xshift=4.5cm] {TB-W3: HITL Dashboard};
+
+% --- Cross-Domain Dependencies (The Critical Path) ---
+\draw [critical] (r1) -- node [above, font=\tiny, align=center] {Identity Envelope\\Invariants} (a1.north east);
+\draw [critical] (r1) -- (t1.north east);
+\draw [dep] (s1.east) -- node [above, font=\tiny, xshift=-0.5cm] {Training Fixtures} (t2.west);
+\draw [dep] (s1.east) -- (a2.west);
+\draw [dep] (r2.south) -- node [left, font=\tiny, yshift=0.3cm] {Policy Gate} (a2.north);
+\draw [dep] (t2.east) -- node [above, font=\tiny] {Audit Evidence} (r3.west);
+
+% --- Wave Transitions ---
+\draw [->, dashed, sapgrey] (r1.east) -- (r2.west);
+\draw [->, dashed, sapgrey] (r2.east) -- (r3.west);
+
+% --- Legend ---
+\node[draw, sapamber, very thick, label=right:\scriptsize Critical Prerequisite] at (0,-7.5) {};
+\node[draw, sapblue, thick, label=right:\scriptsize Data Dependency, xshift=4cm] at (0,-7.5) {};
+
+\end{tikzpicture}
+\caption{Cross-specification dependency graph: The blueprint for platform rollout.}
+\end{figure}
+
+\section{Inter-Domain Prerequisite Matrix}
+
+\begin{table}[htbp]
+\centering
+\footnotesize
+\caption{Normative Cross-Domain Prerequisites.}
+\label{tab:prerequisites}
+\begin{tabularx}{\textwidth}{@{}l l l X@{}}
+\toprule
+\textbf{Target Task} & \textbf{Prerequisite} & \textbf{Ref ID} & \textbf{Rationale} \\
+\midrule
+\rowcolor{sapmidnight!5}
+\textbf{ARA-W1} & REG-W1 (Identity) & \texttt{REG-IDENTITY-01} & Invoice intake must be audit-traced from Day 1. \\
+\textbf{TB-W2}  & SIM-W1 (Extraction) & \texttt{SIM-EXTRACT-01} & Anomaly detection requires HANA schema metadata. \\
+\rowcolor{sapmidnight!5}
+\textbf{REG-W2} & SIM-W1 (Registry) & \texttt{SIM-REGISTRY-01} & Governance monitoring relies on the schema registry. \\
+\textbf{ARA-W2} & REG-W2 (Pillar 1) & \texttt{REG-MGF-P1} & VAT release is an HITL gate governed by MAS Pillar 1. \\
+\rowcolor{sapmidnight!5}
+\textbf{TB-W3}  & ARA-W2 (Posted Invoices) & \texttt{ARA-AP-POST} & Review dashboard depends on posted AP data from Arabic domain. \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\begin{adrbox}{Dependency Enforcement}
+Implementation agents are strictly forbidden from "Fast-Forwarding" into Wave 2 if Wave 1 critical prerequisites (marked in \textcolor{sapamber}{\textbf{Gold}}) are in a \textsc{gap} or \textsc{partial} state.
+\end{adrbox}
+
+
+
+\end{document}

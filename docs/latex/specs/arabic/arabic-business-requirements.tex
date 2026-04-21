@@ -1,0 +1,116 @@
+% !TEX program = xelatex
+% -----------------------------------------------------------------------------
+% Arabic AP: Business Requirements and Lineage Specification
+% -----------------------------------------------------------------------------
+\documentclass[11pt,a4paper,twoside]{report}
+
+\usepackage{xcolor}
+\usepackage[a4paper,margin=28mm]{geometry}
+\usepackage{booktabs}
+\usepackage{tabularx}
+\usepackage{longtable}
+\usepackage{enumitem}
+\usepackage{tcolorbox}
+\usepackage[table]{colortbl}
+
+% --- SAP Midnight Palette ----------------------------------------------------
+\definecolor{sapblue}{HTML}{0B5FA5}
+\definecolor{sapmidnight}{HTML}{1C2B39}
+\definecolor{sapgrey}{HTML}{546E7A}
+\definecolor{sapamber}{HTML}{B8360F}
+
+% --- Semantic Hyperlinking --------------------------------------------------
+\usepackage[hidelinks]{hyperref}
+\usepackage[capitalize,noabbrev]{cleveref}
+
+% --- Safe Font Fallback (Bypassing polyglossia font errors) ------------------
+\usepackage{fontspec}
+\setmainfont{Arial}
+\newcommand{\ar}[1]{#1}
+
+\newtcolorbox{adrbox}[2][]{colback=blue!5,colframe=blue!75!black,fonttitle=\bfseries,title=ADR: #2,#1}
+
+\begin{document}
+
+\title{\Huge Arabic AP Domain \\
+       \textbf{Business Requirements \& Lineage} \\
+       \large Source-to-Specification Mapping \\
+       \small Ref: \texttt{ARA-REQ-LIN-2026-v1.0}}
+\author{SAP-OSS Business Architecture Team}
+\date{April 2026}
+
+\maketitle
+
+\chapter{Source Material Registry}
+\label{ch:source-registry}
+
+This chapter catalogues the primary source documents used to derive the business requirements for the Arabic AP domain.
+
+\begin{longtable}{p{5cm} p{3cm} p{6cm}}
+\caption{Source Document Inventory} \\
+\toprule
+\textbf{File Name} & \textbf{Regulatory Body} & \textbf{Primary Concern} \\
+\midrule
+\endfirsthead
+\toprule
+\textbf{File Name} & \textbf{Regulatory Body} & \textbf{Primary Concern} \\
+\midrule
+\endhead
+\texttt{Accounts Payable DOI.docx} & SCB Bahrain / NBR & Delegation of Invoicing (DOI) \& Controls \\
+\texttt{Saudi - OTP Entry processing...} & ZATCA (Saudi) & VAT Q3'25 processing rules \\
+\texttt{EDAA Annual Fee Invoice...} & EDAA & Arabic/English Invoice layout (Standard) \\
+\texttt{Arabic-Simplified-Invoice.pdf} & Local Authority & Arabic-only simplified invoice structure \\
+\bottomrule
+\end{longtable}
+
+\chapter{Transformation Logic}
+\label{ch:transformation}
+
+\section{From PDF to Machine-Readable (YAML/JSON)}
+The business requirements were extracted from the sources in \cref{ch:source-registry} using a semi-automated "Ground Truth" process:
+\begin{enumerate}
+    \item \textbf{Heuristic Extraction:} Initial requirement identification by GFS Analysts.
+    \item \textbf{Schema Normalization:} Mapping requirements to the \texttt{invoice.schema.json} and \texttt{vat-checklist.schema.json}.
+    \item \textbf{Formalization:} Converting narrative rules (e.g., "Full tax invoice must contain TIN") into JSON-Logic predicates.
+\end{enumerate}
+
+\chapter{Business Requirements Catalogue}
+\label{ch:requirements}
+
+\begin{longtable}{p{2cm} p{5cm} p{7cm}}
+\caption{Consolidated Business Requirements} \\
+\toprule
+\textbf{Req ID} & \textbf{Business Rule} & \textbf{Source Document Reference} \\
+\midrule
+\endfirsthead
+\toprule
+\textbf{Req ID} & \textbf{Business Rule} & \textbf{Source Document Reference} \\
+\midrule
+\endhead
+\rowcolor{sapblue!5}
+\textbf{BR-OCR-01} & Character precision for currency must exceed 99.5\%. & \texttt{Saudi - OTP Entry processing...} (p. 2) \\
+\textbf{BR-VAT-SA} & Simplified vs Full Invoice determination based on 1000 SAR threshold. & ZATCA VAT Guidelines (Implicit in Saudi OTP) \\
+\rowcolor{sapblue!5}
+\textbf{BR-DOI-07} & Evidence-based seven-control sign-off for Bahrain. & \texttt{Accounts Payable DOI.docx} (Section 4) \\
+\textbf{BR-TRN-01} & Translation must maintain semantic mapping for legal entity names. & \texttt{EDAA Annual Fee Invoice...} \\
+\bottomrule
+\end{longtable}
+
+\chapter{Requirement-to-Specification Lineage}
+\label{ch:lineage}
+
+\begin{longtable}{p{2cm} p{6cm} p{6cm}}
+\caption{Technical Traceability Matrix} \\
+\toprule
+\textbf{Req ID} & \textbf{Technical Implementation} & \textbf{Implementation Spec Ref} \\
+\midrule
+\rowcolor{sapamber!5}
+\textbf{BR-OCR-01} & Confidence threshold calibration pilot. & \texttt{arabic-ap-spec} Ch. 10 \\
+\textbf{BR-VAT-SA} & Rule ID \texttt{VAT-SA-SI-001} in VAT Engine. & \texttt{arabic-ap-spec} Ch. 8 \\
+\rowcolor{sapamber!5}
+\textbf{BR-DOI-07} & 28-state workflow wiring in \texttt{ap.workflow.advance}. & \texttt{arabic-ap-spec} Ch. 5 \& 6 \\
+\textbf{BR-TRN-01} & Arabic--English translation gate calibration. & \texttt{arabic-ap-spec} Ch. 3 \\
+\bottomrule
+\end{longtable}
+
+\end{document}

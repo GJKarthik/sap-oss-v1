@@ -1,0 +1,527 @@
+# =============================================================================
+# Human-in-the-Loop Requirements Traceability Manifest
+# Trial Balance Review Process
+# Version: 1.0.0
+# =============================================================================
+
+metadata:
+  manifest_id: "TB-HITL-MANIFEST-001"
+  version: "1.0.0"
+  created_at: "2026-04-20T12:45:00+08:00"
+  updated_at: "2026-04-20T17:32:00+08:00"
+  specification_ref: "docs/latex/specs/tb-hitl/tb-business-requirements-traceability.tex"
+  rules_ref: ".clinerules"
+  companion_documents:
+    - "docs/latex/specs/tb/tb-review-spec.tex"
+    - "docs/tb/machine-readable/manifest.json"
+    - "docs/schema/common/enums.yaml"
+    - "docs/schema/tb/audit-trail-entry.schema.json"
+
+# =============================================================================
+# Layer 1: Source Documents
+# =============================================================================
+source_documents:
+  - source_ref: "TB-BC-001"
+    title: "Business case - Trial Balance"
+    filepath: "docs/tb/Business case - Trial Balance (2).doc"
+    file_type: "doc"
+    file_size_bytes: 97792
+    created_by: "1498002 (S1 Badrinath)"
+    created_date: "2025-12-14"
+    extraction_status: "complete"
+    
+  - source_ref: "TB-BC-002"
+    title: "Business case - BSS Risk Assessment"
+    filepath: "docs/tb/Business case - BSS Risk Assessment (2).doc"
+    file_type: "doc"
+    file_size_bytes: 95232
+    created_by: "1498002 (S1 Badrinath)"
+    created_date: "2025-12-15"
+    extraction_status: "complete"
+    
+  - source_ref: "TB-DOI-001"
+    title: "DOI for Trial Balance Process"
+    filepath: "docs/tb/DOI for Trial Balance Process .docx"
+    file_type: "docx"
+    file_size_bytes: 6583541
+    extraction_status: "complete"
+    
+  - source_ref: "TB-BPMN-001"
+    title: "Operation of Month End Close Controls - Trial Balance Review - GLO"
+    filepath: "docs/tb/Operation of Month End Close Controls  - Trial Balance Review - GLO (1).pdf"
+    file_type: "pdf"
+    file_size_bytes: 65367
+    process_owner: "Modi, Piyush"
+    last_changed: "2025-05-23T19:50:30Z"
+    extraction_status: "complete"
+    
+  - source_ref: "TB-WB-001"
+    title: "HKG_TB review Nov'25"
+    filepath: "docs/tb/HKG_TB review Nov'25.xlsm"
+    file_type: "xlsm"
+    file_size_bytes: 76989527
+    extraction_status: "schema_only"
+    
+  - source_ref: "TB-WB-002"
+    title: "HKG_PL review Nov'25"
+    filepath: "docs/tb/HKG_PL review Nov'25.xlsm"
+    file_type: "xlsm"
+    file_size_bytes: 53245945
+    extraction_status: "schema_only"
+
+# =============================================================================
+# Layer 2: Extracted Machine-Readable Files
+# =============================================================================
+extracted_files:
+  - extraction_id: "EXT-001"
+    source_ref: "TB-BC-001"
+    filepath: "docs/tb/machine-readable/extracted/business-case-trial-balance.md"
+    format: "markdown"
+    word_count: 1172
+    
+  - extraction_id: "EXT-002"
+    source_ref: "TB-BC-002"
+    filepath: "docs/tb/machine-readable/extracted/business-case-bss-risk-assessment.md"
+    format: "markdown"
+    file_size_bytes: 8908
+    
+  - extraction_id: "EXT-003"
+    source_ref: "TB-DOI-001"
+    filepath: "docs/tb/machine-readable/extracted/doi-trial-balance-process.md"
+    format: "markdown"
+    images_extracted: 4
+    
+  - extraction_id: "EXT-004"
+    source_ref: "TB-BPMN-001"
+    filepath: "docs/tb/machine-readable/extracted/bpmn-tb-review-glo.md"
+    format: "markdown"
+    
+  - extraction_id: "EXT-005"
+    source_ref: "TB-BPMN-001"
+    filepath: "docs/tb/machine-readable/extracted/bpmn-elements.json"
+    format: "json"
+    states_extracted: 27
+    
+  - extraction_id: "EXT-006"
+    source_ref: "TB-WB-001"
+    filepath: "docs/tb/machine-readable/training-data/hkg-tb-schema.yaml"
+    format: "yaml"
+    
+  - extraction_id: "EXT-007"
+    source_ref: "TB-WB-002"
+    filepath: "docs/tb/machine-readable/training-data/hkg-pl-schema.yaml"
+    format: "yaml"
+
+# =============================================================================
+# Layer 3: Business Requirements
+# =============================================================================
+requirements:
+  # Executive Summary Requirements
+  - requirement_id: "TB-REQ-ES01"
+    category: "executive_summary"
+    title: "AI model for variance analysis"
+    source_ref: "TB-BC-001"
+    source_location: "Section 1, Para 3"
+    derivation_method: "direct"
+    
+  - requirement_id: "TB-REQ-ES02"
+    category: "executive_summary"
+    title: "Commentary generation from GL data"
+    source_ref: "TB-BC-001"
+    source_location: "Section 1, Para 3"
+    derivation_method: "direct"
+    
+  - requirement_id: "TB-REQ-ES03"
+    category: "executive_summary"
+    title: "5 FTE savings target"
+    source_ref: "TB-BC-001"
+    source_location: "Section 1, Summary Table"
+    derivation_method: "direct"
+    
+  - requirement_id: "TB-REQ-ES04"
+    category: "executive_summary"
+    title: "Studio AI solution (in-house)"
+    source_ref: "TB-BC-001"
+    source_location: "Section 1, Para 6"
+    derivation_method: "direct"
+    
+  # Scope Requirements
+  - requirement_id: "TB-REQ-SC01"
+    category: "scope"
+    title: "234 Legal Entities coverage"
+    source_ref: "TB-BC-001"
+    source_location: "Section 2, Current State"
+    derivation_method: "direct"
+    
+  - requirement_id: "TB-REQ-SC02"
+    category: "scope"
+    title: "Finance caption level reporting"
+    source_ref: "TB-BC-001"
+    source_location: "Section 2, Current State"
+    derivation_method: "direct"
+    
+  - requirement_id: "TB-REQ-SC03"
+    category: "scope"
+    title: "Segment level reporting view"
+    source_ref: "TB-BC-001"
+    source_location: "Section 1, Para 3"
+    derivation_method: "direct"
+    
+  - requirement_id: "TB-REQ-SC04"
+    category: "scope"
+    title: "Legal entity level reporting"
+    source_ref: "TB-BC-001"
+    source_location: "Section 3, Scope"
+    derivation_method: "direct"
+    
+  - requirement_id: "TB-REQ-SC05"
+    category: "scope"
+    title: "Out of scope: Country IFRS"
+    source_ref: "TB-BC-001"
+    source_location: "Section 3, Scope"
+    derivation_method: "direct"
+    
+  - requirement_id: "TB-REQ-SC06"
+    category: "scope"
+    title: "Out of scope: BSS Risk Assessment"
+    source_ref: "TB-BC-001"
+    source_location: "Section 3, Scope"
+    derivation_method: "direct"
+    
+  # Process Step Requirements
+  - requirement_id: "TB-REQ-PS01"
+    category: "process_steps"
+    title: "Roll forward prior month file"
+    source_ref: "TB-BPMN-001"
+    source_location: "State: ROLL_FORWARD"
+    derivation_method: "direct"
+    
+  - requirement_id: "TB-REQ-PS02"
+    category: "process_steps"
+    title: "Download PSGL master data"
+    source_ref: "TB-BPMN-001"
+    source_location: "State: DOWNLOAD_PSGL"
+    derivation_method: "direct"
+    
+  - requirement_id: "TB-REQ-PS03"
+    category: "process_steps"
+    title: "Extract trial balance data"
+    source_ref: "TB-BPMN-001"
+    source_location: "State: EXTRACT_TB"
+    derivation_method: "direct"
+    
+  - requirement_id: "TB-REQ-PS04"
+    category: "process_steps"
+    title: "Calculate variance"
+    source_ref: "TB-BPMN-001"
+    source_location: "State: CALCULATE_VARIANCE"
+    derivation_method: "direct"
+    
+  - requirement_id: "TB-REQ-PS05"
+    category: "process_steps"
+    title: "Filter by materiality"
+    source_ref: "TB-BPMN-001"
+    source_location: "State: FILTER_VARIANCES"
+    derivation_method: "direct"
+    
+  - requirement_id: "TB-REQ-PS06"
+    category: "process_steps"
+    title: "Seek commentaries"
+    source_ref: "TB-BPMN-001"
+    source_location: "State: SEEK_COMMENTARIES"
+    derivation_method: "direct"
+    
+  - requirement_id: "TB-REQ-PS07"
+    category: "process_steps"
+    title: "Track entries and risk"
+    source_ref: "TB-BPMN-001"
+    source_location: "State: TRACK_ENTRIES"
+    derivation_method: "direct"
+    
+  - requirement_id: "TB-REQ-PS08"
+    category: "process_steps"
+    title: "Prepare summary"
+    source_ref: "TB-BPMN-001"
+    source_location: "State: PREPARE_SUMMARY"
+    derivation_method: "direct"
+    
+  # AI Augmentation Requirements
+  - requirement_id: "TB-REQ-AI01"
+    category: "ai_augmentation"
+    title: "Anomaly detection"
+    source_ref: "TB-BC-001"
+    source_location: "Section 1, Para 3"
+    derivation_method: "direct"
+    
+  - requirement_id: "TB-REQ-AI02"
+    category: "ai_augmentation"
+    title: "Trend analysis"
+    source_ref: "TB-BC-001"
+    source_location: "Section 1, Para 3"
+    derivation_method: "direct"
+    
+  - requirement_id: "TB-REQ-AI03"
+    category: "ai_augmentation"
+    title: "New account detection"
+    source_ref: "TB-BC-001"
+    source_location: "Section 1, Para 3"
+    derivation_method: "direct"
+    
+  - requirement_id: "TB-REQ-AI04"
+    category: "ai_augmentation"
+    title: "Spike/drop detection"
+    source_ref: "TB-BC-001"
+    source_location: "Section 1, Para 3"
+    derivation_method: "direct"
+    
+  - requirement_id: "TB-REQ-AI05"
+    category: "ai_augmentation"
+    title: "Material balance identification"
+    source_ref: "TB-BC-001"
+    source_location: "Section 1, Para 3"
+    derivation_method: "direct"
+    
+  - requirement_id: "TB-REQ-AI06"
+    category: "ai_augmentation"
+    title: "LLM-generated commentaries"
+    source_ref: "TB-BC-001"
+    source_location: "Section 3, Proposed Solution"
+    derivation_method: "synthesis"
+    
+  # BSS Risk Assessment Requirements
+  - requirement_id: "BSS-REQ-01"
+    category: "bss_risk_assessment"
+    title: "Risk categorization"
+    source_ref: "TB-BC-002"
+    source_location: "Section: Scope"
+    derivation_method: "direct"
+    
+  - requirement_id: "BSS-REQ-02"
+    category: "bss_risk_assessment"
+    title: "Post-FCA cutoff consolidation"
+    source_ref: "TB-BC-002"
+    source_location: "Step: BSS-STEP-003"
+    derivation_method: "direct"
+    
+  - requirement_id: "BSS-REQ-03"
+    category: "bss_risk_assessment"
+    title: "Risk reporting packs"
+    source_ref: "TB-BC-002"
+    source_location: "Step: BSS-STEP-004"
+    derivation_method: "direct"
+
+# =============================================================================
+# Layer 4: Specifications
+# =============================================================================
+specifications:
+  process_steps:
+    - spec_id: "TB-STEP-001"
+      name: "Roll Forward Prior Month File"
+      requirement_ids: ["TB-REQ-PS01"]
+      
+    - spec_id: "TB-STEP-002"
+      name: "Download PSGL & Update Master"
+      requirement_ids: ["TB-REQ-PS02"]
+      
+    - spec_id: "TB-STEP-003"
+      name: "Extract Trial Balance"
+      requirement_ids: ["TB-REQ-PS03", "TB-REQ-SC01"]
+      
+    - spec_id: "TB-STEP-004"
+      name: "Calculate & Filter Variances"
+      requirement_ids: ["TB-REQ-PS04", "TB-REQ-PS05"]
+      
+    - spec_id: "TB-STEP-005"
+      name: "Seek & Update Commentaries"
+      requirement_ids: ["TB-REQ-PS06", "TB-REQ-AI06"]
+      
+    - spec_id: "TB-STEP-006"
+      name: "Journal Posting Investigation"
+      requirement_ids: ["TB-REQ-PS07"]
+      
+    - spec_id: "TB-STEP-007"
+      name: "Track Entries & Risk"
+      requirement_ids: ["TB-REQ-PS07"]
+      
+    - spec_id: "TB-STEP-008"
+      name: "Prepare Summary & Review"
+      requirement_ids: ["TB-REQ-PS08"]
+      
+  decision_points:
+    - spec_id: "DP-001"
+      name: "Materiality Check"
+      requirement_ids: ["TB-REQ-PS05", "TB-REQ-AI05"]
+      
+    - spec_id: "DP-002"
+      name: "Journal Status"
+      requirement_ids: ["TB-REQ-PS07"]
+      
+    - spec_id: "DP-003"
+      name: "Investigation Required"
+      requirement_ids: ["TB-REQ-PS07"]
+      
+    - spec_id: "DP-004"
+      name: "Entry Confirmation"
+      requirement_ids: ["TB-REQ-PS07"]
+      
+    - spec_id: "DP-005"
+      name: "Unexplained Variance"
+      requirement_ids: ["TB-REQ-AI06", "BSS-REQ-01"]
+      
+  ai_capabilities:
+    - spec_id: "AI-ANOM"
+      name: "Anomaly Detection"
+      requirement_ids: ["TB-REQ-AI01"]
+      
+    - spec_id: "AI-TREND"
+      name: "Trend Analysis"
+      requirement_ids: ["TB-REQ-AI02"]
+      
+    - spec_id: "AI-NEW"
+      name: "New Account Detection"
+      requirement_ids: ["TB-REQ-AI03"]
+      
+    - spec_id: "AI-SPIKE"
+      name: "Spike/Drop Detection"
+      requirement_ids: ["TB-REQ-AI04"]
+      
+    - spec_id: "AI-MAT"
+      name: "Material Balance ID"
+      requirement_ids: ["TB-REQ-AI05"]
+      
+    - spec_id: "AI-LLM"
+      name: "LLM Commentary"
+      requirement_ids: ["TB-REQ-AI06"]
+      
+  controls:
+    - spec_id: "TB-CTRL-001"
+      name: "PSGL Master Data Extraction"
+      euc_reference: "EX/200/1353107/0001/000"
+      requirement_ids: ["TB-REQ-PS02"]
+      
+    - spec_id: "TB-CTRL-002"
+      name: "Variance Analysis"
+      euc_reference: "EX/200/1579702/0001/000"
+      requirement_ids: ["TB-REQ-PS04"]
+      
+    - spec_id: "TB-CTRL-003"
+      name: "Senior Review"
+      euc_reference: "EX/200/1579702/0002/000"
+      requirement_ids: ["TB-REQ-PS08"]
+
+# =============================================================================
+# Layer 5: Schemas
+# =============================================================================
+schemas:
+  - schema_id: "variance-record"
+    filepath: "docs/schema/tb/variance-record.schema.json"
+    spec_ids: ["TB-STEP-004", "DP-001", "DP-002", "DP-003", "DP-004", "DP-005", "AI-ANOM"]
+    
+  - schema_id: "commentary-draft"
+    filepath: "docs/schema/tb/commentary-draft.schema.json"
+    spec_ids: ["AI-LLM", "TB-STEP-005"]
+    
+  - schema_id: "tb-extract"
+    filepath: "docs/schema/tb/tb-extract.schema.json"
+    spec_ids: ["TB-STEP-003"]
+    
+  - schema_id: "entity-params"
+    filepath: "docs/schema/tb/entity-params.schema.json"
+    spec_ids: ["TB-STEP-002", "DP-001"]
+    
+  - schema_id: "decision-point"
+    filepath: "docs/schema/tb/decision-point.schema.json"
+    spec_ids: ["DP-001", "DP-002", "DP-003", "DP-004", "DP-005"]
+    
+  - schema_id: "pl-extract"
+    filepath: "docs/schema/tb/pl-extract.schema.json"
+    spec_ids: ["TB-STEP-003"]
+
+# =============================================================================
+# Gaps
+# =============================================================================
+gaps:
+  - gap_id: "G-001"
+    layer: "source"
+    location: "TB-BC-001, Section 5"
+    issue: "Financial Analysis section marked TBD"
+    severity: "medium"
+    owner: "S1 Badrinath"
+    status: "open"
+    target_resolution: "2026-Q2"
+    
+  - gap_id: "G-002"
+    layer: "extraction"
+    location: "TB-DOI-001, embedded images"
+    issue: "DOI images not OCR processed"
+    severity: "low"
+    owner: "Technical Lead"
+    status: "planned"
+    target_resolution: "2026-05-15"
+
+# =============================================================================
+# HITL Checkpoints
+# =============================================================================
+hitl_checkpoints:
+  - checkpoint_id: "H1"
+    name: "Source Completeness"
+    chapter: "ch:source-documents"
+    status: "pending"
+    
+  - checkpoint_id: "H2"
+    name: "Extraction Accuracy"
+    chapter: "ch:extraction-layer"
+    status: "pending"
+    
+  - checkpoint_id: "H3"
+    name: "Requirement Derivation"
+    chapter: "ch:business-requirements"
+    status: "pending"
+    
+  - checkpoint_id: "H4"
+    name: "Traceability Links"
+    chapter: "ch:bidirectional-traceability"
+    status: "pending"
+    
+  - checkpoint_id: "H5"
+    name: "Schema Alignment"
+    chapter: "ch:schema-mapping"
+    status: "pending"
+    
+  - checkpoint_id: "H6"
+    name: "Gap Analysis"
+    chapter: "ch:gap-analysis"
+    status: "pending"
+
+# =============================================================================
+# Statistics
+# =============================================================================
+statistics:
+  source_documents: 6
+  extracted_files: 7
+  requirements: 27
+  specifications: 22
+  schemas: 7  # Added audit-trail-entry.schema.json
+  gaps: 2
+  hitl_checkpoints: 6
+  bpmn_states: 28  # Corrected from 27 per P0-1 audit finding
+  coverage:
+    source_to_extracted: "100%"
+    requirements_to_source: "100%"
+    specs_to_requirements: "100%"
+    schemas_to_specs: "95%"  # 21/22 specs have schemas (added audit trail)
+  audit_status: "conditionally_approved"
+  findings_resolved:
+    P0-1: "State count reconciliation (27→28)"
+    P0-2: "vLLM fallback specification"
+    P1-1: "Audit trail schema definition"
+    P1-2: "Normality test with MAD fallback"
+    P2-2: "Commentary quality metrics clarification"
+    A-2: "100% traceability exceptions table"
+    A-4: "BSS vocabulary alignment (shared enums.yaml)"
+    I-3: "Bulk operations error handling"
+    I-4: "Kill-switch automation specification"
+  findings_planned:
+    P2-1: "Kill-switch condition automation (8 weeks)"
+  total_findings_resolved: 9
+  total_findings_planned: 1

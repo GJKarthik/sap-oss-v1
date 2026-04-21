@@ -1,218 +1,148 @@
+key item # =============================================================================
+# Shared Vocabulary Registry
+# Cross-Spec Enum Definitions
 # =============================================================================
-# Consolidated Enumeration Values
+# Maintainer: Controls Architecture Team
+# Change Process: RFC required; all consuming spec owners must approve
+# CI Validation: validate.py --registry-check ensures no local redefinitions
 # =============================================================================
-# Single source of truth for enum values across all domain schemas.
-# Last updated: April 2026
+
+risk_status:
+  $id: "common/risk-status"
+  description: "Shared risk classification vocabulary (TB + BSS)"
+  type: string
+  enum:
+    - substantiated           # Evidence supports balance
+    - substantiated_at_risk   # Evidence exists but control weakness identified  
+    - unsubstantiated_unowned # No evidence; no owner assigned
+    - unsubstantiated_owned   # No evidence; owner assigned for remediation
+  ownership:
+    maintainer: "Controls Architecture Team"
+    consumers: 
+      - "tb-review-spec"
+      - "bss-risk-assessment-spec"
+    change_process: "RFC required; both spec owners must approve"
+    last_updated: "2026-04-20"
+    version: "1.0.0"
+
+decision_outcome:
+  $id: "common/decision-outcome"
+  description: "Standard decision outcomes for HITL review workflows"
+  type: string
+  enum:
+    - accept         # Approved without changes
+    - accept_edited  # Approved with human edits
+    - reject         # Rejected; requires regeneration
+    - escalate       # Escalated to senior reviewer
+    - defer          # Deferred to next cycle
+  ownership:
+    maintainer: "Workflow Architecture Team"
+    consumers:
+      - "tb-review-spec"
+      - "arabic-ap-spec"
+      - "regulations-spec"
+    change_process: "RFC required; majority of consuming spec owners must approve"
+    last_updated: "2026-04-20"
+    version: "1.0.0"
+
+variance_type:
+  $id: "common/variance-type"
+  description: "Standard variance classification types"
+  type: string
+  enum:
+    - spike          # Significant increase (>25% by default)
+    - drop           # Significant decrease (<-25% by default)
+    - new_account    # Account not present in prior period
+    - material       # Exceeds materiality threshold
+    - anomaly        # Statistical outlier (Z-score or MAD)
+    - trend          # Multi-period trend detected
+    - normal         # Within expected variance
+  ownership:
+    maintainer: "Financial Analytics Team"
+    consumers:
+      - "tb-review-spec"
+    change_process: "RFC required; spec owner must approve"
+    last_updated: "2026-04-20"
+    version: "1.0.0"
+
+workflow_state_type:
+  $id: "common/workflow-state-type"
+  description: "BPMN state types"
+  type: string
+  enum:
+    - start          # Process start event
+    - task           # Human or automated task
+    - gateway        # Decision point
+    - error          # Error handling state
+    - end            # Process end event
+  ownership:
+    maintainer: "Process Architecture Team"
+    consumers:
+      - "tb-review-spec"
+      - "bss-risk-assessment-spec"
+    change_process: "RFC required"
+    last_updated: "2026-04-20"
+    version: "1.0.0"
+
+audit_action:
+  $id: "common/audit-action"
+  description: "Standard audit trail action types"
+  type: string
+  enum:
+    - view                    # Resource viewed
+    - claim                   # Reviewer claims item
+    - decide                  # Decision made
+    - escalate                # Escalated to senior
+    - override                # Manual override applied
+    - bulk_assign             # Bulk assignment
+    - bulk_priority_change    # Bulk priority change
+    - bulk_requeue            # Bulk requeue
+    - comment_edit            # Commentary edited
+    - comment_approve         # Commentary approved
+    - comment_reject          # Commentary rejected
+    - export                  # Data exported
+    - import                  # Data imported
+    - divergence_detected     # EUC/Dashboard divergence
+    - threshold_change        # Materiality threshold changed
+    - entity_params_update    # Entity parameters updated
+  ownership:
+    maintainer: "Controls Architecture Team"
+    consumers:
+      - "tb-review-spec"
+      - "bss-risk-assessment-spec"
+      - "arabic-ap-spec"
+    change_process: "RFC required; Controls Architecture must approve"
+    last_updated: "2026-04-20"
+    version: "1.0.0"
+
+source_system:
+  $id: "common/source-system"
+  description: "Systems that can originate audit events"
+  type: string
+  enum:
+    - dashboard   # Web dashboard UI
+    - api         # REST API direct call
+    - batch       # Batch processing job
+    - import      # Data import process
+    - scheduler   # Automated scheduler
+  ownership:
+    maintainer: "Platform Team"
+    consumers:
+      - "tb-review-spec"
+      - "arabic-ap-spec"
+    change_process: "RFC required"
+    last_updated: "2026-04-20"
+    version: "1.0.0"
+
 # =============================================================================
-
-# -----------------------------------------------------------------------------
-# Geographic / Jurisdiction
-# -----------------------------------------------------------------------------
-countries:
-  description: Supported countries with tax authorities
-  values:
-    SA:
-      name: Saudi Arabia
-      tax_authority: ZATCA
-      currency: SAR
-      vat_rates: [0, 5, 15]
-    EG:
-      name: Egypt
-      tax_authority: ETA
-      currency: EGP
-      vat_rates: [0, 14]
-    BH:
-      name: Bahrain
-      tax_authority: NBR
-      currency: BHD
-      vat_rates: [0, 10]
-    QA:
-      name: Qatar
-      tax_authority: QTA
-      currency: QAR
-      vat_rates: []  # No VAT currently
-
-tax_authorities:
-  description: Tax authority codes
-  values: [ZATCA, ETA, NBR, QTA]
-
-# -----------------------------------------------------------------------------
-# VAT / Tax Classification
-# -----------------------------------------------------------------------------
-vat_category:
-  description: VAT classification categories
-  values:
-    FI: Full Tax Invoice
-    SI: Simplified Tax Invoice
-    ZR: Zero Rated
-    EX: Exempt
-    RC: Reverse Charge
-    UR: Unregistered Vendor
-    TCN: Tax Credit Note
-    CBR: Cross-Border / Inter-BU
-    OS: Out of Scope
-    OTHER: Other / Unknown
-
-vat_thresholds:
-  description: Per-country thresholds (amount below which SI applies)
-  values:
-    BH:
-      si_fi_boundary: 500
-      currency: BHD
-    SA:
-      si_fi_boundary: 1000
-      currency: SAR
-    EG:
-      si_fi_boundary: 5000
-      currency: EGP
-
-# -----------------------------------------------------------------------------
-# Supplier / Entity Types
-# -----------------------------------------------------------------------------
-supplier_type:
-  description: Supplier classification for tax treatment
-  values:
-    - INDIVIDUAL
-    - CORPORATE
-    - GOVERNMENT
-    - NON_PROFIT
-    - FOREIGN
-
-# -----------------------------------------------------------------------------
-# Document / Invoice Types
-# -----------------------------------------------------------------------------
-invoice_type:
-  description: Type of invoice document
-  values:
-    - STANDARD
-    - CREDIT_NOTE
-    - DEBIT_NOTE
-    - PROFORMA
-    - SELF_BILLING
-
-document_format:
-  description: Source document format
-  values:
-    - PDF
-    - IMAGE_SCAN
-    - ELECTRONIC_XML
-    - ELECTRONIC_JSON
-    - PAPER_DIGITIZED
-
-language:
-  description: Document language codes
-  values:
-    - ar        # Arabic only
-    - en        # English only
-    - ar+en     # Bilingual Arabic/English
-
-# -----------------------------------------------------------------------------
-# Workflow / Status
-# -----------------------------------------------------------------------------
-workflow_status:
-  description: Workflow state machine values
-  values:
-    - DRAFT
-    - PENDING_REVIEW
-    - IN_REVIEW
-    - APPROVED
-    - REJECTED
-    - ESCALATED
-    - ON_HOLD
-    - COMPLETED
-    - ARCHIVED
-
-verdict:
-  description: AI/human decision outcome
-  values:
-    - RELEASE    # Approved for processing
-    - HOLD       # Requires human review
-    - REJECT     # Rejected permanently
-
-checklist_result:
-  description: Per-rule checklist outcomes
-  values:
-    - Y    # Yes / Pass
-    - N    # No / Fail
-    - NA   # Not Applicable
-
-# -----------------------------------------------------------------------------
-# Trial Balance Specific
-# -----------------------------------------------------------------------------
-account_category:
-  description: TB account classification
-  values:
-    - ASSET
-    - LIABILITY
-    - EQUITY
-    - REVENUE
-    - EXPENSE
-    - INTERCOMPANY
-
-variance_flag:
-  description: Anomaly detection flags
-  values:
-    - PERIOD_SPIKE
-    - SIGN_FLIP
-    - NEW_ACCOUNT
-    - STALE_BALANCE
-
-decision_point:
-  description: TB workflow decision points (DP-001 through DP-005)
-  values:
-    - DP-001  # Material variance check
-    - DP-002  # Journal posted check
-    - DP-003  # Further investigation check
-    - DP-004  # Confirmation received check
-    - DP-005  # Unexplained variance check
-
-# -----------------------------------------------------------------------------
-# Simula / Training Data Specific
-# -----------------------------------------------------------------------------
-taxonomy_node_type:
-  description: Type of taxonomy tree node
-  values:
-    - ROOT
-    - FACTOR
-    - LEAF
-
-complexity_level:
-  description: Training example complexity
-  values:
-    - EASY       # c < 0.3
-    - MEDIUM     # 0.3 <= c < 0.7
-    - HARD       # c >= 0.7
-
-critic_verdict:
-  description: Critic evaluation outcome
-  values:
-    - ACCEPT
-    - REVISE
-    - REJECT
-
-# -----------------------------------------------------------------------------
-# Regulations / Compliance Specific
-# -----------------------------------------------------------------------------
-requirement_status:
-  description: Implementation status of regulatory requirement
-  values:
-    - implemented   # Fully implemented and validated
-    - partial       # Partially implemented
-    - gap           # Not implemented
-    - na            # Not applicable
-    - missing       # Expected but absent
-
-obligation_level:
-  description: Normative strength
-  values:
-    - must          # Mandatory
-    - should        # Recommended
-    - may           # Optional
-
-jurisdiction:
-  description: Regulatory jurisdiction codes
-  values:
-    - SG    # Singapore
-    - UK    # United Kingdom
-    - US    # United States
-    - EU    # European Union
+# Registry Metadata
+# =============================================================================
+_registry_metadata:
+  schema_version: "1.0.0"
+  last_validated: "2026-04-20T15:30:00+08:00"
+  validation_tool: "docs/schema/validate.py --registry-check"
+  total_enums: 6
+  governance:
+    rfc_template: "docs/templates/enum-change-rfc.md"
+    approval_process: "CODEOWNERS review + spec owner sign-off"
+    ci_enforcement: true

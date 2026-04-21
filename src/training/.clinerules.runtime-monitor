@@ -1,0 +1,226 @@
+# =============================================================================
+# Simula Runtime Monitor And Alerting Agent Rules
+# Path: src/training/.clinerules.runtime-monitor
+# =============================================================================
+
+Purpose
+- Monitor Simula runs as a production-grade system, not as a demo.
+- Detect operational failures, contract drift, quality-gate regressions, and silent fallback behavior.
+- Produce actionable alerts with precise evidence and a recommended next step.
+
+Mission
+- Watch the authoritative Simula runtime path end to end.
+- Distinguish real production execution from preview, synthetic, fallback, or placeholder behavior.
+- Escalate spec-critical failures early enough that bad datasets, bad reports, or misleading UI state do not propagate.
+
+Source Of Truth
+- Normative spec:
+  - `docs/pdf/specs/simula-training-spec.pdf`
+  - `docs/latex/specs/simula/chapters/06-environment-cli.tex`
+  - `docs/latex/specs/simula/chapters/07-references.tex`
+- Normative contracts:
+  - `docs/schema/simula/training-example.schema.json`
+  - `docs/schema/simula/taxonomy.schema.json`
+- Core runtime paths:
+  - `src/training/scripts/run_hana_pipeline.py`
+  - `src/training/pipeline/`
+- Operational integration paths:
+  - `src/generativeUI/training-webcomponents-ngx/packages/api-server/src/main.py`
+  - `src/generativeUI/training-webcomponents-ngx/apps/angular-shell/src/app/pages/pipeline/pipeline.component.ts`
+  - `src/generativeUI/training-webcomponents-ngx/apps/angular-shell/src/app/pages/hana-explorer/hana-explorer.component.ts`
+  - `src/generativeUI/training-webcomponents-ngx/apps/angular-shell/src/app/components/shell/shell.component.ts`
+
+Primary Monitoring Objective
+- A governed Simula run is healthy only when:
+  - it is running the authoritative Simula path
+  - it is using live dependencies where required
+  - it emits the full required artifact set
+  - its evaluator outputs pass configured thresholds
+  - its UI/API surfaces reflect the true runtime state
+
+Evidence Sources
+- Governance run records and gate-check outcomes
+- Pipeline status endpoints and websocket log streams
+- Job status endpoints and websocket updates
+- Runner-emitted artifacts in the configured output directory
+- HANA health, HANA mode, and query execution mode
+- vLLM / model endpoint health
+- API payloads consumed by pipeline, preview, and explorer surfaces
+- Frontend status surfaces when validating runtime honesty
+
+What Counts As Healthy
+- The run status is successful.
+- The run used the Simula path, not the legacy template path.
+- No stage ended with zero output where output is required.
+- All required artifacts exist and are readable.
+- Serialized outputs are schema-valid where schemas exist.
+- No evaluator crashed or emitted contract-drift exceptions.
+- No governed production run used preview/synthetic fallback mode.
+- Quality metrics meet threshold.
+
+What Must Never Be Reported As Healthy
+- A production-governed run that completed through preview fallback.
+- A run that generated examples but skipped required evaluation reports.
+- A run whose outputs exist but do not match the schema-backed contracts.
+- A UI that is showing simulated/random telemetry for an active production run.
+- A path that still launched the legacy pipeline while claiming Simula completion.
+
+Canonical Required Artifacts
+- `schemas.json`
+- `taxonomies.json`
+- `training_data.jsonl`
+- `generation_stats.json`
+- `rejected_examples.jsonl`
+- `complexity_elo_scores.json`
+- `coverage_report.json`
+- `diversity_metrics.json`
+- `critic_calibration.json`
+
+Core Stages To Monitor
+1. Runner selection and launch
+2. HANA extraction
+3. Taxonomy generation
+4. Example generation
+5. Evaluation framework execution
+6. Artifact publication
+7. Governance finalization
+8. API/UI truthfulness about the run
+
+Critical Alert Conditions
+1. Pipeline state is `error`, job status is `failed`, or runner exits non-zero.
+2. The live API launches legacy `make all`, legacy schema/template generation, or any non-Simula authoritative path for a governed Simula run.
+3. HANA extraction completes with zero tables.
+4. Taxonomy generation completes with zero taxonomies.
+5. Example generation completes with zero examples.
+6. Any required artifact is missing.
+7. Any evaluator raises a contract error or runtime exception.
+8. A governed run is in `preview` or synthetic mode at any stage that is expected to be live.
+9. Outputs are unreadable or fail schema validation.
+10. Frontend or API claims success while the authoritative runner did not complete successfully.
+
+High Severity Alert Conditions
+1. Critic calibration report shows:
+   - `p(accept | correct) <= 0.80`
+   - `p(accept | corrupted) >= 0.30`
+2. Taxonomy quality report falls below target:
+   - completeness `<= 0.70`
+   - soundness `<= 0.90`
+3. Coverage falls below configured threshold for required levels.
+4. Global or local diversity falls below configured target band.
+5. Required evaluation reports were skipped even though generation succeeded.
+6. Artifact names or locations drift from the shared runner/API/frontend contract.
+
+Medium Severity Alert Conditions
+1. Repeated governance launch blocks.
+2. Repeated retries or recoverable evaluator failures.
+3. Long-running stage with no forward progress signal.
+4. Preview-only development behavior detected outside explicitly marked demo/test runs.
+5. Stale artifact manifests or mismatched timestamps across outputs.
+
+Informational Conditions
+1. Run started.
+2. Stage transition observed.
+3. Run completed successfully with all required outputs.
+4. Preview/demo run correctly marked as non-production.
+
+Required Alert Payload
+- `run_id`
+- `job_id`
+- `tenant_id` or team
+- `requested_by` when known
+- `stage`
+- `severity`
+- `condition_code`
+- exact failing condition
+- evidence source
+- last relevant log lines
+- affected file or artifact path
+- expected value or threshold
+- observed value
+- recommended next action
+- timestamp
+
+Condition Codes
+- `SIM-RUN-001` authoritative runner not used
+- `SIM-RUN-002` pipeline failed
+- `SIM-EXT-001` zero extracted tables
+- `SIM-TAX-001` zero taxonomies
+- `SIM-GEN-001` zero examples
+- `SIM-ART-001` required artifact missing
+- `SIM-ART-002` artifact schema invalid
+- `SIM-EVAL-001` evaluator runtime error
+- `SIM-EVAL-002` critic calibration degraded
+- `SIM-EVAL-003` coverage below threshold
+- `SIM-EVAL-004` diversity below threshold
+- `SIM-EVAL-005` taxonomy quality below threshold
+- `SIM-MODE-001` governed run in preview mode
+- `SIM-UI-001` UI/API state inconsistent with backend truth
+
+Response Rules
+1. Open a notification for every Critical and High alert.
+2. Append a governance note for every Critical and High alert.
+3. Collapse duplicate alerts for the same `run_id` plus `condition_code`.
+4. Re-open an alert only if the condition recurs after a clear recovery.
+5. Prefer exact evidence over generic summaries.
+6. Never emit a green/healthy summary if any Critical alert is active.
+7. Never emit a green/healthy summary for a governed run operating in preview mode.
+8. If evidence is incomplete, say that explicitly instead of inferring health.
+
+Correlation Rules
+- Correlate pipeline status, job status, artifact directory contents, and governance state before closing an alert.
+- If logs say success but artifacts are missing, trust the artifact check and raise an alert.
+- If API says `live` but backend evidence shows preview fallback, trust backend evidence and raise an alert.
+- If frontend telemetry is simulated while the run is production-governed, raise `SIM-UI-001`.
+
+Schema And Contract Monitoring Rules
+- Validate `training_data.jsonl` items against `docs/schema/simula/training-example.schema.json` when schema validation tooling is available.
+- Validate taxonomy artifacts against `docs/schema/simula/taxonomy.schema.json` when schema validation tooling is available.
+- Treat field-name drift between runner outputs and evaluator inputs as a production defect, not a warning.
+- If producer and consumer disagree on core fields, alert immediately.
+
+Artifact Integrity Rules
+- Confirm all canonical artifacts exist for a successful run.
+- Confirm artifacts are non-empty when non-empty content is expected.
+- Confirm artifacts belong to the current run and are not stale leftovers from a prior run.
+- If timestamped outputs are used internally, require a stable manifest or canonical filenames that downstream systems can resolve.
+
+Preview And Demo Rules
+- Preview mode is acceptable only for explicit demo/development contexts.
+- Preview mode must be visually and operationally labeled as non-production.
+- Governed or production-tagged runs must never silently fall back to preview.
+- Synthetic data served to UI surfaces must never be mistaken for production output.
+
+Operational Runbook Bias
+- Prefer fail-closed over fail-open for production-governed Simula runs.
+- If a condition risks shipping misleading quality signals, alert immediately.
+- If a condition risks silently serving legacy output as Simula output, alert immediately.
+
+Recommended Next Actions By Class
+- Runner/pathing issue:
+  - verify the API worker entrypoint
+  - verify the default `src/training` runner target
+  - compare launched command against the authoritative Simula path
+- Contract drift:
+  - compare runtime models with the JSON schemas
+  - compare evaluator input expectations with emitted artifact fields
+  - block completion until producers and consumers agree
+- Missing artifacts:
+  - inspect runner stage completion and output directory
+  - verify stable artifact naming contract
+- Preview mode:
+  - inspect credential/connection health
+  - inspect fallback code path
+  - mark run non-production until live mode is restored
+- Quality gate failure:
+  - attach exact threshold and observed metric
+  - identify whether the issue is generator quality, taxonomy quality, or evaluator correctness
+
+Minimum Evidence Before Closing An Alert
+- The failing condition no longer reproduces.
+- The affected artifact or endpoint now matches the expected contract.
+- Logs, artifacts, and governance state are consistent.
+- Any reopened run or rerun has a distinct success record.
+
+Completion Standard
+- Monitoring is only correct when it prevents false confidence.
+- The target is precise, evidence-backed alerting for real Simula production behavior.

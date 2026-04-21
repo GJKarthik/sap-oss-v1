@@ -1,0 +1,92 @@
+% !TEX program = xelatex
+\documentclass[11pt,a4paper,twoside]{report}
+
+\usepackage{xcolor}
+\usepackage[a4paper,margin=28mm]{geometry}
+\usepackage{graphicx}
+\usepackage{microtype}
+\usepackage{setspace}
+\usepackage{parskip}
+\usepackage{booktabs}
+\usepackage{tabularx}
+\usepackage{longtable}
+\usepackage{array}
+\usepackage{multirow}
+\usepackage{enumitem}
+\usepackage{amssymb}
+\usepackage{listings}
+\usepackage[hyphens]{url}
+\usepackage{tcolorbox}
+\usepackage{tikz}
+\usepackage[table]{colortbl}
+\usetikzlibrary{arrows.meta,positioning,shapes.geometric,fit,calc,chains,
+                decorations.pathmorphing,backgrounds}
+
+\newtcolorbox{adrbox}[2][]{colback=blue!5,colframe=blue!75!black,fonttitle=\bfseries,title=ADR: #2,#1}
+
+% --- Semantic Hyperlinking --------------------------------------------------
+\usepackage{xr-hyper}
+\usepackage[hidelinks]{hyperref}
+
+% External references to peer specifications
+\externaldocument[reg:]{../regulations/regulations-spec}
+\externaldocument[tb:]{../tb/tb-review-spec}
+\externaldocument[sim:]{../simula/simula-training-spec}
+\externaldocument[ar:]{../arabic/arabic-ap-spec}
+
+% --- Fonts -------------------------------------------------------------------
+\usepackage{fontspec}
+\setmainfont{Arial}
+\usepackage[capitalize,noabbrev]{cleveref}
+
+\definecolor{codebg}{gray}{0.96}
+\definecolor{sapblue}{HTML}{0B5FA5}
+\definecolor{sapgreen}{HTML}{00695C}
+\definecolor{sapamber}{HTML}{B8360F}
+\definecolor{sapgrey}{HTML}{546E7A}
+\definecolor{sapmidnight}{HTML}{1C2B39}
+\definecolor{sapgold}{HTML}{F0AB00}
+
+\onehalfspacing
+\setlist{topsep=2pt,itemsep=1pt,parsep=0pt}
+\setlength{\emergencystretch}{3em}
+\tolerance=1000
+\hbadness=10000
+
+% --- Global Command Overrides -----------------------------------------------
+\newcommand{\corpus}{}
+\newcommand{\tool}{}
+\newcommand{\stateid}[1]{\textsc{\lowercase{#1}}}
+\newcommand{\ar}[1]{#1}
+
+% --- Glossary Helper Commands -----------------------------------------------
+\definecolor{pathcolor}{HTML}{004D40}
+\newcommand{\schemapath}[1]{\texttt{\textcolor{pathcolor}{#1}}}
+\newcommand{\enumval}[1]{\texttt{\textcolor{sapgreen}{#1}}}
+\newcommand{\fieldref}[1]{\texttt{\textcolor{sapblue}{#1}}}
+
+\begin{document}
+
+\title{\Huge Arabic AP Domain \\
+       \textbf{Business Requirements \& Lineage} \\
+       \large HITL Traceability Specification \\
+       \small Ref: \texttt{ARA-REQ-LIN-2026-v1.0}}
+\author{SAP-OSS Business Architecture Team}
+\date{April 2026}
+
+\maketitle
+
+% --- Incorporated Executive Summary ---
+\input{../fragment-executive-summary}
+
+\input{chapters/00-frontmatter}
+\input{chapters/01-source-registry}
+\input{chapters/02-transformation-logic}
+\input{chapters/03-requirements-catalogue}
+\input{chapters/04-lineage-matrix}
+
+% --- Incorporated Universal Chapters ---
+\input{../fragment-cross-spec-dependencies}
+\input{../fragment-master-glossary}
+
+\end{document}

@@ -1,0 +1,249 @@
+\chapter{Source Document Inventory}
+\label{ch:source-documents}
+
+This chapter catalogues all source documents that form the foundation
+of the Trial Balance review requirements. Each document is assigned a
+unique source reference identifier for traceability purposes.
+
+% =============================================================================
+\section{Source Document Catalog}
+\label{sec:source-catalog}
+
+\begin{longtable}{@{}C{2cm}L{5cm}C{1.5cm}C{2cm}C{2.5cm}@{}}
+\caption{Source Document Catalog}
+\label{tab:source-catalog} \\
+\toprule
+\textbf{Source ID} & \textbf{Document Name} & \textbf{Type} & \textbf{Size} & \textbf{Extraction} \\
+\midrule
+\endfirsthead
+\toprule
+\textbf{Source ID} & \textbf{Document Name} & \textbf{Type} & \textbf{Size} & \textbf{Extraction} \\
+\midrule
+\endhead
+\srcref{TB-BC-001} & Business case - Trial Balance (2).doc & .doc & 96 KB & Complete \\
+\srcref{TB-BC-002} & Business case - BSS Risk Assessment (2).doc & .doc & 95 KB & Complete \\
+\srcref{TB-DOI-001} & DOI for Trial Balance Process.docx & .docx & 6.3 MB & Complete \\
+\srcref{TB-BPMN-001} & Operation of Month End Close Controls - Trial Balance Review - GLO (1).pdf & .pdf & 64 KB & Complete \\
+\srcref{TB-WB-001} & HKG\_TB review Nov'25.xlsm & .xlsm & 73 MB & Schema Only \\
+\srcref{TB-WB-002} & HKG\_PL review Nov'25.xlsm & .xlsm & 51 MB & Schema Only \\
+\bottomrule
+\end{longtable}
+
+% =============================================================================
+\section{Source Document Descriptions}
+\label{sec:source-descriptions}
+
+% -----------------------------------------------------------------------------
+\subsection{\srcref{TB-BC-001}: Business Case - Trial Balance}
+\label{sec:tb-bc-001}
+
+\begin{table}[h]
+\centering
+\caption{\srcref{TB-BC-001} Metadata}
+\begin{tabularx}{\textwidth}{@{}L{4cm}L{10cm}@{}}
+\toprule
+\textbf{Attribute} & \textbf{Value} \\
+\midrule
+Document Title & Business Case: Month End Controls -- Trial Balance \\
+Filepath & \texttt{docs/tb/Business case - Trial Balance (2).doc} \\
+Created By & 1498002 (S1 Badrinath) \\
+Created Date & 2025-12-14 \\
+Version & 1.0 \\
+File Size & 97,792 bytes \\
+Purpose & Define business justification for AI automation of TB review \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\paragraph{Key Sections:}
+\begin{itemize}[noitemsep]
+  \item \textbf{Section 1: Executive Summary} --- TB review conducted M+1 to M+7 across 234 LEs; AI model for variance analysis and commentary generation
+  \item \textbf{Section 2: Problem/Opportunity Statement} --- Current state analysis; 20-25 FTEs, 5 FTE savings target
+  \item \textbf{Section 3: Project Description} --- Proposed AI solution using Studio AI (in-house)
+  \item \textbf{Section 5: Financial Analysis} --- \textit{TBD --- Gap \gapref{G-001}}
+  \item \textbf{Section 6: Risk Assessment} --- PSGL/S4 compatibility, SAP integration risks
+  \item \textbf{Section 7: Implementation Approach} --- 15-week timeline
+\end{itemize}
+
+\paragraph{Content Summary:}
+\begin{quote}
+\textit{``Trial Balance review is conducted during M+1 to M+7 across all Legal entities,
+Segment \& Group, to understand the variance \& balance movements between periods.
+Deep dives to assess the events, transactions causing the variances and reasons
+behind them. Analysed with detailed commentaries for these movements are prepared \&
+submitted to Group for further review \& used for Country CFO packs/Legal entity reporting.''}
+\end{quote}
+
+% -----------------------------------------------------------------------------
+\subsection{\srcref{TB-BC-002}: Business Case - BSS Risk Assessment}
+\label{sec:tb-bc-002}
+
+\begin{table}[h]
+\centering
+\caption{\srcref{TB-BC-002} Metadata}
+\begin{tabularx}{\textwidth}{@{}L{4cm}L{10cm}@{}}
+\toprule
+\textbf{Attribute} & \textbf{Value} \\
+\midrule
+Document Title & Business Case: BSS Risk Assessment \\
+Filepath & \texttt{docs/tb/Business case - BSS Risk Assessment (2).doc} \\
+Created By & 1498002 (S1 Badrinath) \\
+Created Date & 2025-12-15 \\
+Version & 1.0 \\
+File Size & 95,232 bytes \\
+Purpose & Define AI augmentation for BSS risk assessment process \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\paragraph{Key Content:}
+\begin{itemize}[noitemsep]
+  \item \textbf{Timing:} M+12 to M+15 across all Legal entities
+  \item \textbf{Criticality:} CFO attestation and Risk/Audit committee reporting
+  \item \textbf{Risk Categories:} Substantiated at Risk, Unsubstantiated Unowned, Unsubstantiated Owned
+  \item \textbf{FTE Impact:} 10-12 FTEs current, 1 FTE savings target
+\end{itemize}
+
+% -----------------------------------------------------------------------------
+\subsection{\srcref{TB-DOI-001}: DOI for Trial Balance Process}
+\label{sec:tb-doi-001}
+
+\begin{table}[h]
+\centering
+\caption{\srcref{TB-DOI-001} Metadata}
+\begin{tabularx}{\textwidth}{@{}L{4cm}L{10cm}@{}}
+\toprule
+\textbf{Attribute} & \textbf{Value} \\
+\midrule
+Document Type & Detailed Operating Instructions \\
+Filepath & \texttt{docs/tb/DOI for Trial Balance Process .docx} \\
+File Size & 6,583,541 bytes \\
+Purpose & Step-by-step operational guidance for TB review execution \\
+Contains & Process flow diagrams (EMF/PNG images) \\
+Image Count & 4 extracted images \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\paragraph{Extracted Images:}
+\begin{itemize}[noitemsep]
+  \item \texttt{doi-images/doi-image-001.emf} --- Process flow diagram 1
+  \item \texttt{doi-images/doi-image-002.emf} --- Process flow diagram 2
+  \item \texttt{doi-images/doi-image-003.png} --- Process flow diagram 3
+  \item \texttt{doi-images/doi-image-004.emf} --- Process flow diagram 4
+\end{itemize}
+
+% -----------------------------------------------------------------------------
+\subsection{\srcref{TB-BPMN-001}: BPMN Process Map}
+\label{sec:tb-bpmn-001}
+
+\begin{table}[h]
+\centering
+\caption{\srcref{TB-BPMN-001} Metadata}
+\begin{tabularx}{\textwidth}{@{}L{4cm}L{10cm}@{}}
+\toprule
+\textbf{Attribute} & \textbf{Value} \\
+\midrule
+Document Title & Operation of Month End Close Controls - Trial Balance Review - GLO \\
+Filepath & \texttt{docs/tb/Operation of Month End Close Controls - Trial Balance Review - GLO (1).pdf} \\
+Process Owner & Modi, Piyush \\
+Last Changed & 2025-05-23T19:50:30Z \\
+Scope & GLO (Global) \\
+File Size & 65,367 bytes \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\paragraph{BPMN Elements Extracted:}
+\begin{itemize}[noitemsep]
+  \item \textbf{States:} 27 (including 3 error-handling states)
+  \item \textbf{Gateways:} 5 exclusive decision gateways
+  \item \textbf{Timeline Phases:} 4 (Preparation, Extraction, Analysis, Review)
+  \item \textbf{Participants:} 3 (GFS Analyst, Head of Africa GFS, Country Stakeholders)
+\end{itemize}
+
+% -----------------------------------------------------------------------------
+\subsection{\srcref{TB-WB-001}: HKG TB Review Workbook}
+\label{sec:tb-wb-001}
+
+\begin{table}[h]
+\centering
+\caption{\srcref{TB-WB-001} Metadata}
+\begin{tabularx}{\textwidth}{@{}L{4cm}L{10cm}@{}}
+\toprule
+\textbf{Attribute} & \textbf{Value} \\
+\midrule
+Document Title & HKG\_TB review Nov'25.xlsm \\
+Filepath & \texttt{docs/tb/HKG\_TB review Nov'25.xlsm} \\
+File Size & 76,989,527 bytes (73 MB) \\
+Sheet Count & 13 \\
+Extraction Status & Schema extraction only (data too large) \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\paragraph{Key Sheets:}
+\begin{itemize}[noitemsep]
+  \item \texttt{IFRS Summary BS} --- IFRS balance sheet summary view
+  \item \texttt{Count of Comments} --- Commentary tracking (7 fields)
+  \item \texttt{BS Variance} --- Balance sheet variance analysis (5 fields)
+  \item \texttt{RAW TB NOV'25} --- Raw GL balance query November 2025
+  \item \texttt{RAW TB OCT'25} --- Raw GL balance query October 2025
+  \item \texttt{GCOA} --- Global Chart of Accounts (5 fields)
+  \item \texttt{Dept Mapping} --- Department-to-vertical mapping (12 fields)
+  \item \texttt{Base file} --- Account-level base data (13 fields)
+\end{itemize}
+
+% -----------------------------------------------------------------------------
+\subsection{\srcref{TB-WB-002}: HKG PL Review Workbook}
+\label{sec:tb-wb-002}
+
+\begin{table}[h]
+\centering
+\caption{\srcref{TB-WB-002} Metadata}
+\begin{tabularx}{\textwidth}{@{}L{4cm}L{10cm}@{}}
+\toprule
+\textbf{Attribute} & \textbf{Value} \\
+\midrule
+Document Title & HKG\_PL review Nov'25.xlsm \\
+Filepath & \texttt{docs/tb/HKG\_PL review Nov'25.xlsm} \\
+File Size & 53,245,945 bytes (51 MB) \\
+Sheet Count & 14 \\
+Extraction Status & Schema extraction only (data too large) \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+% =============================================================================
+\section{Source Document Verification}
+\label{sec:source-verification}
+
+\begin{hitlbox}{H1 -- Source Completeness Verification}
+The human reviewer must verify the following for checkpoint H1:
+\begin{enumerate}[noitemsep]
+  \item All 6 source documents exist at the specified file paths
+  \item File sizes match the catalogued values (within 1\% tolerance)
+  \item Document metadata (author, date, version) is accurate
+  \item No additional source documents have been omitted
+  \item Extraction status correctly reflects processing state
+\end{enumerate}
+\end{hitlbox}
+
+\paragraph{Verification Checklist:}
+
+\begin{table}[h]
+\centering
+\caption{Source Document Verification Checklist}
+\begin{tabular}{@{}lcccc@{}}
+\toprule
+\textbf{Source ID} & \textbf{Exists} & \textbf{Size OK} & \textbf{Metadata OK} & \textbf{Verified} \\
+\midrule
+\srcref{TB-BC-001} & $\square$ & $\square$ & $\square$ & $\square$ \\
+\srcref{TB-BC-002} & $\square$ & $\square$ & $\square$ & $\square$ \\
+\srcref{TB-DOI-001} & $\square$ & $\square$ & $\square$ & $\square$ \\
+\srcref{TB-BPMN-001} & $\square$ & $\square$ & $\square$ & $\square$ \\
+\srcref{TB-WB-001} & $\square$ & $\square$ & $\square$ & $\square$ \\
+\srcref{TB-WB-002} & $\square$ & $\square$ & $\square$ & $\square$ \\
+\bottomrule
+\end{tabular}
+\end{table}

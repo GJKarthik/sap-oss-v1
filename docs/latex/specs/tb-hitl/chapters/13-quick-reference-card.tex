@@ -1,0 +1,152 @@
+\chapter*{Quick Reference Card}
+\addcontentsline{toc}{chapter}{Quick Reference Card}
+\label{ch:quick-ref}
+
+\begin{tcolorbox}[colback=white,colframe=sapblue,title=\textbf{TB-HITL Quick Reference Card --- Print \& Keep}]
+
+\section*{Source Document IDs}
+\begin{tabular}{@{}ll@{}}
+\srcref{TB-BC-001} & Business Case - Trial Balance \\
+\srcref{TB-BC-002} & Business Case - BSS Risk Assessment \\
+\srcref{TB-DOI-001} & DOI for Trial Balance Process \\
+\srcref{TB-BPMN-001} & BPMN Process Map (GLO) \\
+\srcref{TB-WB-001} & HKG TB Review Workbook \\
+\srcref{TB-WB-002} & HKG PL Review Workbook \\
+\end{tabular}
+
+\vspace{0.3cm}
+\hrule
+\vspace{0.3cm}
+
+\section*{Requirement IDs (27 Total)}
+
+\begin{minipage}[t]{0.48\textwidth}
+\textbf{Executive Summary (4)}
+\begin{itemize}[noitemsep,leftmargin=*]
+  \item \reqref{TB-REQ-ES01} AI variance analysis
+  \item \reqref{TB-REQ-ES02} Commentary generation
+  \item \reqref{TB-REQ-ES03} 5 FTE savings
+  \item \reqref{TB-REQ-ES04} Studio AI solution
+\end{itemize}
+
+\textbf{Scope (6)}
+\begin{itemize}[noitemsep,leftmargin=*]
+  \item \reqref{TB-REQ-SC01} 234 Legal Entities
+  \item \reqref{TB-REQ-SC02} Finance caption level
+  \item \reqref{TB-REQ-SC03} Segment level
+  \item \reqref{TB-REQ-SC04} Legal entity level
+  \item \reqref{TB-REQ-SC05} Exclude Country IFRS
+  \item \reqref{TB-REQ-SC06} Exclude BSS RA
+\end{itemize}
+
+\textbf{AI Augmentation (6)}
+\begin{itemize}[noitemsep,leftmargin=*]
+  \item \reqref{TB-REQ-AI01} Anomaly detection
+  \item \reqref{TB-REQ-AI02} Trend analysis
+  \item \reqref{TB-REQ-AI03} New account detection
+  \item \reqref{TB-REQ-AI04} Spike/drop detection
+  \item \reqref{TB-REQ-AI05} Material balance ID
+  \item \reqref{TB-REQ-AI06} LLM commentaries
+\end{itemize}
+\end{minipage}%
+\hfill
+\begin{minipage}[t]{0.48\textwidth}
+\textbf{Process Steps (8)}
+\begin{itemize}[noitemsep,leftmargin=*]
+  \item \reqref{TB-REQ-PS01} Roll forward file
+  \item \reqref{TB-REQ-PS02} Download PSGL
+  \item \reqref{TB-REQ-PS03} Extract TB
+  \item \reqref{TB-REQ-PS04} Calculate variance
+  \item \reqref{TB-REQ-PS05} Filter materiality
+  \item \reqref{TB-REQ-PS06} Seek commentaries
+  \item \reqref{TB-REQ-PS07} Track entries/risk
+  \item \reqref{TB-REQ-PS08} Prepare summary
+\end{itemize}
+
+\textbf{BSS Risk Assessment (3)}
+\begin{itemize}[noitemsep,leftmargin=*]
+  \item \reqref{BSS-REQ-01} Risk categorization
+  \item \reqref{BSS-REQ-02} Post-FCA consolidation
+  \item \reqref{BSS-REQ-03} Risk reporting packs
+\end{itemize}
+\end{minipage}
+
+\vspace{0.3cm}
+\hrule
+\vspace{0.3cm}
+
+\section*{Specification IDs (22 Total)}
+
+\begin{minipage}[t]{0.32\textwidth}
+\textbf{Process Steps (8)}
+\begin{itemize}[noitemsep,leftmargin=*,font=\small]
+  \item \specref{TB-STEP-001}
+  \item \specref{TB-STEP-002}
+  \item \specref{TB-STEP-003}
+  \item \specref{TB-STEP-004}
+  \item \specref{TB-STEP-005}
+  \item \specref{TB-STEP-006}
+  \item \specref{TB-STEP-007}
+  \item \specref{TB-STEP-008}
+\end{itemize}
+\end{minipage}%
+\begin{minipage}[t]{0.32\textwidth}
+\textbf{Decision Points (5)}
+\begin{itemize}[noitemsep,leftmargin=*,font=\small]
+  \item \specref{DP-001} Materiality
+  \item \specref{DP-002} Journal Status
+  \item \specref{DP-003} Investigation
+  \item \specref{DP-004} Confirmation
+  \item \specref{DP-005} Unexplained
+\end{itemize}
+
+\textbf{Controls (3)}
+\begin{itemize}[noitemsep,leftmargin=*,font=\small]
+  \item \specref{TB-CTRL-001}
+  \item \specref{TB-CTRL-002}
+  \item \specref{TB-CTRL-003}
+\end{itemize}
+\end{minipage}%
+\begin{minipage}[t]{0.32\textwidth}
+\textbf{AI Capabilities (6)}
+\begin{itemize}[noitemsep,leftmargin=*,font=\small]
+  \item \specref{AI-ANOM}
+  \item \specref{AI-TREND}
+  \item \specref{AI-NEW}
+  \item \specref{AI-SPIKE}
+  \item \specref{AI-MAT}
+  \item \specref{AI-LLM}
+\end{itemize}
+\end{minipage}
+
+\vspace{0.3cm}
+\hrule
+\vspace{0.3cm}
+
+\section*{Schema IDs (6 Total)}
+\begin{tabular}{@{}lll@{}}
+\schemaref{variance-record} & \schemaref{commentary-draft} & \schemaref{tb-extract} \\
+\schemaref{entity-params} & \schemaref{decision-point} & \schemaref{pl-extract} \\
+\end{tabular}
+
+\vspace{0.3cm}
+\hrule
+\vspace{0.3cm}
+
+\section*{HITL Checkpoints}
+\begin{tabular}{@{}llll@{}}
+\textbf{H1} Source Completeness & \textbf{H2} Extraction Accuracy & \textbf{H3} Requirement Derivation \\
+\textbf{H4} Traceability Links & \textbf{H5} Schema Alignment & \textbf{H6} Gap Analysis \\
+\end{tabular}
+
+\vspace{0.3cm}
+\hrule
+\vspace{0.3cm}
+
+\section*{Gap IDs}
+\begin{tabular}{@{}lll@{}}
+\gapref{G-001} & Financial Analysis TBD & Owner: S1 Badrinath \\
+\gapref{G-002} & DOI images not OCR'd & Owner: Technical Lead \\
+\end{tabular}
+
+\end{tcolorbox}

@@ -1,0 +1,744 @@
+% =============================================================================
+% Chapter 14: Audit Findings and Resolutions
+% =============================================================================
+\chapter{Audit Findings and Resolutions}
+\label{ch:audit-findings}
+
+This chapter documents audit findings from the formal review and their 
+resolutions. All P0 (critical) and P1 (high priority) findings are 
+addressed before production release.
+
+% =============================================================================
+\section{Audit Review Summary}
+\label{sec:audit-summary}
+% =============================================================================
+
+\begin{tcolorbox}[colback=yellow!10,colframe=yellow!50!black,title=Audit Status: Conditionally Approved]
+\textbf{Review Date:} 20 April 2026\\
+\textbf{Overall Verdict:} Conditionally Approved\\
+\textbf{Condition:} P0 items must be resolved before GA cutover
+
+\vspace{0.5em}
+\begin{tabular}{lccl}
+\toprule
+\textbf{Checkpoint} & \textbf{Status} & \textbf{Condition} \\
+\midrule
+H1 - Source Completeness & \textcolor{green}{\textbf{PASS}} & None \\
+H2 - Extraction Accuracy & \textcolor{green}{\textbf{PASS}} & None \\
+H3 - Requirement Derivation & \textcolor{orange}{\textbf{CONDITIONAL}} & Pending G-001 resolution \\
+H4 - Traceability Links & \textcolor{green}{\textbf{PASS}} & None \\
+H5 - Schema Alignment & \textcolor{orange}{\textbf{CONDITIONAL}} & Pending audit trail schema \\
+H6 - Gap Analysis & \textcolor{orange}{\textbf{CONDITIONAL}} & Pending G-003 cross-spec \\
+\bottomrule
+\end{tabular}
+\end{tcolorbox}
+
+% =============================================================================
+\section{P0 Findings: Critical (Resolution Required Before v1.0)}
+\label{sec:p0-findings}
+% =============================================================================
+
+% -----------------------------------------------------------------------------
+\subsection{P0-1: State Count Reconciliation (27 vs 28)}
+\label{sec:p0-state-count}
+% -----------------------------------------------------------------------------
+
+\begin{tcolorbox}[colback=red!5,colframe=red!70,title=\faIcon{exclamation-triangle} Finding P0-1: State Count Inconsistency]
+\textbf{Location:} HITL Spec p.9 vs Implementation Spec Table 5.1\\
+\textbf{Issue:} HITL spec references ``27 states + 3 error-handling'' while 
+implementation spec Table 5.1 enumerates 28 states\\
+\textbf{Severity:} \textbf{P0 - Critical}\\
+\textbf{Owner:} Spec Owner\\
+\textbf{Timeline:} 1 week
+\end{tcolorbox}
+
+\textbf{Resolution:}
+
+\begin{tcolorbox}[colback=green!5,colframe=green!70,title=\faIcon{check-circle} Resolution Applied]
+The \textbf{implementation spec's 28-state enumeration is authoritative}.
+
+The discrepancy arose from counting methodology:
+\begin{itemize}
+    \item \textbf{HITL Spec (27+3):} Counted 27 ``primary'' states plus 3 error-handling 
+          states as a separate category = 30 total states
+    \item \textbf{Implementation Spec (28):} Counted 28 operational states; error-handling 
+          states (AWAITING\_CLARIFICATION, ESCALATED\_TO\_FINANCE, MANUAL\_OVERRIDE) 
+          are subsumed within the 28
+\end{itemize}
+
+\textbf{Authoritative Source:} \texttt{structured/workflows/tb-review-glo.json}\\
+\textbf{Correct Count:} \textbf{28 states} as enumerated in Table 5.1
+
+\vspace{0.5em}
+\textbf{Corrective Action:} This specification is updated to reference 28 states 
+throughout. Cross-references corrected in:
+\begin{itemize}
+    \item Chapter~\ref{ch:source-documents}: Updated BPMN extraction to state ``28 states''
+    \item Chapter~\ref{ch:specification-mapping}: Updated process step count
+    \item YAML manifest: Updated \texttt{statistics.bpmn\_states} to 28
+\end{itemize}
+\end{tcolorbox}
+
+\textbf{State Enumeration (Authoritative):}
+
+\begin{longtable}{clll}
+\caption{Authoritative 28-State Enumeration} \\
+\toprule
+\textbf{\#} & \textbf{State ID} & \textbf{Type} & \textbf{Timing} \\
+\midrule
+\endfirsthead
+\toprule
+\textbf{\#} & \textbf{State ID} & \textbf{Type} & \textbf{Timing} \\
+\midrule
+\endhead
+1 & ROLL\_FORWARD & Task & M-3 \\
+2 & DOWNLOAD\_PSGL & Task & M-3 \\
+3 & UPDATE\_ACCOUNTS\_MASTER & Task & M-3 \\
+4 & EXTRACT\_TB & Task & M-3 to M+5 \\
+5 & UPDATE\_COMPARATIVES & Task & M-3 to M+5 \\
+6 & CALC\_VARIANCE & Task & M-2 to M+5 \\
+7 & FILTER\_VARIANCES & Task & M-2 to M+5 \\
+8 & UPDATE\_COMMENTARIES & Task & M-2 to M+5 \\
+9 & CHECK\_JOURNAL\_POSTED & Gateway & M-2 to M+5 \\
+10 & SEND\_JOURNAL\_REQUEST & Task & M-2 to M+5 \\
+11 & UPDATE\_RISK\_SUMMARY & Task & M-2 to M+5 \\
+12 & PREPARE\_SUMMARY & Task & M-2 to M+5 \\
+13 & INVESTIGATE\_VARIANCE & Task & M-2 to M+5 \\
+14 & CHECK\_MATERIAL & Gateway & M-2 to M+5 \\
+15 & INTERNAL\_REVIEW & Task & M+5 \\
+16 & SEND\_FORTM\_SUMMARY & Task & M+5 \\
+17 & CATEGORIZE\_UNEXPLAINED & Task & M-2 to M+5 \\
+18 & CHECK\_TEAM\_ENTRIES & Task & M-2 to M+5 \\
+19 & CONFIRM\_ENTRIES & Task & M-2 to M+5 \\
+20 & SEEK\_COMMENTARIES & Task & M-2 to M+5 \\
+21 & RECEIVE\_COMMENTARIES & Task & M-2 to M+5 \\
+22 & PERFORM\_RISK\_ANALYSIS & Task & M-2 to M+5 \\
+23 & UPDATE\_VARIANCE\_COMMENTARIES & Task & M-2 to M+5 \\
+24 & TRACK\_ENTRIES & Task & M-2 to M+5 \\
+25 & AWAITING\_CLARIFICATION & Error & As needed \\
+26 & ESCALATED\_TO\_FINANCE & Error & As needed \\
+27 & MANUAL\_OVERRIDE & Error & As needed \\
+28 & COMPLETED & End & M+5 \\
+\bottomrule
+\end{longtable}
+
+% -----------------------------------------------------------------------------
+\subsection{P0-2: vLLM Fallback Specification}
+\label{sec:p0-vllm-fallback}
+% -----------------------------------------------------------------------------
+
+\begin{tcolorbox}[colback=red!5,colframe=red!70,title=\faIcon{exclamation-triangle} Finding P0-2: vLLM Fallback Not Specified]
+\textbf{Location:} tb-review-spec, p.13, \S3.1\\
+\textbf{Issue:} ``vllm-only routing policy'' with no fallback if vLLM cluster degrades\\
+\textbf{Impact:} Commentary generation (Stage 3) blocks on LLM availability\\
+\textbf{Severity:} \textbf{P0 - Critical}\\
+\textbf{Owner:} AI Architect\\
+\textbf{Timeline:} 2 weeks
+\end{tcolorbox}
+
+\textbf{Resolution:}
+
+\begin{tcolorbox}[colback=green!5,colframe=green!70,title=\faIcon{check-circle} Resolution: Graceful Degradation Specification]
+\textbf{Primary:} vLLM cluster via AI Core (default)\\
+\textbf{Fallback:} Template-based commentary generation\\
+\textbf{Trigger Conditions:} (any of)
+\begin{itemize}
+    \item vLLM latency P95 $> 5000$ms (5-minute rolling window)
+    \item vLLM error rate $> 10\%$ (5-minute rolling window)
+    \item vLLM cluster health check fails 3 consecutive probes
+\end{itemize}
+\end{tcolorbox}
+
+\textbf{Fallback Implementation Specification:}
+
+\begin{lstlisting}[language=Python,caption={vLLM Fallback Logic}]
+class CommentaryService:
+    VLLM_LATENCY_THRESHOLD_MS = 5000
+    VLLM_ERROR_RATE_THRESHOLD = 0.10
+    HEALTH_CHECK_FAILURES_MAX = 3
+    
+    def generate_commentary(self, variance_record: VarianceRecord) -> Commentary:
+        if self._should_use_fallback():
+            return self._generate_template_commentary(variance_record)
+        try:
+            return self._generate_vllm_commentary(variance_record)
+        except VLLMTimeoutError:
+            self._record_latency_breach()
+            return self._generate_template_commentary(variance_record)
+    
+    def _generate_template_commentary(self, vr: VarianceRecord) -> Commentary:
+        """Template-based fallback with 80% of LLM quality."""
+        template = self._select_template(vr.variance_type, vr.account_category)
+        return Commentary(
+            text=template.format(
+                account=vr.account_name,
+                variance_amount=format_currency(vr.variance_amount),
+                variance_pct=format_percent(vr.variance_percentage),
+                direction="increased" if vr.variance_amount > 0 else "decreased",
+                prior_period=vr.prior_period,
+            ),
+            confidence=0.75,  # Template confidence capped at 75%
+            source="template_fallback",
+            llm_available=False,
+        )
+\end{lstlisting}
+
+\textbf{Template Library Requirements:}
+
+\begin{tabular}{lll}
+\toprule
+\textbf{Template ID} & \textbf{Variance Type} & \textbf{Account Category} \\
+\midrule
+TPL-001 & Spike ($>25\%$) & Revenue \\
+TPL-002 & Spike ($>25\%$) & Cost of Sales \\
+TPL-003 & Drop ($<-25\%$) & Revenue \\
+TPL-004 & Drop ($<-25\%$) & Cost of Sales \\
+TPL-005 & New Account & Any \\
+TPL-006 & Material Balance & Any \\
+TPL-007 & General Variance & Any (catch-all) \\
+\bottomrule
+\end{tabular}
+
+\textbf{Monitoring Requirements:}
+
+\begin{enumerate}
+    \item Dashboard SHALL display ``LLM Status'' indicator (green/amber/red)
+    \item Fallback activations SHALL be logged with timestamp and trigger reason
+    \item Weekly report SHALL include fallback activation count and duration
+    \item SLA: Fallback mode SHALL not exceed 4 hours continuous without escalation
+\end{enumerate}
+
+% =============================================================================
+\section{P1 Findings: High Priority (Resolution Required Within 4 Weeks)}
+\label{sec:p1-findings}
+% =============================================================================
+
+% -----------------------------------------------------------------------------
+\subsection{P1-1: Audit Trail Schema for EUC Retirement}
+\label{sec:p1-audit-trail}
+% -----------------------------------------------------------------------------
+
+\begin{tcolorbox}[colback=orange!5,colframe=orange!70,title=\faIcon{exclamation-circle} Finding P1-1: Audit Trail Schema Not Defined]
+\textbf{Location:} tb-review-spec, Section 1.8 (p.6-7)\\
+\textbf{Issue:} Dashboard audit trail defined as ``authoritative evidence'' but no 
+field-level schema specified\\
+\textbf{Impact:} Cannot verify EUC retirement evidence standard\\
+\textbf{Severity:} \textbf{P1 - High}\\
+\textbf{Owner:} Controls Owner\\
+\textbf{Timeline:} 4 weeks
+\end{tcolorbox}
+
+\textbf{Resolution:}
+
+\begin{tcolorbox}[colback=green!5,colframe=green!70,title=\faIcon{check-circle} Schema Definition: audit-trail-entry.schema.json]
+\begin{lstlisting}[language=jsonx,basicstyle=\tiny\ttfamily]
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "audit-trail-entry.schema.json",
+  "title": "Audit Trail Entry",
+  "type": "object",
+  "required": ["audit_id", "timestamp", "persona_id", "action", "evidence_hash"],
+  "properties": {
+    "audit_id": {
+      "type": "string",
+      "format": "uuid",
+      "description": "Unique identifier for this audit entry"
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO 8601 timestamp of the action"
+    },
+    "persona_id": {
+      "type": "string",
+      "description": "Employee ID from SAP IAS token (sub claim)"
+    },
+    "action": {
+      "type": "string",
+      "enum": ["view", "claim", "decide", "escalate", "override", "bulk_assign", 
+               "comment_edit", "comment_approve", "comment_reject", "export"]
+    },
+    "resource_type": {
+      "type": "string",
+      "enum": ["variance_record", "commentary", "workflow_state", "entity_params"]
+    },
+    "resource_id": {
+      "type": "string",
+      "description": "ID of the affected resource"
+    },
+    "before_state": {
+      "type": "object",
+      "description": "Snapshot of resource state before action (null for create)"
+    },
+    "after_state": {
+      "type": "object",
+      "description": "Snapshot of resource state after action"
+    },
+    "evidence_hash": {
+      "type": "string",
+      "pattern": "^sha256:[a-f0-9]{64}$",
+      "description": "SHA-256 hash of (timestamp + persona_id + action + resource_id + after_state)"
+    },
+    "bulk_operation_id": {
+      "type": "string",
+      "format": "uuid",
+      "description": "Groups entries from same bulk operation (null for single ops)"
+    },
+    "ip_address": {
+      "type": "string",
+      "format": "ipv4",
+      "description": "Client IP address"
+    },
+    "user_agent": {
+      "type": "string",
+      "description": "Browser/client user agent string"
+    }
+  }
+}
+\end{lstlisting}
+\end{tcolorbox}
+
+\textbf{Divergence Detection Specification:}
+
+During the 12-month EUC deprecation window, divergence between Excel EUC and 
+dashboard may occur. The following automated detection is specified:
+
+\begin{lstlisting}[language=SQL,caption={Daily Divergence Detection Query}]
+-- Run daily at M+6 for prior month data
+WITH euc_data AS (
+    SELECT legal_entity, account, closing_balance 
+    FROM imported_euc_tb WHERE period = :period
+),
+dashboard_data AS (
+    SELECT legal_entity, account, closing_balance 
+    FROM variance_records WHERE period = :period
+)
+SELECT 
+    COALESCE(e.legal_entity, d.legal_entity) AS le,
+    COALESCE(e.account, d.account) AS account,
+    e.closing_balance AS euc_balance,
+    d.closing_balance AS dashboard_balance,
+    ABS(e.closing_balance - d.closing_balance) AS divergence,
+    CASE 
+        WHEN e.closing_balance IS NULL THEN 'dashboard_only'
+        WHEN d.closing_balance IS NULL THEN 'euc_only'
+        ELSE 'value_mismatch'
+    END AS divergence_type
+FROM euc_data e
+FULL OUTER JOIN dashboard_data d 
+    ON e.legal_entity = d.legal_entity AND e.account = d.account
+WHERE e.closing_balance != d.closing_balance 
+   OR e.closing_balance IS NULL OR d.closing_balance IS NULL;
+\end{lstlisting}
+
+\textbf{Resolution Rule:} Dashboard is authoritative. Divergence records are 
+logged with \texttt{action="divergence\_detected"} and require manual review 
+by Controls Owner within 5 business days.
+
+% -----------------------------------------------------------------------------
+\subsection{P1-2: Statistical Normality Test for 3$\sigma$ Threshold}
+\label{sec:p1-normality}
+% -----------------------------------------------------------------------------
+
+\begin{tcolorbox}[colback=orange!5,colframe=orange!70,title=\faIcon{exclamation-circle} Finding P1-2: Statistical Assumption Not Validated]
+\textbf{Location:} tb-review-spec, p.14, \S3.3\\
+\textbf{Issue:} 3$\sigma$ threshold assumes normally-distributed variance; 
+financial data often exhibits fat tails (leptokurtosis)\\
+\textbf{Severity:} \textbf{P1 - High}\\
+\textbf{Owner:} Data Science\\
+\textbf{Timeline:} 4 weeks
+\end{tcolorbox}
+
+\textbf{Resolution:}
+
+\begin{tcolorbox}[colback=green!5,colframe=green!70,title=\faIcon{check-circle} Resolution: Normality Testing with MAD Fallback]
+\textbf{Acceptance Criteria Addition (AC-ES01-2a):}
+
+Before applying Z-score $> 3.0$ threshold, the system SHALL:
+\begin{enumerate}
+    \item Run Shapiro-Wilk normality test per account category
+    \item If $p$-value $> 0.05$: Use Z-score (normal distribution confirmed)
+    \item If $p$-value $\leq 0.05$: Use MAD (Median Absolute Deviation) with 
+          threshold $= 3.5 \times$ MAD (robust to fat tails)
+\end{enumerate}
+\end{tcolorbox}
+
+\textbf{Implementation:}
+
+\begin{lstlisting}[language=Python,caption={Normality Test with MAD Fallback}]
+from scipy import stats
+import numpy as np
+
+class AnomalyDetector:
+    ZSCORE_THRESHOLD = 3.0
+    MAD_THRESHOLD = 3.5
+    SHAPIRO_P_THRESHOLD = 0.05
+    
+    def detect_anomalies(self, values: np.ndarray) -> np.ndarray:
+        """Returns boolean mask of anomalies."""
+        # Test for normality
+        if len(values) >= 20:  # Shapiro-Wilk requires n >= 20
+            _, p_value = stats.shapiro(values)
+            use_robust = p_value <= self.SHAPIRO_P_THRESHOLD
+        else:
+            use_robust = True  # Default to robust for small samples
+        
+        if use_robust:
+            return self._mad_detection(values)
+        else:
+            return self._zscore_detection(values)
+    
+    def _zscore_detection(self, values: np.ndarray) -> np.ndarray:
+        z_scores = np.abs(stats.zscore(values))
+        return z_scores > self.ZSCORE_THRESHOLD
+    
+    def _mad_detection(self, values: np.ndarray) -> np.ndarray:
+        median = np.median(values)
+        mad = np.median(np.abs(values - median))
+        # Consistency constant for normal distribution approximation
+        mad_adjusted = mad * 1.4826
+        modified_z = np.abs(values - median) / mad_adjusted
+        return modified_z > self.MAD_THRESHOLD
+\end{lstlisting}
+
+\textbf{Documentation Note:} Add to Chapter~\ref{ch:business-requirements}, 
+AC-ES01-2: ``Anomaly detection SHALL flag items with Z-score $> 3.0$ for 
+normally-distributed data (Shapiro-Wilk $p > 0.05$) \textbf{OR} MAD-score 
+$> 3.5$ for non-normal distributions.''
+
+% =============================================================================
+\section{Cross-Cutting Issue Resolutions}
+\label{sec:cross-cutting}
+% =============================================================================
+
+% -----------------------------------------------------------------------------
+\subsection{C-1: Terminology Reconciliation}
+\label{sec:c1-terminology}
+% -----------------------------------------------------------------------------
+
+\begin{tabular}{lll}
+\toprule
+\textbf{Term} & \textbf{Authoritative Value} & \textbf{Corrective Action} \\
+\midrule
+State count & \textbf{28 states} & Update HITL spec to 28 \\
+EUC-002 name & ``TB Variance Analysis file integrity'' & Standardize across docs \\
+\bottomrule
+\end{tabular}
+
+% -----------------------------------------------------------------------------
+\subsection{C-2: Materiality Threshold Standardization}
+\label{sec:c2-materiality}
+% -----------------------------------------------------------------------------
+
+\begin{tcolorbox}[colback=blue!5,colframe=blue!70,title=Resolution: Entity-Params Configuration]
+\textbf{Issue:} Hardcoded thresholds (BS $> \$100$M, PL $> \$3$M) in DP-001 
+conflict with ``country-specific'' in TB-KPI-001.
+
+\textbf{Resolution:} Move thresholds to \texttt{entity-params/<le-code>.yaml}:
+\begin{lstlisting}[language=yaml]
+# entity-params/HKG.yaml
+legal_entity_code: "HKG"
+materiality_thresholds:
+  balance_sheet_absolute: 100000000  # $100M USD
+  profit_loss_absolute: 3000000      # $3M USD
+  variance_percentage: 0.10          # 10%
+\end{lstlisting}
+
+\textbf{Corrective Action:} Remove hardcoded thresholds from DP-001 description; 
+reference ``entity-specific materiality from \texttt{entity-params}'' instead.
+\end{tcolorbox}
+
+% =============================================================================
+\section{Additional Auditor Findings}
+\label{sec:additional-findings}
+% =============================================================================
+
+% -----------------------------------------------------------------------------
+\subsection{A-2: 100\% Traceability Claim Qualification}
+\label{sec:a2-traceability-exceptions}
+% -----------------------------------------------------------------------------
+
+\begin{tcolorbox}[colback=orange!5,colframe=orange!70,title=\faIcon{exclamation-circle} Finding A-2: Exceptions to 100\% Traceability]
+\textbf{Issue:} The spec claims ``100\% BIDIRECTIONAL TRACEABILITY ACHIEVED'' 
+but exceptions exist and should be explicitly disclosed.
+\end{tcolorbox}
+
+\textbf{Resolution: Exceptions Table}
+
+\begin{longtable}{p{3cm} p{3.5cm} p{6cm}}
+\caption{Explicit Exceptions to 100\% Traceability} \\
+\toprule
+\textbf{Layer} & \textbf{Item} & \textbf{Justification} \\
+\midrule
+\endfirsthead
+\toprule
+\textbf{Layer} & \textbf{Item} & \textbf{Justification} \\
+\midrule
+\endhead
+Spec $\rightarrow$ Schema & TB-STEP-006 (Journal Posting Investigation) & Workflow orchestration step; no persistent data schema required \\
+Spec $\rightarrow$ Schema & TB-STEP-007 (Track Entries \& Risk) & Workflow orchestration step; state tracked in workflow engine, not schema \\
+Schema $\rightarrow$ Spec & \texttt{audit\_id} field & Infrastructure field for tamper detection; not derived from business requirement \\
+Schema $\rightarrow$ Spec & \texttt{version} field & Infrastructure field for concurrency control; not derived from business requirement \\
+Schema $\rightarrow$ Spec & \texttt{processed\_at} field & Infrastructure field for pipeline telemetry; not derived from business requirement \\
+\bottomrule
+\end{longtable}
+
+\textbf{Updated Claim:}
+\begin{quote}
+\textit{``100\% BIDIRECTIONAL TRACEABILITY ACHIEVED for business requirements. 
+Five infrastructure/orchestration items are documented exceptions (see Table 14.X).''}
+\end{quote}
+
+% -----------------------------------------------------------------------------
+\subsection{A-4: BSS Risk Assessment Vocabulary Alignment}
+\label{sec:a4-bss-vocabulary}
+% -----------------------------------------------------------------------------
+
+\begin{tcolorbox}[colback=orange!5,colframe=orange!70,title=\faIcon{exclamation-circle} Finding A-4: BSS Cross-Spec Vocabulary]
+\textbf{Issue:} BSS Risk Assessment is out of scope but risk vocabulary 
+(\texttt{substantiated\_at\_risk}, \texttt{unsubstantiated\_unowned}, 
+\texttt{unsubstantiated\_owned}) appears in DP-005.\\
+\textbf{Question:} How will cross-spec vocabulary alignment be maintained?
+\end{tcolorbox}
+
+\textbf{Resolution: Shared Vocabulary Registry}
+
+\begin{tcolorbox}[colback=green!5,colframe=green!70,title=\faIcon{check-circle} Resolution: Cross-Spec Enum Registry]
+A shared vocabulary registry SHALL be maintained at:
+\begin{verbatim}
+docs/schema/common/enums.yaml
+\end{verbatim}
+
+Risk status values are defined once and imported by both TB and BSS specs:
+
+\begin{lstlisting}[language=yaml,caption={Shared Enum Registry (enums.yaml)}]
+# docs/schema/common/enums.yaml
+risk_status:
+  $id: "common/risk-status"
+  description: "Shared risk classification vocabulary (TB + BSS)"
+  type: string
+  enum:
+    - substantiated           # Evidence supports balance
+    - substantiated_at_risk   # Evidence exists but control weakness identified
+    - unsubstantiated_unowned # No evidence; no owner assigned
+    - unsubstantiated_owned   # No evidence; owner assigned for remediation
+  ownership:
+    maintainer: "Controls Architecture Team"
+    consumers: ["tb-review-spec", "bss-risk-assessment-spec"]
+    change_process: "RFC required; both spec owners must approve"
+\end{lstlisting}
+
+\textbf{Governance:}
+\begin{enumerate}
+    \item Any change to shared enums requires RFC (Request for Comment)
+    \item Both TB and BSS spec owners must approve vocabulary changes
+    \item CI validation ensures specs reference registry (not local definitions)
+\end{enumerate}
+\end{tcolorbox}
+
+% -----------------------------------------------------------------------------
+\subsection{I-3: Bulk Operations Error Handling}
+\label{sec:i3-bulk-operations}
+% -----------------------------------------------------------------------------
+
+\begin{tcolorbox}[colback=orange!5,colframe=orange!70,title=\faIcon{exclamation-circle} Finding I-3: Bulk Operations Gaps]
+\textbf{Missing specifications:}
+\begin{itemize}
+    \item Partial success handling (e.g., 10 of 50 items fail)
+    \item Race conditions (two reviewers claiming same item via bulk)
+    \item Audit of bulk operations (single entry or per-item?)
+\end{itemize}
+\end{tcolorbox}
+
+\textbf{Resolution: Bulk Operations Specification}
+
+\begin{tcolorbox}[colback=green!5,colframe=green!70,title=\faIcon{check-circle} Resolution: Bulk Operation Semantics]
+
+\textbf{1. Atomic Per-Item with Rollback:}
+\begin{itemize}
+    \item Each item in a bulk operation SHALL be processed atomically
+    \item If \textbf{any} item fails, the \textbf{entire bulk operation} SHALL be rolled back
+    \item No partial success state is allowed
+\end{itemize}
+
+\textbf{2. Race Condition Prevention:}
+\begin{lstlisting}[language=SQL,caption={Optimistic Locking for Bulk Claim}]
+-- Bulk claim with optimistic locking
+BEGIN TRANSACTION;
+  -- Attempt to claim all items atomically
+  UPDATE variance_records 
+  SET claimant_id = :persona_id,
+      claimed_at = NOW(),
+      version = version + 1
+  WHERE id IN (:item_ids)
+    AND claimant_id IS NULL  -- Only unclaimed items
+    AND version = :expected_version;  -- Optimistic lock
+  
+  -- Check all items were claimed
+  IF ROW_COUNT() != :expected_count THEN
+    ROLLBACK;  -- Race condition detected
+    RETURN error: 'CONFLICT: Some items already claimed'
+  END IF;
+COMMIT;
+\end{lstlisting}
+
+\textbf{3. Audit of Bulk Operations:}
+\begin{itemize}
+    \item Each item SHALL have its own audit entry
+    \item All entries SHALL share the same \texttt{bulk\_operation\_id}
+    \item A summary audit entry SHALL be created with operation context
+\end{itemize}
+
+\begin{lstlisting}[language=jsonx,caption={Bulk Operation Audit Example}]
+// Summary entry
+{
+  "audit_id": "uuid-summary",
+  "action": "bulk_assign",
+  "bulk_operation_id": "uuid-bulk-123",
+  "bulk_operation_context": {
+    "total_items": 50,
+    "success_count": 50,
+    "failure_count": 0,
+    "operation_type": "bulk_assign"
+  }
+}
+
+// Individual item entries (50 of these)
+{
+  "audit_id": "uuid-item-1",
+  "action": "bulk_assign",
+  "bulk_operation_id": "uuid-bulk-123",
+  "resource_id": "variance-record-001",
+  "change_summary": {
+    "new_assignee": "1234567"
+  }
+}
+\end{lstlisting}
+\end{tcolorbox}
+
+% -----------------------------------------------------------------------------
+\subsection{I-4: Kill-Switch Automation Specification}
+\label{sec:i4-kill-switch}
+% -----------------------------------------------------------------------------
+
+\begin{tcolorbox}[colback=orange!5,colframe=orange!70,title=\faIcon{exclamation-circle} Finding I-4: Kill-Switch Automation Missing]
+\textbf{Table 11.4 defines six kill-switch conditions but doesn't specify:}
+\begin{itemize}
+    \item Who evaluates? (Automated monitor vs. manual check)
+    \item Evaluation frequency (continuous? post-cycle?)
+    \item Notification mechanism (email? PagerDuty? Jira?)
+\end{itemize}
+\end{tcolorbox}
+
+\textbf{Resolution: Kill-Switch Automation Specification}
+
+\begin{longtable}{p{2.5cm} p{2cm} p{2cm} p{3cm} p{3cm}}
+\caption{Kill-Switch Condition Automation} \\
+\toprule
+\textbf{Condition} & \textbf{Evaluator} & \textbf{Frequency} & \textbf{Notification} & \textbf{Probe Implementation} \\
+\midrule
+\endfirsthead
+\toprule
+\textbf{Condition} & \textbf{Evaluator} & \textbf{Frequency} & \textbf{Notification} & \textbf{Probe Implementation} \\
+\midrule
+\endhead
+Accept-without-edit $<$ 50\% & Automated & Post-cycle (M+6) & PagerDuty P2 + Slack & SQL query on decisions table \\
+Material variance missed & Automated & Daily at 06:00 UTC & PagerDuty P1 + Email & Compare AI flags vs manual flags \\
+Commentary factual error & Manual & Weekly review & Jira ticket & Random sampling (5\%) \\
+Hallucination detected & Automated & Real-time & PagerDuty P1 + Kill & Confidence score $<$ 0.3 AND no source \\
+vLLM availability $<$ 95\% & Automated & Continuous (1-min) & PagerDuty P2 & Health check endpoint \\
+Audit trail integrity & Automated & Hourly & PagerDuty P1 + Kill & Evidence hash verification \\
+\bottomrule
+\end{longtable}
+
+\textbf{Probe Implementation Examples:}
+
+\begin{lstlisting}[language=Python,caption={Kill-Switch Probe Implementation}]
+class KillSwitchMonitor:
+    """Automated kill-switch condition evaluation."""
+    
+    def check_accept_rate(self, period: str) -> KillSwitchResult:
+        """Post-cycle check: Accept-without-edit rate."""
+        query = """
+            SELECT 
+                COUNT(*) FILTER (WHERE decision='accept' AND edits='{}') AS accept_no_edit,
+                COUNT(*) AS total_reviewed
+            FROM decisions WHERE period = %s
+        """
+        result = db.execute(query, [period])
+        rate = result.accept_no_edit / result.total_reviewed
+        if rate < 0.50:
+            return KillSwitchResult(
+                triggered=True,
+                condition="accept_rate_below_50",
+                value=rate,
+                action="ALERT_P2",
+                notification=["pagerduty:p2", "slack:#tb-review-alerts"]
+            )
+        return KillSwitchResult(triggered=False)
+    
+    def check_hallucination_realtime(self, commentary: Commentary) -> KillSwitchResult:
+        """Real-time check: Hallucination detection."""
+        if commentary.confidence < 0.3 and not commentary.source_references:
+            return KillSwitchResult(
+                triggered=True,
+                condition="hallucination_detected",
+                value=commentary.confidence,
+                action="KILL_IMMEDIATELY",
+                notification=["pagerduty:p1", "kill-switch:activate"]
+            )
+        return KillSwitchResult(triggered=False)
+\end{lstlisting}
+
+% =============================================================================
+\section{Commentary Quality Metrics Clarification}
+\label{sec:commentary-metrics}
+% =============================================================================
+
+\begin{tcolorbox}[colback=orange!5,colframe=orange!70,title=\faIcon{exclamation-circle} Finding P2-2: Metrics Ambiguity]
+\textbf{Location:} tb-review-spec, p.15, \S3.8\\
+\textbf{Issue:} ``accept-with-edit'' numerator/denominator not defined
+\end{tcolorbox}
+
+\textbf{Authoritative Definitions:}
+
+\begin{align}
+\text{accept\_without\_edit\_rate} &= \frac{|\{d : d.\text{decision} = \text{`accept'} \land d.\text{edits} = \emptyset\}|}{|\text{total\_reviewed}|} \geq 70\% \\[1em]
+\text{accept\_with\_any\_edit\_rate} &= \frac{|\{d : d.\text{decision} = \text{`accept'}\}|}{|\text{total\_reviewed}|} \geq 95\%
+\end{align}
+
+\textbf{Interpretation:}
+\begin{itemize}
+    \item \textbf{accept\_without\_edit\_rate:} Commentaries accepted exactly as AI generated
+    \item \textbf{accept\_with\_any\_edit\_rate:} All accepted commentaries (including those requiring human edits)
+    \item \textbf{Implication:} Up to 25\% of accepted commentaries may require human editing; 
+          up to 5\% may be rejected entirely
+\end{itemize}
+
+% =============================================================================
+\section{Recommendations Priority Matrix}
+\label{sec:priority-matrix}
+% =============================================================================
+
+\begin{longtable}{p{1cm} p{5cm} p{3cm} p{2cm} p{1.5cm}}
+\caption{Audit Finding Resolution Status} \\
+\toprule
+\textbf{ID} & \textbf{Action} & \textbf{Owner} & \textbf{Timeline} & \textbf{Status} \\
+\midrule
+\endfirsthead
+\rowcolor{green!10}
+P0-1 & Reconcile state count (27→28) & Spec Owner & 1 week & \textcolor{green}{\textbf{RESOLVED}} \\
+\rowcolor{green!10}
+P0-2 & Add vLLM fallback specification & AI Architect & 2 weeks & \textcolor{green}{\textbf{RESOLVED}} \\
+\rowcolor{green!10}
+P1-1 & Define audit trail schema & Controls Owner & 4 weeks & \textcolor{green}{\textbf{RESOLVED}} \\
+\rowcolor{green!10}
+P1-2 & Add normality test to AC & Data Science & 4 weeks & \textcolor{green}{\textbf{RESOLVED}} \\
+\rowcolor{yellow!20}
+P2-1 & Automate kill-switch eval & Platform Team & 8 weeks & \textcolor{orange}{\textbf{PLANNED}} \\
+\rowcolor{green!10}
+P2-2 & Define commentary metrics & Product Owner & 2 weeks & \textcolor{green}{\textbf{RESOLVED}} \\
+\bottomrule
+\end{longtable}
+
+\end{document}
