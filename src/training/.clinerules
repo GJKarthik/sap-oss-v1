@@ -68,6 +68,24 @@ Current Repo Reality You Must Assume
 - The evaluation layer is only partially integrated and some modules currently drift from the actual runtime models.
 - Passing legacy tests does not prove Simula compliance.
 
+Known Issue Registry
+- `SIM-KI-001` legacy path still default:
+  - symptom: pipeline launches `make all`, legacy template expansion, or `training/pipeline/output/train.jsonl`
+  - impact: production path is not running the spec-defined Simula flow
+  - prevention: default entrypoints, API worker, and UI stage model must all point to the Simula runner
+- `SIM-KI-002` contract drift between runtime models and schemas:
+  - symptom: evaluator modules expect fields not present on `TrainingExample` or taxonomy objects
+  - impact: coverage, critic validation, and downstream evaluation crash at runtime
+  - prevention: schema-first model changes, plus producer and consumer updates in the same change
+- `SIM-KI-003` preview and synthetic fallback masquerading as operational behavior:
+  - symptom: HANA or data preview surfaces return preview/synthetic data while the product appears healthy
+  - impact: operators can mistake demo behavior for production success
+  - prevention: explicit mode labeling and governed-run fail-closed behavior
+- `SIM-KI-004` simulated UI telemetry:
+  - symptom: random throughput, fake stage timing, or placeholder run signals in production surfaces
+  - impact: false confidence, poor incident diagnosis
+  - prevention: bind UI telemetry to real runtime artifacts, logs, and job state
+
 Primary Goal State
 - The default pipeline path launches the Simula HANA-direct flow.
 - Every generated artifact follows one canonical contract shared by runner, API, governance, and frontend.
@@ -193,6 +211,18 @@ Priority Order For Bringing The System To 10/10
 5. Replace placeholder telemetry and preview-first behavior in the live product surfaces.
 6. Only then remove or quarantine remaining legacy defaults.
 
+Pre-Change Checklist
+- Confirm which spec chapter is being implemented.
+- Confirm which JSON schema contracts are affected.
+- Confirm whether the change touches only `src/training` or also requires API/frontend integration updates.
+- Check whether the current live path still references:
+  - `make all`
+  - `schema_pipeline/data_generator.py`
+  - `prepare_training_data.py`
+  - `training/pipeline/output/train.jsonl`
+- Check whether the UI still references legacy stage names or synthetic telemetry.
+- If any of those are still present in the impacted path, treat migration work as part of the task, not optional follow-up.
+
 Task Checklist For Any Non-Trivial Change
 - Confirm which spec chapter governs the task.
 - Confirm which serialized contracts are touched.
@@ -214,6 +244,24 @@ Minimum Verification Before Closing Work
 - If API/frontend integration changed:
   - verify artifact paths and payload shapes end to end
   - verify governed runs do not show preview as healthy production
+
+Post-Change Smoke Tests
+- Runner and contract smoke:
+  - `python3 src/training/scripts/run_hana_pipeline.py --help`
+  - verify the documented/default entrypoint resolves to the Simula runner
+- Schema and artifact smoke:
+  - generate or stage a representative output set
+  - confirm the canonical artifact names exist in the agreed output directory
+  - confirm the JSONL and taxonomy outputs match the JSON schemas
+- Legacy-path regression smoke:
+  - `rg -n "make all|schema_pipeline/data_generator.py|prepare_training_data.py|training/pipeline/output/train.jsonl" src/generativeUI/training-webcomponents-ngx/packages/api-server/src/main.py`
+  - expected result after full migration: no live Simula path should depend on those references
+- Frontend truthfulness smoke:
+  - `rg -n "Preconvert|Parse Templates|Expand|Build SQL|Math.random\\(" src/generativeUI/training-webcomponents-ngx/apps/angular-shell/src/app/pages/pipeline/pipeline.component.ts`
+  - expected result after full migration: legacy stage model and fake telemetry should not drive the production Simula experience
+- Preview-mode smoke:
+  - verify governed production runs do not settle on preview or synthetic data mode
+  - verify any preview/demo mode is visibly and operationally marked as non-production
 
 Existing Useful Test Entrypoints
 - `python3 -m pytest src/training/pipeline/tests/test_pipeline.py -v --tb=short`
@@ -237,6 +285,8 @@ Working Style
   - more explicit report structures
   - more explicit tests
   - more explicit failure modes
+- If you can specify a concrete verification command, do so.
+- Match the operational specificity standard already demonstrated in `src/generativeUI/.clinerules`.
 
 Completion Standard
 - The target is not "good enough."

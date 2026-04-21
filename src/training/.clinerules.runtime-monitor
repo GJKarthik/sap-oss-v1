@@ -65,6 +65,23 @@ What Must Never Be Reported As Healthy
 - A UI that is showing simulated/random telemetry for an active production run.
 - A path that still launched the legacy pipeline while claiming Simula completion.
 
+Known Failure Registry
+- `SIM-KI-001` authoritative runner bypass:
+  - pattern: API or operator path still launches legacy `make all` or schema/template generators
+  - severity bias: Critical
+- `SIM-KI-002` evaluator contract drift:
+  - pattern: runtime exceptions involving missing `TrainingExample`, taxonomy, or node fields
+  - severity bias: Critical
+- `SIM-KI-003` governed preview fallback:
+  - pattern: HANA or data surfaces return `preview` or synthetic mode for a governed production run
+  - severity bias: Critical
+- `SIM-KI-004` misleading UI telemetry:
+  - pattern: production pipeline surface still driven by random/simulated throughput or legacy stage names
+  - severity bias: High
+- `SIM-KI-005` artifact contract drift:
+  - pattern: runner, API, and UI disagree on artifact names or locations
+  - severity bias: High
+
 Canonical Required Artifacts
 - `schemas.json`
 - `taxonomies.json`
@@ -122,6 +139,25 @@ Informational Conditions
 2. Stage transition observed.
 3. Run completed successfully with all required outputs.
 4. Preview/demo run correctly marked as non-production.
+
+Synthetic Check Cadence
+- For active production environments, run lightweight synthetic checks every 5 minutes.
+- For lower environments, run synthetic checks on deploy and at least hourly.
+- Re-run critical checks immediately after any pipeline, API, or frontend deployment touching Simula paths.
+
+Example Automated Checks
+- Authoritative path check:
+  - confirm the launched command maps to the Simula runner, not legacy pipeline entrypoints
+- Artifact presence check:
+  - confirm all canonical artifacts exist after a successful run
+- Artifact freshness check:
+  - confirm artifact timestamps or manifest entries belong to the current run
+- Mode honesty check:
+  - confirm governed production runs are not reported as `preview` or synthetic
+- Quality gate check:
+  - confirm critic calibration, coverage, diversity, and taxonomy quality metrics meet threshold
+- UI honesty check:
+  - confirm the pipeline surface reflects real stage and throughput data rather than synthetic placeholders
 
 Required Alert Payload
 - `run_id`
@@ -215,6 +251,19 @@ Recommended Next Actions By Class
   - attach exact threshold and observed metric
   - identify whether the issue is generator quality, taxonomy quality, or evaluator correctness
 
+Operator Triage Checklist
+1. Confirm the run identifier and whether it is governed production or demo/development.
+2. Confirm which command or worker path actually launched the run.
+3. Confirm the output directory and expected artifact manifest.
+4. Confirm whether the failure is:
+   - pathing/routing
+   - dependency health
+   - contract drift
+   - missing artifacts
+   - quality gate regression
+   - UI/API truthfulness gap
+5. Attach direct evidence before escalating or clearing the alert.
+
 Minimum Evidence Before Closing An Alert
 - The failing condition no longer reproduces.
 - The affected artifact or endpoint now matches the expected contract.
@@ -224,3 +273,4 @@ Minimum Evidence Before Closing An Alert
 Completion Standard
 - Monitoring is only correct when it prevents false confidence.
 - The target is precise, evidence-backed alerting for real Simula production behavior.
+- Match the operational specificity standard already demonstrated in `src/generativeUI/.clinerules`.
