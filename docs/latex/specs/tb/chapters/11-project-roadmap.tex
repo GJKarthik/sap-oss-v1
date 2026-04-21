@@ -247,3 +247,32 @@ on the following rhythm:
         project steering and filed at
         \path{docs/tb/business-case/refresh-history.yaml}.
 \end{itemize}
+
+\section{Machine-readable milestone registry}\label{sec:tb-moscow-yaml}
+
+Every milestone identifier in this chapter is also addressable from
+data records via the shared \texttt{RoadmapReference} definition in
+\path{docs/schema/common/base-types.schema.json}. The authoritative
+list lives at
+\path{docs/schema/common/moscow.yaml} and is the input to the CI check
+\texttt{python3 docs/schema/validate.py --check-roadmap} --- which
+rejects any record whose \texttt{roadmap.milestones[*]} does not
+resolve against this file.
+
+\begin{lstlisting}[language=yaml,caption={Excerpt from
+\texttt{docs/schema/common/moscow.yaml} for the TB
+domain.},label=lst:tb-moscow-yaml]
+tb:
+  - { id: M01, priority: Must,   title: "Data schema v1.0",        ticket: TB-ENG-001 }
+  - { id: M02, priority: Must,   title: "AI pipeline scaffold",    ticket: TB-ENG-002 }
+  - { id: M03, priority: Must,   title: "Controls engine",         ticket: TB-ENG-003 }
+  - { id: S01, priority: Should, title: "Regulations integration", ticket: REG-INTG-TB-001 }
+  - { id: C01, priority: Could,  title: "V2 ML gate",              ticket: TB-V2-GATE }
+  # ...
+\end{lstlisting}
+
+\noindent
+Any change to the milestone list in this chapter must be reflected in
+\path{docs/schema/common/moscow.yaml} in the same pull request; the CI
+workflow \path{.github/workflows/schema-validation.yaml} fails closed
+if the two drift.

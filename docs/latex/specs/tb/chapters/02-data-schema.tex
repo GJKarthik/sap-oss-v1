@@ -271,3 +271,53 @@ python3 docs/schema/validate.py --domain tb \
 \noindent
 CI runs \texttt{--registry-check} on every pull request that touches
 \path{docs/schema/} or any TB pipeline module.
+
+\section{Schema registry v1.2.0 addendum}\label{sec:tb-schema-v1-2-0}
+
+On 19~April~2026 the unified registry was uplifted to \textbf{v1.2.0}
+(\path{docs/schema/registry.json} \texttt{version} = \texttt{"1.2.0"}).
+The changes are additive for TB data producers but strictness-preserving:
+arbitrary field names under \texttt{variance\_bands.*} are no longer
+accepted. See \path{docs/schema/CHANGELOG.md} and
+\path{docs/schema/MIGRATION.md} for the full upgrade procedure.
+
+\begin{description}
+  \item[Strict-by-default validation.] Every TB schema
+        (\texttt{tb-extract}, \texttt{pl-extract}, \texttt{variance-record},
+        \texttt{commentary-draft}, \texttt{decision-point},
+        \texttt{entity-params}) now declares
+        \texttt{"additionalProperties": false} at every object level,
+        \emph{including} the inner map-value schema under
+        \texttt{entity-params.variance\_bands.*}. Previously, arbitrary
+        sigma field names slipped through validation.
+  \item[MoSCoW traceability.] The machine-readable milestone registry
+        at \path{docs/schema/common/moscow.yaml} mirrors
+        \cref{ch:tb-roadmap}. TB milestones \texttt{M01}\ldots\texttt{M07}
+        plus \texttt{S01} (REG-INTG-TB-001) and \texttt{C01} (V2 gate)
+        are addressable from any record via the shared
+        \texttt{RoadmapReference} definition in
+        \path{docs/schema/common/base-types.schema.json}.
+  \item[Referencing migration.] \texttt{validate.py} now uses
+        \texttt{referencing.Registry} instead of the deprecated
+        \texttt{jsonschema.RefResolver}. Cross-schema \texttt{\$ref}
+        resolution is faster and no longer emits a
+        \texttt{DeprecationWarning} under jsonschema~$\ge$~4.18.
+  \item[Canonical fixtures.] Two canonical samples ship under
+        \path{docs/schema/tests/fixtures/tb/}:
+        \texttt{tb-extract.sample.json} (HKG 2026-04 balanced TB) and
+        \texttt{variance-record.sample.json} (PERIOD\_SPIKE flag with
+        completed DP-002 workflow). Both are parametrised into the
+        \texttt{pytest} suite under \path{docs/schema/tests/integration/}.
+  \item[CI + pre-commit.]
+        \path{.github/workflows/schema-validation.yaml} runs on every
+        PR touching \path{docs/schema/**}; the same five layered checks
+        run locally via \path{docs/schema/.pre-commit-config.yaml}.
+\end{description}
+
+\noindent
+New validator sub-commands:
+\begin{lstlisting}[language=bash]
+python3 docs/schema/validate.py --run-fixtures
+python3 docs/schema/validate.py --check-roadmap
+python3 docs/schema/validate.py --all
+\end{lstlisting}

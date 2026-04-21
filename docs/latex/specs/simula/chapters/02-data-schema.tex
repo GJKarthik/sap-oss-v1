@@ -147,6 +147,58 @@ See \path{docs/schema/README.md} for Python usage examples; the CI pipeline
 executes \texttt{--registry-check} on every pull request that touches
 \path{docs/schema/} or any spec chapter that references these schemas.
 
+\subsection{Schema registry v1.2.0 addendum}
+\label{sec:simula-schema-v1-2-0}
+
+On 19~April~2026 the unified registry was uplifted to \textbf{v1.2.0}
+(\path{docs/schema/registry.json} \texttt{version} = \texttt{"1.2.0"}).
+Two Simula-facing additions matter for reproducibility and spatial
+hardening:
+
+\begin{description}
+  \item[Reproducibility manifest.] \path{docs/schema/simula/config.schema.json}
+        now accepts a \texttt{reproducibility} block of shape
+        \texttt{\{commit, tag, seed, generated\_at\}} conforming to the
+        shared \texttt{ReproducibilityManifest} definition in
+        \path{docs/schema/common/base-types.schema.json}. The M06
+        reference run is pinned in the canonical fixture at
+        \path{docs/schema/tests/fixtures/simula/config.sample.json}:
+        commit \texttt{b8d40a1}, tag
+        \texttt{simula-v1.2-worked-example}, seed \texttt{20251115}.
+  \item[Spatial SRID policy.] A new enum field
+        \texttt{hana\_spatial\_policy} (\textsc{warn}, \textsc{strict},
+        \textsc{skip}; default \textsc{warn}) on the config schema
+        makes the unknown-SRID behaviour explicit. Production
+        data-generation runs should set \textsc{strict}; see
+        \cref{sec:sim-roadmap}~M05.
+  \item[Strict-by-default validation.] Every Simula schema now declares
+        \texttt{"additionalProperties": false}. The validator
+        meta-schema enforces the convention across the whole registry.
+  \item[MoSCoW traceability.] The machine-readable milestone registry at
+        \path{docs/schema/common/moscow.yaml} mirrors
+        \cref{sec:sim-roadmap}. Records may carry an optional
+        \texttt{roadmap} field referencing milestones
+        \texttt{M01}\ldots\texttt{M08}, \texttt{S01}\ldots\texttt{S03}.
+  \item[Canonical fixtures + pytest.] Two samples ship under
+        \path{docs/schema/tests/fixtures/simula/}:
+        \texttt{config.sample.json} (pinned M06 reference run) and
+        \texttt{taxonomy.sample.json} (three-level tree with quality
+        metrics). The integration suite includes a dedicated test
+        \texttt{test\_simula\_config\_has\_reproducibility\_manifest}
+        that locks in the commit/tag/seed values.
+\end{description}
+
+\noindent
+Full changelog: \path{docs/schema/CHANGELOG.md}.
+Upgrade procedure: \path{docs/schema/MIGRATION.md}.
+
+\begin{lstlisting}[language=bash]
+python3 docs/schema/validate.py --run-fixtures
+python3 docs/schema/validate.py --check-roadmap
+python3 docs/schema/validate.py --all
+pytest docs/schema/tests/integration/ -v
+\end{lstlisting}
+
 % =============================================================================
 % CHAPTER 3: HANA SCHEMA EXTRACTION PIPELINE
 % =============================================================================

@@ -129,10 +129,114 @@ Requirement category & bound\_risks, human\_accountability, technical\_controls,
 Lifecycle phase & planning, design, development, pre\_deployment, deployment, post\_deployment, decommission \\
 Implementation kind & code, config, doc, schema, dataset, none \\
 Verification kind & aiverify-plugin, moonshot-test, test, manual-review, process-checklist, external-audit \\
-Status & implemented, partial, gap, planned, not\_applicable \\
+Status & implemented, partial, gap, planned, not\_applicable, \textbf{compliant} \\
 \bottomrule
 \end{tabularx}
-\caption{Controlled vocabularies.}
+\caption{Controlled vocabularies. The \textbf{compliant} terminal status
+was added in schema registry v1.2.0 (19~April~2026) and is reached via
+the \texttt{flip\_trigger} block --- see~\cref{sec:reg-schema-v1-2-0}.}
 \label{tab:enums}
 \end{table}
+
+\section{Unified schema registry}\label{sec:reg-unified-registry}
+
+As of 18~April~2026 all four regulations schemas are published in the
+unified registry at \path{docs/schema/regulations/} alongside the other
+three SAP~OSS Finance specifications. Migration status is
+\emph{complete} (see \path{docs/schema/registry.json} field
+\texttt{migration.status}).
+
+\begin{description}
+  \item[Registry index.] \path{docs/schema/registry.json} --- master
+        index of all 20 schemas across five domains.
+  \item[Common types.] \path{docs/schema/common/base-types.schema.json}
+        --- shared definitions
+        (\texttt{Metadata}, \texttt{SHA256}, \texttt{RequirementId})
+        referenced via JSON Schema \texttt{\$ref}.
+  \item[Consolidated enums.] \path{docs/schema/common/enums.yaml} ---
+        single source of truth for
+        \texttt{requirement\_status}, \texttt{obligation\_level},
+        \texttt{jurisdiction}, \texttt{moscow\_priority}.
+  \item[Regulations schemas.] \path{docs/schema/regulations/} ---
+        \texttt{regulation.schema.json},
+        \texttt{requirement.schema.json},
+        \texttt{conformance-tool.schema.json}, and
+        \texttt{corpus.schema.json}. All marked \texttt{status:~stable}.
+\end{description}
+
+\begin{lstlisting}[language=bash]
+python3 docs/schema/validate.py --registry-check
+python3 docs/schema/validate.py --domain regulations \
+    --schema requirement.schema.json --file req.json
+\end{lstlisting}
+
+\section{Schema registry v1.2.0 addendum}\label{sec:reg-schema-v1-2-0}
+
+On 19~April~2026 the registry was uplifted to \textbf{v1.2.0}. The
+regulations domain gained the two pieces of machinery that make the
+\emph{partial~$\to$~compliant} status-flip path declarative instead of
+documentary:
+
+\begin{description}
+  \item[\texttt{flip\_trigger} on requirements.] Every requirement in
+        \texttt{partial} (or \texttt{partial\_star}) status may carry a
+        \texttt{flip\_trigger} block pointing to the domain, milestone,
+        and ticket whose completion will flip the status to
+        \texttt{compliant}. Schema shape:
+        \begin{lstlisting}[language=jsonx]
+"flip_trigger": {
+  "domain":        "arabic",
+  "milestone_id":  "S01",
+  "ticket":        "REG-INTG-AP-001",
+  "from_status":   "partial",
+  "to_status":     "compliant"
+}
+        \end{lstlisting}
+        The canonical worked example, \textbf{REG-MGF-2.1.2-002}, is
+        pinned in
+        \path{docs/schema/tests/fixtures/regulations/requirement.sample.json}
+        and locked by
+        \texttt{test\_reg\_mgf\_2\_1\_2\_002\_is\_partial\_with\_flip\_trigger}.
+  \item[\texttt{roadmap} references.] Requirements, regulations, and
+        corpus records accept an optional \texttt{roadmap} field
+        conforming to the shared \texttt{RoadmapReference} definition.
+        It links a record to one or more milestone IDs defined in
+        \path{docs/schema/common/moscow.yaml}, the machine-readable
+        mirror of \cref{ch:reg-roadmap}. CI rejects any milestone ID
+        that does not resolve.
+  \item[Strict-by-default validation.] Every regulations schema now
+        declares \texttt{"additionalProperties": false}, \emph{including}
+        the inner map-value schema under
+        \texttt{corpus.coverage\_summary.by\_regulation.*} --- which
+        previously accepted arbitrary per-regulation field names.
+  \item[\texttt{compliant} status + \texttt{**} marker.] The
+        \texttt{requirement\_status} enum gained \texttt{compliant} as
+        the terminal state reached by a successful \texttt{flip\_trigger};
+        the \texttt{requirement\_status\_marker} enum gained
+        \texttt{**} for ``production-validated after flip''. Exhaustive
+        Python \texttt{match} statements must handle the two new tokens.
+  \item[Canonical fixtures + pytest.] Two samples ship under
+        \path{docs/schema/tests/fixtures/regulations/}:
+        \texttt{regulation.sample.json} (MAS~MGF v1 with SHA-256) and
+        \texttt{requirement.sample.json} (REG-MGF-2.1.2-002 pinned).
+        The pytest suite under \path{docs/schema/tests/integration/}
+        runs 14 tests including two bespoke tests for the flip trigger.
+  \item[Referencing migration + CI.] \texttt{validate.py} has migrated
+        from \texttt{jsonschema.RefResolver} to
+        \texttt{referencing.Registry};
+        \path{.github/workflows/schema-validation.yaml} runs five
+        layered checks on every PR touching \path{docs/schema/**}.
+\end{description}
+
+\noindent
+Full changelog: \path{docs/schema/CHANGELOG.md}.
+Upgrade procedure: \path{docs/schema/MIGRATION.md}.
+
+\begin{lstlisting}[language=bash]
+python3 docs/schema/validate.py --run-fixtures
+python3 docs/schema/validate.py --check-roadmap
+python3 docs/schema/validate.py --all
+pytest docs/schema/tests/integration/ -v
+\end{lstlisting}
+
 \clearpage

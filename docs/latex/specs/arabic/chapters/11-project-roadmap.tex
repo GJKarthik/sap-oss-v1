@@ -271,3 +271,35 @@ following rhythm:
         project steering and filed at
         \path{docs/arabic/business-case/refresh-history.yaml}.
 \end{itemize}
+
+\section{Machine-readable milestone registry}\label{sec:ap-moscow-yaml}
+
+Every milestone identifier in this chapter is also addressable from
+data records via the shared \texttt{RoadmapReference} definition in
+\path{docs/schema/common/base-types.schema.json}. The authoritative
+list lives at
+\path{docs/schema/common/moscow.yaml} and is the input to the CI check
+\texttt{python3 docs/schema/validate.py --check-roadmap} --- which
+rejects any record whose \texttt{roadmap.milestones[*]} does not
+resolve against this file.
+
+\begin{lstlisting}[language=yaml,caption={Excerpt from
+\texttt{docs/schema/common/moscow.yaml} for the Arabic AP
+domain.},label=lst:ap-moscow-yaml]
+arabic:
+  - { id: M01, priority: Must,   title: "OCR pipeline",       ticket: AP-ENG-001 }
+  - { id: M02, priority: Must,   title: "VAT engine",         ticket: AP-ENG-002 }
+  - { id: M03, priority: Must,   title: "Pilot prep (200 docs)", ticket: AP-PILOT-PREP }
+  - { id: M04, priority: Must,   title: "Identity wiring",    ticket: REG-INTG-AP-001 }
+  - { id: S01, priority: Should, title: "Egypt onboarded",    ticket: AP-WAVE-002 }
+  # ...
+\end{lstlisting}
+
+\noindent
+Any change to the milestone list in this chapter must be reflected in
+\path{docs/schema/common/moscow.yaml} in the same pull request; the CI
+workflow \path{.github/workflows/schema-validation.yaml} fails closed
+if the two drift. The
+\path{docs/schema/tests/integration/test_roadmap_references_resolve}
+pytest guards the invariant locally via
+\path{docs/schema/.pre-commit-config.yaml}.

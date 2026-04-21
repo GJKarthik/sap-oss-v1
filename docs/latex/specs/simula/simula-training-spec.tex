@@ -47,6 +47,29 @@
   morestring=[b]",
   backgroundcolor=\color{codebg},
 }
+\lstdefinelanguage{yaml}{
+  sensitive=true,
+  keywords={true,false,null,yes,no,on,off},
+  keywordstyle=\color{codeblue}\bfseries,
+  morekeywords={Must,Should,Could,Won't},
+  comment=[l]{\#},
+  commentstyle=\color{codegreen}\itshape,
+  stringstyle=\color{codepurple},
+  morestring=[b]',
+  morestring=[b]",
+  backgroundcolor=\color{codebg},
+}
+\lstdefinelanguage{jsonx}{
+  sensitive=true,
+  keywords={true,false,null},
+  keywordstyle=\color{codeblue}\bfseries,
+  comment=[l]{//},
+  commentstyle=\color{codegreen}\itshape,
+  stringstyle=\color{codepurple},
+  morestring=[b]',
+  morestring=[b]",
+  backgroundcolor=\color{codebg},
+}
 
 \lstset{
   basicstyle=\ttfamily\small,

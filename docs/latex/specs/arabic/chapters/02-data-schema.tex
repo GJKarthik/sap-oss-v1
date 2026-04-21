@@ -261,3 +261,55 @@ python3 docs/schema/validate.py --domain arabic \
 \noindent
 CI runs \texttt{--registry-check} on every pull request touching
 \path{docs/schema/} or any dependent pipeline module.
+
+\section{Schema registry v1.2.0 addendum}\label{sec:ap-schema-v1-2-0}
+
+On 19~April~2026 the unified registry was uplifted to \textbf{v1.2.0}
+(\path{docs/schema/registry.json} \texttt{version} = \texttt{"1.2.0"}).
+The changes listed below are additive for data producers but introduce
+machine-enforced invariants for consumers; see
+\path{docs/schema/CHANGELOG.md} and \path{docs/schema/MIGRATION.md}
+for the full changelog and upgrade procedure.
+
+\begin{description}
+  \item[Strict-by-default validation.] Every object-with-properties
+        across all four Arabic schemas now declares
+        \texttt{"additionalProperties": false}. Previously-accepted
+        ad-hoc extension fields are rejected. The meta-schema walk in
+        \path{docs/schema/validate.py} enforces the convention.
+  \item[MoSCoW traceability.] A new file
+        \path{docs/schema/common/moscow.yaml} is the machine-readable
+        mirror of \cref{ch:ap-roadmap}. Records may carry an optional
+        \texttt{roadmap} field pointing at one or more milestone IDs
+        (\texttt{M01}\ldots\texttt{M09}, \texttt{S01}\ldots\texttt{S03},
+        \texttt{C01}\ldots). CI verifies every reference resolves.
+  \item[Referencing migration.] \texttt{validate.py} now builds a
+        \texttt{referencing.Registry} of every local schema, replacing
+        the deprecated \texttt{jsonschema.RefResolver}. A fallback path
+        is retained for environments without the
+        \texttt{referencing} library.
+  \item[Canonical fixtures.] Two canonical samples ship under
+        \path{docs/schema/tests/fixtures/arabic/}:
+        \texttt{invoice.sample.json} (ZATCA tax invoice with bilingual
+        seller/buyer) and \texttt{vendor.sample.json} (Saudi corporate
+        vendor with full bank details). Both are validated on every
+        pull request by a parametrised \texttt{pytest} suite.
+  \item[CI + pre-commit.]
+        \path{.github/workflows/schema-validation.yaml} runs five
+        layered checks on every PR; a matching
+        \path{docs/schema/.pre-commit-config.yaml} enforces the same
+        invariants locally.
+\end{description}
+
+\noindent
+New validator sub-commands:
+\begin{lstlisting}[language=bash]
+# Validate every fixture against its schema
+python3 docs/schema/validate.py --run-fixtures
+
+# Verify every RoadmapReference resolves against moscow.yaml
+python3 docs/schema/validate.py --check-roadmap
+
+# All of the above plus --registry-check
+python3 docs/schema/validate.py --all
+\end{lstlisting}

@@ -264,3 +264,41 @@ following rhythm:
         project steering and filed at
         \path{docs/simula/business-case/refresh-history.yaml}.
 \end{itemize}
+
+\subsection{Machine-readable milestone registry}\label{sec:sim-moscow-yaml}
+
+Every milestone identifier in this roadmap is also addressable from
+data records via the shared \texttt{RoadmapReference} definition in
+\path{docs/schema/common/base-types.schema.json}. The authoritative
+list lives at
+\path{docs/schema/common/moscow.yaml} and is the input to the CI check
+\texttt{python3 docs/schema/validate.py --check-roadmap} --- which
+rejects any record whose \texttt{roadmap.milestones[*]} does not
+resolve against this file.
+
+M06 is especially noteworthy: the reference-run manifest
+(commit \texttt{b8d40a1}, tag \texttt{simula-v1.2-worked-example},
+seed \texttt{20251115}) is pinned both in the \texttt{moscow.yaml}
+\texttt{reproducibility\_block} and in the canonical fixture
+\path{docs/schema/tests/fixtures/simula/config.sample.json}; they are
+locked by the pytest
+\texttt{test\_simula\_config\_has\_reproducibility\_manifest}.
+
+\begin{lstlisting}[language=yaml,caption={Excerpt from
+\texttt{docs/schema/common/moscow.yaml} for the Simula
+domain.},label=lst:sim-moscow-yaml]
+simula:
+  - { id: M01, priority: Must,   title: "Extraction pipeline",     ticket: SIM-ENG-001 }
+  - { id: M05, priority: Must,   title: "HANA spatial policy",     ticket: SIM-HANA-SRID }
+  - { id: M06, priority: Must,   title: "Reference run (M06)",     ticket: SIM-REF-RUN,
+      reproducibility_block: { commit: "b8d40a1",
+                               tag:    "simula-v1.2-worked-example",
+                               seed:   20251115 } }
+  # ...
+\end{lstlisting}
+
+\noindent
+Any change to the milestone list in this roadmap must be reflected in
+\path{docs/schema/common/moscow.yaml} in the same pull request; the CI
+workflow \path{.github/workflows/schema-validation.yaml} fails closed
+if the two drift.

@@ -267,3 +267,44 @@ following rhythm:
         the project steering and filed at
         \path{docs/regulations/business-case/refresh-history.yaml}.
 \end{itemize}
+
+\section{Machine-readable milestone registry}\label{sec:reg-moscow-yaml}
+
+Every milestone identifier in this chapter is also addressable from
+data records via the shared \texttt{RoadmapReference} definition in
+\path{docs/schema/common/base-types.schema.json}. The authoritative
+list lives at
+\path{docs/schema/common/moscow.yaml} and is the input to the CI check
+\texttt{python3 docs/schema/validate.py --check-roadmap} --- which
+rejects any record whose \texttt{roadmap.milestones[*]} does not
+resolve against this file.
+
+The regulations domain in particular makes heavy use of the machinery:
+every \texttt{partial} requirement in
+\path{docs/regulations/structured/requirements/} carries a
+\texttt{flip\_trigger} block pointing at the milestone whose
+completion will flip it to \texttt{compliant}. The canonical worked
+example REG-MGF-2.1.2-002 flips on Arabic~AP \textbf{S01} (ticket
+REG-INTG-AP-001); the pinned fixture
+\path{docs/schema/tests/fixtures/regulations/requirement.sample.json}
+locks this linkage and is verified by the pytest
+\texttt{test\_reg\_mgf\_2\_1\_2\_002\_is\_partial\_with\_flip\_trigger}.
+
+\begin{lstlisting}[language=yaml,caption={Excerpt from
+\texttt{docs/schema/common/moscow.yaml} for the regulations
+domain.},label=lst:reg-moscow-yaml]
+regulations:
+  - { id: M01, priority: Must,   title: "Agent index + MGF",      ticket: REG-IDX-001 }
+  - { id: M02, priority: Must,   title: "Audit log",              ticket: REG-AUDIT-001 }
+  - { id: M03, priority: Must,   title: "Identity attribution",   ticket: REG-IDENTITY-001 }
+  - { id: S01, priority: Should, title: "Arabic AP integration",  ticket: REG-INTG-AP-001,
+      flips: [REG-MGF-2.1.2-002: { from: partial, to: compliant }] }
+  # ...
+\end{lstlisting}
+
+\noindent
+Any change to the milestone list in this chapter (or to a
+\texttt{flip\_trigger} target) must be reflected in
+\path{docs/schema/common/moscow.yaml} in the same pull request; the
+CI workflow \path{.github/workflows/schema-validation.yaml} fails
+closed if the two drift.

@@ -58,6 +58,17 @@
   keywordstyle=\color{codekey}\bfseries,
   morecomment=[l]{\#},
 }
+\lstdefinelanguage{yaml}{
+  sensitive=true,
+  string=[s]{"}{"},
+  morestring=[s]{'}{'},
+  stringstyle=\color{codestr},
+  comment=[l]{\#},
+  commentstyle=\color{codecom},
+  keywords={true,false,null,yes,no,on,off},
+  keywordstyle=\color{codekey}\bfseries,
+  morekeywords={Must,Should,Could,Won't},
+}
 \lstset{
   basicstyle=\ttfamily\footnotesize,
   backgroundcolor=\color{codebg},
