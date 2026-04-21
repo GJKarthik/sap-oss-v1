@@ -27,13 +27,67 @@ logger = logging.getLogger(__name__)
 
 @dataclass
 class TaxonomyNode:
-    """A node in the taxonomy tree."""
+    """
+    A node in the taxonomy tree.
+    
+    Schema-compliant with docs/schema/simula/taxonomy.schema.json#/definitions/taxonomy_node.
+    Required fields: node_id, name, node_type
+    """
+    # Required fields per schema
     name: str
+    node_id: str = ""  # Unique identifier within taxonomy
+    node_type: str = "FACTOR"  # ROOT, FACTOR, LEAF
+    
+    # Optional fields per schema
     description: str = ""
+    level: int = 0
+    path: str = ""  # Full path from root (e.g., query_type/aggregation/sum)
+    examples: list[str] = field(default_factory=list)
+    sampling_weight: float = 1.0
+    sample_count: int = 0
+    coverage_ratio: Optional[float] = None
+    
+    # Internal fields (not in schema)
     parent: Optional["TaxonomyNode"] = None
     children: list["TaxonomyNode"] = field(default_factory=list)
-    level: int = 0
     metadata: dict = field(default_factory=dict)
+    
+    def __post_init__(self):
+        """Post-initialization to generate node_id and path if not provided."""
+        if not self.node_id:
+            self.node_id = self._generate_node_id()
+        if not self.path:
+            self.path = self._compute_path()
+        if not self.node_type:
+            self.node_type = self._infer_node_type()
+    
+    def _generate_node_id(self) -> str:
+        """Generate a unique node ID based on path."""
+        return self.name.lower().replace(" ", "_").replace("-", "_")
+    
+    def _compute_path(self) -> str:
+        """Compute the full path from root."""
+        ancestors = self.get_ancestors()
+        return "/".join(ancestors + [self.name]) if ancestors else self.name
+    
+    def _infer_node_type(self) -> str:
+        """Infer node type based on position in tree."""
+        if self.parent is None and self.level == 0:
+            return "ROOT"
+        elif not self.children:
+            return "LEAF"
+        return "FACTOR"
+    
+    # Alias properties for schema compatibility
+    @property
+    def id(self) -> str:
+        """Alias for node_id (used by evaluators)."""
+        return self.node_id
+    
+    @id.setter
+    def id(self, value: str):
+        """Setter for id alias."""
+        self.node_id = value
     
     def add_child(self, name: str, description: str = "", **metadata) -> "TaxonomyNode":
         """Add a child node."""
@@ -42,9 +96,16 @@ class TaxonomyNode:
             description=description,
             parent=self,
             level=self.level + 1,
+            node_type="LEAF",  # Will be updated if children are added
             metadata=metadata,
         )
+        # Update path after setting parent
+        child.path = child._compute_path()
+        child.node_id = child._generate_node_id()
         self.children.append(child)
+        # Update parent node_type since it now has children
+        if self.node_type == "LEAF":
+            self.node_type = "FACTOR"
         return child
     
     def get_ancestors(self) -> list[str]:
@@ -72,23 +133,62 @@ class TaxonomyNode:
         return leaves
     
     def to_dict(self) -> dict:
-        """Serialize to dictionary."""
+        """
+        Serialize to dictionary.
+        
+        Produces schema-compliant output per docs/schema/simula/taxonomy.schema.json.
+        """
+        result = {
+            # Required fields
+            "node_id": self.node_id,
+            "name": self.name,
+            "node_type": self.node_type,
+        }
+        
+        # Optional fields (include only if set/non-default)
+        if self.description:
+            result["description"] = self.description
+        result["level"] = self.level
+        if self.path:
+            result["path"] = self.path
+        if self.children:
+            result["children"] = [c.to_dict() for c in self.children]
+        if self.examples:
+            result["examples"] = self.examples
+        if self.sampling_weight != 1.0:
+            result["sampling_weight"] = self.sampling_weight
+        if self.sample_count > 0:
+            result["sample_count"] = self.sample_count
+        if self.coverage_ratio is not None:
+            result["coverage_ratio"] = self.coverage_ratio
+        
+        return result
+    
+    def to_legacy_dict(self) -> dict:
+        """Serialize to legacy dictionary format for backward compatibility."""
         return {
             "name": self.name,
             "description": self.description,
             "level": self.level,
             "metadata": self.metadata,
-            "children": [c.to_dict() for c in self.children],
+            "children": [c.to_legacy_dict() for c in self.children],
         }
     
     @classmethod
     def from_dict(cls, data: dict, parent: Optional["TaxonomyNode"] = None) -> "TaxonomyNode":
-        """Deserialize from dictionary."""
+        """Deserialize from dictionary (handles both schema and legacy formats)."""
         node = cls(
             name=data["name"],
+            node_id=data.get("node_id", ""),
+            node_type=data.get("node_type", "FACTOR"),
             description=data.get("description", ""),
             parent=parent,
             level=data.get("level", 0),
+            path=data.get("path", ""),
+            examples=data.get("examples", []),
+            sampling_weight=data.get("sampling_weight", 1.0),
+            sample_count=data.get("sample_count", 0),
+            coverage_ratio=data.get("coverage_ratio"),
             metadata=data.get("metadata", {}),
         )
         for child_data in data.get("children", []):
@@ -98,16 +198,195 @@ class TaxonomyNode:
 
 
 @dataclass
+class TaxonomyStatistics:
+    """Taxonomy statistics per schema."""
+    total_nodes: int = 0
+    leaf_count: int = 0
+    factor_count: int = 0
+    max_depth: int = 0
+    avg_branching_factor: float = 0.0
+    level_distribution: dict[str, int] = field(default_factory=dict)
+    
+    def to_dict(self) -> dict:
+        """Serialize to dictionary."""
+        return {
+            "total_nodes": self.total_nodes,
+            "leaf_count": self.leaf_count,
+            "factor_count": self.factor_count,
+            "max_depth": self.max_depth,
+            "avg_branching_factor": self.avg_branching_factor,
+            "level_distribution": self.level_distribution,
+        }
+
+
+@dataclass
+class TaxonomyGenerationMetadata:
+    """Metadata about how taxonomy was generated."""
+    method: str = "llm_generated"  # llm_generated, manual, hybrid, imported
+    model: str = ""
+    best_of_n: int = 5
+    target_depth: int = 4
+    generated_at: Optional[str] = None
+    source_factors: list[str] = field(default_factory=list)
+    seed: Optional[int] = None
+    
+    def to_dict(self) -> dict:
+        """Serialize to dictionary."""
+        result = {
+            "method": self.method,
+            "best_of_n": self.best_of_n,
+            "target_depth": self.target_depth,
+        }
+        if self.model:
+            result["model"] = self.model
+        if self.generated_at:
+            result["generated_at"] = self.generated_at
+        if self.source_factors:
+            result["source_factors"] = self.source_factors
+        if self.seed is not None:
+            result["seed"] = self.seed
+        return result
+
+
+@dataclass
+class TaxonomyQualityMetrics:
+    """Quality metrics from taxonomy evaluation."""
+    completeness: Optional[float] = None  # Target: >70%
+    soundness: Optional[float] = None  # Target: >90%
+    expert_taxonomy_path: str = ""
+    evaluated_at: Optional[str] = None
+    passed_quality_gate: Optional[bool] = None
+    
+    def to_dict(self) -> dict:
+        """Serialize to dictionary."""
+        result = {}
+        if self.completeness is not None:
+            result["completeness"] = self.completeness
+        if self.soundness is not None:
+            result["soundness"] = self.soundness
+        if self.expert_taxonomy_path:
+            result["expert_taxonomy_path"] = self.expert_taxonomy_path
+        if self.evaluated_at:
+            result["evaluated_at"] = self.evaluated_at
+        if self.passed_quality_gate is not None:
+            result["passed_quality_gate"] = self.passed_quality_gate
+        return result
+
+
+@dataclass
 class Taxonomy:
-    """A complete taxonomy tree for a factor of variation."""
-    factor_name: str
+    """
+    A complete taxonomy tree for a factor of variation.
+    
+    Schema-compliant with docs/schema/simula/taxonomy.schema.json.
+    Required fields: taxonomy_id, name, root, metadata
+    """
+    # Required fields per schema
     root: TaxonomyNode
+    
+    # Fields with defaults
+    taxonomy_id: str = ""  # Unique identifier for this taxonomy
+    name: str = ""  # Taxonomy name (e.g., query_type)
     description: str = ""
+    domain: str = ""  # Domain this taxonomy applies to
+    schema_context: str = ""  # Reference to HANA schema
+    
+    # Complex fields
+    statistics: Optional[TaxonomyStatistics] = None
+    generation_metadata: Optional[TaxonomyGenerationMetadata] = None
+    quality_metrics: Optional[TaxonomyQualityMetrics] = None
+    
+    # Legacy fields for backward compatibility
+    factor_name: str = ""  # Maps to name
     source_column: Optional[str] = None
+    
+    def __post_init__(self):
+        """Post-initialization to sync legacy and schema fields."""
+        # Sync factor_name <-> name
+        if self.factor_name and not self.name:
+            self.name = self.factor_name
+        elif self.name and not self.factor_name:
+            self.factor_name = self.name
+        
+        # Generate taxonomy_id if not set
+        if not self.taxonomy_id:
+            self.taxonomy_id = f"tax_{self.name}".lower().replace(" ", "_")
+        
+        # Compute statistics if not set
+        if not self.statistics:
+            self.statistics = self._compute_statistics()
+    
+    # Alias properties for schema compatibility
+    @property
+    def id(self) -> str:
+        """Alias for taxonomy_id (used by evaluators)."""
+        return self.taxonomy_id
+    
+    @id.setter
+    def id(self, value: str):
+        """Setter for id alias."""
+        self.taxonomy_id = value
+    
+    @property
+    def factor(self) -> str:
+        """Alias for factor_name/name (used by evaluators)."""
+        return self.factor_name or self.name
+    
+    @factor.setter
+    def factor(self, value: str):
+        """Setter for factor alias."""
+        self.factor_name = value
+        self.name = value
+    
+    def _compute_statistics(self) -> TaxonomyStatistics:
+        """Compute taxonomy statistics."""
+        total_nodes = 0
+        leaf_count = 0
+        factor_count = 0
+        max_depth = 0
+        level_distribution: dict[str, int] = {}
+        branching_sum = 0
+        non_leaf_count = 0
+        
+        def traverse(node: TaxonomyNode):
+            nonlocal total_nodes, leaf_count, factor_count, max_depth, branching_sum, non_leaf_count
+            total_nodes += 1
+            
+            level_key = str(node.level)
+            level_distribution[level_key] = level_distribution.get(level_key, 0) + 1
+            
+            if node.level > max_depth:
+                max_depth = node.level
+            
+            if not node.children:
+                leaf_count += 1
+            else:
+                if node.level > 0:  # Don't count root as factor
+                    factor_count += 1
+                branching_sum += len(node.children)
+                non_leaf_count += 1
+                for child in node.children:
+                    traverse(child)
+        
+        traverse(self.root)
+        
+        avg_branching = branching_sum / non_leaf_count if non_leaf_count > 0 else 0.0
+        
+        return TaxonomyStatistics(
+            total_nodes=total_nodes,
+            leaf_count=leaf_count,
+            factor_count=factor_count,
+            max_depth=max_depth,
+            avg_branching_factor=avg_branching,
+            level_distribution=level_distribution,
+        )
     
     @property
     def depth(self) -> int:
         """Calculate maximum depth of the taxonomy."""
+        if self.statistics:
+            return self.statistics.max_depth
+        
         def _max_depth(node: TaxonomyNode) -> int:
             if not node.children:
                 return node.level
@@ -117,6 +396,9 @@ class Taxonomy:
     @property
     def node_count(self) -> int:
         """Count total nodes in taxonomy."""
+        if self.statistics:
+            return self.statistics.total_nodes
+        
         def _count(node: TaxonomyNode) -> int:
             return 1 + sum(_count(c) for c in node.children)
         return _count(self.root)
@@ -137,24 +419,107 @@ class Taxonomy:
         return self.root.get_leaf_nodes()
     
     def to_dict(self) -> dict:
-        """Serialize to dictionary."""
+        """
+        Serialize to dictionary.
+        
+        Produces schema-compliant output per docs/schema/simula/taxonomy.schema.json.
+        """
+        result = {
+            # Required fields
+            "taxonomy_id": self.taxonomy_id,
+            "name": self.name,
+            "root": self.root.to_dict(),
+            "metadata": {
+                "created_at": self.generation_metadata.generated_at if self.generation_metadata else None,
+            },
+        }
+        
+        # Optional fields
+        if self.description:
+            result["description"] = self.description
+        if self.domain:
+            result["domain"] = self.domain
+        if self.schema_context:
+            result["schema_context"] = self.schema_context
+        if self.statistics:
+            result["statistics"] = self.statistics.to_dict()
+        if self.generation_metadata:
+            result["generation_metadata"] = self.generation_metadata.to_dict()
+        if self.quality_metrics:
+            result["quality_metrics"] = self.quality_metrics.to_dict()
+        
+        return result
+    
+    def to_legacy_dict(self) -> dict:
+        """Serialize to legacy dictionary format for backward compatibility."""
         return {
             "factor_name": self.factor_name,
             "description": self.description,
             "source_column": self.source_column,
             "depth": self.depth,
             "node_count": self.node_count,
-            "root": self.root.to_dict(),
+            "root": self.root.to_legacy_dict(),
         }
     
     @classmethod
     def from_dict(cls, data: dict) -> "Taxonomy":
-        """Deserialize from dictionary."""
+        """Deserialize from dictionary (handles both schema and legacy formats)."""
+        # Handle legacy format (factor_name)
+        factor_name = data.get("factor_name", "")
+        name = data.get("name", factor_name)
+        taxonomy_id = data.get("taxonomy_id", "")
+        
+        # Parse statistics if present
+        statistics = None
+        if "statistics" in data:
+            stats_data = data["statistics"]
+            statistics = TaxonomyStatistics(
+                total_nodes=stats_data.get("total_nodes", 0),
+                leaf_count=stats_data.get("leaf_count", 0),
+                factor_count=stats_data.get("factor_count", 0),
+                max_depth=stats_data.get("max_depth", 0),
+                avg_branching_factor=stats_data.get("avg_branching_factor", 0.0),
+                level_distribution=stats_data.get("level_distribution", {}),
+            )
+        
+        # Parse generation_metadata if present
+        gen_metadata = None
+        if "generation_metadata" in data:
+            gm_data = data["generation_metadata"]
+            gen_metadata = TaxonomyGenerationMetadata(
+                method=gm_data.get("method", "llm_generated"),
+                model=gm_data.get("model", ""),
+                best_of_n=gm_data.get("best_of_n", 5),
+                target_depth=gm_data.get("target_depth", 4),
+                generated_at=gm_data.get("generated_at"),
+                source_factors=gm_data.get("source_factors", []),
+                seed=gm_data.get("seed"),
+            )
+        
+        # Parse quality_metrics if present
+        quality_metrics = None
+        if "quality_metrics" in data:
+            qm_data = data["quality_metrics"]
+            quality_metrics = TaxonomyQualityMetrics(
+                completeness=qm_data.get("completeness"),
+                soundness=qm_data.get("soundness"),
+                expert_taxonomy_path=qm_data.get("expert_taxonomy_path", ""),
+                evaluated_at=qm_data.get("evaluated_at"),
+                passed_quality_gate=qm_data.get("passed_quality_gate"),
+            )
+        
         return cls(
-            factor_name=data["factor_name"],
+            taxonomy_id=taxonomy_id,
+            name=name,
+            factor_name=factor_name,
             description=data.get("description", ""),
+            domain=data.get("domain", ""),
+            schema_context=data.get("schema_context", ""),
             source_column=data.get("source_column"),
             root=TaxonomyNode.from_dict(data["root"]),
+            statistics=statistics,
+            generation_metadata=gen_metadata,
+            quality_metrics=quality_metrics,
         )
 
 

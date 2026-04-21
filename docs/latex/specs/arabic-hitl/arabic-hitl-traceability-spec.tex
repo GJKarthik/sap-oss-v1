@@ -1,7 +1,11 @@
 % !TEX program = xelatex
 \documentclass[11pt,a4paper,twoside]{report}
 
-\usepackage{xcolor}
+% --- Shared SAP-OSS Style Packages ------------------------------------------
+\usepackage{sap-oss-colors}
+\usepackage{sap-oss-boxes}
+\usepackage{sap-oss-listings}
+
 \usepackage[a4paper,margin=28mm]{geometry}
 \usepackage{graphicx}
 \usepackage{microtype}
@@ -14,15 +18,12 @@
 \usepackage{multirow}
 \usepackage{enumitem}
 \usepackage{amssymb}
-\usepackage{listings}
+\usepackage{pifont}
+\usepackage{fontawesome5}
 \usepackage[hyphens]{url}
-\usepackage{tcolorbox}
 \usepackage{tikz}
-\usepackage[table]{colortbl}
 \usetikzlibrary{arrows.meta,positioning,shapes.geometric,fit,calc,chains,
                 decorations.pathmorphing,backgrounds}
-
-\newtcolorbox{adrbox}[2][]{colback=blue!5,colframe=blue!75!black,fonttitle=\bfseries,title=ADR: #2,#1}
 
 % --- Semantic Hyperlinking --------------------------------------------------
 \usepackage{xr-hyper}
@@ -39,13 +40,12 @@
 \setmainfont{Arial}
 \usepackage[capitalize,noabbrev]{cleveref}
 
-\definecolor{codebg}{gray}{0.96}
-\definecolor{sapblue}{HTML}{0B5FA5}
-\definecolor{sapgreen}{HTML}{00695C}
-\definecolor{sapamber}{HTML}{B8360F}
-\definecolor{sapgrey}{HTML}{546E7A}
-\definecolor{sapmidnight}{HTML}{1C2B39}
-\definecolor{sapgold}{HTML}{F0AB00}
+% --- Domain-Specific Colors (Supplementing shared palette) ------------------
+\definecolor{apred}{HTML}{B71C1C}
+\definecolor{apblue}{HTML}{1565C0}
+\definecolor{apgreen}{HTML}{2E7D32}
+\definecolor{apgrey}{HTML}{546E7A}
+\definecolor{apamber}{HTML}{F0AB00}
 
 \onehalfspacing
 \setlist{topsep=2pt,itemsep=1pt,parsep=0pt}
@@ -84,6 +84,10 @@
 \input{chapters/02-transformation-logic}
 \input{chapters/03-requirements-catalogue}
 \input{chapters/04-lineage-matrix}
+
+% --- NEW Detailed Analysis Chapters ---
+\input{chapters/05-analysis-bh-doi}
+\input{chapters/06-analysis-sa-vat}
 
 % --- Incorporated Universal Chapters ---
 \input{../fragment-cross-spec-dependencies}

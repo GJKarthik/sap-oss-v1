@@ -15,7 +15,7 @@ chapter tells future agents \emph{how} to build what those sections
 describe, \emph{where} to put it in the codebase, and \emph{how} it
 plugs into the wider platform.
 
-\input{../shared-intent-core.tex}
+\input{shared-intent-core.tex}
 
 \section{FMEA: Failure Mode and Effects Analysis for AI}
 \label{sec:fmea-ai}
@@ -99,6 +99,72 @@ regulations remain distinct when Simula reads them.
     \texttt{simula.corpus.export}. All other MCP tools are denied by
     default per MAS MGF pillar~1.
 \end{itemize}
+
+\section{Agent Rule-Pack Binding}
+\label{sec:agent-rule-binding}
+Before initiating any task in this domain, the agent MUST load the following rule packs in order:
+\begin{enumerate}
+  \item \filepath{.clinerules} (Global Standards)
+  \item \filepath{src/intelligence/.clinerules} (Regulations Envelope)
+  \item \filepath{src/training/.clinerules} (Simula Domain Constraints)
+  \item \filepath{src/training/.clinerules.runtime-monitor} (Runtime Monitoring Rules)
+\end{enumerate}
+
+\section{Current Implementation Gap Analysis}
+\label{sec:current-gap-analysis}
+
+\begin{tcolorbox}[colback=red!5,colframe=red!70,title=\textbf{Critical: Review Gap Analysis Before Implementation}]
+Before beginning any implementation task, agents \textbf{MUST} review the implementation
+gap analysis documented in \cref{chap:simula-gap-review}. This chapter provides a comprehensive
+assessment of the current codebase state against this specification, including:
+\begin{itemize}
+  \item P0 gaps that block v1.2 release
+  \item P1 gaps requiring near-term remediation
+  \item P2 gaps for future iterations
+  \item Evidence-backed findings with specific file references
+  \item Sequenced remediation order
+\end{itemize}
+\end{tcolorbox}
+
+\subsection{Key Findings Summary}
+
+The gap analysis (as of 2026-04-21) identified the following critical issues:
+
+\begin{table}[htbp]
+\centering
+\footnotesize
+\caption{P0 Implementation Gaps Requiring Immediate Attention}
+\label{tab:p0-gaps-summary}
+\begin{tabularx}{\textwidth}{@{}l l X@{}}
+\toprule
+\textbf{Gap ID} & \textbf{Severity} & \textbf{Issue} \\
+\midrule
+SIM-GAP-001 & P0 & Default execution path is still the legacy pipeline \\
+SIM-GAP-002 & P0 & API and job orchestration wired to legacy generators \\
+SIM-GAP-003 & P0 & Evaluation modules have drifted from current data contracts \\
+UI-GAP-001 & P0 & Pipeline UI still models the old six-stage workflow \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\noindent
+Implementers should address these gaps in the order specified in
+\cref{chap:simula-gap-review}, \S{}Sequenced Remediation Order, to ensure
+dependencies are resolved before downstream work begins.
+
+\subsection{Gap Analysis Validity}
+
+\begin{adrbox}{Gap Analysis Freshness}
+The gap analysis in \cref{chap:simula-gap-review} has an implicit validity period.
+As implementation progresses, the analysis should be updated:
+\begin{itemize}
+  \item After completing each milestone from \cref{sec:sim-roadmap}
+  \item When new spec-vs-code drift is discovered
+  \item As part of each release's closing criteria
+\end{itemize}
+If the gap analysis is more than 4 weeks old without updates, treat it as
+potentially stale and re-verify findings before relying on them.
+\end{adrbox}
 
 \section{Implementation tasks for this domain}
 \label{sec:agent-tasks}

@@ -21,7 +21,7 @@ PORT := 8084
 # Full image path
 IMAGE := $(REGISTRY)/$(IMAGE_NAME):$(IMAGE_TAG)
 
-.PHONY: all build push deploy run test clean help
+.PHONY: all build push deploy run test test-clinerules clean help
 
 all: build
 
@@ -80,6 +80,10 @@ test-pal:
 ## Run MCP server tests (requires running server)
 test-mcp:
 	pytest tests/test_mcp_server.py -v
+
+## Validate Regulations .clinerules rule packs
+test-clinerules:
+	pytest tests/test_clinerules_contracts.py -v
 
 # ============================================================================
 # Kyma Deployment

@@ -154,6 +154,13 @@
           "title": "Meta-Prompt Record",
           "status": "stable",
           "source_spec_section": "Chapter 5"
+        },
+        {
+          "id": "dataset-spec",
+          "path": "simula/dataset-spec.schema.json",
+          "title": "Declarative Dataset Specification",
+          "status": "stable",
+          "source_spec_section": "Chapter 16 Enhancement 4"
         }
       ],
       "enums": [

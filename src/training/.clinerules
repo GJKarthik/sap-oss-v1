@@ -20,7 +20,8 @@ Source Of Truth
   - `docs/latex/specs/simula/chapters/04-taxonomy-engine.tex`
   - `docs/latex/specs/simula/chapters/05-generation-engine.tex`
   - `docs/latex/specs/simula/chapters/06-environment-cli.tex`
-  - `docs/latex/specs/simula/chapters/07-references.tex`
+  - `docs/latex/specs/simula/chapters/07-evaluation-framework.tex`
+  - `docs/latex/specs/simula/chapters/07a-worked-example.tex`
   - `docs/latex/specs/simula/chapters/12-implementation-instructions.tex`
 - Normative data contracts:
   - `docs/schema/simula/training-example.schema.json`

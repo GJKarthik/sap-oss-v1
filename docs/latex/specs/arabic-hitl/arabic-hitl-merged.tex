@@ -47,6 +47,30 @@ decorations.pathmorphing,backgrounds}
 \definecolor{sapmidnight}{HTML}{1C2B39}
 \definecolor{sapgold}{HTML}{F0AB00}
 
+\lstdefinelanguage{jsonx}{
+basicstyle=\ttfamily\small,
+columns=fullflexible,
+breaklines=true,
+showstringspaces=false,
+comment=[l]{//},
+morestring=[b]",
+stringstyle=\color{sapgreen},
+keywordstyle=\color{sapblue},
+}
+
+\lstdefinelanguage{yamlx}{
+keywords={true,false,null,y,n},
+keywordstyle=\color{sapblue}\bfseries,
+basicstyle=\ttfamily\small,
+sensitive=false,
+comment=[l]{\#},
+commentstyle=\color{sapgreen}\ttfamily,
+stringstyle=\color{sapamber}\ttfamily,
+moredelim=[l][\color{sapmidnight}]{\:},
+morestring=[b]',
+morestring=[b]",
+}
+
 \onehalfspacing
 \setlist{topsep=2pt,itemsep=1pt,parsep=0pt}
 \setlength{\emergencystretch}{3em}
@@ -197,6 +221,90 @@ The transformation from narrative prose to technical enforcement uses a semi-aut
 \textbf{BR-TRN-01} & Arabic--English translation gate calibration. & \texttt{arabic-ap-spec} Ch. 3 \\
 \bottomrule
 \end{longtable}
+
+% --- NEW Detailed Analysis Chapters ---
+\chapter{Source Analysis: Bahrain AP DOI}
+\label{ch:analysis-bh-doi}
+
+\section{Document Context}
+The \texttt{Accounts Payable DOI.docx} (Bahrain) defines the delegation of authority and mandatory controls for invoice processing. This document was processed into \texttt{structured/policies/bh-ap-doi.json}.
+
+\section{Detailed Requirement Mapping}
+
+\begin{longtable}{p{5cm} p{5cm} p{5cm}}
+\caption{Bahrain DOI: Source-to-Requirement Lineage} \\
+\toprule
+\textbf{Source Paragraph} & \textbf{Business Requirement} & \textbf{Formal Requirement (Spec)} \\
+\midrule
+\endfirsthead
+\toprule
+\textbf{Source Paragraph} & \textbf{Business Requirement} & \textbf{Formal Requirement (Spec)} \\
+\midrule
+\endhead
+Section 4.1: ``All invoices must be matched against a valid Purchase Order prior to processing.'' & \textbf{BR-DOI-M1:} Mandatory PO-Matching for standard AP flow. & \texttt{arabic-ap-spec} Ch. 5 (PO-EPROC state machine). \\
+\midrule
+Section 4.2: ``Any variance > 5\% between PO and Invoice must be routed to the Finance Head.'' & \textbf{BR-DOI-V1:} Automated variance threshold detection. & \texttt{arabic-ap-spec} Ch. 6 (Variance Control C3). \\
+\midrule
+Section 4.7: ``The final payment file must be hashed and signed by two distinct personas.'' & \textbf{BR-DOI-S1:} Dual-Persona Cryptographic Sign-off. & \texttt{arabic-ap-spec} Ch. 12 (HITL Gate: Payment Instruction). \\
+\bottomrule
+\end{longtable}
+
+\section{Machine-Readable Evidence (Fragment)}
+The following YAML fragment was extracted from the DOI to drive the 28-state workflow engine:
+
+\begin{lstlisting}[language=jsonx]
+{
+"policy_id": "BH-DOI-2026",
+"controls": [
+{
+"id": "C3",
+"description": "PO-Invoice Variance check",
+"threshold": 0.05,
+"escalation_persona": "finance_head"
+}
+]
+}
+\end{lstlisting}
+\chapter{Source Analysis: Saudi VAT (ZATCA)}
+\label{ch:analysis-sa-vat}
+
+\section{Document Context}
+The \texttt{Saudi - OTP Entry processing...} (ZATCA) defines the rules for electronic invoicing (E-Invoicing) and simplified vs. full tax invoice criteria. This was processed into \texttt{structured/rules/ksa-vat-q3.yaml}.
+
+\section{Detailed Requirement Mapping}
+
+\begin{longtable}{p{5cm} p{5cm} p{5cm}}
+\caption{Saudi ZATCA: Source-to-Requirement Lineage} \\
+\toprule
+\textbf{Source Provision} & \textbf{Business Requirement} & \textbf{Technical Rule (Spec Ch. 8)} \\
+\midrule
+\endfirsthead
+\toprule
+\textbf{Source Provision} & \textbf{Business Requirement} & \textbf{Technical Rule (Spec Ch. 8)} \\
+\midrule
+\endhead
+Article 53(b): ``Simplified Tax Invoices are issued for transactions < 1,000 SAR.'' & \textbf{BR-VAT-SI:} Determination of Simplified vs Full invoice based on threshold. & Rule \texttt{VAT-SA-THRESHOLD}: \texttt{gross\_amount < 1000} \\
+\midrule
+Article 54: ``Full Tax Invoices must display the Buyer's VAT Registration Number.'' & \textbf{BR-VAT-FULL:} Mandatory TRN/TIN field extraction for Full invoices. & Rule \texttt{VAT-SA-MANDATORY}: \texttt{exists(buyer.trn)} \\
+\midrule
+Phase 2 (ZATCA Integration): ``Invoice must contain a Phase-2 QR code including the ECDSA signature.'' & \textbf{BR-VAT-QR:} Extraction and verification of ZATCA QR signatures. & \texttt{arabic-ap-spec} Ch. 10 (OCR Pilot: QR calibration). \\
+\bottomrule
+\end{longtable}
+
+\section{Machine-Readable Evidence (Fragment)}
+The following YAML extraction defines the logic evaluated by the VAT engine for Saudi Arabian invoices:
+
+\begin{lstlisting}[language=yamlx]
+domain: "ksa-vat"
+rules:
+- id: "THRESHOLD_CHECK"
+type: "classification"
+predicate: "invoice.total_gross < 1000"
+target_schema: "simplified_invoice"
+- id: "TRN_CHECK"
+type: "validation"
+requirement: "buyer.trn must match ^3[0-9]{14}$"
+\end{lstlisting}
 
 % --- Incorporated Universal Chapters ---
 \chapter{Global Wave-Dependency Manifest}

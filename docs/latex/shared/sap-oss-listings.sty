@@ -1,0 +1,405 @@
+% =============================================================================
+% SAP-OSS Listings Package - WWDC Keynote Quality
+% Version: 2.0.0
+% Code listings with Xcode-inspired styling
+% =============================================================================
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{sap-oss-listings}[2026/04/21 SAP-OSS WWDC-Style Listings v2.0.1]
+
+% Core packages
+\RequirePackage{listings}
+\RequirePackage{tcolorbox}
+\tcbuselibrary{listings,skins}
+
+% -----------------------------------------------------------------------------
+% CODE COLORS - VS Code / Xcode Inspired
+% -----------------------------------------------------------------------------
+\definecolor{codebg}{HTML}{FAFBFC}
+\definecolor{codebgdark}{HTML}{1E1E1E}
+\definecolor{codeframe}{HTML}{E1E4E8}
+\definecolor{codekeyword}{HTML}{D73A49}
+\definecolor{codestring}{HTML}{032F62}
+\definecolor{codecomment}{HTML}{6A737D}
+\definecolor{codenumber}{HTML}{005CC5}
+\definecolor{codeoperator}{HTML}{D73A49}
+\definecolor{codeidentifier}{HTML}{24292E}
+\definecolor{codefunction}{HTML}{6F42C1}
+\definecolor{codetype}{HTML}{22863A}
+\definecolor{linenumberbg}{HTML}{F6F8FA}
+\definecolor{shadowcolor}{HTML}{000000}
+
+% -----------------------------------------------------------------------------
+% BASE LISTING STYLE - WWDC CLEAN
+% -----------------------------------------------------------------------------
+\lstset{
+  basicstyle=\small\ttfamily\color{codeidentifier},
+  keywordstyle=\color{codekeyword}\bfseries,
+  stringstyle=\color{codestring},
+  commentstyle=\color{codecomment}\itshape,
+  numberstyle=\tiny\color{applegray2}\ttfamily,
+  identifierstyle=\color{codeidentifier},
+  showstringspaces=false,
+  showspaces=false,
+  showtabs=false,
+  tabsize=2,
+  breaklines=true,
+  breakatwhitespace=true,
+  breakautoindent=true,
+  columns=flexible,
+  keepspaces=true,
+  aboveskip=0pt,
+  belowskip=0pt,
+  % Line numbers with distinct Xcode-like gutter (28pt left band in
+  % linenumberbg colour behind the number column)
+  numbers=left,
+  numbersep=12pt,
+  stepnumber=1,
+  frame=leftline,
+  framerule=28pt,
+  rulecolor=\color{linenumberbg},
+  backgroundcolor=\color{codebg},
+  xleftmargin=28pt,
+  xrightmargin=10pt,
+  framesep=6pt,
+  framexleftmargin=0pt,
+  % Escape to LaTeX
+  escapeinside={(*@}{@*)},
+  extendedchars=true,
+  inputencoding=utf8,
+  literate={→}{{$\rightarrow$}}1 {←}{{$\leftarrow$}}1 {≥}{{$\geq$}}1 {≤}{{$\leq$}}1 {≠}{{$\neq$}}1,
+}
+
+% -----------------------------------------------------------------------------
+% LANGUAGE DEFINITIONS
+% -----------------------------------------------------------------------------
+
+% Python
+\lstdefinelanguage{pythonx}{
+  language=Python,
+  morekeywords={self,True,False,None,async,await,yield,with,as,lambda,nonlocal,
+                match,case,dataclass,field,Optional,List,Dict,Set,Tuple,Union,
+                Any,Callable,TypeVar,Generic,Protocol,Literal,Final,ClassVar},
+  morecomment=[l]{\#},
+  morestring=[b]",
+  morestring=[b]',
+  morestring=[s]{"""}{"""},
+  morestring=[s]{'''}{'''},
+  keywordstyle=\color{codekeyword}\bfseries,
+  stringstyle=\color{codestring},
+  commentstyle=\color{codecomment}\itshape,
+  emph={print,len,range,enumerate,zip,map,filter,sorted,reversed,
+        open,read,write,close,json,yaml,Path,datetime},
+  emphstyle=\color{codefunction},
+}
+
+% JavaScript/TypeScript
+\lstdefinelanguage{typescript}{
+  language=JavaScript,
+  morekeywords={const,let,async,await,export,import,from,type,interface,
+                implements,extends,readonly,keyof,typeof,infer,as,is,
+                enum,namespace,declare,module,abstract,static,public,private,
+                protected,override,satisfies},
+  morecomment=[l]{//},
+  morecomment=[s]{/*}{*/},
+  morestring=[b]",
+  morestring=[b]',
+  morestring=[b]`,
+  keywordstyle=\color{codekeyword}\bfseries,
+  stringstyle=\color{codestring},
+  commentstyle=\color{codecomment}\itshape,
+  emph={console,document,window,fetch,Promise,Array,Object,Map,Set,
+        Number,String,Boolean,Symbol,BigInt,null,undefined,void},
+  emphstyle=\color{codetype},
+}
+
+% JSON
+\lstdefinelanguage{jsonx}{
+  morestring=[b]",
+  morecomment=[l]{//},
+  stringstyle=\color{codestring},
+  commentstyle=\color{codecomment}\itshape,
+  literate=
+    *{:}{{{\color{codeoperator}:}}}1
+    {,}{{{\color{codeoperator},}}}1
+    {\{}{{{\color{codeoperator}\{}}}1
+    {\}}{{{\color{codeoperator}\}}}}1
+    {[}{{{\color{codeoperator}[}}}1
+    {]}{{{\color{codeoperator}]}}}1
+    {true}{{{\color{codekeyword}true}}}4
+    {false}{{{\color{codekeyword}false}}}5
+    {null}{{{\color{codekeyword}null}}}4,
+}
+
+% YAML
+\lstdefinelanguage{yamlx}{
+  keywords={true,false,null,yes,no,on,off},
+  keywordstyle=\color{codekeyword},
+  sensitive=false,
+  morecomment=[l]{\#},
+  commentstyle=\color{codecomment}\itshape,
+  stringstyle=\color{codestring},
+  moredelim=[l][\color{codetype}]{:\ },
+  morestring=[b]',
+  morestring=[b]",
+}
+
+% SQL
+\lstdefinelanguage{sqlx}{
+  language=SQL,
+  morekeywords={ILIKE,REGEXP,COALESCE,NULLIF,CAST,CONVERT,OVER,PARTITION,
+                ROW_NUMBER,RANK,DENSE_RANK,LAG,LEAD,FIRST_VALUE,LAST_VALUE,
+                CTE,RECURSIVE,MATERIALIZED,LATERAL,CROSS,APPLY,PIVOT,UNPIVOT},
+  keywordstyle=\color{codekeyword}\bfseries,
+  stringstyle=\color{codestring},
+  commentstyle=\color{codecomment}\itshape,
+}
+
+% Bash/Shell
+\lstdefinelanguage{bashx}{
+  language=bash,
+  morekeywords={sudo,apt,brew,pip,npm,yarn,docker,kubectl,git,make,
+                curl,wget,grep,sed,awk,find,xargs,jq,yq},
+  keywordstyle=\color{codekeyword}\bfseries,
+  stringstyle=\color{codestring},
+  commentstyle=\color{codecomment}\itshape,
+}
+
+% -----------------------------------------------------------------------------
+% WWDC-STYLE CODE BOXES WITH SHADOWS
+% -----------------------------------------------------------------------------
+
+% Base code box style - Xcode inspired with shadow
+\tcbset{
+  code box wwdc/.style={
+    enhanced,
+    breakable,
+    boxrule=0pt,
+    colback=codebg,
+    colframe=codebg,
+    arc=8pt,
+    outer arc=8pt,
+    left=20pt,
+    right=16pt,
+    top=14pt,
+    bottom=14pt,
+    before skip=20pt,
+    after skip=20pt,
+    % Subtle shadow
+    shadow={2pt}{-2pt}{4pt}{shadowcolor!8},
+    % Top accent line (subtle)
+    overlay={
+      \draw[codeframe, line width=0.5pt] 
+        ([xshift=8pt]frame.north west) -- ([xshift=-8pt]frame.north east);
+    },
+  },
+  % Dark theme variant
+  code box dark/.style={
+    enhanced,
+    breakable,
+    boxrule=0pt,
+    colback=codebgdark,
+    colframe=codebgdark,
+    arc=8pt,
+    outer arc=8pt,
+    left=20pt,
+    right=16pt,
+    top=14pt,
+    bottom=14pt,
+    before skip=20pt,
+    after skip=20pt,
+    shadow={2pt}{-2pt}{4pt}{black!30},
+  },
+  % With file path header
+  code box file/.style 2 args={
+    code box wwdc,
+    title={\small\color{applegray2}\faIcon{file-code}\hspace{6pt}\texttt{#1}},
+    coltitle=applegray1,
+    colbacktitle=linenumberbg,
+    boxed title style={
+      boxrule=0pt,
+      arc=8pt,
+      outer arc=8pt,
+      colback=linenumberbg,
+    },
+    attach boxed title to top left={xshift=12pt, yshift=-4pt},
+  },
+}
+
+% =============================================================================
+% CODE LISTING ENVIRONMENTS
+% =============================================================================
+
+% Python code
+\newtcblisting{pythoncode}{
+  code box wwdc,
+  listing only,
+  listing options={language=pythonx},
+}
+
+% Python code with file path
+\NewTCBListing{pythonfile}{ m }{
+  code box wwdc,
+  listing only,
+  listing options={language=pythonx},
+  title={\small\color{applegray2}\faIcon{file-code}\hspace{6pt}\texttt{#1}},
+  coltitle=applegray1,
+  colbacktitle=linenumberbg,
+  boxed title style={boxrule=0pt, arc=6pt, colback=linenumberbg},
+  attach boxed title to top left={xshift=12pt, yshift=-4pt},
+}
+
+% TypeScript/JavaScript code
+\newtcblisting{typescriptcode}{
+  code box wwdc,
+  listing only,
+  listing options={language=typescript},
+}
+
+% JSON code
+\newtcblisting{jsoncode}{
+  code box wwdc,
+  listing only,
+  listing options={language=jsonx},
+}
+
+% YAML code
+\newtcblisting{yamlcode}{
+  code box wwdc,
+  listing only,
+  listing options={language=yamlx},
+}
+
+% SQL code
+\newtcblisting{sqlcode}{
+  code box wwdc,
+  listing only,
+  listing options={language=sqlx},
+}
+
+% Bash/Terminal code (dark theme)
+\newtcblisting{terminalcode}{
+  code box dark,
+  listing only,
+  listing options={
+    language=bashx,
+    basicstyle=\small\ttfamily\color{white},
+    keywordstyle=\color{applegreen}\bfseries,
+    commentstyle=\color{applegray2}\itshape,
+    stringstyle=\color{sapamber},
+  },
+}
+
+% Generic code with language parameter
+\NewTCBListing{codebox}{ O{} }{
+  code box wwdc,
+  listing only,
+  listing options={#1},
+}
+
+% File with path and language
+\NewTCBListing{filecode}{ m m }{
+  code box wwdc,
+  listing only,
+  listing options={language=#2},
+  title={\small\color{applegray2}\faIcon{file-code}\hspace{6pt}\texttt{#1}},
+  coltitle=applegray1,
+  colbacktitle=linenumberbg,
+  boxed title style={boxrule=0pt, arc=6pt, colback=linenumberbg},
+  attach boxed title to top left={xshift=12pt, yshift=-4pt},
+}
+
+% =============================================================================
+% INLINE CODE - WWDC STYLE
+% =============================================================================
+
+% Inline code with background
+\newcommand{\code}[1]{%
+  {\ttfamily\small\colorbox{codebg}{\color{codeidentifier}\strut #1}}%
+}
+
+% Inline code (subtle variant)
+\newcommand{\codeinline}[1]{%
+  {\ttfamily\small\color{sapblue}#1}%
+}
+
+% Command/CLI inline
+\newcommand{\cmd}[1]{%
+  {\ttfamily\small\colorbox{codebgdark}{\color{white}\strut #1}}%
+}
+
+% File path inline
+\newcommand{\codepath}[1]{%
+  {\ttfamily\small\color{pathcolor}#1}%
+}
+
+% =============================================================================
+% OUTPUT/RESULT BOXES
+% =============================================================================
+
+% Output result box
+\newtcolorbox{outputbox}{
+  enhanced,
+  breakable,
+  colback=applegray3!10,
+  colframe=applegray3!30,
+  boxrule=0.5pt,
+  arc=6pt,
+  left=14pt,
+  right=14pt,
+  top=12pt,
+  bottom=12pt,
+  before skip=16pt,
+  after skip=16pt,
+  fontupper=\small\ttfamily\color{applegray1},
+  title={\small\color{applegray2}\faIcon{terminal}\hspace{6pt}Output},
+  coltitle=applegray1,
+  colbacktitle=applegray3!20,
+  attach boxed title to top left={xshift=10pt, yshift=-4pt},
+  boxed title style={boxrule=0pt, arc=4pt, colback=applegray3!20},
+}
+
+% API response box
+\newtcolorbox{apiresponse}{
+  enhanced,
+  breakable,
+  colback=applegreen!3,
+  colframe=applegreen!30,
+  boxrule=0.5pt,
+  arc=6pt,
+  left=14pt,
+  right=14pt,
+  top=12pt,
+  bottom=12pt,
+  before skip=16pt,
+  after skip=16pt,
+  fontupper=\small\ttfamily,
+  title={\small\color{applegreen!80!black}\faIcon{check-circle}\hspace{6pt}Response (200 OK)},
+  coltitle=applegreen!80!black,
+  colbacktitle=applegreen!10,
+  attach boxed title to top left={xshift=10pt, yshift=-4pt},
+  boxed title style={boxrule=0pt, arc=4pt, colback=applegreen!10},
+}
+
+% Error response box
+\newtcolorbox{errorresponse}{
+  enhanced,
+  breakable,
+  colback=applered!3,
+  colframe=applered!30,
+  boxrule=0.5pt,
+  arc=6pt,
+  left=14pt,
+  right=14pt,
+  top=12pt,
+  bottom=12pt,
+  before skip=16pt,
+  after skip=16pt,
+  fontupper=\small\ttfamily,
+  title={\small\color{applered}\faIcon{times-circle}\hspace{6pt}Error Response},
+  coltitle=applered,
+  colbacktitle=applered!10,
+  attach boxed title to top left={xshift=10pt, yshift=-4pt},
+  boxed title style={boxrule=0pt, arc=4pt, colback=applered!10},
+}
+
+\endinput

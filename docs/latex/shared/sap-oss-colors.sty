@@ -1,0 +1,191 @@
+% =============================================================================
+% SAP-OSS Color Palette - Apple WWDC Inspired
+% Version: 1.0.0
+% =============================================================================
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{sap-oss-colors}[2026/04/21 SAP-OSS Apple-Style Color Palette]
+
+\RequirePackage{xcolor}
+
+% -----------------------------------------------------------------------------
+% PRIMARY BRAND COLORS (SAP)
+% -----------------------------------------------------------------------------
+\definecolor{sapblue}{HTML}{0070F2}           % SAP Blue - Primary brand
+\definecolor{sapgold}{HTML}{F0AB00}           % SAP Gold - Accent
+\definecolor{sapnavy}{HTML}{0A2B4A}           % Deep navy - Headers
+\definecolor{sapcharcoal}{HTML}{1C2B39}       % Charcoal - Body text
+
+% -----------------------------------------------------------------------------
+% APPLE-INSPIRED NEUTRALS
+% -----------------------------------------------------------------------------
+\definecolor{appleblack}{HTML}{1D1D1F}        % Apple deep black
+\definecolor{applegray1}{HTML}{86868B}        % Apple gray (secondary text)
+\definecolor{applegray2}{HTML}{6E6E73}        % Apple gray (tertiary)
+\definecolor{applegray3}{HTML}{D2D2D7}        % Apple light gray (borders)
+\definecolor{applegray4}{HTML}{F5F5F7}        % Apple off-white (backgrounds)
+\definecolor{applewhite}{HTML}{FBFBFD}        % Apple pure white
+
+% -----------------------------------------------------------------------------
+% SEMANTIC COLORS (Apple-Inspired)
+% -----------------------------------------------------------------------------
+% Success / Green
+\definecolor{applegreen}{HTML}{34C759}        % Apple green
+\definecolor{successlight}{HTML}{E8F9ED}      % Light green background
+\definecolor{successdark}{HTML}{248A3D}       % Dark green for text
+
+% Warning / Orange  
+\definecolor{appleorange}{HTML}{FF9500}       % Apple orange
+\definecolor{warninglight}{HTML}{FFF4E5}      % Light orange background
+\definecolor{warningdark}{HTML}{C93400}       % Dark orange for text
+
+% Error / Red
+\definecolor{applered}{HTML}{FF3B30}          % Apple red
+\definecolor{errorlight}{HTML}{FFEBE9}        % Light red background
+\definecolor{errordark}{HTML}{D70015}         % Dark red for text
+
+% Info / Blue
+\definecolor{appleblue}{HTML}{007AFF}         % Apple blue
+\definecolor{infolight}{HTML}{E5F1FF}         % Light blue background
+\definecolor{infodark}{HTML}{0040DD}          % Dark blue for text
+
+% Purple / Accent
+\definecolor{applepurple}{HTML}{AF52DE}       % Apple purple
+\definecolor{purplelight}{HTML}{F5E9FB}       % Light purple background
+\definecolor{purpledark}{HTML}{8944AB}        % Dark purple for text
+
+% Teal / Cyan
+\definecolor{appleteal}{HTML}{5AC8FA}         % Apple teal
+\definecolor{teallight}{HTML}{E5F8FF}         % Light teal background
+\definecolor{tealdark}{HTML}{0071A4}          % Dark teal for text
+
+% -----------------------------------------------------------------------------
+% CODE SYNTAX HIGHLIGHTING (VS Code Dark+ Inspired)
+% -----------------------------------------------------------------------------
+\definecolor{codebg}{HTML}{1E1E1E}            % VS Code dark background
+\definecolor{codebglight}{HTML}{F8F8F8}       % Light mode code background
+\definecolor{codeborder}{HTML}{3C3C3C}        % Code block border
+\definecolor{codetext}{HTML}{D4D4D4}          % Default code text
+\definecolor{codekeyword}{HTML}{569CD6}       % Keywords (blue)
+\definecolor{codestring}{HTML}{CE9178}        % Strings (orange)
+\definecolor{codecomment}{HTML}{6A9955}       % Comments (green)
+\definecolor{codenumber}{HTML}{B5CEA8}        % Numbers (light green)
+\definecolor{codefunction}{HTML}{DCDCAA}      % Functions (yellow)
+\definecolor{codetype}{HTML}{4EC9B0}          % Types (teal)
+\definecolor{codeoperator}{HTML}{D4D4D4}      % Operators
+\definecolor{codelinenr}{HTML}{858585}        % Line numbers
+
+% -----------------------------------------------------------------------------
+% DOCUMENT STRUCTURE COLORS
+% -----------------------------------------------------------------------------
+\definecolor{chaptercolor}{HTML}{0070F2}      % Chapter headings
+\definecolor{sectioncolor}{HTML}{1D1D1F}      % Section headings  
+\definecolor{subsectioncolor}{HTML}{6E6E73}   % Subsection headings
+\definecolor{headerrule}{HTML}{D2D2D7}        % Header/footer rule
+\definecolor{linkcolor}{HTML}{0070F2}         % Hyperlinks
+\definecolor{urlcolor}{HTML}{007AFF}          % URLs
+\definecolor{citecolor}{HTML}{AF52DE}         % Citations
+
+% -----------------------------------------------------------------------------
+% TABLE COLORS
+% -----------------------------------------------------------------------------
+\definecolor{tableheader}{HTML}{F5F5F7}       % Table header background
+\definecolor{tableheadertext}{HTML}{1D1D1F}   % Table header text
+\definecolor{tablerow1}{HTML}{FFFFFF}         % Odd row background
+\definecolor{tablerow2}{HTML}{F9F9FB}         % Even row background (alternating)
+\definecolor{tableborder}{HTML}{E5E5EA}       % Table borders
+
+% -----------------------------------------------------------------------------
+% BOX/CALLOUT COLORS
+% -----------------------------------------------------------------------------
+% Note box (blue)
+\definecolor{notebg}{HTML}{E5F1FF}
+\definecolor{noteborder}{HTML}{007AFF}
+\definecolor{notetext}{HTML}{0040DD}
+
+% Warning box (orange)
+\definecolor{warnbg}{HTML}{FFF4E5}
+\definecolor{warnborder}{HTML}{FF9500}
+\definecolor{warntext}{HTML}{C93400}
+
+% Danger box (red)
+\definecolor{dangerbg}{HTML}{FFEBE9}
+\definecolor{dangerborder}{HTML}{FF3B30}
+\definecolor{dangertext}{HTML}{D70015}
+
+% Success box (green)
+\definecolor{successbg}{HTML}{E8F9ED}
+\definecolor{successborder}{HTML}{34C759}
+\definecolor{successtext}{HTML}{248A3D}
+
+% Tip box (purple)
+\definecolor{tipbg}{HTML}{F5E9FB}
+\definecolor{tipborder}{HTML}{AF52DE}
+\definecolor{tiptext}{HTML}{8944AB}
+
+% ADR box (teal)
+\definecolor{adrbg}{HTML}{E5F8FF}
+\definecolor{adrborder}{HTML}{5AC8FA}
+\definecolor{adrtext}{HTML}{0071A4}
+
+% Requirement box (gold)
+\definecolor{reqbg}{HTML}{FFF9E5}
+\definecolor{reqborder}{HTML}{F0AB00}
+\definecolor{reqtext}{HTML}{996300}
+
+% Implementation note (gray)
+\definecolor{implbg}{HTML}{F5F5F7}
+\definecolor{implborder}{HTML}{86868B}
+\definecolor{impltext}{HTML}{6E6E73}
+
+% Future work (purple gradient)
+\definecolor{futurebg}{HTML}{F0E6F7}
+\definecolor{futureborder}{HTML}{8944AB}
+\definecolor{futuretext}{HTML}{5E3278}
+
+% Gap/Issue box (red)
+\definecolor{gapbg}{HTML}{FFEBE9}
+\definecolor{gapborder}{HTML}{FF3B30}
+\definecolor{gaptext}{HTML}{D70015}
+
+% HITL checkpoint (green)
+\definecolor{hitlbg}{HTML}{E8F9ED}
+\definecolor{hitlborder}{HTML}{34C759}
+\definecolor{hitltext}{HTML}{248A3D}
+
+% Source quotation (light blue)
+\definecolor{sourcebg}{HTML}{F0F7FF}
+\definecolor{sourceborder}{HTML}{0070F2}
+\definecolor{sourcetext}{HTML}{0A2B4A}
+
+% -----------------------------------------------------------------------------
+% LEGACY COLOR ALIASES (for backward compatibility)
+% -----------------------------------------------------------------------------
+\colorlet{sapgreen}{applegreen}
+\colorlet{sapamber}{appleorange}
+\colorlet{sapgrey}{applegray1}
+\colorlet{sapmidnight}{sapnavy}
+\colorlet{tbred}{applered}
+\colorlet{tbblue}{appleblue}
+\colorlet{tbgreen}{applegreen}
+\colorlet{tbgrey}{applegray1}
+\colorlet{tbamber}{appleorange}
+\colorlet{sourcegreen}{successdark}
+\colorlet{reqblue}{infodark}
+\colorlet{specamber}{warningdark}
+\colorlet{registrymidnight}{sapnavy}
+\colorlet{reqpurple}{applepurple}
+\colorlet{specblue}{appleblue}
+\colorlet{schemaorg}{appleorange}
+\colorlet{gapred}{applered}
+\colorlet{gapamber}{appleorange}
+\colorlet{regred}{applered}
+\colorlet{regblue}{appleblue}
+\colorlet{reggreen}{applegreen}
+\colorlet{reggrey}{applegray1}
+\colorlet{regamber}{appleorange}
+\colorlet{pathcolor}{tealdark}
+\colorlet{hanagreen}{successdark}
+\colorlet{llmpurple}{applepurple}
+\colorlet{saplight}{applegray4}
+
+\endinput

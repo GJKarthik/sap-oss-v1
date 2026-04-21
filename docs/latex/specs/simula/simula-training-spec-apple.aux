@@ -1,0 +1,843 @@
+\relax 
+\providecommand\hyper@newdestlabel[2]{}
+\providecommand*\HyPL@Entry[1]{}
+\HyPL@Entry{0<</S/D>>}
+\pgfsyspdfmark {pgfid1}{6526379}{48133715}
+\pgfsyspdfmark {pgfid2}{6526379}{5594039}
+\@writefile{toc}{\contentsline {chapter}{\numberline {1}Executive Summary}{19}{chapter.1}\protected@file@percent }
+\@writefile{lof}{\addvspace {10\p@ }}
+\@writefile{lot}{\addvspace {10\p@ }}
+\@writefile{toc}{\contentsline {chapter}{Frontmatter}{21}{chapter*.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{Executive Summary}{21}{section*.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{Document Conventions}{22}{Item.4}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {1.1}{\ignorespaces MoSCoW Priority Definitions}}{22}{table.caption.4}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{How to Read This Specification}{23}{table.caption.5}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {1.2}{\ignorespaces Requirement ID Prefixes}}{24}{table.caption.5}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{Reading Guide}{24}{Item.10}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {1.1}{\ignorespaces Chapter relationship flowchart. Blue: core specification. Gold: planning chapters (v1.2 scope). Dotted gray: future scope (v1.3+). Red: gap review. Solid arrows: hard prerequisites. Dashed arrows: remediation dependencies.}}{25}{figure.caption.6}\protected@file@percent }
+\providecommand*\caption@xref[2]{\@setref\relax\@undefined{#1}}
+\newlabel{fig:chapter-relationships}{{1.1}{25}{Chapter relationship flowchart. Blue: core specification. Gold: planning chapters (v1.2 scope). Dotted gray: future scope (v1.3+). Red: gap review. Solid arrows: hard prerequisites. Dashed arrows: remediation dependencies}{figure.caption.6}{}}
+\newlabel{fig:chapter-relationships@cref}{{[figure][1][1]1.1}{[1][24][]25}{}{}{}}
+\gdef \LT@i {\LT@entry 
+    {1}{48.00351pt}\LT@entry 
+    {2}{74.4706pt}\LT@entry 
+    {1}{233.62204pt}}
+\@writefile{toc}{\contentsline {section}{Version History}{27}{Item.31}\protected@file@percent }
+\gdef \LT@ii {\LT@entry 
+    {1}{119.81102pt}\LT@entry 
+    {1}{68.9055pt}\LT@entry 
+    {1}{68.9055pt}\LT@entry 
+    {1}{148.26378pt}}
+\@writefile{toc}{\contentsline {section}{Document Scope Matrix}{28}{table.1.3}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {1.4}{\ignorespaces Document Scope Matrix}}{28}{table.1.4}\protected@file@percent }
+\@writefile{toc}{\contentsline {chapter}{\numberline {2}Overview and Scope}{29}{chapter.2}\protected@file@percent }
+\@writefile{lof}{\addvspace {10\p@ }}
+\@writefile{lot}{\addvspace {10\p@ }}
+\newlabel{chap:overview}{{2}{29}{Overview and Scope}{chapter.2}{}}
+\newlabel{chap:overview@cref}{{[chapter][2][]2}{[1][29][]29}{}{}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {2.1}The Problem}{29}{section.2.1}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {2.1}{\ignorespaces Current vs. Target Training Data Pipeline}}{30}{table.caption.7}\protected@file@percent }
+\newlabel{tab:gap-analysis}{{2.1}{30}{Current vs. Target Training Data Pipeline}{table.caption.7}{}}
+\newlabel{tab:gap-analysis@cref}{{[table][1][2]2.1}{[1][29][]30}{}{}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {2.2}Goals}{30}{section.2.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {2.3}In-Scope Domains}{31}{section.2.3}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {2.2}{\ignorespaces Application Domains}}{31}{table.caption.8}\protected@file@percent }
+\newlabel{tab:domains}{{2.2}{31}{Application Domains}{table.caption.8}{}}
+\newlabel{tab:domains@cref}{{[table][2][2]2.2}{[1][30][]31}{}{}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {2.4}System Context}{32}{section.2.4}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {2.1}{\ignorespaces System context. HANA Cloud (green) provides live schema metadata via the MCP protocol (blue). The vLLM backend (purple) powers taxonomy expansion and data generation. Output is JSONL training data (gold).}}{32}{figure.caption.9}\protected@file@percent }
+\newlabel{fig:system-context}{{2.1}{32}{System context. HANA Cloud (green) provides live schema metadata via the MCP protocol (blue). The vLLM backend (purple) powers taxonomy expansion and data generation. Output is JSONL training data (gold)}{figure.caption.9}{}}
+\newlabel{fig:system-context@cref}{{[figure][1][2]2.1}{[1][31][]32}{}{}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {2.5}Research Paper Traceability}{32}{section.2.5}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {2.3}{\ignorespaces Traceability: Research Paper to Implementation}}{33}{table.caption.10}\protected@file@percent }
+\newlabel{tab:traceability}{{2.3}{33}{Traceability: Research Paper to Implementation}{table.caption.10}{}}
+\newlabel{tab:traceability@cref}{{[table][3][2]2.3}{[1][32][]33}{}{}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {2.6}Out of Scope}{33}{section.2.6}\protected@file@percent }
+\@writefile{toc}{\contentsline {chapter}{\numberline {3}Business Requirements Specification}{35}{chapter.3}\protected@file@percent }
+\@writefile{lof}{\addvspace {10\p@ }}
+\@writefile{lot}{\addvspace {10\p@ }}
+\newlabel{chap:business-requirements}{{3}{35}{Business Requirements Specification}{chapter.3}{}}
+\newlabel{chap:business-requirements@cref}{{[chapter][3][]3}{[1][35][]35}{}{}{}}
+\@writefile{toc}{\contentsline {section}{Integration with existing chapters}{35}{section*.11}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{Scope of this chapter}{36}{section*.11}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {3.1}Requirements Overview}{36}{section.3.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.1.1}Requirement Identification Convention}{36}{subsection.3.1.1}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {3.1}{\ignorespaces Business requirement categories.}}{37}{table.caption.12}\protected@file@percent }
+\newlabel{tab:br-categories}{{3.1}{37}{Business requirement categories}{table.caption.12}{}}
+\newlabel{tab:br-categories@cref}{{[table][1][3]3.1}{[1][36][]37}{}{}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.1.2}Priority Classification}{37}{subsection.3.1.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {3.2}BR-1: Strategic and Preparation Phase}{37}{section.3.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.2.1}BR-1.1: Use Case Definition}{38}{subsection.3.2.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.2.2}BR-1.2: Value-Risk Assessment}{39}{subsection.3.2.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.2.3}BR-1.3: Governance Framework Integration}{40}{subsection.3.2.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.2.4}BR-1.4: Cross-Functional Team Formation}{41}{subsection.3.2.4}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.2.5}BR-1.5: ROI Baseline Establishment}{42}{subsection.3.2.5}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {3.3}BR-2: Generation Phase}{42}{section.3.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.3.1}BR-2.1: Domain Taxonomy Construction and Validation}{43}{subsection.3.3.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.3.2}BR-2.2: Controllable Parameter Configuration}{44}{subsection.3.3.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.3.3}BR-2.3: Cost and Resource Budget Control}{45}{subsection.3.3.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.3.4}BR-2.4: Metadata and Provenance Recording}{46}{subsection.3.3.4}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.3.5}BR-2.5: Incremental Generation and Dataset Evolution}{47}{subsection.3.3.5}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {3.4}BR-3: Quality Assurance and Validation}{47}{section.3.4}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.4.1}BR-3.1: Intrinsic Quality Assessment}{48}{subsection.3.4.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.4.2}BR-3.2: Downstream Task Validation}{49}{subsection.3.4.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.4.3}BR-3.3: Privacy Risk Assessment}{50}{subsection.3.4.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.4.4}BR-3.4: Bias Detection and Mitigation}{51}{subsection.3.4.4}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.4.5}BR-3.5: Continuous Monitoring and Drift Detection}{52}{subsection.3.4.5}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {3.5}BR-4: Governance and Compliance}{52}{section.3.5}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.5.1}BR-4.1: Access Control and Permission Management}{53}{subsection.3.5.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.5.2}BR-4.2: Regulatory Framework Alignment}{54}{subsection.3.5.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.5.3}BR-4.3: Audit Logging and Traceability}{55}{subsection.3.5.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.5.4}BR-4.4: Transparency and Explainability}{56}{subsection.3.5.4}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.5.5}BR-4.5: Incident Response and Remediation}{57}{subsection.3.5.5}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {3.6}BR-5: Integration and Infrastructure}{57}{section.3.6}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.6.1}BR-5.1: ML Pipeline Integration}{58}{subsection.3.6.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.6.2}BR-5.2: Data Storage and Version Management}{59}{subsection.3.6.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.6.3}BR-5.3: Elastic Compute Resource Scheduling}{60}{subsection.3.6.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.6.4}BR-5.4: Multi-Environment Deployment Support}{61}{subsection.3.6.4}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {3.7}Requirements Traceability Matrix}{61}{section.3.7}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {3.2}{\ignorespaces Requirements to enhancement traceability.}}{62}{table.caption.13}\protected@file@percent }
+\newlabel{tab:req-traceability}{{3.2}{62}{Requirements to enhancement traceability}{table.caption.13}{}}
+\newlabel{tab:req-traceability@cref}{{[table][2][3]3.2}{[1][61][]62}{}{}{}}
+\@writefile{toc}{\contentsline {chapter}{\numberline {4}Canonical Data Schema}{63}{chapter.4}\protected@file@percent }
+\@writefile{lof}{\addvspace {10\p@ }}
+\@writefile{lot}{\addvspace {10\p@ }}
+\newlabel{chap:schema}{{4}{63}{Canonical Data Schema}{chapter.4}{}}
+\newlabel{chap:schema@cref}{{[chapter][4][]4}{[1][63][]63}{}{}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {4.1}Layout of \texttt  {src/training/pipeline/}}{64}{section.4.1}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {4.1}{\ignorespaces Pipeline Module Layout}}{64}{table.caption.14}\protected@file@percent }
+\newlabel{tab:module-layout}{{4.1}{64}{Pipeline Module Layout}{table.caption.14}{}}
+\newlabel{tab:module-layout@cref}{{[table][1][4]4.1}{[1][63][]64}{}{}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {4.2}Training Example Record}{64}{section.4.2}\protected@file@percent }
+\@writefile{lol}{\contentsline {lstlisting}{\numberline {4.1}{\ignorespaces TrainingExample dataclass (simula\_data\_generator.py)}}{64}{lstlisting.4.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {4.3}Schema Registry}{65}{section.4.3}\protected@file@percent }
+\@writefile{lol}{\contentsline {lstlisting}{\numberline {4.2}{\ignorespaces Schema registry structures (schema\_registry.py)}}{65}{lstlisting.4.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {4.4}Taxonomy Structure}{65}{section.4.4}\protected@file@percent }
+\@writefile{lol}{\contentsline {lstlisting}{\numberline {4.3}{\ignorespaces Taxonomy structures (simula\_taxonomy\_builder.py)}}{65}{lstlisting.4.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {4.5}Enumerations}{66}{section.4.5}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {4.2}{\ignorespaces Key Enumerations}}{66}{table.caption.15}\protected@file@percent }
+\newlabel{tab:enums}{{4.2}{66}{Key Enumerations}{table.caption.15}{}}
+\newlabel{tab:enums@cref}{{[table][2][4]4.2}{[1][66][]66}{}{}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {4.6}Unified Schema Registry}{66}{section.4.6}\protected@file@percent }
+\@writefile{toc}{\contentsline {chapter}{\numberline {5}HANA Schema Extraction Pipeline}{69}{chapter.5}\protected@file@percent }
+\@writefile{lof}{\addvspace {10\p@ }}
+\@writefile{lot}{\addvspace {10\p@ }}
+\newlabel{chap:extraction}{{5}{69}{HANA Schema Extraction Pipeline}{chapter.5}{}}
+\newlabel{chap:extraction@cref}{{[chapter][5][]5}{[1][69][]69}{}{}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {5.1}Pipeline at a Glance}{69}{section.5.1}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {5.1}{\ignorespaces The five extraction stages; each emits a well-typed payload to the next.}}{69}{figure.caption.16}\protected@file@percent }
+\newlabel{fig:extraction-pipeline}{{5.1}{69}{The five extraction stages; each emits a well-typed payload to the next}{figure.caption.16}{}}
+\newlabel{fig:extraction-pipeline@cref}{{[figure][1][5]5.1}{[1][69][]69}{}{}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {5.2}Stage 1 --- MCP Discovery}{70}{section.5.2}\protected@file@percent }
+\@writefile{lol}{\contentsline {lstlisting}{\numberline {5.1}{\ignorespaces MCP connection (hana\_schema\_extractor.py, lines 45--60)}}{70}{lstlisting.5.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {5.3}Stage 2 --- Table Enumeration}{70}{section.5.3}\protected@file@percent }
+\@writefile{lol}{\contentsline {lstlisting}{\numberline {5.2}{\ignorespaces Table discovery (hana\_schema\_extractor.py, lines 85--105)}}{70}{lstlisting.5.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {5.4}Stage 3 --- Column Extraction}{71}{section.5.4}\protected@file@percent }
+\@writefile{lol}{\contentsline {lstlisting}{\numberline {5.3}{\ignorespaces Column extraction SQL}}{71}{lstlisting.5.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {5.5}Stage 4 --- Registry Population}{71}{section.5.5}\protected@file@percent }
+\@writefile{lol}{\contentsline {lstlisting}{\numberline {5.4}{\ignorespaces Registry population (hana\_schema\_extractor.py, lines 140--165)}}{71}{lstlisting.5.4}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {5.6}Stage 5 --- JSON Export}{72}{section.5.6}\protected@file@percent }
+\@writefile{lol}{\contentsline {lstlisting}{\numberline {5.5}{\ignorespaces JSON export format}}{72}{lstlisting.5.5}\protected@file@percent }
+\@writefile{toc}{\contentsline {chapter}{\numberline {6}Taxonomy Generation Engine}{73}{chapter.6}\protected@file@percent }
+\@writefile{lof}{\addvspace {10\p@ }}
+\@writefile{lot}{\addvspace {10\p@ }}
+\newlabel{chap:taxonomy}{{6}{73}{Taxonomy Generation Engine}{chapter.6}{}}
+\newlabel{chap:taxonomy@cref}{{[chapter][6][]6}{[1][73][]73}{}{}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {6.1}Algorithm 1: Reasoning-Driven Taxonomy Generation}{73}{section.6.1}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {6.1}{\ignorespaces Taxonomy generation stages with iterative refinement.}}{74}{figure.caption.17}\protected@file@percent }
+\newlabel{fig:taxonomy-stages}{{6.1}{74}{Taxonomy generation stages with iterative refinement}{figure.caption.17}{}}
+\newlabel{fig:taxonomy-stages@cref}{{[figure][1][6]6.1}{[1][73][]74}{}{}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {6.2}Step 1: Factor Identification}{74}{section.6.2}\protected@file@percent }
+\@writefile{lol}{\contentsline {lstlisting}{\numberline {6.1}{\ignorespaces Factor identification prompt}}{74}{lstlisting.6.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {6.3}Step 2: Breadth-First Expansion}{75}{section.6.3}\protected@file@percent }
+\@writefile{lol}{\contentsline {lstlisting}{\numberline {6.2}{\ignorespaces Node expansion (simula\_taxonomy\_builder.py, lines 180--220)}}{75}{lstlisting.6.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {6.4}Step 3: Best-of-N Proposal}{75}{section.6.4}\protected@file@percent }
+\@writefile{lol}{\contentsline {lstlisting}{\numberline {6.3}{\ignorespaces Best-of-N sampling}}{75}{lstlisting.6.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {6.5}Step 4: Critic Refinement}{76}{section.6.5}\protected@file@percent }
+\@writefile{lol}{\contentsline {lstlisting}{\numberline {6.4}{\ignorespaces Critic refinement prompt}}{76}{lstlisting.6.4}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {6.6}Step 5: Level Planning}{77}{section.6.6}\protected@file@percent }
+\@writefile{lol}{\contentsline {lstlisting}{\numberline {6.5}{\ignorespaces Level planning}}{77}{lstlisting.6.5}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {6.7}Taxonomy Depth and Dataset Size Relationship}{77}{section.6.7}\protected@file@percent }
+\newlabel{sec:depth-size-relationship}{{6.7}{77}{Taxonomy Depth and Dataset Size Relationship}{section.6.7}{}}
+\newlabel{sec:depth-size-relationship@cref}{{[section][7][6]6.7}{[1][77][]77}{}{}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {6.7.1}Node Count Growth}{77}{subsection.6.7.1}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {6.1}{\ignorespaces Expected Node Count by Taxonomy Depth}}{78}{table.caption.18}\protected@file@percent }
+\newlabel{tab:depth-nodes}{{6.1}{78}{Expected Node Count by Taxonomy Depth}{table.caption.18}{}}
+\newlabel{tab:depth-nodes@cref}{{[table][1][6]6.1}{[1][78][]78}{}{}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {6.7.2}Target Examples vs Taxonomy Depth}{78}{subsection.6.7.2}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {6.2}{\ignorespaces Recommended Target Examples by Depth (K=4, b=4, m=5, r=0.10)}}{79}{table.caption.19}\protected@file@percent }
+\newlabel{tab:target-by-depth}{{6.2}{79}{Recommended Target Examples by Depth (K=4, b=4, m=5, r=0.10)}{table.caption.19}{}}
+\newlabel{tab:target-by-depth@cref}{{[table][2][6]6.2}{[1][78][]79}{}{}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {6.7.3}Configuration Guidelines}{79}{subsection.6.7.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {6.7.4}Cost Estimation}{79}{subsection.6.7.4}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {6.8}Worked Example: Trial Balance Taxonomy}{80}{section.6.8}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {6.3}{\ignorespaces Sample Taxonomy for Trial Balance Domain}}{80}{table.caption.20}\protected@file@percent }
+\newlabel{tab:tb-taxonomy}{{6.3}{80}{Sample Taxonomy for Trial Balance Domain}{table.caption.20}{}}
+\newlabel{tab:tb-taxonomy@cref}{{[table][3][6]6.3}{[1][80][]80}{}{}{}}
+\@writefile{toc}{\contentsline {chapter}{\numberline {7}Training Data Generation Engine}{81}{chapter.7}\protected@file@percent }
+\@writefile{lof}{\addvspace {10\p@ }}
+\@writefile{lot}{\addvspace {10\p@ }}
+\newlabel{chap:generator}{{7}{81}{Training Data Generation Engine}{chapter.7}{}}
+\newlabel{chap:generator@cref}{{[chapter][7][]7}{[1][81][]81}{}{}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {7.1}Algorithm 2: Agentic Data Synthesis}{81}{section.7.1}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {7.1}{\ignorespaces Data generation stages implementing Algorithm 2.}}{82}{figure.caption.21}\protected@file@percent }
+\newlabel{fig:generator-stages}{{7.1}{82}{Data generation stages implementing Algorithm 2}{figure.caption.21}{}}
+\newlabel{fig:generator-stages@cref}{{[figure][1][7]7.1}{[1][81][]82}{}{}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {7.2}Step 1: Mix Sampling (Global Diversity)}{82}{section.7.2}\protected@file@percent }
+\@writefile{lol}{\contentsline {lstlisting}{\numberline {7.1}{\ignorespaces Mix sampling (simula\_data\_generator.py, lines 120--150)}}{82}{lstlisting.7.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {7.3}Step 2: Meta-Prompt Generation (Local Diversity)}{83}{section.7.3}\protected@file@percent }
+\@writefile{lol}{\contentsline {lstlisting}{\numberline {7.2}{\ignorespaces Meta-prompt generation}}{83}{lstlisting.7.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {7.4}Step 3: Complexification}{83}{section.7.4}\protected@file@percent }
+\@writefile{lol}{\contentsline {lstlisting}{\numberline {7.3}{\ignorespaces Complexification prompt}}{83}{lstlisting.7.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {7.5}Step 4: Example Generation}{84}{section.7.5}\protected@file@percent }
+\@writefile{lol}{\contentsline {lstlisting}{\numberline {7.4}{\ignorespaces Example generation}}{84}{lstlisting.7.4}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {7.6}Step 5: Double-Critic Filtering}{84}{section.7.6}\protected@file@percent }
+\@writefile{lol}{\contentsline {lstlisting}{\numberline {7.5}{\ignorespaces Double-critic evaluation (simula\_llm\_client.py, lines 180--220)}}{84}{lstlisting.7.5}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {7.7}Schema Context Pruning}{85}{section.7.7}\protected@file@percent }
+\newlabel{sec:schema-context-pruning}{{7.7}{85}{Schema Context Pruning}{section.7.7}{}}
+\newlabel{sec:schema-context-pruning@cref}{{[section][7][7]7.7}{[1][85][]85}{}{}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {7.7.1}Token Budget}{86}{subsection.7.7.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {7.7.2}Pruning Algorithm}{86}{subsection.7.7.2}\protected@file@percent }
+\@writefile{lol}{\contentsline {lstlisting}{\numberline {7.6}{\ignorespaces Schema context pruning algorithm}}{86}{lstlisting.7.6}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {7.7.3}Relevance Scoring}{87}{subsection.7.7.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {7.7.4}Configuration}{88}{subsection.7.7.4}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {7.1}{\ignorespaces Schema Pruning Configuration}}{88}{table.caption.22}\protected@file@percent }
+\newlabel{tab:schema-pruning-config}{{7.1}{88}{Schema Pruning Configuration}{table.caption.22}{}}
+\newlabel{tab:schema-pruning-config@cref}{{[table][1][7]7.1}{[1][87][]88}{}{}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {7.7.5}Quality Impact}{88}{subsection.7.7.5}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {7.8}Output Format}{88}{section.7.8}\protected@file@percent }
+\@writefile{lol}{\contentsline {lstlisting}{\numberline {7.7}{\ignorespaces JSONL output format}}{88}{lstlisting.7.7}\protected@file@percent }
+\gdef \LT@iii {\LT@entry 
+    {1}{154.26378pt}\LT@entry 
+    {1}{97.35826pt}\LT@entry 
+    {1}{182.71652pt}}
+\@writefile{toc}{\contentsline {chapter}{\numberline {8}Environment and CLI}{91}{chapter.8}\protected@file@percent }
+\@writefile{lof}{\addvspace {10\p@ }}
+\@writefile{lot}{\addvspace {10\p@ }}
+\newlabel{chap:config}{{8}{91}{Environment and CLI}{chapter.8}{}}
+\newlabel{chap:config@cref}{{[chapter][8][]8}{[1][91][]91}{}{}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {8.1}Configuration Table}{91}{section.8.1}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {8.1}{\ignorespaces Environment Variables}}{91}{table.8.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {8.2}CLI Usage}{92}{section.8.2}\protected@file@percent }
+\@writefile{lol}{\contentsline {lstlisting}{\numberline {8.1}{\ignorespaces CLI entry point}}{92}{lstlisting.8.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {8.3}Output Files}{93}{section.8.3}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {8.2}{\ignorespaces Pipeline Output Files}}{93}{table.caption.23}\protected@file@percent }
+\newlabel{tab:outputs}{{8.2}{93}{Pipeline Output Files}{table.caption.23}{}}
+\newlabel{tab:outputs@cref}{{[table][2][8]8.2}{[1][92][]93}{}{}{}}
+\@writefile{toc}{\contentsline {chapter}{\numberline {9}Evaluation Framework}{95}{chapter.9}\protected@file@percent }
+\@writefile{lof}{\addvspace {10\p@ }}
+\@writefile{lot}{\addvspace {10\p@ }}
+\newlabel{chap:evaluation}{{9}{95}{Evaluation Framework}{chapter.9}{}}
+\newlabel{chap:evaluation@cref}{{[chapter][9][]9}{[1][95][]95}{}{}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {9.1}Calibrated Complexity Scoring (Algorithm 3)}{95}{section.9.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {9.1.1}Elo Rating Algorithm}{96}{subsection.9.1.1}\protected@file@percent }
+\@writefile{lol}{\contentsline {lstlisting}{\numberline {9.1}{\ignorespaces Elo computation (simula\_complexity\_calibrator.py)}}{96}{lstlisting.9.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {9.1.2}Usage}{96}{subsection.9.1.2}\protected@file@percent }
+\@writefile{lol}{\contentsline {lstlisting}{\numberline {9.2}{\ignorespaces Complexity calibrator usage}}{96}{lstlisting.9.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {9.2}Taxonomic Coverage Evaluation}{97}{section.9.2}\protected@file@percent }
+\@writefile{lol}{\contentsline {lstlisting}{\numberline {9.3}{\ignorespaces Coverage evaluator usage}}{98}{lstlisting.9.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {9.3}Embedding-Based Diversity Metrics}{98}{section.9.3}\protected@file@percent }
+\@writefile{lol}{\contentsline {lstlisting}{\numberline {9.4}{\ignorespaces Diversity analyzer usage}}{98}{lstlisting.9.4}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {9.4}Critic Calibration Validation}{99}{section.9.4}\protected@file@percent }
+\@writefile{lol}{\contentsline {lstlisting}{\numberline {9.5}{\ignorespaces Critic validator usage}}{99}{lstlisting.9.5}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {9.5}Student-Teacher Gap Analysis}{100}{section.9.5}\protected@file@percent }
+\@writefile{lol}{\contentsline {lstlisting}{\numberline {9.6}{\ignorespaces Gap analysis}}{100}{lstlisting.9.6}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {9.6}Adaptive Features (v1.2)}{100}{section.9.6}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {9.6.1}Adaptive Complexity Ratio (Figure 7)}{100}{subsection.9.6.1}\protected@file@percent }
+\@writefile{lol}{\contentsline {lstlisting}{\numberline {9.7}{\ignorespaces Adaptive complexity ratio}}{100}{lstlisting.9.7}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {9.6.2}Adaptive Critic Thresholding (Figure 3b)}{101}{subsection.9.6.2}\protected@file@percent }
+\@writefile{lol}{\contentsline {lstlisting}{\numberline {9.8}{\ignorespaces Adaptive critic threshold}}{101}{lstlisting.9.8}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {9.6.3}Automatic Coverage Gap Filling}{101}{subsection.9.6.3}\protected@file@percent }
+\@writefile{lol}{\contentsline {lstlisting}{\numberline {9.9}{\ignorespaces Coverage gap filling}}{101}{lstlisting.9.9}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {9.6.4}Diversity Optimizer}{102}{subsection.9.6.4}\protected@file@percent }
+\@writefile{lol}{\contentsline {lstlisting}{\numberline {9.10}{\ignorespaces Diversity optimizer usage}}{102}{lstlisting.9.10}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {9.6.5}Taxonomy Quality Gate (Section B.1, Table 2)}{103}{subsection.9.6.5}\protected@file@percent }
+\@writefile{lol}{\contentsline {lstlisting}{\numberline {9.11}{\ignorespaces Taxonomy quality gate}}{103}{lstlisting.9.11}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {9.7}Evaluation Environment Variables}{104}{section.9.7}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {9.1}{\ignorespaces Evaluation Framework Environment Variables}}{104}{table.caption.24}\protected@file@percent }
+\newlabel{tab:eval-env}{{9.1}{104}{Evaluation Framework Environment Variables}{table.caption.24}{}}
+\newlabel{tab:eval-env@cref}{{[table][1][9]9.1}{[1][103][]104}{}{}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {9.8}CI Integration of Evaluation Tolerances}{105}{section.9.8}\protected@file@percent }
+\newlabel{sec:ci-tolerances}{{9.8}{105}{CI Integration of Evaluation Tolerances}{section.9.8}{}}
+\newlabel{sec:ci-tolerances@cref}{{[section][8][9]9.8}{[1][105][]105}{}{}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {9.2}{\ignorespaces CI Pass/Fail Criteria for Evaluation Metrics}}{105}{table.caption.25}\protected@file@percent }
+\newlabel{tab:ci-pass-fail}{{9.2}{105}{CI Pass/Fail Criteria for Evaluation Metrics}{table.caption.25}{}}
+\newlabel{tab:ci-pass-fail@cref}{{[table][2][9]9.2}{[1][105][]105}{}{}{}}
+\@writefile{toc}{\contentsline {chapter}{\numberline {10}Worked Example: Trial Balance Domain}{107}{chapter.10}\protected@file@percent }
+\@writefile{lof}{\addvspace {10\p@ }}
+\@writefile{lot}{\addvspace {10\p@ }}
+\newlabel{chap:worked-example}{{10}{107}{Worked Example: Trial Balance Domain}{chapter.10}{}}
+\newlabel{chap:worked-example@cref}{{[chapter][10][]10}{[1][107][]107}{}{}{}}
+\newlabel{sec:worked-example}{{10}{107}{Worked Example: Trial Balance Domain}{chapter.10}{}}
+\newlabel{sec:worked-example@cref}{{[chapter][10][]10}{[1][107][]107}{}{}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {10.1}Step 1: Schema Extraction}{107}{section.10.1}\protected@file@percent }
+\@writefile{lol}{\contentsline {lstlisting}{\numberline {10.1}{\ignorespaces Schema extraction output (schemas.json)}}{108}{lstlisting.10.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {10.2}Step 2: Factor Identification}{109}{section.10.2}\protected@file@percent }
+\@writefile{lol}{\contentsline {lstlisting}{\numberline {10.2}{\ignorespaces Factors (factors.json)}}{109}{lstlisting.10.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {10.3}Step 3: Taxonomy Generation}{109}{section.10.3}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {10.1}{\ignorespaces Generated Taxonomy for ``query\_type'' Factor}}{109}{table.caption.26}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {10.4}Step 4: Mix Sampling and Meta-Prompt Generation}{110}{section.10.4}\protected@file@percent }
+\@writefile{lol}{\contentsline {lstlisting}{\numberline {10.3}{\ignorespaces Meta-prompt generated}}{110}{lstlisting.10.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {10.5}Step 5: Example Generation}{110}{section.10.5}\protected@file@percent }
+\@writefile{lol}{\contentsline {lstlisting}{\numberline {10.4}{\ignorespaces Generated training example}}{110}{lstlisting.10.4}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {10.6}Step 6: Evaluation Metrics}{111}{section.10.6}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {10.2}{\ignorespaces Evaluation results for Trial Balance dataset (reference run \texttt  {simula-v1.2-worked-example}, 2025-11-15).}}{111}{table.caption.27}\protected@file@percent }
+\newlabel{tab:sim-worked-example-eval}{{10.2}{111}{Evaluation results for Trial Balance dataset (reference run \texttt {simula-v1.2-worked-example}, 2025-11-15)}{table.caption.27}{}}
+\newlabel{tab:sim-worked-example-eval@cref}{{[table][2][10]10.2}{[1][110][]111}{}{}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {10.6.1}Reproducibility}{111}{subsection.10.6.1}\protected@file@percent }
+\newlabel{sec:reproducibility}{{10.6.1}{111}{Reproducibility}{subsection.10.6.1}{}}
+\newlabel{sec:reproducibility@cref}{{[subsection][1][10,6]10.6.1}{[1][111][]111}{}{}{}}
+\@writefile{lol}{\contentsline {lstlisting}{\numberline {10.5}{\ignorespaces Reproduction command for the worked example}}{111}{lstlisting.10.5}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {10.7}Step 7: Output Files}{112}{section.10.7}\protected@file@percent }
+\@writefile{lol}{\contentsline {lstlisting}{\numberline {10.6}{\ignorespaces Final output artifacts}}{112}{lstlisting.10.6}\protected@file@percent }
+\@writefile{toc}{\contentsline {chapter}{\numberline {11}Testing Specification}{113}{chapter.11}\protected@file@percent }
+\@writefile{lof}{\addvspace {10\p@ }}
+\@writefile{lot}{\addvspace {10\p@ }}
+\newlabel{ch:testing}{{11}{113}{Testing Specification}{chapter.11}{}}
+\newlabel{ch:testing@cref}{{[chapter][11][]11}{[1][113][]113}{}{}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {11.1}Test coverage requirements}{113}{section.11.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {11.2}Test fixtures}{113}{section.11.2}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {11.1}{\ignorespaces Simula test coverage targets.}}{114}{table.caption.28}\protected@file@percent }
+\newlabel{tab:simula-coverage}{{11.1}{114}{Simula test coverage targets}{table.caption.28}{}}
+\newlabel{tab:simula-coverage@cref}{{[table][1][11]11.1}{[1][113][]114}{}{}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {11.2.1}Taxonomy fixtures}{114}{subsection.11.2.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {11.2.2}Training example fixtures}{114}{subsection.11.2.2}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {11.2}{\ignorespaces Training example fixture requirements.}}{114}{table.caption.29}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {11.3}Unit test cases}{115}{section.11.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {11.3.1}Taxonomy traversal}{115}{subsection.11.3.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {11.3.2}Complexity scoring}{115}{subsection.11.3.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {11.3.3}Critic evaluation}{116}{subsection.11.3.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {11.3.4}Diversity metrics}{116}{subsection.11.3.4}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {11.3.5}Adaptive features}{117}{subsection.11.3.5}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {11.3.6}HANA type handling}{117}{subsection.11.3.6}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{SIM-HANA-002 implementation}{117}{subsection.11.3.6}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {11.3}{\ignorespaces HANA spatial type $\to $ scalar method mapping.}}{118}{table.caption.30}\protected@file@percent }
+\newlabel{tab:sim-hana-spatial-mapping}{{11.3}{118}{HANA spatial type $\to $ scalar method mapping}{table.caption.30}{}}
+\newlabel{tab:sim-hana-spatial-mapping@cref}{{[table][3][11]11.3}{[1][117][]118}{}{}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {11.4}Integration test suite}{119}{section.11.4}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {11.4.1}End-to-end scenarios}{119}{subsection.11.4.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {11.5}Performance benchmarks}{120}{section.11.5}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {11.4}{\ignorespaces Simula performance targets on reference hardware.}}{120}{table.caption.31}\protected@file@percent }
+\newlabel{tab:sim-perf-targets}{{11.4}{120}{Simula performance targets on reference hardware}{table.caption.31}{}}
+\newlabel{tab:sim-perf-targets@cref}{{[table][4][11]11.4}{[1][120][]120}{}{}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {11.5.1}Reference hardware profile}{120}{subsection.11.5.1}\protected@file@percent }
+\newlabel{sec:sim-perf-hardware}{{11.5.1}{120}{Reference hardware profile}{subsection.11.5.1}{}}
+\newlabel{sec:sim-perf-hardware@cref}{{[subsection][1][11,5]11.5.1}{[1][120][]120}{}{}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {11.6}Quality metrics tests}{121}{section.11.6}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {11.7}CI/CD integration}{121}{section.11.7}\protected@file@percent }
+\@writefile{lol}{\contentsline {lstlisting}{\numberline {11.1}{\ignorespaces GitHub Actions workflow excerpt.}}{121}{lstlisting.11.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {11.8}Acceptance criteria}{122}{section.11.8}\protected@file@percent }
+\@writefile{toc}{\contentsline {chapter}{\numberline {12}Test Fixture Specification}{123}{chapter.12}\protected@file@percent }
+\@writefile{lof}{\addvspace {10\p@ }}
+\@writefile{lot}{\addvspace {10\p@ }}
+\newlabel{ch:test-fixtures}{{12}{123}{Test Fixture Specification}{chapter.12}{}}
+\newlabel{ch:test-fixtures@cref}{{[chapter][12][]12}{[1][123][]123}{}{}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {12.1}Overview}{124}{section.12.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {12.2}Fixture Count Calculation Methodology}{124}{section.12.2}\protected@file@percent }
+\newlabel{sec:fixture-count-methodology}{{12.2}{124}{Fixture Count Calculation Methodology}{section.12.2}{}}
+\newlabel{sec:fixture-count-methodology@cref}{{[section][2][12]12.2}{[1][124][]124}{}{}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {12.2.1}Coverage-Based Calculation}{124}{subsection.12.2.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {12.2.2}Fixture Count Derivation by Domain}{125}{subsection.12.2.2}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {12.1}{\ignorespaces Fixture count derivation methodology.}}{125}{table.caption.32}\protected@file@percent }
+\newlabel{tab:fixture-derivation}{{12.1}{125}{Fixture count derivation methodology}{table.caption.32}{}}
+\newlabel{tab:fixture-derivation@cref}{{[table][1][12]12.1}{[1][125][]125}{}{}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {12.2.3}Edge Case Multiplier}{125}{subsection.12.2.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {12.2.4}Extending Fixture Counts}{125}{subsection.12.2.4}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {12.3}Fixture organisation}{126}{section.12.3}\protected@file@percent }
+\@writefile{lol}{\contentsline {lstlisting}{\numberline {12.1}{\ignorespaces Test fixture directory structure.}}{126}{lstlisting.12.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {12.4}Arabic AP fixtures}{127}{section.12.4}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {12.4.1}Invoice fixtures}{127}{subsection.12.4.1}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {12.2}{\ignorespaces Required invoice fixture categories.}}{127}{table.caption.33}\protected@file@percent }
+\newlabel{tab:invoice-fixtures}{{12.2}{127}{Required invoice fixture categories}{table.caption.33}{}}
+\newlabel{tab:invoice-fixtures@cref}{{[table][2][12]12.2}{[1][127][]127}{}{}{}}
+\@writefile{toc}{\contentsline {subsubsection}{Fixture schema}{127}{table.caption.33}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {12.4.2}OCR fixtures}{128}{subsection.12.4.2}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {12.3}{\ignorespaces OCR fixture confidence levels.}}{128}{table.caption.34}\protected@file@percent }
+\newlabel{tab:ocr-fixtures}{{12.3}{128}{OCR fixture confidence levels}{table.caption.34}{}}
+\newlabel{tab:ocr-fixtures@cref}{{[table][3][12]12.3}{[1][127][]128}{}{}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {12.5}Trial Balance fixtures}{128}{section.12.5}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {12.5.1}TB extract fixtures}{128}{subsection.12.5.1}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {12.4}{\ignorespaces Required TB extract fixture categories.}}{128}{table.caption.35}\protected@file@percent }
+\newlabel{tab:tb-fixtures}{{12.4}{128}{Required TB extract fixture categories}{table.caption.35}{}}
+\newlabel{tab:tb-fixtures@cref}{{[table][4][12]12.4}{[1][128][]128}{}{}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {12.5.2}Variance fixtures}{128}{subsection.12.5.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {12.6}Simula fixtures}{129}{section.12.6}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {12.6.1}Taxonomy fixtures}{129}{subsection.12.6.1}\protected@file@percent }
+\@writefile{lol}{\contentsline {lstlisting}{\numberline {12.2}{\ignorespaces Taxonomy fixture structure.}}{129}{lstlisting.12.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {12.6.2}Training example fixtures}{130}{subsection.12.6.2}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {12.5}{\ignorespaces Training example fixture requirements.}}{130}{table.caption.36}\protected@file@percent }
+\newlabel{tab:training-fixtures}{{12.5}{130}{Training example fixture requirements}{table.caption.36}{}}
+\newlabel{tab:training-fixtures@cref}{{[table][5][12]12.5}{[1][129][]130}{}{}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {12.7}Common fixtures}{130}{section.12.7}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {12.7.1}Mock LLM responses}{130}{subsection.12.7.1}\protected@file@percent }
+\@writefile{lol}{\contentsline {lstlisting}{\numberline {12.3}{\ignorespaces Mock LLM response fixture.}}{130}{lstlisting.12.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {12.7.2}Schema copies}{131}{subsection.12.7.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {12.8}Data sanitisation requirements}{131}{section.12.8}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {12.6}{\ignorespaces Data sanitisation rules.}}{131}{table.caption.37}\protected@file@percent }
+\newlabel{tab:sanitisation}{{12.6}{131}{Data sanitisation rules}{table.caption.37}{}}
+\newlabel{tab:sanitisation@cref}{{[table][6][12]12.6}{[1][131][]131}{}{}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {12.9}Fixture validation}{131}{section.12.9}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {12.9.1}Schema validation}{132}{subsection.12.9.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {12.9.2}Coverage verification}{132}{subsection.12.9.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {12.10}Implementation checklist}{132}{section.12.10}\protected@file@percent }
+\@writefile{toc}{\contentsline {chapter}{\numberline {13}Agent Implementation Instructions}{135}{chapter.13}\protected@file@percent }
+\@writefile{lof}{\addvspace {10\p@ }}
+\@writefile{lot}{\addvspace {10\p@ }}
+\newlabel{ch:agent-impl}{{13}{135}{Agent Implementation Instructions}{chapter.13}{}}
+\newlabel{ch:agent-impl@cref}{{[chapter][13][]13}{[1][135][]135}{}{}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {13.1}Purpose and audience}{135}{section.13.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {13.2}Rules of Engagement for AI Agents}{136}{section.13.2}\protected@file@percent }
+\newlabel{sec:agent-rules}{{13.2}{136}{Rules of Engagement for AI Agents}{section.13.2}{}}
+\newlabel{sec:agent-rules@cref}{{[section][2][13]13.2}{[1][136][]136}{}{}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {13.3}Agent Rule-Pack Architecture (.clinerules)}{137}{section.13.3}\protected@file@percent }
+\newlabel{sec:agent-rule-packs}{{13.3}{137}{Agent Rule-Pack Architecture (.clinerules)}{section.13.3}{}}
+\newlabel{sec:agent-rule-packs@cref}{{[section][3][13]13.3}{[1][136][]137}{}{}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {13.3.1}Inheritance Hierarchy}{137}{subsection.13.3.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {13.3.2}Safety-Critical Flags}{137}{subsection.13.3.2}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {13.1}{\ignorespaces Safety-Critical Agent Flags.}}{137}{table.caption.38}\protected@file@percent }
+\newlabel{tab:safety-flags}{{13.1}{137}{Safety-Critical Agent Flags}{table.caption.38}{}}
+\newlabel{tab:safety-flags@cref}{{[table][1][13]13.1}{[1][137][]137}{}{}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {13.4}Platform Overview --- One Codebase, One Instance}{138}{section.13.4}\protected@file@percent }
+\newlabel{sec:agent-platform-overview}{{13.4}{138}{Platform Overview --- One Codebase, One Instance}{section.13.4}{}}
+\newlabel{sec:agent-platform-overview@cref}{{[section][4][13]13.4}{[1][137][]138}{}{}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {13.4.1}Integration Stance}{138}{subsection.13.4.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {13.4.2}Platform Integration Map}{138}{subsection.13.4.2}\protected@file@percent }
+\newlabel{sec:platform-map}{{13.4.2}{138}{Platform Integration Map}{subsection.13.4.2}{}}
+\newlabel{sec:platform-map@cref}{{[subsection][2][13,4]13.4.2}{[1][138][]138}{}{}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {13.1}{\ignorespaces Cross-domain interaction and unified data flow map. Detailed governance logic is defined in \cref  {reg:ch:mgf}.}}{138}{figure.caption.39}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {13.5}Transactional Sequence Diagrams}{139}{section.13.5}\protected@file@percent }
+\newlabel{sec:agent-sequences}{{13.5}{139}{Transactional Sequence Diagrams}{section.13.5}{}}
+\newlabel{sec:agent-sequences@cref}{{[section][5][13]13.5}{[1][138][]139}{}{}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {13.5.1}Universal Governance Handshake}{139}{subsection.13.5.1}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {13.2}{\ignorespaces Standard platform handshake for governed tool execution. Audit schemas are detailed in \cref  {reg:ch:identity}.}}{139}{figure.caption.40}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {13.5.2}Arabic AP Golden Path}{139}{subsection.13.5.2}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {13.3}{\ignorespaces Arabic AP sequence: Scanned PDF to Release. VAT rules are specified in \cref  {ar:ch:vat}.}}{140}{figure.caption.41}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {13.6}Compute and Resource Alignment}{140}{section.13.6}\protected@file@percent }
+\newlabel{sec:hardware-profiles}{{13.6}{140}{Compute and Resource Alignment}{section.13.6}{}}
+\newlabel{sec:hardware-profiles@cref}{{[section][6][13]13.6}{[1][139][]140}{}{}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {13.2}{\ignorespaces Infrastructure Reference Profiles.}}{140}{table.caption.42}\protected@file@percent }
+\newlabel{tab:hardware-profiles}{{13.2}{140}{Infrastructure Reference Profiles}{table.caption.42}{}}
+\newlabel{tab:hardware-profiles@cref}{{[table][2][13]13.2}{[1][139][]140}{}{}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {13.7}Human-in-the-Loop (HITL) Critical Gates}{140}{section.13.7}\protected@file@percent }
+\newlabel{sec:hitl-gates}{{13.7}{140}{Human-in-the-Loop (HITL) Critical Gates}{section.13.7}{}}
+\newlabel{sec:hitl-gates@cref}{{[section][7][13]13.7}{[1][140][]140}{}{}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {13.8}Registry Integrity \& Live Status}{141}{section.13.8}\protected@file@percent }
+\newlabel{sec:registry-integrity}{{13.8}{141}{Registry Integrity \& Live Status}{section.13.8}{}}
+\newlabel{sec:registry-integrity@cref}{{[section][8][13]13.8}{[1][141][]141}{}{}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {13.9}Master Implementation Manifest (Union)}{141}{section.13.9}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {13.10}Governance Obligations (MAS MGF)}{142}{section.13.10}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {13.11}FMEA: Failure Mode and Effects Analysis for AI}{143}{section.13.11}\protected@file@percent }
+\newlabel{sec:fmea-ai}{{13.11}{143}{FMEA: Failure Mode and Effects Analysis for AI}{section.13.11}{}}
+\newlabel{sec:fmea-ai@cref}{{[section][11][13]13.11}{[1][143][]143}{}{}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {13.3}{\ignorespaces FMEA for Simula AI Pipeline.}}{143}{table.caption.43}\protected@file@percent }
+\newlabel{tab:simula-fmea}{{13.3}{143}{FMEA for Simula AI Pipeline}{table.caption.43}{}}
+\newlabel{tab:simula-fmea@cref}{{[table][3][13]13.3}{[1][143][]143}{}{}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {13.12}This domain in context}{143}{section.13.12}\protected@file@percent }
+\newlabel{sec:agent-domain-context}{{13.12}{143}{This domain in context}{section.13.12}{}}
+\newlabel{sec:agent-domain-context@cref}{{[section][12][13]13.12}{[1][143][]143}{}{}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {13.13}Schema contribution}{144}{section.13.13}\protected@file@percent }
+\newlabel{sec:agent-schema-contrib}{{13.13}{144}{Schema contribution}{section.13.13}{}}
+\newlabel{sec:agent-schema-contrib@cref}{{[section][13][13]13.13}{[1][144][]144}{}{}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {13.14}Persona and MCP allow-list}{144}{section.13.14}\protected@file@percent }
+\newlabel{sec:agent-persona}{{13.14}{144}{Persona and MCP allow-list}{section.13.14}{}}
+\newlabel{sec:agent-persona@cref}{{[section][14][13]13.14}{[1][144][]144}{}{}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {13.15}Agent Rule-Pack Binding}{145}{section.13.15}\protected@file@percent }
+\newlabel{sec:agent-rule-binding}{{13.15}{145}{Agent Rule-Pack Binding}{section.13.15}{}}
+\newlabel{sec:agent-rule-binding@cref}{{[section][15][13]13.15}{[1][145][]145}{}{}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {13.16}Current Implementation Gap Analysis}{146}{section.13.16}\protected@file@percent }
+\newlabel{sec:current-gap-analysis}{{13.16}{146}{Current Implementation Gap Analysis}{section.13.16}{}}
+\newlabel{sec:current-gap-analysis@cref}{{[section][16][13]13.16}{[1][145][]146}{}{}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {13.16.1}Key Findings Summary}{146}{subsection.13.16.1}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {13.4}{\ignorespaces P0 Implementation Gaps Requiring Immediate Attention}}{146}{table.caption.44}\protected@file@percent }
+\newlabel{tab:p0-gaps-summary}{{13.4}{146}{P0 Implementation Gaps Requiring Immediate Attention}{table.caption.44}{}}
+\newlabel{tab:p0-gaps-summary@cref}{{[table][4][13]13.4}{[1][146][]146}{}{}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {13.16.2}Gap Analysis Validity}{147}{subsection.13.16.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {13.17}Implementation tasks for this domain}{147}{section.13.17}\protected@file@percent }
+\newlabel{sec:agent-tasks}{{13.17}{147}{Implementation tasks for this domain}{section.13.17}{}}
+\newlabel{sec:agent-tasks@cref}{{[section][17][13]13.17}{[1][147][]147}{}{}{}}
+\@writefile{toc}{\contentsline {subsubsection}{Task S1 --- HANA schema extraction.}{147}{section.13.17}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{Task S2 --- Taxonomy generation (Algorithm 1).}{148}{lstnumber.-5.6}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{Task S3 --- Agentic data synthesis (Algorithm 2).}{149}{lstnumber.-5.6}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{Task S4 --- Environment and CLI.}{149}{lstnumber.-5.6}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{Task S5 --- Evaluation framework.}{149}{lstnumber.-5.6}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{Task S6 --- Test fixtures and testing.}{150}{lstnumber.-5.6}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {13.18}Governance obligations applied to this domain}{150}{section.13.18}\protected@file@percent }
+\newlabel{sec:agent-governance}{{13.18}{150}{Governance obligations applied to this domain}{section.13.18}{}}
+\newlabel{sec:agent-governance@cref}{{[section][18][13]13.18}{[1][150][]150}{}{}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {13.19}Cross-spec integration --- full detail}{151}{section.13.19}\protected@file@percent }
+\newlabel{sec:agent-integration}{{13.19}{151}{Cross-spec integration --- full detail}{section.13.19}{}}
+\newlabel{sec:agent-integration@cref}{{[section][19][13]13.19}{[1][151][]151}{}{}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {13.19.1}With Arabic AP}{151}{subsection.13.19.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {13.19.2}With Trial Balance}{151}{subsection.13.19.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {13.19.3}With Regulations}{151}{subsection.13.19.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {13.19.4}With Simula}{152}{subsection.13.19.4}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {13.20}Wave assignment and sequencing}{152}{section.13.20}\protected@file@percent }
+\newlabel{sec:agent-waves}{{13.20}{152}{Wave assignment and sequencing}{section.13.20}{}}
+\newlabel{sec:agent-waves@cref}{{[section][20][13]13.20}{[1][152][]152}{}{}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {13.21}Acceptance criteria (platform-wide)}{153}{section.13.21}\protected@file@percent }
+\newlabel{sec:agent-acceptance}{{13.21}{153}{Acceptance criteria (platform-wide)}{section.13.21}{}}
+\newlabel{sec:agent-acceptance@cref}{{[section][21][13]13.21}{[1][153][]153}{}{}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {13.22}References}{154}{section.13.22}\protected@file@percent }
+\newlabel{sec:agent-references}{{13.22}{154}{References}{section.13.22}{}}
+\newlabel{sec:agent-references@cref}{{[section][22][13]13.22}{[1][153][]154}{}{}{}}
+\@writefile{toc}{\contentsline {chapter}{\numberline {14}Cross-Specification Dependencies}{155}{chapter.14}\protected@file@percent }
+\@writefile{lof}{\addvspace {10\p@ }}
+\@writefile{lot}{\addvspace {10\p@ }}
+\newlabel{ch:cross-spec}{{14}{155}{Cross-Specification Dependencies}{chapter.14}{}}
+\newlabel{ch:cross-spec@cref}{{[chapter][14][]14}{[1][155][]155}{}{}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {14.1}Architecture Position}{156}{section.14.1}\protected@file@percent }
+\newlabel{sec:arch-position}{{14.1}{156}{Architecture Position}{section.14.1}{}}
+\newlabel{sec:arch-position@cref}{{[section][1][14]14.1}{[1][155][]156}{}{}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {14.2}Schema Dependencies}{156}{section.14.2}\protected@file@percent }
+\newlabel{sec:schema-deps}{{14.2}{156}{Schema Dependencies}{section.14.2}{}}
+\newlabel{sec:schema-deps@cref}{{[section][2][14]14.2}{[1][156][]156}{}{}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {14.2.1}Schemas Owned by Simula}{156}{subsection.14.2.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {14.2.2}Schemas Consumed from Other Domains}{157}{subsection.14.2.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {14.3}Regulations Integration}{157}{section.14.3}\protected@file@percent }
+\newlabel{sec:reg-integration}{{14.3}{157}{Regulations Integration}{section.14.3}{}}
+\newlabel{sec:reg-integration@cref}{{[section][3][14]14.3}{[1][157][]157}{}{}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {14.3.1}Pillar 1: Training Data Bounds}{157}{subsection.14.3.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {14.3.2}Pillar 2: Human Accountability}{158}{subsection.14.3.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {14.3.3}Pillar 3: Technical Controls}{158}{subsection.14.3.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {14.3.4}Pillar 4: Data Provenance}{158}{subsection.14.3.4}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {14.4}Arabic AP Integration}{158}{section.14.4}\protected@file@percent }
+\newlabel{sec:arabic-integration}{{14.4}{158}{Arabic AP Integration}{section.14.4}{}}
+\newlabel{sec:arabic-integration@cref}{{[section][4][14]14.4}{[1][158][]158}{}{}{}}
+\gdef \LT@iv {\LT@entry 
+    {1}{105.58464pt}\LT@entry 
+    {1}{125.81102pt}\LT@entry 
+    {1}{148.26378pt}}
+\@writefile{toc}{\contentsline {section}{\numberline {14.5}Trial Balance Integration}{159}{section.14.5}\protected@file@percent }
+\newlabel{sec:tb-integration}{{14.5}{159}{Trial Balance Integration}{section.14.5}{}}
+\newlabel{sec:tb-integration@cref}{{[section][5][14]14.5}{[1][159][]159}{}{}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {14.6}Cross-Reference Summary}{159}{section.14.6}\protected@file@percent }
+\newlabel{sec:xref-summary}{{14.6}{159}{Cross-Reference Summary}{section.14.6}{}}
+\newlabel{sec:xref-summary@cref}{{[section][6][14]14.6}{[1][159][]159}{}{}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {14.1}{\ignorespaces Simula cross-specification references}}{160}{table.14.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {chapter}{\numberline {15}Schema Versioning and Interface Contracts}{161}{chapter.15}\protected@file@percent }
+\@writefile{lof}{\addvspace {10\p@ }}
+\@writefile{lot}{\addvspace {10\p@ }}
+\newlabel{chap:schema-versioning}{{15}{161}{Schema Versioning and Interface Contracts}{chapter.15}{}}
+\newlabel{chap:schema-versioning@cref}{{[chapter][15][]15}{[1][161][]161}{}{}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {15.1}Versioning Policy}{161}{section.15.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {15.1.1}Semantic Versioning for Schemas}{162}{subsection.15.1.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {15.1.2}Current Schema Versions}{162}{subsection.15.1.2}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {15.1}{\ignorespaces Simula schema versions as of v1.2.}}{162}{table.caption.45}\protected@file@percent }
+\newlabel{tab:schema-versions}{{15.1}{162}{Simula schema versions as of v1.2}{table.caption.45}{}}
+\newlabel{tab:schema-versions@cref}{{[table][1][15]15.1}{[1][162][]162}{}{}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {15.2}Schema Evolution Rules}{162}{section.15.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {15.2.1}Backward Compatibility Requirements}{162}{subsection.15.2.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {15.2.2}Deprecation Process}{163}{subsection.15.2.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {15.3}Cross-Domain Interface Contracts}{163}{section.15.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {15.3.1}Schema-In, TrainingExample-Out Contract}{163}{subsection.15.3.1}\protected@file@percent }
+\@writefile{lol}{\contentsline {lstlisting}{\numberline {15.1}{\ignorespaces Cross-domain interface contract.}}{163}{lstlisting.15.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {15.3.2}Interface Versioning}{164}{subsection.15.3.2}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {15.2}{\ignorespaces Cross-domain interface versions.}}{164}{table.caption.46}\protected@file@percent }
+\newlabel{tab:interface-versions}{{15.2}{164}{Cross-domain interface versions}{table.caption.46}{}}
+\newlabel{tab:interface-versions@cref}{{[table][2][15]15.2}{[1][164][]164}{}{}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {15.4}Schema Validation}{164}{section.15.4}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {15.4.1}Validation Points}{164}{subsection.15.4.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {15.4.2}Validation Implementation}{165}{subsection.15.4.2}\protected@file@percent }
+\@writefile{lol}{\contentsline {lstlisting}{\numberline {15.2}{\ignorespaces Schema validation in the pipeline.}}{165}{lstlisting.15.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {15.5}Changelog Management}{165}{section.15.5}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {15.5.1}Schema Changelog Location}{165}{subsection.15.5.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {15.5.2}Changelog Entry Format}{166}{subsection.15.5.2}\protected@file@percent }
+\@writefile{lol}{\contentsline {lstlisting}{\numberline {15.3}{\ignorespaces Changelog entry format.}}{166}{lstlisting.15.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {15.6}Version Negotiation}{166}{section.15.6}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {15.6.1}Runtime Version Checking}{166}{subsection.15.6.1}\protected@file@percent }
+\@writefile{lol}{\contentsline {lstlisting}{\numberline {15.4}{\ignorespaces Version negotiation.}}{166}{lstlisting.15.4}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {15.6.2}Graceful Degradation}{167}{subsection.15.6.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {15.7}Implementation Checklist}{167}{section.15.7}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {15.8}Governance}{168}{section.15.8}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {15.8.1}Schema Change Approval}{168}{subsection.15.8.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {15.8.2}Change Ownership}{168}{subsection.15.8.2}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {15.3}{\ignorespaces Schema ownership.}}{168}{table.caption.47}\protected@file@percent }
+\newlabel{tab:schema-ownership}{{15.3}{168}{Schema ownership}{table.caption.47}{}}
+\newlabel{tab:schema-ownership@cref}{{[table][3][15]15.3}{[1][168][]168}{}{}{}}
+\@writefile{toc}{\contentsline {chapter}{\numberline {16}Project Roadmap}{169}{chapter.16}\protected@file@percent }
+\@writefile{lof}{\addvspace {10\p@ }}
+\@writefile{lot}{\addvspace {10\p@ }}
+\newlabel{sec:sim-roadmap}{{16}{169}{Project Roadmap}{chapter.16}{}}
+\newlabel{sec:sim-roadmap@cref}{{[chapter][16][]16}{[1][169][]169}{}{}{}}
+\@writefile{toc}{\contentsline {subsection}{Scope of this chapter}{169}{section*.48}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{Sequence, not dates.}{170}{section*.48}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {16.1}MoSCoW classification}{170}{section.16.1}\protected@file@percent }
+\newlabel{sec:sim-moscow}{{16.1}{170}{MoSCoW classification}{section.16.1}{}}
+\newlabel{sec:sim-moscow@cref}{{[section][1][16]16.1}{[1][170][]170}{}{}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {16.2}Dependency graph}{170}{section.16.2}\protected@file@percent }
+\newlabel{sec:sim-dependency-graph}{{16.2}{170}{Dependency graph}{section.16.2}{}}
+\newlabel{sec:sim-dependency-graph@cref}{{[section][2][16]16.2}{[1][170][]170}{}{}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {16.3}Project milestones}{170}{section.16.3}\protected@file@percent }
+\newlabel{sec:sim-milestones}{{16.3}{170}{Project milestones}{section.16.3}{}}
+\newlabel{sec:sim-milestones@cref}{{[section][3][16]16.3}{[1][170][]170}{}{}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {16.1}{\ignorespaces MoSCoW prioritisation (shared across the four SAP OSS Finance projects).}}{171}{table.caption.49}\protected@file@percent }
+\newlabel{tab:sim-moscow}{{16.1}{171}{MoSCoW prioritisation (shared across the four SAP OSS Finance projects)}{table.caption.49}{}}
+\newlabel{tab:sim-moscow@cref}{{[table][1][16]16.1}{[1][170][]171}{}{}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {16.2}{\ignorespaces Simula v1.2 project milestones in dependency order. Priority: M=Must (critical path), S=Should, C=Could, W=Won't.}}{172}{table.caption.51}\protected@file@percent }
+\newlabel{tab:sim-milestones}{{16.2}{172}{Simula v1.2 project milestones in dependency order. Priority: M=Must (critical path), S=Should, C=Could, W=Won't}{table.caption.51}{}}
+\newlabel{tab:sim-milestones@cref}{{[table][2][16]16.2}{[1][170][]172}{}{}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {16.1}{\ignorespaces Simula dependency graph. Amber nodes are Must (critical path); blue are Should (consumer-corpus allowance); dotted green are Could (discretionary). Solid arrows are hard prerequisites; dashed arrows indicate conditional starts (the target is unlocked when the upstream completes \textit  {and} the v1.3 trigger in \cref  {sec:sim-v13-trigger} fires).}}{173}{figure.caption.50}\protected@file@percent }
+\newlabel{fig:sim-dependency-graph}{{16.1}{173}{Simula dependency graph. Amber nodes are Must (critical path); blue are Should (consumer-corpus allowance); dotted green are Could (discretionary). Solid arrows are hard prerequisites; dashed arrows indicate conditional starts (the target is unlocked when the upstream completes \emph {and} the v1.3 trigger in \cref {sec:sim-v13-trigger} fires)}{figure.caption.50}{}}
+\newlabel{fig:sim-dependency-graph@cref}{{[figure][1][16]16.1}{[1][170][]173}{}{}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {16.4}Launch tiers and exit gates}{173}{section.16.4}\protected@file@percent }
+\newlabel{sec:sim-launch-tiers}{{16.4}{173}{Launch tiers and exit gates}{section.16.4}{}}
+\newlabel{sec:sim-launch-tiers@cref}{{[section][4][16]16.4}{[1][170][]173}{}{}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {16.5}Kill-switch conditions}{173}{section.16.5}\protected@file@percent }
+\newlabel{sec:sim-kill-switch}{{16.5}{173}{Kill-switch conditions}{section.16.5}{}}
+\newlabel{sec:sim-kill-switch@cref}{{[section][5][16]16.5}{[1][173][]173}{}{}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {16.3}{\ignorespaces Simula launch tiers. The exit gate defines the MoSCoW items that must be closed to exit the tier.}}{174}{table.caption.52}\protected@file@percent }
+\newlabel{tab:sim-launch-tiers}{{16.3}{174}{Simula launch tiers. The exit gate defines the MoSCoW items that must be closed to exit the tier}{table.caption.52}{}}
+\newlabel{tab:sim-launch-tiers@cref}{{[table][3][16]16.3}{[1][170][]174}{}{}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {16.4}{\ignorespaces Simula kill-switch.}}{175}{table.caption.53}\protected@file@percent }
+\newlabel{tab:sim-kill-switch}{{16.4}{175}{Simula kill-switch}{table.caption.53}{}}
+\newlabel{tab:sim-kill-switch@cref}{{[table][4][16]16.4}{[1][173][]175}{}{}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {16.6}Shared-platform dependencies}{176}{section.16.6}\protected@file@percent }
+\newlabel{sec:sim-shared-deps}{{16.6}{176}{Shared-platform dependencies}{section.16.6}{}}
+\newlabel{sec:sim-shared-deps@cref}{{[section][6][16]16.6}{[1][173][]176}{}{}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {16.5}{\ignorespaces Shared-platform dependencies.}}{176}{table.caption.54}\protected@file@percent }
+\newlabel{tab:sim-shared-deps}{{16.5}{176}{Shared-platform dependencies}{table.caption.54}{}}
+\newlabel{tab:sim-shared-deps@cref}{{[table][5][16]16.5}{[1][176][]176}{}{}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {16.7}v1.3 expansion trigger}{176}{section.16.7}\protected@file@percent }
+\newlabel{sec:sim-v13-trigger}{{16.7}{176}{v1.3 expansion trigger}{section.16.7}{}}
+\newlabel{sec:sim-v13-trigger@cref}{{[section][7][16]16.7}{[1][176][]176}{}{}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {16.8}Governance and business-case cadence}{177}{section.16.8}\protected@file@percent }
+\newlabel{sec:sim-governance}{{16.8}{177}{Governance and business-case cadence}{section.16.8}{}}
+\newlabel{sec:sim-governance@cref}{{[section][8][16]16.8}{[1][177][]177}{}{}{}}
+\@writefile{toc}{\contentsline {subsubsection}{Project governance.}{177}{section.16.8}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{Business-case refresh (M08).}{177}{section.16.8}\protected@file@percent }
+\@writefile{toc}{\contentsline {chapter}{\numberline {17}Implementation Roadmap}{179}{chapter.17}\protected@file@percent }
+\@writefile{lof}{\addvspace {10\p@ }}
+\@writefile{lot}{\addvspace {10\p@ }}
+\newlabel{chap:implementation-roadmap}{{17}{179}{Implementation Roadmap}{chapter.17}{}}
+\newlabel{chap:implementation-roadmap@cref}{{[chapter][17][]17}{[1][179][]179}{}{}{}}
+\@writefile{toc}{\contentsline {section}{Integration with existing chapters}{179}{section*.55}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{Scope of this chapter}{180}{section*.55}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{Relationship to Project Milestones}{180}{section*.55}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {17.1}{\ignorespaces Mapping of Project Milestones (Ch.~\ref {sec:sim-roadmap}) to Enterprise Phases (Ch.~\ref {chap:implementation-roadmap})}}{181}{table.caption.56}\protected@file@percent }
+\newlabel{tab:milestone-to-phase}{{17.1}{181}{Mapping of Project Milestones (Ch.~\ref {sec:sim-roadmap}) to Enterprise Phases (Ch.~\ref {chap:implementation-roadmap})}{table.caption.56}{}}
+\newlabel{tab:milestone-to-phase@cref}{{[table][1][17]17.1}{[1][180][]181}{}{}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {17.2}{\ignorespaces Typical Phase Durations (Resource-Dependent)}}{181}{table.caption.57}\protected@file@percent }
+\newlabel{tab:typical-durations}{{17.2}{181}{Typical Phase Durations (Resource-Dependent)}{table.caption.57}{}}
+\newlabel{tab:typical-durations@cref}{{[table][2][17]17.2}{[1][181][]181}{}{}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {17.1}Roadmap Overview}{181}{section.17.1}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {17.1}{\ignorespaces Simula implementation phases.}}{182}{figure.caption.58}\protected@file@percent }
+\newlabel{fig:phases}{{17.1}{182}{Simula implementation phases}{figure.caption.58}{}}
+\newlabel{fig:phases@cref}{{[figure][1][17]17.1}{[1][181][]182}{}{}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {17.1.1}Phase Dependencies}{182}{subsection.17.1.1}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {17.3}{\ignorespaces Phase entry criteria.}}{182}{table.caption.59}\protected@file@percent }
+\newlabel{tab:phase-entry}{{17.3}{182}{Phase entry criteria}{table.caption.59}{}}
+\newlabel{tab:phase-entry@cref}{{[table][3][17]17.3}{[1][181][]182}{}{}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {17.2}Phase 1: Foundation Capability Building}{182}{section.17.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {17.2.1}Phase 1 Objectives}{182}{subsection.17.2.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {17.2.2}Phase 1 Deliverables}{183}{subsection.17.2.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{1.1 Use Case Definition and Value-Risk Assessment}{183}{subsection.17.2.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{1.2 Cross-Functional Team Assembly}{184}{subsection.17.2.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{1.3 Governance Framework Integration}{185}{subsection.17.2.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{1.4 Domain Taxonomy Construction}{186}{subsection.17.2.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{1.5 Metadata and Provenance Infrastructure}{187}{subsection.17.2.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{1.6 Quality Assessment Pipeline}{188}{subsection.17.2.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {17.2.3}Phase 1 Exit Criteria}{188}{subsection.17.2.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {17.3}Phase 2: Scaled Deployment}{189}{section.17.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {17.3.1}Phase 2 Objectives}{189}{subsection.17.3.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {17.3.2}Phase 2 Deliverables}{189}{subsection.17.3.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{2.1 Parameter Configuration Interface}{190}{subsection.17.3.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{2.2 Privacy Risk Assessment System}{191}{subsection.17.3.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{2.3 Bias Detection and Mitigation}{192}{subsection.17.3.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{2.4 Access Control and Permissions}{193}{subsection.17.3.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{2.5 ML Pipeline Integration}{194}{subsection.17.3.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{2.6 Audit Logging System}{195}{subsection.17.3.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {17.3.3}Phase 2 Exit Criteria}{195}{subsection.17.3.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {17.4}Phase 3: Mature Operations and Continuous Optimization}{196}{section.17.4}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {17.4.1}Phase 3 Objectives}{196}{subsection.17.4.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {17.4.2}Phase 3 Deliverables}{196}{subsection.17.4.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{3.1 Continuous Monitoring and Drift Detection}{197}{subsection.17.4.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{3.2 Regulatory Compliance Completion}{198}{subsection.17.4.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{3.3 Transparency and Explainability}{199}{subsection.17.4.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{3.4 Incident Response Procedures}{200}{subsection.17.4.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{3.5 Cost and Budget Optimization}{201}{subsection.17.4.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{3.6 Incremental Generation Capability}{202}{subsection.17.4.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {17.4.3}Phase 3 Exit Criteria}{202}{subsection.17.4.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {17.5}Key Success Factors}{203}{section.17.5}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {17.5.1}Critical Success Factors}{203}{subsection.17.5.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {17.5.2}Risk Mitigation Summary}{203}{subsection.17.5.2}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {17.4}{\ignorespaces Key risks and mitigations by phase.}}{203}{table.caption.60}\protected@file@percent }
+\newlabel{tab:phase-risks}{{17.4}{203}{Key risks and mitigations by phase}{table.caption.60}{}}
+\newlabel{tab:phase-risks@cref}{{[table][4][17]17.4}{[1][203][]203}{}{}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {17.6}Requirements Coverage by Phase}{204}{section.17.6}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {17.5}{\ignorespaces Business requirements addressed by phase.}}{204}{table.caption.61}\protected@file@percent }
+\newlabel{tab:req-by-phase}{{17.5}{204}{Business requirements addressed by phase}{table.caption.61}{}}
+\newlabel{tab:req-by-phase@cref}{{[table][5][17]17.5}{[1][203][]204}{}{}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {17.7}SAP Technology Stack Summary}{204}{section.17.7}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {17.6}{\ignorespaces SAP technology integration by capability.}}{205}{table.caption.62}\protected@file@percent }
+\newlabel{tab:sap-stack}{{17.6}{205}{SAP technology integration by capability}{table.caption.62}{}}
+\newlabel{tab:sap-stack@cref}{{[table][6][17]17.6}{[1][204][]205}{}{}{}}
+\@writefile{toc}{\contentsline {chapter}{\numberline {18}Future Directions (v1.3+)}{207}{chapter.18}\protected@file@percent }
+\@writefile{lof}{\addvspace {10\p@ }}
+\@writefile{lot}{\addvspace {10\p@ }}
+\newlabel{chap:future-directions}{{18}{207}{Future Directions (v1.3+)}{chapter.18}{}}
+\newlabel{chap:future-directions@cref}{{[chapter][18][]18}{[1][207][]207}{}{}{}}
+\@writefile{toc}{\contentsline {section}{Integration with existing chapters}{208}{section*.63}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{Scope of this chapter}{209}{section*.63}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {18.1}Enhancement Overview}{209}{section.18.1}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {18.1}{\ignorespaces Simula enhancement dimensions.}}{209}{table.caption.64}\protected@file@percent }
+\newlabel{tab:enhancement-dimensions}{{18.1}{209}{Simula enhancement dimensions}{table.caption.64}{}}
+\newlabel{tab:enhancement-dimensions@cref}{{[table][1][18]18.1}{[1][209][]209}{}{}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {18.2}Enhancement 1: Multi-Modal Extension}{210}{section.18.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {18.2.1}Current Limitation}{210}{subsection.18.2.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {18.2.2}Cross-Modal Reasoning Scaffolds}{210}{subsection.18.2.2}\protected@file@percent }
+\@writefile{lol}{\contentsline {lstlisting}{\numberline {18.1}{\ignorespaces Cross-modal taxonomy extension.}}{210}{lstlisting.18.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {18.2.3}Modality-Aware Complexification}{211}{subsection.18.2.3}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {18.2}{\ignorespaces Modality-specific complexity dimensions.}}{212}{table.caption.65}\protected@file@percent }
+\newlabel{tab:modality-complexity}{{18.2}{212}{Modality-specific complexity dimensions}{table.caption.65}{}}
+\newlabel{tab:modality-complexity@cref}{{[table][2][18]18.2}{[1][211][]212}{}{}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {18.2.4}SAP Integration: Document Information Extraction}{212}{subsection.18.2.4}\protected@file@percent }
+\@writefile{lol}{\contentsline {lstlisting}{\numberline {18.2}{\ignorespaces SAP DOX multi-modal integration.}}{212}{lstlisting.18.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {18.3}Enhancement 2: Domain Adaptation Calibration}{213}{section.18.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {18.3.1}Current Limitation}{213}{subsection.18.3.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {18.3.2}Human-in-Loop Knowledge Anchors}{213}{subsection.18.3.2}\protected@file@percent }
+\@writefile{lol}{\contentsline {lstlisting}{\numberline {18.3}{\ignorespaces Domain knowledge anchor injection.}}{213}{lstlisting.18.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {18.3.3}Vertical-Specific Complexity Metrics}{215}{subsection.18.3.3}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {18.3}{\ignorespaces Vertical-specific complexity definitions.}}{215}{table.caption.66}\protected@file@percent }
+\newlabel{tab:vertical-complexity}{{18.3}{215}{Vertical-specific complexity definitions}{table.caption.66}{}}
+\newlabel{tab:vertical-complexity@cref}{{[table][3][18]18.3}{[1][214][]215}{}{}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {18.3.4}SAP Integration: S/4HANA Domain Schemas}{215}{subsection.18.3.4}\protected@file@percent }
+\@writefile{lol}{\contentsline {lstlisting}{\numberline {18.4}{\ignorespaces SAP S/4HANA domain calibration.}}{215}{lstlisting.18.4}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {18.4}Enhancement 3: Closed-Loop Validation}{216}{section.18.4}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {18.4.1}Current Limitation}{216}{subsection.18.4.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {18.4.2}Training-Validation Feedback Loop}{217}{subsection.18.4.2}\protected@file@percent }
+\@writefile{lol}{\contentsline {lstlisting}{\numberline {18.5}{\ignorespaces Closed-loop validation architecture.}}{217}{lstlisting.18.5}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {18.4.3}Adversarial Verification Layer}{219}{subsection.18.4.3}\protected@file@percent }
+\@writefile{lol}{\contentsline {lstlisting}{\numberline {18.6}{\ignorespaces Adversarial verification for distribution drift.}}{219}{lstlisting.18.6}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {18.4.4}SAP Integration: AI Core MLOps}{220}{subsection.18.4.4}\protected@file@percent }
+\@writefile{lol}{\contentsline {lstlisting}{\numberline {18.7}{\ignorespaces SAP AI Core integration for closed-loop training.}}{220}{lstlisting.18.7}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {18.5}Enhancement 4: Programmable Workflow Engine}{221}{section.18.5}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {18.5.1}Current Limitation}{221}{subsection.18.5.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {18.5.2}Declarative Dataset Specification Language}{221}{subsection.18.5.2}\protected@file@percent }
+\@writefile{lol}{\contentsline {lstlisting}{\numberline {18.8}{\ignorespaces Simula dataset specification DSL.}}{221}{lstlisting.18.8}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {18.5.3}Version Control and Reproducibility}{223}{subsection.18.5.3}\protected@file@percent }
+\@writefile{lol}{\contentsline {lstlisting}{\numberline {18.9}{\ignorespaces Git-like versioning for datasets.}}{223}{lstlisting.18.9}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {18.5.4}SAP Integration: BTP and HANA Cloud}{224}{subsection.18.5.4}\protected@file@percent }
+\@writefile{lol}{\contentsline {lstlisting}{\numberline {18.10}{\ignorespaces SAP BTP integration for workflow orchestration.}}{224}{lstlisting.18.10}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {18.6}Regulatory Framework Alignment}{225}{section.18.6}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {18.6.1}UK FCA Synthetic Data Expert Group}{225}{subsection.18.6.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {18.6.2}IEEE Synthetic Data White Paper}{226}{subsection.18.6.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {18.6.3}World Economic Forum Guidelines}{226}{subsection.18.6.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {18.7}Implementation Checklist}{227}{section.18.7}\protected@file@percent }
+\@writefile{toc}{\contentsline {chapter}{\numberline {A}Implementation Gap Review and Agent Rule Pack}{229}{appendix.A}\protected@file@percent }
+\@writefile{lof}{\addvspace {10\p@ }}
+\@writefile{lot}{\addvspace {10\p@ }}
+\newlabel{chap:simula-gap-review}{{A}{229}{Implementation Gap Review and Agent Rule Pack}{appendix.A}{}}
+\newlabel{chap:simula-gap-review@cref}{{[chapter][1][]A}{[1][229][]229}{}{}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {A.1}Review scope and constraints}{230}{section.A.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {A.2}Executive assessment}{231}{section.A.2}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {A.1}{\ignorespaces Current implementation status against the Simula specification.}}{231}{table.caption.67}\protected@file@percent }
+\newlabel{tab:simula-gap-summary}{{A.1}{231}{Current implementation status against the Simula specification}{table.caption.67}{}}
+\newlabel{tab:simula-gap-summary@cref}{{[table][1][1]A.1}{[1][230][]231}{}{}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {A.3}Validation performed}{231}{section.A.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {A.4}Gap-to-Milestone Mapping Summary}{232}{section.A.4}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {A.5}Findings in \texttt  {src/training}}{232}{section.A.5}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {A.2}{\ignorespaces P0 Gap to Milestone Blocking Relationship}}{233}{table.caption.68}\protected@file@percent }
+\newlabel{tab:gap-milestone-mapping}{{A.2}{233}{P0 Gap to Milestone Blocking Relationship}{table.caption.68}{}}
+\newlabel{tab:gap-milestone-mapping@cref}{{[table][2][1]A.2}{[1][232][]233}{}{}{}}
+\newlabel{gap:sim-001}{{A.5}{234}{}{section.A.5}{}}
+\newlabel{gap:sim-001@cref}{{[section][5][1]A.5}{[1][232][]234}{}{}{}}
+\newlabel{gap:sim-002}{{A.5}{234}{}{section.A.5}{}}
+\newlabel{gap:sim-002@cref}{{[section][5][1]A.5}{[1][234][]234}{}{}{}}
+\newlabel{gap:sim-003}{{A.5}{235}{}{section.A.5}{}}
+\newlabel{gap:sim-003@cref}{{[section][5][1]A.5}{[1][235][]235}{}{}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {A.6}Findings in \texttt  {src/generativeUI/training-webcomponents-ngx}}{239}{section.A.6}\protected@file@percent }
+\newlabel{gap:ui-001}{{A.6}{239}{}{section.A.6}{}}
+\newlabel{gap:ui-001@cref}{{[section][6][1]A.6}{[1][239][]239}{}{}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {A.7}Proposed implementation-agent rule file}{243}{section.A.7}\protected@file@percent }
+\newlabel{sec:simula-proposed-clinerules}{{A.7}{243}{Proposed implementation-agent rule file}{section.A.7}{}}
+\newlabel{sec:simula-proposed-clinerules@cref}{{[section][7][1]A.7}{[1][242][]243}{}{}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {A.8}Proposed runtime-monitor agent rule file}{244}{section.A.8}\protected@file@percent }
+\newlabel{sec:simula-proposed-monitor-rules}{{A.8}{244}{Proposed runtime-monitor agent rule file}{section.A.8}{}}
+\newlabel{sec:simula-proposed-monitor-rules@cref}{{[section][8][1]A.8}{[1][244][]244}{}{}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {A.9}Sequenced remediation order}{245}{section.A.9}\protected@file@percent }
+\newlabel{sec:remediation-order}{{A.9}{245}{Sequenced remediation order}{section.A.9}{}}
+\newlabel{sec:remediation-order@cref}{{[section][9][1]A.9}{[1][245][]245}{}{}{}}
+\@writefile{toc}{\contentsline {chapter}{\numberline {B}SAP Integration Guide}{247}{appendix.B}\protected@file@percent }
+\@writefile{lof}{\addvspace {10\p@ }}
+\@writefile{lot}{\addvspace {10\p@ }}
+\newlabel{chap:sap-integration-guide}{{B}{247}{SAP Integration Guide}{appendix.B}{}}
+\newlabel{chap:sap-integration-guide@cref}{{[chapter][2][]B}{[1][247][]247}{}{}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {B.1}SAP HANA Cloud Integration}{247}{section.B.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {B.1.1}Connection Configuration}{247}{subsection.B.1.1}\protected@file@percent }
+\@writefile{lol}{\contentsline {lstlisting}{\numberline {B.1}{\ignorespaces HANA Cloud connection configuration}}{248}{lstlisting.B.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {B.1.2}Required Database Permissions}{248}{subsection.B.1.2}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {B.1}{\ignorespaces HANA Cloud permissions for Simula service user}}{248}{table.caption.69}\protected@file@percent }
+\newlabel{tab:hana-permissions}{{B.1}{248}{HANA Cloud permissions for Simula service user}{table.caption.69}{}}
+\newlabel{tab:hana-permissions@cref}{{[table][1][2]B.1}{[1][248][]248}{}{}{}}
+\@writefile{lol}{\contentsline {lstlisting}{\numberline {B.2}{\ignorespaces Granting minimum permissions}}{249}{lstlisting.B.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {B.1.3}HANA-Specific Type Mapping}{249}{subsection.B.1.3}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {B.2}{\ignorespaces HANA type to Simula schema type mapping}}{249}{table.caption.70}\protected@file@percent }
+\newlabel{tab:hana-type-mapping}{{B.2}{249}{HANA type to Simula schema type mapping}{table.caption.70}{}}
+\newlabel{tab:hana-type-mapping@cref}{{[table][2][2]B.2}{[1][249][]249}{}{}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {B.1.4}Spatial Type Handling}{250}{subsection.B.1.4}\protected@file@percent }
+\newlabel{sec:spatial-types}{{B.1.4}{250}{Spatial Type Handling}{subsection.B.1.4}{}}
+\newlabel{sec:spatial-types@cref}{{[subsection][4][2,1]B.1.4}{[1][249][]250}{}{}{}}
+\@writefile{lol}{\contentsline {lstlisting}{\numberline {B.3}{\ignorespaces Spatial type detection and handling}}{250}{lstlisting.B.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {B.2}SAP AI Core Integration}{251}{section.B.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {B.2.1}Deployment Configuration}{251}{subsection.B.2.1}\protected@file@percent }
+\@writefile{lol}{\contentsline {lstlisting}{\numberline {B.4}{\ignorespaces SAP AI Core serving configuration}}{251}{lstlisting.B.4}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {B.2.2}Training Pipeline Integration}{252}{subsection.B.2.2}\protected@file@percent }
+\@writefile{lol}{\contentsline {lstlisting}{\numberline {B.5}{\ignorespaces Registering training data with AI Core}}{252}{lstlisting.B.5}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {B.3}SAP BTP Services Integration}{253}{section.B.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {B.3.1}Credential Store}{253}{subsection.B.3.1}\protected@file@percent }
+\@writefile{lol}{\contentsline {lstlisting}{\numberline {B.6}{\ignorespaces Retrieving secrets from BTP Credential Store}}{253}{lstlisting.B.6}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {B.3.2}Audit Log Service}{254}{subsection.B.3.2}\protected@file@percent }
+\@writefile{lol}{\contentsline {lstlisting}{\numberline {B.7}{\ignorespaces Audit logging integration}}{254}{lstlisting.B.7}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {B.3.3}Alert Notification Service}{255}{subsection.B.3.3}\protected@file@percent }
+\@writefile{lol}{\contentsline {lstlisting}{\numberline {B.8}{\ignorespaces Alert notification for quality failures}}{255}{lstlisting.B.8}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {B.4}SAP Analytics Cloud Integration}{256}{section.B.4}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {B.4.1}Cost Tracking Dashboard}{256}{subsection.B.4.1}\protected@file@percent }
+\@writefile{lol}{\contentsline {lstlisting}{\numberline {B.9}{\ignorespaces Exporting metrics to Analytics Cloud}}{256}{lstlisting.B.9}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {B.4.2}Recommended Dashboard Widgets}{257}{subsection.B.4.2}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {B.3}{\ignorespaces SAC dashboard widget recommendations}}{257}{table.caption.71}\protected@file@percent }
+\newlabel{tab:sac-widgets}{{B.3}{257}{SAC dashboard widget recommendations}{table.caption.71}{}}
+\newlabel{tab:sac-widgets@cref}{{[table][3][2]B.3}{[1][256][]257}{}{}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {B.5}SAP GRC Integration}{257}{section.B.5}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {B.5.1}Policy Management}{257}{subsection.B.5.1}\protected@file@percent }
+\@writefile{lol}{\contentsline {lstlisting}{\numberline {B.10}{\ignorespaces GRC policy registration}}{257}{lstlisting.B.10}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {B.5.2}Compliance Evidence Collection}{258}{subsection.B.5.2}\protected@file@percent }
+\@writefile{lol}{\contentsline {lstlisting}{\numberline {B.11}{\ignorespaces GRC evidence collection}}{258}{lstlisting.B.11}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {B.6}SAP Build Apps Integration}{259}{section.B.6}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {B.6.1}API Endpoints}{259}{subsection.B.6.1}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {B.4}{\ignorespaces Simula REST API endpoints for Build Apps}}{259}{table.caption.72}\protected@file@percent }
+\newlabel{tab:api-endpoints}{{B.4}{259}{Simula REST API endpoints for Build Apps}{table.caption.72}{}}
+\newlabel{tab:api-endpoints@cref}{{[table][4][2]B.4}{[1][259][]259}{}{}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {B.6.2}Build Apps Data Entity}{259}{subsection.B.6.2}\protected@file@percent }
+\@writefile{lol}{\contentsline {lstlisting}{\numberline {B.12}{\ignorespaces Build Apps data entity for generation runs}}{259}{lstlisting.B.12}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {B.7}Quick Reference: Environment Variables}{261}{section.B.7}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {B.5}{\ignorespaces Complete environment variable reference}}{261}{table.caption.73}\protected@file@percent }
+\newlabel{tab:env-vars-complete}{{B.5}{261}{Complete environment variable reference}{table.caption.73}{}}
+\newlabel{tab:env-vars-complete@cref}{{[table][5][2]B.5}{[1][260][]261}{}{}{}}
+\@writefile{toc}{\contentsline {chapter}{\numberline {C}References}{263}{appendix.C}\protected@file@percent }
+\@writefile{lof}{\addvspace {10\p@ }}
+\@writefile{lot}{\addvspace {10\p@ }}
+\newlabel{chap:references}{{C}{263}{References}{appendix.C}{}}
+\newlabel{chap:references@cref}{{[chapter][3][]C}{[1][263][]263}{}{}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {C.1}Source Documents}{263}{section.C.1}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {C.1}{\ignorespaces Source Documents}}{263}{table.caption.74}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {C.2}Implementation Files}{264}{section.C.2}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {C.2}{\ignorespaces Implementation Files}}{264}{table.caption.75}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {C.3}Tools and Dependencies}{265}{section.C.3}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {C.3}{\ignorespaces Tools and Dependencies}}{265}{table.caption.76}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {C.4}Academic References}{265}{section.C.4}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {C.5}Related Specifications}{266}{section.C.5}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {C.6}Schema Registry}{266}{section.C.6}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {C.7}External Standards}{267}{section.C.7}\protected@file@percent }
+\@writefile{toc}{\contentsline {chapter}{\numberline {D}Global Wave-Dependency Manifest}{269}{appendix.D}\protected@file@percent }
+\@writefile{lof}{\addvspace {10\p@ }}
+\@writefile{lot}{\addvspace {10\p@ }}
+\newlabel{ch:global-dependencies}{{D}{269}{Global Wave-Dependency Manifest}{appendix.D}{}}
+\newlabel{ch:global-dependencies@cref}{{[chapter][4][]D}{[1][269][]269}{}{}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {D.1}Critical Path Visualization (Waves 1--3)}{269}{section.D.1}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {D.1}{\ignorespaces Cross-specification dependency graph: The blueprint for platform rollout.}}{270}{figure.caption.77}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {D.2}Inter-Domain Prerequisite Matrix}{270}{section.D.2}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {D.1}{\ignorespaces Normative Cross-Domain Prerequisites.}}{271}{table.caption.78}\protected@file@percent }
+\newlabel{tab:prerequisites}{{D.1}{271}{Normative Cross-Domain Prerequisites}{table.caption.78}{}}
+\newlabel{tab:prerequisites@cref}{{[table][1][4]D.1}{[1][270][]271}{}{}{}}
+\ttl@finishall
+\gdef \@abspage@last{272}

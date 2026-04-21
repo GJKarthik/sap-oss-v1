@@ -1,0 +1,69 @@
+\chapter{References}
+\label{ch:references}
+
+\section{Normative references}
+
+\begin{itemize}
+  \item \filepath{docs/pdf/specs/regulations-spec.pdf}
+  \item \filepath{docs/latex/specs/regulations/chapters/03-mgf-framework.tex}
+  \item \filepath{docs/latex/specs/regulations/chapters/08-monitoring-spec.tex}
+  \item \filepath{docs/latex/specs/regulations/chapters/10-identity-attribution.tex}
+  \item \filepath{docs/latex/specs/regulations/chapters/12-implementation-instructions.tex}
+\end{itemize}
+
+\section{Schema references}
+
+\begin{itemize}
+  \item \filepath{docs/schema/regulations/requirement.schema.json}
+  \item \filepath{docs/schema/regulations/conformance-tool.schema.json}
+  \item \filepath{docs/schema/regulations/agent-identity.schema.json}
+  \item \filepath{docs/schema/regulations/request-identity.schema.json}
+  \item \filepath{docs/schema/regulations/audit-event.schema.json}
+  \item \filepath{docs/schema/regulations/capability-monitoring-metrics.schema.json}
+  \item \filepath{docs/schema/common/exceptions-registry.schema.json}
+  \item \filepath{docs/schema/simula/training-example.schema.json}
+  \item \filepath{docs/schema/simula/taxonomy.schema.json}
+\end{itemize}
+
+\section{Repository rule-pack references}
+
+\begin{itemize}
+  \item \filepath{.clinerules}
+  \item \filepath{src/generativeUI/.clinerules}
+  \item \filepath{src/generativeUI/gateway/.clinerules.runtime-monitor}
+  \item \filepath{src/training/.clinerules}
+  \item \filepath{src/training/.clinerules.runtime-monitor}
+  \item \filepath{src/intelligence/.clinerules}
+  \item \filepath{src/intelligence/.clinerules.runtime-monitor}
+  \item \filepath{src/intelligence/model-registry.yaml}
+  \item \filepath{docs/schema/common/exceptions-registry.yaml}
+  \item \filepath{.baseline-clinerules-pointer}
+\end{itemize}
+
+\section{Version history}
+\label{sec:version-history}
+
+\begin{table}[htbp]
+\centering
+\footnotesize
+\caption{Document version history.}
+\label{tab:version-history}
+\begin{tabularx}{\textwidth}{@{}l l l X@{}}
+\toprule
+\textbf{Version} & \textbf{Date} & \textbf{Author} & \textbf{Changes} \\
+\midrule
+1.0.0 & 2026-04-15 & Platform Engineering & Initial specification release. \\
+1.1.0 & 2026-04-21 & Platform Engineering & Added: rule-pack lifecycle states (\cref{sec:lifecycle-states}), baseline warm-up period (\cref{sec:baseline-warmup}), inheritance conflict detection (\cref{sec:conflict-detection}), mandatory ingress overlay (\cref{sec:ingress-overlay}), inter-agent signaling (\cref{sec:inter-agent-signaling}), quantified benchmark scorecard (\cref{sec:benchmark-scorecard}). \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\section{Cross-references to other specifications}
+
+This specification relies on and is referenced by:
+\begin{itemize}
+  \item \textbf{Regulations Specification} (\filepath{docs/pdf/specs/regulations-spec.pdf}): Defines the governance framework that all rule packs must inherit.
+  \item \textbf{Simula Training Specification} (\filepath{docs/pdf/specs/simula-training-spec.pdf}): Consumes the Simula domain rule packs defined here.
+  \item \textbf{TB Review Specification} (\filepath{docs/pdf/specs/tb-review-spec.pdf}): May adopt the swarm delivery model for its governance needs.
+  \item \textbf{Arabic AP Specification} (\filepath{docs/pdf/specs/arabic-ap-spec.pdf}): May adopt the swarm delivery model for its governance needs.
+\end{itemize}

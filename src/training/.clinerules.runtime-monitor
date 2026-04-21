@@ -17,7 +17,8 @@ Source Of Truth
 - Normative spec:
   - `docs/pdf/specs/simula-training-spec.pdf`
   - `docs/latex/specs/simula/chapters/06-environment-cli.tex`
-  - `docs/latex/specs/simula/chapters/07-references.tex`
+  - `docs/latex/specs/simula/chapters/07-evaluation-framework.tex`
+  - `docs/latex/specs/simula/chapters/07a-worked-example.tex`
 - Normative contracts:
   - `docs/schema/simula/training-example.schema.json`
   - `docs/schema/simula/taxonomy.schema.json`

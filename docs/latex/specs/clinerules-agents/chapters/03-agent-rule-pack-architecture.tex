@@ -1,0 +1,176 @@
+\chapter{Agent Rule-Pack Architecture}
+\label{ch:architecture}
+
+\section{Repository path convention}
+
+\begin{table}[htbp]
+\centering
+\footnotesize
+\caption{Standard path convention for .clinerules packs.}
+\label{tab:path-convention}
+\begin{tabularx}{\textwidth}{@{}l X@{}}
+\toprule
+\textbf{Path} & \textbf{Meaning} \\
+\midrule
+\filepath{.clinerules} & Repository-wide or umbrella rules that are not owned by a single implementation subtree. \\
+\filepath{src/<domain>/.clinerules} & Development and maintenance contract for one domain or service family. \\
+\filepath{src/<domain>/.clinerules.runtime-monitor} & Runtime monitoring and alerting contract for the same domain or service family. \\
+\filepath{src/<domain>/tests/test_clinerules_contracts.py} or equivalent & Validation harness that proves the rule packs are structurally complete and benchmarked. \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\section{Frontmatter format definition}
+\label{sec:frontmatter-format}
+
+Every \artifact{.clinerules} pack MUST begin with a YAML frontmatter
+block delimited by triple-dashes (\texttt{---}). This block defines
+the mission, state, and governance linkage for the agent.
+
+\begin{adrbox}{YAML-between-Dashes}
+We mandate YAML frontmatter to ensure that metadata (version, domain,
+conformance tags) is machine-readable by the validation harness without
+requiring a full markdown parser.
+\end{adrbox}
+
+\section{Minimum contents of a development pack}
+
+Every development rule pack must encode, at minimum:
+\begin{enumerate}
+  \item purpose and mission;
+  \item source of truth;
+  \item read-first files;
+  \item current repo reality and known issue registry;
+  \item definition of done;
+  \item non-negotiable engineering rules;
+  \item contract rules for schemas, payloads, and artefacts;
+  \item integration rules for adjacent systems;
+  \item pre-change checklist;
+  \item post-change smoke tests;
+  \item completion blockers.
+\end{enumerate}
+
+\section{Minimum contents of a runtime-monitor pack}
+
+Every runtime-monitor pack must encode, at minimum:
+\begin{enumerate}
+  \item purpose and mission;
+  \item source of truth;
+  \item evidence sources;
+  \item healthy versus unhealthy criteria;
+  \item critical, high, medium, and informational conditions;
+  \item condition codes;
+  \item response rules and escalation path;
+  \item operator triage checklist;
+  \item minimum evidence required to close an alert.
+\end{enumerate}
+
+\section{Cross-domain inventory required by this specification}
+
+\begin{table}[htbp]
+\centering
+\footnotesize
+\caption{Target rule-pack inventory.}
+\label{tab:inventory}
+\begin{tabularx}{\textwidth}{@{}l l X@{}}
+\toprule
+\textbf{Area} & \textbf{Path} & \textbf{Role} \\
+\midrule
+Shared repository & \filepath{.clinerules} & Repo-wide documentation and standards baseline. \\
+Generative UI & \filepath{src/generativeUI/.clinerules} & Deployment and monitoring standards for the UI stack. \\
+Simula training & \filepath{src/training/.clinerules} & Implementation and migration contract for the Simula path. \\
+Simula runtime & \filepath{src/training/.clinerules.runtime-monitor} & Monitoring and alerting contract for Simula runs. \\
+Regulations development & \filepath{src/intelligence/.clinerules} & Governance-runtime implementation contract. \\
+Regulations runtime & \filepath{src/intelligence/.clinerules.runtime-monitor} & Monitoring, alerting, and fail-closed contract for governance runtime. \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\section{Rule-pack inheritance conflict detection}
+\label{sec:conflict-detection}
+
+The validation harness MUST include automated checks that ensure
+domain-specific packs do not override critical regulatory constraints
+with less restrictive values. This is the technical enforcement of the
+``inherit, never weaken'' principle.
+
+\subsection{Inheritance hierarchy}
+
+Rule packs inherit in the following order (most general to most
+specific):
+\begin{enumerate}
+  \item \textbf{Repository-level}: \filepath{.clinerules} (baseline)
+  \item \textbf{Intelligence-level}: \filepath{src/intelligence/.clinerules}
+    (regulations envelope)
+  \item \textbf{Domain-level}: \filepath{src/<domain>/.clinerules}
+    (domain-specific constraints)
+\end{enumerate}
+
+\subsection{Critical safety flags}
+
+The following flags are designated as \textbf{safety-critical} and
+may only be \emph{tightened} (made more restrictive) by child packs,
+never \emph{loosened}:
+
+\begin{table}[htbp]
+\centering
+\footnotesize
+\caption{Safety-critical flags and their tightening direction.}
+\label{tab:safety-flags}
+\begin{tabularx}{\textwidth}{@{}l l X@{}}
+\toprule
+\textbf{Flag} & \textbf{Tightening direction} & \textbf{Violation example} \\
+\midrule
+\texttt{deny\_by\_default} & \texttt{false} $\rightarrow$ \texttt{true} only & Domain sets \texttt{true} $\rightarrow$ \texttt{false}. \\
+\texttt{allow\_unlisted\_tools} & \texttt{true} $\rightarrow$ \texttt{false} only & Domain enables unlisted tools when parent denies. \\
+\texttt{require\_identity\_envelope} & \texttt{false} $\rightarrow$ \texttt{true} only & Domain disables identity requirement. \\
+\texttt{audit\_before\_action} & \texttt{false} $\rightarrow$ \texttt{true} only & Domain disables pre-action audit. \\
+\texttt{circuit\_break\_enabled} & \texttt{false} $\rightarrow$ \texttt{true} only & Domain disables circuit breaker. \\
+\texttt{max\_retries} & May only \emph{decrease} & Domain increases retry limit beyond parent. \\
+\texttt{timeout\_ms} & May only \emph{decrease} & Domain increases timeout beyond parent. \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\subsection{Automated conflict detection}
+
+The validation harness SHALL:
+\begin{enumerate}
+  \item Load packs in inheritance order (Repository $\rightarrow$
+    Intelligence $\rightarrow$ Domain).
+  \item For each safety-critical flag, compare the child value against
+    the parent value.
+  \item If a child value is less restrictive than the parent, emit a
+    \textbf{CONFLICT\_ERROR} with:
+    \begin{itemize}
+      \item the flag name;
+      \item the parent path and value;
+      \item the child path and attempted value;
+      \item the allowed tightening direction.
+    \end{itemize}
+  \item Block CI/CD pipeline progression if any conflict is detected.
+\end{enumerate}
+
+\subsection{Conflict resolution workflow}
+
+When a conflict is detected:
+\begin{enumerate}
+  \item The domain team MUST either:
+    \begin{itemize}
+      \item remove the conflicting override;
+      \item or request a formal exception via the Controls Architecture
+        Team.
+    \end{itemize}
+  \item Exceptions require documented risk acceptance and a time-bound
+    remediation plan.
+  \item All exceptions MUST be logged to
+    \filepath{docs/schema/common/exceptions-registry.yaml} (validated
+    against \filepath{exceptions-registry.schema.json}) with:
+    \begin{itemize}
+      \item exception ID;
+      \item requesting domain;
+      \item justification;
+      \item expiry date;
+      \item approving authority.
+    \end{itemize}
+\end{enumerate}

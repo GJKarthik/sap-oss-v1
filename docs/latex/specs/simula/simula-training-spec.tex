@@ -1,57 +1,39 @@
 % =============================================================================
-% Simula Training Data Framework — Implementation Specification
-% Main document - includes chapter files
+% SIMULA TRAINING DATA FRAMEWORK SPECIFICATION
+% Reasoning-Driven Synthetic Data Generation for SAP AI Agents
+% Version: 1.2.0
 % =============================================================================
-\documentclass[11pt,a4paper]{report}
+\documentclass[12pt,a4paper,twoside]{report}
+
+% --- Shared SAP-OSS Style Packages ------------------------------------------
+\usepackage{sap-oss-colors}
+\usepackage{sap-oss-boxes}
+\usepackage{sap-oss-listings}
 
 \usepackage[utf8]{inputenc}
 \usepackage[T1]{fontenc}
 \usepackage{lmodern}
-\usepackage{amsmath}
-\usepackage[margin=2.5cm]{geometry}
+\usepackage{geometry}
+\geometry{margin=1in,inner=1.25in,outer=1in}
+\usepackage{hyperref}
 \usepackage{graphicx}
 \usepackage{booktabs}
-\usepackage{longtable}
 \usepackage{tabularx}
+\usepackage{longtable}
 \usepackage{multirow}
 \usepackage{array}
-\usepackage{float}
+\usepackage{amsmath}
+\usepackage{amssymb}
 \usepackage{enumitem}
-\usepackage{xcolor}
-\usepackage{tcolorbox}
+\usepackage{algorithm}
+\usepackage{algpseudocode}
 \usepackage{tikz}
-\usepackage[table]{colortbl}
-\usetikzlibrary{arrows.meta,positioning,shapes.geometric}
-
-\newtcolorbox{adrbox}[2][]{colback=blue!5,colframe=blue!75!black,fonttitle=\bfseries,title=ADR: #2,#1}
-
-% --- Semantic Hyperlinking --------------------------------------------------
-\usepackage{xr-hyper}
-\usepackage[hidelinks]{hyperref}
-
-% External references to peer specifications
-\externaldocument[reg:]{../regulations/regulations-spec}
-\externaldocument[tb:]{../tb/tb-review-spec}
-\externaldocument[ar:]{../arabic/arabic-ap-spec}
-
+\usetikzlibrary{arrows.meta,positioning,shapes.geometric,calc}
 \usepackage[capitalize,noabbrev]{cleveref}
-\usepackage{fancyhdr}
-\usepackage{titlesec}
+\usepackage{fontawesome5}
+\usepackage{pifont}
 
-% ─── Code listings ───────────────────────────────────────────────────────────
-\usepackage{listings}
-
-\definecolor{codebg}{RGB}{248,248,248}
-\definecolor{codegreen}{RGB}{0,128,0}
-\definecolor{codegray}{RGB}{128,128,128}
-\definecolor{codeblue}{RGB}{0,0,180}
-\definecolor{codepurple}{RGB}{128,0,128}
-\definecolor{sapblue}{HTML}{0B5FA5}
-\definecolor{sapgreen}{HTML}{00695C}
-\definecolor{sapamber}{HTML}{B8360F}
-\definecolor{sapgrey}{HTML}{546E7A}
-\definecolor{sapmidnight}{HTML}{1C2B39}
-\definecolor{sapgold}{HTML}{F0AB00}
+% --- Domain-Specific Colors (Supplementing shared palette) ------------------
 \definecolor{simred}{HTML}{B71C1C}
 \definecolor{simblue}{HTML}{1565C0}
 \definecolor{simgreen}{HTML}{2E7D32}
@@ -61,48 +43,13 @@
 \definecolor{llmpurple}{HTML}{6A1B9A}
 \definecolor{saplight}{HTML}{F5F5F5}
 
-\lstdefinelanguage{Python}{
-  keywords={class,def,return,if,elif,else,for,in,import,from,async,await,
-            True,False,None,self,try,except,finally,with,as,yield,not,and,or,
-            Optional,Dict,List,Tuple,Any,str,int,float,bool,dataclass,field,Enum},
-  keywordstyle=\color{codeblue}\bfseries,
-  ndkeywords={@dataclass,@property,asyncio,httpx},
-  ndkeywordstyle=\color{codepurple}\bfseries,
-  identifierstyle=\color{black},
-  sensitive=false,
-  comment=[l]{\#},
-  commentstyle=\color{codegreen}\ttfamily,
-  stringstyle=\color{sapblue}\ttfamily,
-  morestring=[b]',
-  morestring=[b]"
-}
-
-\lstdefinelanguage{jsonx}{
-  basicstyle=\ttfamily\small,
-  columns=fullflexible,
-  breaklines=true,
-  showstringspaces=false,
-  comment=[l]{//},
-  morestring=[b]",
-  stringstyle=\color{sapgreen},
-  keywordstyle=\color{sapblue},
-}
-
-\lstset{
-  language=Python,
-  backgroundcolor=\color{codebg},
-  basicstyle=\ttfamily\small,
-  breakatwhitespace=false,
-  breaklines=true,
-  captionpos=b,
-  keepspaces=true,
-  showspaces=false,
-  showstringspaces=false,
-  showtabs=false,
-  tabsize=2,
-  frame=single,
-  rulecolor=\color{black!10}
-}
+% --- Global Command Overrides -----------------------------------------------
+\newcommand{\filepath}[1]{\texttt{#1}}
+\newcommand{\reqid}[1]{\textbf{#1}}
+\newcommand{\corpus}[1]{\texttt{#1}}
+\newcommand{\tool}[1]{\texttt{#1}}
+\newcommand{\stateid}[1]{\textsc{\lowercase{#1}}}
+\newcommand{\ar}[1]{#1}
 
 % --- Glossary Helper Commands -----------------------------------------------
 \definecolor{pathcolor}{HTML}{004D40}
@@ -110,15 +57,11 @@
 \newcommand{\enumval}[1]{\texttt{\textcolor{sapgreen}{#1}}}
 \newcommand{\fieldref}[1]{\texttt{\textcolor{sapblue}{#1}}}
 
-\begin{document}
-
-\title{\Huge Simula Training Data Framework \\
-       \textbf{Implementation Specification} \\
-       \large Synthetic Data Generation for Text-to-SQL \\
-       \small Ref: \texttt{SIM-TRAIN-2026-v1.2}}
-\author{SAP-OSS AI Training Team}
+\title{Simula Training Data Framework Specification}
+\author{SAP Controls Architecture Team}
 \date{April 2026}
 
+\begin{document}
 \maketitle
 
 % --- Incorporated Executive Summary ---
@@ -126,17 +69,27 @@
 
 \input{chapters/00-frontmatter}
 \input{chapters/01-overview}
-\input{chapters/02-data-schema}
-\input{chapters/03-extraction-pipeline}
-\input{chapters/04-taxonomy-engine}
-\input{chapters/05-generation-engine}
-\input{chapters/06-environment-cli}
-\input{chapters/07-references}
-\input{chapters/08-test-fixtures-spec}
-\input{chapters/09-testing}
-\input{chapters/10-project-roadmap}
+\input{chapters/02-business-requirements}
+\input{chapters/03-data-schema}
+\input{chapters/04-extraction-pipeline}
+\input{chapters/05-taxonomy-engine}
+\input{chapters/06-generation-engine}
+\input{chapters/07-environment-cli}
+\input{chapters/08-evaluation-framework}
+\input{chapters/09-worked-example}
+\input{chapters/10-testing-spec}
+\input{chapters/11-test-fixtures-spec}
 \input{chapters/12-implementation-instructions}
-\input{chapters/14-implementation-gap-review}
+\input{chapters/13-cross-spec-dependencies}
+\input{chapters/14-schema-versioning}
+\input{chapters/15-project-roadmap}
+\input{chapters/16-implementation-roadmap}
+\input{chapters/17-future-directions}
+
+\appendix
+\input{chapters/A1-implementation-gap-review}
+\input{chapters/A2-sap-integration}
+\input{chapters/A3-references}
 
 % --- Incorporated Universal Chapters ---
 \input{../fragment-cross-spec-dependencies}

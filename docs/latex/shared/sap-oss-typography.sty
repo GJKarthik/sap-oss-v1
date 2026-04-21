@@ -1,0 +1,200 @@
+% =============================================================================
+% SAP-OSS Typography Package - WWDC Keynote Quality
+% Version: 2.0.0
+% Professional typography with Inter and JetBrains Mono
+% =============================================================================
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{sap-oss-typography}[2026/04/21 SAP-OSS WWDC-Style Typography v2.0.1]
+
+% Require fontspec for XeLaTeX/LuaLaTeX
+\RequirePackage{fontspec}
+\RequirePackage{microtype}
+\RequirePackage{fontawesome5}
+
+% -----------------------------------------------------------------------------
+% FONT SETUP - WWDC INSPIRED
+% -----------------------------------------------------------------------------
+% Primary: Inter (Apple-style humanist sans-serif)
+% Code: JetBrains Mono (developer-focused monospace)
+% Fallbacks: Helvetica Neue → Arial for sans, Menlo → Courier for mono
+
+% Main font - use system fonts with robust fallback chain
+% Try Inter first, then Helvetica Neue, then standard TeX fonts
+\IfFontExistsTF{Inter}{%
+  \setmainfont{Inter}[
+    Ligatures = TeX,
+    Scale = 1.0,
+  ]
+  \setsansfont{Inter}[
+    Ligatures = TeX,
+    Scale = 1.0,
+  ]
+}{%
+  \IfFontExistsTF{Helvetica Neue}{%
+    \setmainfont{Helvetica Neue}[Scale=1.0]
+    \setsansfont{Helvetica Neue}[Scale=1.0]
+  }{%
+    \IfFontExistsTF{Helvetica}{%
+      \setmainfont{Helvetica}[Scale=1.0]
+      \setsansfont{Helvetica}[Scale=1.0]
+    }{%
+      % Fall back to TeX Gyre Heros (Helvetica clone)
+      \setmainfont{TeX Gyre Heros}[Scale=1.0]
+      \setsansfont{TeX Gyre Heros}[Scale=1.0]
+    }
+  }
+}
+
+% Monospace font - with robust fallback
+\IfFontExistsTF{JetBrains Mono}{%
+  \setmonofont{JetBrains Mono}[Scale=0.88]
+}{%
+  \IfFontExistsTF{Menlo}{%
+    \setmonofont{Menlo}[Scale=0.88]
+  }{%
+    \IfFontExistsTF{Monaco}{%
+      \setmonofont{Monaco}[Scale=0.88]
+    }{%
+      \setmonofont{Courier New}[Scale=0.88]
+    }
+  }
+}
+
+% -----------------------------------------------------------------------------
+% MICROTYPOGRAPHY (XeTeX compatible settings)
+% -----------------------------------------------------------------------------
+% XeTeX only supports protrusion, not expansion or spacing
+\microtypesetup{
+  protrusion=true,
+  expansion=false,
+  tracking=false,
+  kerning=false,
+  spacing=false,
+}
+
+% -----------------------------------------------------------------------------
+% LINE SPACING - WWDC BREATHING ROOM
+% -----------------------------------------------------------------------------
+% Base line spread for body text - Apple HIG spec leading (tightened from
+% 1.45 which read like a double-spaced essay to 1.25 for spec density).
+\linespread{1.25}
+
+% -----------------------------------------------------------------------------
+% FONT SIZE COMMANDS - DRAMATIC SCALE
+% -----------------------------------------------------------------------------
+% WWDC uses dramatic size differences to establish hierarchy
+
+% Display sizes (for titles and hero text)
+\newcommand{\displayhuge}{\fontsize{72}{80}\selectfont}
+\newcommand{\displaylarge}{\fontsize{48}{54}\selectfont}
+\newcommand{\displaymedium}{\fontsize{36}{42}\selectfont}
+\newcommand{\displaysmall}{\fontsize{28}{34}\selectfont}
+
+% Heading sizes
+\newcommand{\headingone}{\fontsize{32}{38}\selectfont\fontseries{sb}\selectfont}
+\newcommand{\headingtwo}{\fontsize{24}{30}\selectfont\fontseries{sb}\selectfont}
+\newcommand{\headingthree}{\fontsize{18}{24}\selectfont\fontseries{sb}\selectfont}
+\newcommand{\headingfour}{\fontsize{15}{20}\selectfont\fontseries{sb}\selectfont}
+
+% Body sizes
+\newcommand{\bodylarge}{\fontsize{13}{19}\selectfont}
+\newcommand{\bodytext}{\fontsize{11}{17}\selectfont}
+\newcommand{\bodysmall}{\fontsize{10}{15}\selectfont}
+\newcommand{\captionsize}{\fontsize{9}{13}\selectfont}
+\renewcommand{\footnotesize}{\fontsize{8}{11}\selectfont}
+
+% -----------------------------------------------------------------------------
+% FONT WEIGHT SHORTCUTS
+% -----------------------------------------------------------------------------
+\newcommand{\ultralight}{\fontseries{ul}\selectfont}
+\newcommand{\light}{\fontseries{l}\selectfont}
+\newcommand{\regular}{\fontseries{m}\selectfont}
+\newcommand{\medium}{\fontseries{m}\selectfont}
+\newcommand{\semibold}{\fontseries{sb}\selectfont}
+\newcommand{\extrabold}{\fontseries{eb}\selectfont}
+
+% -----------------------------------------------------------------------------
+% TEXT STYLING COMMANDS
+% -----------------------------------------------------------------------------
+% Apple-style uppercase with tracking
+\newcommand{\allcaps}[1]{%
+  {\addfontfeature{LetterSpace=10.0}\MakeUppercase{#1}}%
+}
+
+% Small caps with tracking
+\newcommand{\sctracked}[1]{%
+  {\addfontfeature{LetterSpace=6.0}\textsc{#1}}%
+}
+
+% Subtle emphasis (medium weight)
+\newcommand{\textem}[1]{%
+  {\fontseries{m}\selectfont #1}%
+}
+
+% Strong emphasis (semibold)
+\newcommand{\textstrong}[1]{%
+  {\fontseries{sb}\selectfont #1}%
+}
+
+% Thin text (for decorative use)
+\newcommand{\textthin}[1]{%
+  {\fontseries{ul}\selectfont #1}%
+}
+
+% -----------------------------------------------------------------------------
+% SPECIAL TEXT ELEMENTS
+% -----------------------------------------------------------------------------
+% Version badge
+\newcommand{\versionbadge}[1]{%
+  {\small\fontseries{m}\selectfont\colorbox{sapblue!10}{\color{sapblue}\strut v#1}}%
+}
+
+% Status badge
+\newcommand{\statusbadge}[2]{%
+  {\small\fontseries{m}\selectfont\colorbox{#1!10}{\color{#1}\strut #2}}%
+}
+
+% Date formatting
+\newcommand{\dateformat}[1]{%
+  {\color{applegray2}\fontseries{m}\selectfont #1}%
+}
+
+% -----------------------------------------------------------------------------
+% NUMERIC FORMATTING
+% -----------------------------------------------------------------------------
+% Tabular (lining) figures for tables
+\newcommand{\tabfigures}[1]{%
+  {\addfontfeature{Numbers=Lining,Numbers=Monospaced}#1}%
+}
+
+% Proportional figures for body text (default)
+\newcommand{\propfigures}[1]{%
+  {\addfontfeature{Numbers=OldStyle,Numbers=Proportional}#1}%
+}
+
+% -----------------------------------------------------------------------------
+% QUOTATION STYLING
+% -----------------------------------------------------------------------------
+\newcommand{\openquote}{{\fontsize{36}{36}\selectfont\color{sapblue!30}\textthin{"}\hspace{-6pt}}}
+\newcommand{\closequote}{{\fontsize{36}{36}\selectfont\color{sapblue!30}\textthin{"}}}
+
+% Pull quote environment
+\newenvironment{pullquote}{%
+  \begin{center}
+  \begin{minipage}{0.85\textwidth}
+  \openquote
+  \large\itshape\color{applegray1}
+}{%
+  \closequote
+  \end{minipage}
+  \end{center}
+}
+
+% -----------------------------------------------------------------------------
+% LEGACY COMPATIBILITY
+% -----------------------------------------------------------------------------
+% Ensure standard commands still work
+\let\textbf\textstrong
+\renewcommand{\emph}[1]{\textit{#1}}
+
+\endinput

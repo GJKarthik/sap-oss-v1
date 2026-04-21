@@ -1,0 +1,185 @@
+\chapter{Swarm Delivery Model}
+\label{ch:swarm}
+
+\section{Objective}
+
+The swarm exists to deliver and maintain the published outputs in
+\filepath{docs/pdf/specs/}. It does this by splitting responsibility
+across agents with different scopes and control surfaces.
+
+\section{Swarm roles}
+
+\begin{table}[htbp]
+\centering
+\footnotesize
+\caption{Recommended swarm roles.}
+\label{tab:swarm-roles}
+\begin{tabularx}{\textwidth}{@{}L{3.1cm}L{3.7cm}X@{}}
+\toprule
+\textbf{Role} & \textbf{Primary rule pack} & \textbf{Responsibility} \\
+\midrule
+Spec orchestrator & repo-level or docs-local pack & Sequence work, assign ownership, preserve cross-spec coherence, and block conflicting edits. \\
+Regulations development agent & \filepath{src/intelligence/.clinerules} & Keep all domain packs aligned to the regulations book and regulations schemas. \\
+Regulations runtime-monitor agent & \filepath{src/intelligence/.clinerules.runtime-monitor} & Police live governance, alerting, degradation, and evidence completeness. \\
+Simula development agent & \filepath{src/training/.clinerules} & Maintain the Simula implementation and migration path. \\
+Simula runtime-monitor agent & \filepath{src/training/.clinerules.runtime-monitor} & Supervise live Simula runs and artefacts. \\
+Generative UI deployment agent & \filepath{src/generativeUI/.clinerules} & Keep UI deployment, routing, and monitoring honest. \\
+PDF build and validation agent & docs-local pack or build contract & Build PDFs, validate references, and gate publication. \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\section{Interaction model}
+
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}[
+  node distance=10mm and 16mm,
+  box/.style={draw,rounded corners,minimum width=34mm,minimum height=11mm,align=center,font=\small,fill=blue!5},
+  ctrl/.style={draw,rounded corners,minimum width=36mm,minimum height=11mm,align=center,font=\small,fill=orange!10},
+  t/.style={-{Latex[length=2mm]},thick}
+]
+\node[ctrl] (lead) {Spec Orchestrator};
+\node[box,below left=of lead] (regdev) {Regulations\\Development};
+\node[box,below right=of lead] (regmon) {Regulations\\Runtime Monitor};
+\node[box,below=of regdev] (sim) {Simula\\Pack};
+\node[box,below=of regmon] (gui) {Generative UI\\Pack};
+\node[ctrl,below right=of sim] (pdf) {PDF Build \&\\Validation};
+
+\draw[t] (lead) -- (regdev);
+\draw[t] (lead) -- (regmon);
+\draw[t] (regdev) -- (sim);
+\draw[t] (regdev) -- (gui);
+\draw[t] (sim) -- (pdf);
+\draw[t] (gui) -- (pdf);
+\draw[t] (regmon) -- (pdf);
+\end{tikzpicture}
+\caption{Minimum swarm for governed spec delivery.}
+\label{fig:swarm}
+\end{figure}
+
+\section{Inter-agent signaling}
+\label{sec:inter-agent-signaling}
+
+Agents within the swarm MUST NOT rely on direct network calls to each
+other. All interaction SHALL be mediated via the repository state and
+immutable artefacts. This constraint ensures auditability, reproducibility,
+and prevents tight coupling between agent implementations.
+
+\subsection{Signal types}
+
+\begin{table}[htbp]
+\centering
+\footnotesize
+\caption{Inter-agent signal types.}
+\label{tab:signal-types}
+\begin{tabularx}{\textwidth}{@{}l l X@{}}
+\toprule
+\textbf{Signal type} & \textbf{Mechanism} & \textbf{Purpose} \\
+\midrule
+Blocking & Lock file & Prevent downstream agents from proceeding. \\
+State & JSON status file & Communicate current operational state. \\
+Completion & Artefact presence & Signal that a phase is complete. \\
+Degradation & Alert file & Notify swarm of service health issues. \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\subsection{Blocking signals}
+
+A runtime-monitor MUST create a lock file to signal that publication
+or deployment should be halted:
+
+\begin{table}[htbp]
+\centering
+\footnotesize
+\caption{Blocking signal file conventions.}
+\label{tab:blocking-signals}
+\begin{tabularx}{\textwidth}{@{}l X@{}}
+\toprule
+\textbf{Path pattern} & \textbf{Meaning} \\
+\midrule
+\filepath{reports/alerts/<domain>\_DEGRADED.lock} & Domain is in degraded state; block PDF publication. \\
+\filepath{reports/alerts/<domain>\_CIRCUIT\_OPEN.lock} & Circuit breaker is open; block all deployments. \\
+\filepath{reports/alerts/SWARM\_HALT.lock} & Critical issue affecting entire swarm; halt all operations. \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+Lock files MUST contain:
+\begin{verbatim}
+{
+  "created_by": "<agent-identity>",
+  "created_at": "<ISO-8601-timestamp>",
+  "reason": "<human-readable-reason>",
+  "evidence_path": "<path-to-supporting-evidence>",
+  "ttl_minutes": <auto-expire-time-or-null>
+}
+\end{verbatim}
+
+\subsection{State validation signals}
+
+Before executing a deployment or migration, a development agent MUST
+read the latest status file from the target domain:
+
+\begin{itemize}
+  \item Path: \filepath{deployments/<domain>/status.json}
+  \item Required fields: \texttt{state}, \texttt{last\_updated},
+    \texttt{version}, \texttt{health\_check\_url}
+  \item The agent MUST NOT proceed if \texttt{state} is not
+    \texttt{HEALTHY} or \texttt{LEARNING}.
+\end{itemize}
+
+\subsection{Completion signals}
+
+Completion is signaled by the presence of artefacts, not by explicit
+messages:
+
+\begin{table}[htbp]
+\centering
+\footnotesize
+\caption{Completion signal artefacts.}
+\label{tab:completion-signals}
+\begin{tabularx}{\textwidth}{@{}l X@{}}
+\toprule
+\textbf{Artefact} & \textbf{Signals completion of} \\
+\midrule
+\filepath{docs/pdf/specs/<name>-spec.pdf} & PDF build for the named specification. \\
+\filepath{reports/validation/<domain>-harness-pass.json} & Validation harness for the domain. \\
+\filepath{deployments/<domain>/v<N>/manifest.json} & Deployment of version N for the domain. \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\subsection{Signal consumption rules}
+
+\begin{enumerate}
+  \item Agents MUST poll for signals at defined intervals (default: 30
+    seconds during active work).
+  \item Agents MUST NOT delete signals they did not create.
+  \item Signals older than their TTL SHALL be automatically reaped by
+    the repository CI service (e.g., GitHub Actions \texttt{reap-locks} job).
+  \item All signal creation and consumption MUST be logged to the audit
+    trail.
+\end{enumerate}
+
+\section{Swarm sequencing}
+
+\begin{enumerate}
+  \item Freeze the regulatory control model first.
+  \item Update domain development packs so they inherit the regulatory
+    obligations.
+  \item Update runtime-monitor packs so they watch the resulting live
+    behaviour.
+  \item Only then assemble and publish the PDF specifications.
+\end{enumerate}
+
+\section{Non-negotiable swarm rules}
+
+\begin{itemize}
+  \item No domain pack may weaken a regulations obligation locally.
+  \item No PDF may be treated as current if the underlying rule packs
+    and validation harnesses disagree.
+  \item Runtime-monitor agents must be able to contradict a successful
+    build if the live system still violates the regulations contract.
+\end{itemize}

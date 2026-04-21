@@ -1,6 +1,6 @@
 # Domain Specifications
 
-This directory contains the **four core domain specifications** for the SAP AI Platform:
+This directory contains the **four core domain specifications** for the SAP AI Platform plus one cross-domain supplementary specification for `.clinerules` agents:
 
 | Domain | Specification | LaTeX Source | PDF |
 |--------|--------------|--------------|-----|
@@ -8,6 +8,7 @@ This directory contains the **four core domain specifications** for the SAP AI P
 | **TB** | Trial Balance Review | `tb/tb-review-spec.tex` | `tb-review-spec.pdf` |
 | **Regulations** | AI Governance & Compliance | `regulations/regulations-spec.tex` | `regulations-spec.pdf` |
 | **Simula** | Training Data Framework | `simula/simula-training-spec.tex` | `simula-training-spec.pdf` |
+| **Supplementary** | `.clinerules` Agent Swarm | `clinerules-agents/clinerules-agents-spec.tex` | `clinerules-agents-spec.pdf` |
 
 ## Directory Structure
 
@@ -49,6 +50,18 @@ specs/
 │       ├── 06-conformance-tooling.tex
 │       └── 07-references.tex
 │
+├── clinerules-agents/           # Cross-domain .clinerules agent supplement
+│   ├── clinerules-agents-spec.tex
+│   └── chapters/
+│       ├── 00-frontmatter.tex
+│       ├── 01-overview.tex
+│       ├── 02-regulatory-alignment.tex
+│       ├── 03-agent-rule-pack-architecture.tex
+│       ├── 04-regulatory-agents.tex
+│       ├── 05-swarm-delivery.tex
+│       ├── 06-validation.tex
+│       └── 07-references.tex
+│
 └── simula/                      # Training Data Framework
     ├── simula-training-spec.tex # Main document
     └── chapters/                # 8 chapter files
@@ -67,7 +80,7 @@ specs/
 ```bash
 # From repository root:
 
-# Build all 4 domain specs
+# Build all specs, including the supplementary agent-swarm book
 make specs-all
 
 # Build individual specs
@@ -75,6 +88,7 @@ make spec-arabic       # Arabic AP Invoice
 make spec-tb           # Trial Balance Review
 make spec-regulations  # AI Regulations
 make spec-simula       # Simula Training Data
+make spec-clinerules-agents  # .clinerules Agent Swarm supplement
 
 # Export to Word
 make specs-docx
@@ -127,6 +141,14 @@ Specifies the synthetic training data generation pipeline:
 - Complexity calibration and diversity optimization
 - Quality validation with critic agents
 
+### 5. `.clinerules` Agent Swarm Supplement (`clinerules-agents/`)
+
+Specifies the repository-wide operating model for `.clinerules` rule packs:
+- Development and runtime-monitor agent split
+- Alignment of all agent packs to the Regulations specification
+- Placement conventions for domain rule packs and validation harnesses
+- Swarm roles used to deliver and maintain `docs/pdf/specs/`
+
 ## Adding New Specifications
 
 1. Create a new directory under `specs/`:
@@ -152,5 +174,6 @@ Each specification has corresponding implementation code:
 |---------------|---------------|
 | Arabic | `src/intelligence/ocr/` |
 | TB | `docs/tb/` (business docs) |
-| Regulations | `docs/regulations/` (reference docs) |
+| Regulations | `src/intelligence/` and gateway/governance integration surfaces |
 | Simula | `src/training/pipeline/` |
+| `.clinerules` Agent Swarm | `src/*/.clinerules`, `src/*/.clinerules.runtime-monitor` |

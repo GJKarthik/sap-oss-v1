@@ -435,7 +435,7 @@ EUC-002 name & ``TB Variance Analysis file integrity'' & Standardize across docs
 conflict with ``country-specific'' in TB-KPI-001.
 
 \textbf{Resolution:} Move thresholds to \texttt{entity-params/<le-code>.yaml}:
-\begin{lstlisting}[language=yaml]
+\begin{lstlisting}[language=yamlx]
 # entity-params/HKG.yaml
 legal_entity_code: "HKG"
 materiality_thresholds:
@@ -511,7 +511,7 @@ docs/schema/common/enums.yaml
 
 Risk status values are defined once and imported by both TB and BSS specs:
 
-\begin{lstlisting}[language=yaml,caption={Shared Enum Registry (enums.yaml)}]
+\begin{lstlisting}[language=yamlx,caption={Shared Enum Registry (enums.yaml)}]
 # docs/schema/common/enums.yaml
 risk_status:
   $id: "common/risk-status"

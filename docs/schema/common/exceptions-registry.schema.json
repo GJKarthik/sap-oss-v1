@@ -1,0 +1,24 @@
+{
+  "$schema": "https://json-schema.org/draft/07/schema#",
+  "$id": "https://sap.com/oss/exceptions-registry.schema.json",
+  "title": "Agent Rule-Pack Exceptions Registry",
+  "description": "Canonical registry for safety-critical rule overrides.",
+  "type": "object",
+  "required": ["exceptions"],
+  "properties": {
+    "exceptions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "domain", "justification", "expiry_date", "approver"],
+        "properties": {
+          "id": { "type": "string", "pattern": "^EXC-[A-Z0-9]{4}$" },
+          "domain": { "type": "string" },
+          "justification": { "type": "string" },
+          "expiry_date": { "type": "string", "format": "date" },
+          "approver": { "type": "string" }
+        }
+      }
+    }
+  }
+}

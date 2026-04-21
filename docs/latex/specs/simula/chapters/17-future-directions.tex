@@ -1,0 +1,769 @@
+\chapter{Future Directions (v1.3+)}
+\label{chap:future-directions}
+
+\begin{futurebox}
+\textbf{Important Notice}\\
+All features described in this chapter are \textbf{explicitly out of scope for v1.2}. They represent planned enhancements for v1.3 and beyond. Do not include these features in v1.2 implementation planning or resource allocation.\\
+\\
+This chapter is provided for:
+\begin{itemize}
+  \item Strategic planning and roadmap visibility
+  \item Stakeholder expectation setting
+  \item Architecture decisions that preserve future extensibility
+\end{itemize}
+\end{futurebox}
+
+\section*{Integration with existing chapters}
+\addcontentsline{toc}{section}{Integration with existing chapters}
+
+This chapter describes future enhancements that extend the foundational Simula specification established in earlier chapters:
+
+\begin{itemize}
+  \item \textbf{Chapter~\ref{chap:extraction}} (Extraction Pipeline): Enhancement~1 
+    (Multi-Modal) extends schema extraction to document images and time-series.
+  \item \textbf{Chapter~\ref{chap:taxonomy}} (Taxonomy Engine): Enhancement~2 
+    (Domain Calibration) adds knowledge anchors to the Algorithm~1 taxonomy builder.
+  \item \textbf{Chapter~\ref{chap:generator}} (Generation Engine): Enhancement~3 
+    (Closed-Loop) adds feedback integration to Algorithm~2 data synthesis.
+  \item \textbf{Chapter~\ref{sec:sim-roadmap}} (Project Roadmap): The business 
+    requirements in Chapter~\ref{chap:business-requirements} and implementation 
+    roadmap in Chapter~\ref{chap:implementation-roadmap} are sequenced \emph{after} 
+    the v1.2 milestones (M01--M07) complete.
+  \item \textbf{Chapter~\ref{ch:agent-impl}} (Agent Instructions): Task S1--S6 
+    remain the technical implementation tasks; the business requirements here 
+    provide the governance and compliance wrapper around those tasks.
+\end{itemize}
+
+\noindent
+The enhancements defined here are categorized as \textbf{Should} or \textbf{Could} 
+items in the MoSCoW classification from \cref{tab:sim-moscow}, meaning they may 
+be deferred to v1.3 if the Must milestones consume available capacity.
+
+\section*{Scope of this chapter}
+\addcontentsline{toc}{section}{Scope of this chapter}
+
+This chapter defines enterprise-grade enhancements to the Simula framework, extending
+the core ``mechanism design'' approach to synthetic data generation for production
+deployment in regulated industries. These enhancements address the practical limitations
+identified in the original research while preserving Simula's key differentiators:
+dataset-level design, seedless generation, and independent control of coverage,
+complexity, and quality.
+
+\section{Enhancement Overview}
+
+The Simula framework, as described in ``Reasoning-Driven Synthetic Data Generation
+and Evaluation'' (OpenReview NALsdGEPhB, 2026) and the Google Research blog
+``Designing Synthetic Datasets for the Real World,'' introduces four foundational
+steps:
+
+\begin{enumerate}
+  \item \textbf{Global Diversification} --- Taxonomic sampling scaffolds for coverage
+  \item \textbf{Local Diversification} --- Meta-prompt variation to prevent mode collapse
+  \item \textbf{Complexification} --- Controlled difficulty progression
+  \item \textbf{Quality Assurance} --- Reasoning-driven verification
+\end{enumerate}
+
+This chapter extends each step with enterprise-ready capabilities:
+
+\begin{table}[htbp]
+\centering
+\caption{Simula enhancement dimensions.}
+\label{tab:enhancement-dimensions}
+\footnotesize
+\begin{tabularx}{\textwidth}{@{}l l X@{}}
+\toprule
+\textbf{Enhancement} & \textbf{Simula Step} & \textbf{Enterprise Value} \\
+\midrule
+Multi-Modal Extension & Global + Local & Vision, time-series, tabular data support \\
+Domain Adaptation Calibration & Global & Vertical-specific accuracy (finance, healthcare) \\
+Closed-Loop Validation & Quality Assurance & Measurable ROI via downstream correlation \\
+Programmable Workflow Engine & All Steps & Declarative specifications, audit compliance \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+
+\section{Enhancement 1: Multi-Modal Extension}
+
+\subsection{Current Limitation}
+
+The Simula research primarily demonstrates text-based synthetic data generation.
+Enterprise use cases frequently require multi-modal data:
+\begin{itemize}
+  \item \textbf{Document processing}: Scanned invoices with embedded tables (Arabic AP domain)
+  \item \textbf{Time-series analytics}: Financial metrics with temporal patterns (Trial Balance domain)
+  \item \textbf{Structured data}: Tabular records with categorical and numerical fields
+\end{itemize}
+
+\subsection{Cross-Modal Reasoning Scaffolds}
+
+Extend the taxonomic scaffolding approach to multi-modal scenarios by constructing
+\emph{cross-modal reasoning graphs} that capture relationships between modalities.
+
+\begin{lstlisting}[language=jsonx,caption={Cross-modal taxonomy extension.}]
+@dataclass
+class MultiModalTaxonomyNode(TaxonomyNode):
+    """Extended taxonomy node with cross-modal relationships."""
+    
+    # Primary modality for this node
+    primary_modality: str = "text"  # text, image, tabular, time_series
+    
+    # Cross-modal mappings
+    cross_modal_mappings: dict[str, str] = field(default_factory=dict)
+    # Example: {"image": "invoice_header_region", "text": "vendor_name_field"}
+    
+    # Modality-specific constraints
+    modality_constraints: dict[str, Any] = field(default_factory=dict)
+    # Example: {"image": {"min_resolution": [800, 600], "format": "PNG"}}
+
+class CrossModalTaxonomyBuilder(SimulaTaxonomyBuilder):
+    """Build taxonomies with cross-modal consistency."""
+    
+    async def build_cross_modal_taxonomy(
+        self,
+        factor: Factor,
+        modalities: list[str],
+    ) -> MultiModalTaxonomy:
+        """
+        Build taxonomy ensuring cross-modal consistency.
+        
+        For example, in medical imaging:
+        disease_type -> imaging_presentation -> text_description
+        ensures generated image-text pairs are semantically aligned.
+        """
+        # Build primary modality taxonomy
+        primary_taxonomy = await self.build_taxonomy(factor)
+        
+        # Extend with cross-modal mappings
+        for node in primary_taxonomy.get_leaf_nodes():
+            mappings = await self._infer_cross_modal_mappings(
+                node, modalities
+            )
+            node.cross_modal_mappings = mappings
+        
+        return MultiModalTaxonomy(
+            primary_taxonomy=primary_taxonomy,
+            modalities=modalities,
+        )
+\end{lstlisting}
+
+\subsection{Modality-Aware Complexification}
+
+Define modality-specific complexity metrics:
+
+\begin{table}[htbp]
+\centering
+\caption{Modality-specific complexity dimensions.}
+\label{tab:modality-complexity}
+\footnotesize
+\begin{tabularx}{\textwidth}{@{}l X@{}}
+\toprule
+\textbf{Modality} & \textbf{Complexity Dimensions} \\
+\midrule
+Text & Vocabulary diversity, syntactic complexity, reasoning depth \\
+Image & Background clutter, lighting variation, occlusion, scale variance \\
+Tabular & Cardinality, sparsity, categorical diversity, numerical range \\
+Time-Series & Trend strength, seasonality, anomaly density, noise ratio \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\subsection{SAP Integration: Document Information Extraction}
+
+For SAP Document Information Extraction (DOX) scenarios:
+
+\begin{lstlisting}[language=jsonx,caption={SAP DOX multi-modal integration.}]
+class SAPDOXModalityAdapter:
+    """Adapter for SAP Document Information Extraction."""
+    
+    MODALITY_MAPPING = {
+        "invoice_header": ["image_region", "text_field", "table_cell"],
+        "line_items": ["table_structure", "text_sequence"],
+        "totals": ["numerical_field", "currency_format"],
+    }
+    
+    def generate_cross_modal_example(
+        self,
+        taxonomy_path: list[str],
+        complexity_level: str,
+    ) -> MultiModalTrainingExample:
+        """
+        Generate aligned multi-modal training example.
+        
+        Output includes:
+        - Synthetic document image (PNG/PDF)
+        - Extracted text annotations
+        - Structured field mappings
+        - Ground truth bounding boxes
+        """
+        pass
+\end{lstlisting}
+
+
+\section{Enhancement 2: Domain Adaptation Calibration}
+
+\subsection{Current Limitation}
+
+Simula's seedless, reasoning-driven approach relies on the LLM's inherent knowledge
+to construct taxonomies. In specialized domains (finance, healthcare, manufacturing),
+this knowledge may be incomplete or biased toward common patterns, missing critical
+long-tail scenarios.
+
+\subsection{Human-in-Loop Knowledge Anchors}
+
+Introduce lightweight ``knowledge anchors'' that guide taxonomy construction without
+violating the seedless principle:
+
+\begin{lstlisting}[language=jsonx,caption={Domain knowledge anchor injection.}]
+@dataclass
+class DomainKnowledgeAnchor:
+    """Lightweight knowledge injection for domain calibration."""
+    
+    # Domain identifier
+    domain: str  # "trial_balance", "arabic_ap", "regulations"
+    
+    # Required coverage nodes (MUST appear in taxonomy)
+    required_nodes: list[str] = field(default_factory=list)
+    
+    # Prohibited nodes (MUST NOT appear - regulatory/compliance)
+    prohibited_nodes: list[str] = field(default_factory=list)
+    
+    # Expert-provided complexity anchors
+    complexity_anchors: dict[str, float] = field(default_factory=dict)
+    # Example: {"multi_currency_reconciliation": 0.85, "simple_variance": 0.2}
+    
+    # Domain-specific vocabulary
+    domain_vocabulary: list[str] = field(default_factory=list)
+
+class CalibratedTaxonomyBuilder(SimulaTaxonomyBuilder):
+    """Taxonomy builder with domain calibration."""
+    
+    async def build_calibrated_taxonomy(
+        self,
+        factor: Factor,
+        anchors: DomainKnowledgeAnchor,
+    ) -> Taxonomy:
+        """
+        Build taxonomy with domain expert calibration.
+        
+        Process:
+        1. Generate initial taxonomy via LLM reasoning
+        2. Validate required nodes are present
+        3. Remove prohibited nodes
+        4. Calibrate complexity scores against anchors
+        5. Present to expert for final review (optional)
+        """
+        # Step 1: Initial generation
+        taxonomy = await self.build_taxonomy(factor)
+        
+        # Step 2: Validate required nodes
+        existing_nodes = {n.name.lower() for n in taxonomy.get_leaf_nodes()}
+        missing = set(anchors.required_nodes) - existing_nodes
+        
+        if missing:
+            logger.warning(f"Missing required nodes: {missing}")
+            taxonomy = await self._inject_missing_nodes(taxonomy, missing)
+        
+        # Step 3: Remove prohibited nodes
+        taxonomy = self._prune_prohibited(taxonomy, anchors.prohibited_nodes)
+        
+        # Step 4: Calibrate complexity
+        taxonomy = self._calibrate_complexity(taxonomy, anchors.complexity_anchors)
+        
+        return taxonomy
+\end{lstlisting}
+
+\subsection{Vertical-Specific Complexity Metrics}
+
+Define industry-standard complexity dimensions:
+
+\begin{table}[htbp]
+\centering
+\caption{Vertical-specific complexity definitions.}
+\label{tab:vertical-complexity}
+\footnotesize
+\begin{tabularx}{\textwidth}{@{}l l X@{}}
+\toprule
+\textbf{Vertical} & \textbf{Metric} & \textbf{Definition} \\
+\midrule
+\multirow{3}{*}{Finance} 
+  & Regulatory complexity & Number of compliance rules applicable \\
+  & Temporal complexity & Multi-period analysis requirements \\
+  & Entity complexity & Cross-entity consolidation depth \\
+\midrule
+\multirow{3}{*}{Healthcare}
+  & Diagnostic complexity & Differential diagnosis breadth \\
+  & Protocol complexity & Multi-step treatment pathways \\
+  & Comorbidity complexity & Co-occurring condition interactions \\
+\midrule
+\multirow{3}{*}{Manufacturing}
+  & Process complexity & Operation sequence length \\
+  & Tolerance complexity & Precision requirements (6-sigma) \\
+  & Supply chain complexity & Multi-tier supplier dependencies \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\subsection{SAP Integration: S/4HANA Domain Schemas}
+
+\begin{lstlisting}[language=jsonx,caption={SAP S/4HANA domain calibration.}]
+# Domain anchors for SAP verticals
+SAP_DOMAIN_ANCHORS = {
+    "trial_balance": DomainKnowledgeAnchor(
+        domain="trial_balance",
+        required_nodes=[
+            "intercompany_elimination",
+            "currency_translation",
+            "statutory_adjustment",
+            "management_overlay",
+        ],
+        prohibited_nodes=[
+            "personal_account_detail",  # Privacy
+            "salary_individual",        # Compliance
+        ],
+        complexity_anchors={
+            "simple_variance_analysis": 0.2,
+            "multi_currency_consolidation": 0.75,
+            "complex_elimination_entry": 0.9,
+        },
+    ),
+    "arabic_ap": DomainKnowledgeAnchor(
+        domain="arabic_ap",
+        required_nodes=[
+            "vat_compliance",
+            "withholding_tax",
+            "payment_terms_discount",
+            "multi_currency_invoice",
+        ],
+        complexity_anchors={
+            "standard_invoice": 0.15,
+            "credit_note_reconciliation": 0.5,
+            "multi_vendor_payment_run": 0.8,
+        },
+    ),
+}
+\end{lstlisting}
+
+
+\section{Enhancement 3: Closed-Loop Validation}
+
+\subsection{Current Limitation}
+
+Simula's quality assurance relies on reasoning-model self-evaluation. This lacks
+direct feedback from downstream model performance, making it difficult to:
+\begin{itemize}
+  \item Quantify ROI of synthetic data generation
+  \item Identify systematic blind spots in coverage
+  \item Adapt generation parameters based on model learning curves
+\end{itemize}
+
+\subsection{Training-Validation Feedback Loop}
+
+Integrate Simula with the model training pipeline to create a closed feedback loop:
+
+\begin{lstlisting}[language=jsonx,caption={Closed-loop validation architecture.}]
+@dataclass
+class DownstreamPerformanceSignal:
+    """Performance signal from downstream model training."""
+    
+    # Model identifier
+    model_id: str
+    
+    # Performance by complexity band
+    accuracy_by_complexity: dict[str, float]  # {"easy": 0.95, "hard": 0.72}
+    
+    # Performance by taxonomy path
+    accuracy_by_taxonomy: dict[str, float]  # {"sql/aggregation/sum": 0.98}
+    
+    # Identified weak spots
+    underperforming_nodes: list[str]
+    
+    # Timestamp
+    evaluated_at: str
+
+class ClosedLoopGenerator(SimulaDataGenerator):
+    """Generator with downstream feedback integration."""
+    
+    async def generate_with_feedback(
+        self,
+        initial_count: int,
+        downstream_evaluator: Callable,
+        max_iterations: int = 3,
+    ) -> list[TrainingExample]:
+        """
+        Generate data with iterative refinement based on downstream performance.
+        
+        Algorithm:
+        1. Generate initial dataset
+        2. Train downstream model
+        3. Evaluate performance by taxonomy node
+        4. Identify underperforming regions
+        5. Adjust sampling weights to oversample weak regions
+        6. Generate additional targeted examples
+        7. Repeat until convergence or max iterations
+        """
+        examples = await self.generate_examples(initial_count)
+        
+        for iteration in range(max_iterations):
+            # Train and evaluate downstream model
+            signal = await downstream_evaluator(examples)
+            
+            # Check convergence
+            if self._is_converged(signal):
+                break
+            
+            # Adjust sampling weights
+            weight_adjustments = self._compute_weight_adjustments(signal)
+            self._apply_weight_adjustments(weight_adjustments)
+            
+            # Generate targeted examples for weak regions
+            additional = await self._generate_targeted(
+                signal.underperforming_nodes,
+                count=initial_count // 4,
+            )
+            examples.extend(additional)
+        
+        return examples
+    
+    def _compute_weight_adjustments(
+        self,
+        signal: DownstreamPerformanceSignal,
+    ) -> dict[str, float]:
+        """
+        Compute sampling weight adjustments based on performance gaps.
+        
+        Regions with lower accuracy receive higher sampling weights
+        in subsequent generations.
+        """
+        adjustments = {}
+        mean_accuracy = sum(signal.accuracy_by_taxonomy.values()) / len(signal.accuracy_by_taxonomy)
+        
+        for node, accuracy in signal.accuracy_by_taxonomy.items():
+            if accuracy < mean_accuracy:
+                # Boost underperforming regions
+                gap = mean_accuracy - accuracy
+                adjustments[node] = 1.0 + (gap * 2)  # Up to 2x boost
+            else:
+                adjustments[node] = 1.0
+        
+        return adjustments
+\end{lstlisting}
+
+\subsection{Adversarial Verification Layer}
+
+Add an adversarial detector to identify systematic biases:
+
+\begin{lstlisting}[language=jsonx,caption={Adversarial verification for distribution drift.}]
+class AdversarialVerifier:
+    """Detect systematic biases in synthetic data."""
+    
+    async def detect_distribution_drift(
+        self,
+        synthetic_examples: list[TrainingExample],
+        reference_distribution: dict[str, float],
+    ) -> DriftReport:
+        """
+        Compare synthetic data distribution against reference.
+        
+        Detects:
+        - Mode collapse (over-concentration in specific patterns)
+        - Coverage gaps (missing taxonomy regions)
+        - Complexity skew (imbalanced difficulty distribution)
+        """
+        pass
+    
+    async def adversarial_probe(
+        self,
+        synthetic_examples: list[TrainingExample],
+        probe_queries: list[str],
+    ) -> ProbeReport:
+        """
+        Use adversarial probes to test for memorization.
+        
+        Checks if generated data inadvertently reproduces
+        patterns from the reasoning model's training data.
+        """
+        pass
+\end{lstlisting}
+
+\subsection{SAP Integration: AI Core MLOps}
+
+\begin{lstlisting}[language=jsonx,caption={SAP AI Core integration for closed-loop training.}]
+class SAPAICoreIntegration:
+    """Integration with SAP AI Core for MLOps feedback loop."""
+    
+    async def submit_training_job(
+        self,
+        training_data_path: str,
+        model_config: dict,
+    ) -> str:
+        """Submit training job to SAP AI Core."""
+        # Use SAP AI Core SDK
+        pass
+    
+    async def get_evaluation_metrics(
+        self,
+        execution_id: str,
+    ) -> DownstreamPerformanceSignal:
+        """Retrieve evaluation metrics from completed training."""
+        # Parse AI Core metrics
+        pass
+    
+    async def trigger_retraining(
+        self,
+        signal: DownstreamPerformanceSignal,
+        threshold: float = 0.85,
+    ) -> Optional[str]:
+        """Trigger retraining if performance below threshold."""
+        if signal.overall_accuracy < threshold:
+            # Generate additional targeted examples
+            # Submit new training job
+            pass
+\end{lstlisting}
+
+
+\section{Enhancement 4: Programmable Workflow Engine}
+
+\subsection{Current Limitation}
+
+Simula provides conceptual controllability but lacks:
+\begin{itemize}
+  \item User-friendly interfaces for business users
+  \item Declarative specification of dataset requirements
+  \item Version control and reproducibility guarantees
+  \item Audit trails for compliance
+\end{itemize}
+
+\subsection{Declarative Dataset Specification Language}
+
+Design a YAML-based DSL for dataset specification:
+
+\begin{lstlisting}[language=yamlx,caption={Simula dataset specification DSL.}]
+# simula-dataset-spec.yaml
+apiVersion: simula/v1
+kind: DatasetSpecification
+metadata:
+  name: trial-balance-text2sql-v3
+  domain: trial_balance
+  owner: finance-ai-team
+  created: 2026-04-21
+  
+spec:
+  # Target dataset size
+  target_count: 10000
+  
+  # Coverage requirements
+  coverage:
+    taxonomy_paths:
+      - path: "query_type/aggregation/*"
+        min_coverage: 0.15
+      - path: "query_type/filtering/*"
+        min_coverage: 0.20
+      - path: "complexity/multi_table_join"
+        min_coverage: 0.10
+    
+  # Complexity distribution
+  complexity:
+    distribution:
+      easy: 0.30
+      medium: 0.45
+      hard: 0.25
+    calibration_anchors:
+      - example_id: "expert_example_001"
+        target_score: 0.85
+  
+  # Quality thresholds
+  quality:
+    critic_pass_rate: 0.90
+    diversity_threshold: 0.70
+    
+  # Generation parameters
+  generation:
+    model: "gpt-4-turbo"
+    temperature: 0.7
+    best_of_n: 5
+    enable_complexification: true
+    complexification_ratio: 0.30
+    
+  # Validation
+  validation:
+    schema: "docs/schema/simula/training-example.schema.json"
+    downstream_eval: true
+    
+  # Output
+  output:
+    format: jsonl
+    path: "data/hana_generated/tb_text2sql_v3.jsonl"
+    include_metadata: true
+\end{lstlisting}
+
+\subsection{Version Control and Reproducibility}
+
+\begin{lstlisting}[language=jsonx,caption={Git-like versioning for datasets.}]
+@dataclass
+class DatasetVersion:
+    """Version metadata for reproducibility."""
+    
+    version_id: str  # Semantic version or hash
+    parent_version: Optional[str]
+    
+    # Generation configuration snapshot
+    spec_snapshot: dict
+    taxonomy_snapshot: dict
+    
+    # Reproducibility parameters
+    random_seed: int
+    model_version: str
+    
+    # Statistics
+    example_count: int
+    coverage_report: dict
+    quality_report: dict
+    
+    # Audit trail
+    created_by: str
+    created_at: str
+    approval_status: str  # draft, reviewed, approved
+    approver: Optional[str]
+
+class DatasetVersionControl:
+    """Git-like version control for synthetic datasets."""
+    
+    def commit(
+        self,
+        examples: list[TrainingExample],
+        spec: DatasetSpecification,
+        message: str,
+    ) -> DatasetVersion:
+        """Commit a new dataset version."""
+        pass
+    
+    def diff(
+        self,
+        version_a: str,
+        version_b: str,
+    ) -> DatasetDiff:
+        """Compare two dataset versions."""
+        pass
+    
+    def rollback(
+        self,
+        version_id: str,
+    ) -> list[TrainingExample]:
+        """Rollback to a previous version."""
+        pass
+    
+    def audit_log(
+        self,
+        version_id: str,
+    ) -> list[AuditEntry]:
+        """Get complete audit trail for a version."""
+        pass
+\end{lstlisting}
+
+\subsection{SAP Integration: BTP and HANA Cloud}
+
+\begin{lstlisting}[language=jsonx,caption={SAP BTP integration for workflow orchestration.}]
+class SAPBTPWorkflowIntegration:
+    """Integration with SAP BTP for workflow orchestration."""
+    
+    def __init__(self, btp_config: BTPConfig):
+        self.object_store = btp_config.object_store  # SAP Object Store
+        self.hana_client = HanaClient(btp_config.hana)
+        self.workflow_service = btp_config.workflow_service
+    
+    async def execute_workflow(
+        self,
+        spec: DatasetSpecification,
+    ) -> WorkflowExecution:
+        """
+        Execute Simula workflow on SAP BTP.
+        
+        Steps:
+        1. Parse specification
+        2. Extract schema from HANA Cloud
+        3. Build taxonomies
+        4. Generate examples
+        5. Validate against schema
+        6. Upload to HANA Cloud
+        7. Trigger downstream training (optional)
+        """
+        pass
+    
+    async def store_dataset_version(
+        self,
+        version: DatasetVersion,
+        examples: list[TrainingExample],
+    ) -> str:
+        """Store dataset version in SAP Object Store with HANA metadata."""
+        # Store examples in Object Store
+        object_path = f"simula/{version.version_id}/examples.jsonl"
+        
+        # Store metadata in HANA Cloud
+        self.hana_client.insert_dataset_version(version)
+        
+        return object_path
+\end{lstlisting}
+
+
+\section{Regulatory Framework Alignment}
+
+These enhancements are designed to align with emerging regulatory guidance on
+synthetic data:
+
+\subsection{UK FCA Synthetic Data Expert Group}
+
+The Financial Conduct Authority (FCA) Synthetic Data Expert Group identifies
+nine governance principles\footnote{FCA, ``Synthetic Data Expert Group Report,'' 2024}:
+
+\begin{enumerate}
+  \item \textbf{Transparency} --- Enhancement 4 (audit trails, version control)
+  \item \textbf{Explainability} --- Enhancement 2 (knowledge anchors, calibration)
+  \item \textbf{Purpose limitation} --- Enhancement 4 (declarative specifications)
+  \item \textbf{Data minimization} --- Enhancement 1 (targeted generation)
+  \item \textbf{Accuracy} --- Enhancement 3 (closed-loop validation)
+  \item \textbf{Security} --- SAP BTP integration (access control)
+  \item \textbf{Accountability} --- Enhancement 4 (ownership, approval workflows)
+  \item \textbf{Fairness} --- Enhancement 3 (adversarial bias detection)
+  \item \textbf{Continuous monitoring} --- Enhancement 3 (drift detection)
+\end{enumerate}
+
+\subsection{IEEE Synthetic Data White Paper}
+
+The IEEE white paper on synthetic data governance emphasizes\footnote{IEEE, 
+``Synthetic Data: Generation, Validation, and Governance,'' 2025}:
+
+\begin{itemize}
+  \item \textbf{Privacy risk quantification} --- Enhancement 3 (adversarial probing)
+  \item \textbf{Fidelity-utility tradeoff} --- Enhancement 3 (downstream validation)
+  \item \textbf{Provenance tracking} --- Enhancement 4 (version control)
+\end{itemize}
+
+\subsection{World Economic Forum Guidelines}
+
+The WEF framework for synthetic data in financial services notes\footnote{WEF, 
+``Synthetic Data for Financial Services,'' 2024}:
+
+\begin{itemize}
+  \item Cross-functional governance teams are essential (addressed in Chapter~\ref{chap:business-requirements})
+  \item Traceability and provenance are foundational (Enhancement 4)
+  \item Continuous monitoring prevents quality degradation (Enhancement 3)
+\end{itemize}
+
+
+\section{Implementation Checklist}
+
+\begin{itemize}
+  \item[\texttt{[ ]}] Multi-modal taxonomy builder with cross-modal mappings
+  \item[\texttt{[ ]}] Modality-specific complexification metrics
+  \item[\texttt{[ ]}] SAP DOX integration for document extraction
+  \item[\texttt{[ ]}] Domain knowledge anchor injection mechanism
+  \item[\texttt{[ ]}] Vertical-specific complexity calibration
+  \item[\texttt{[ ]}] Closed-loop training feedback integration
+  \item[\texttt{[ ]}] Adversarial verification layer
+  \item[\texttt{[ ]}] SAP AI Core MLOps integration
+  \item[\texttt{[ ]}] Declarative DSL parser
+  \item[\texttt{[ ]}] Dataset version control system
+  \item[\texttt{[ ]}] SAP BTP workflow orchestration
+  \item[\texttt{[ ]}] HANA Cloud metadata storage
+\end{itemize}

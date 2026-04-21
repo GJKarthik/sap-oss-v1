@@ -1,0 +1,30 @@
+\contentsline {figure}{\numberline {1}{\ignorespaces Chapter relationship flowchart. Blue: core specification. Gold: planning chapters (v1.2 scope). Dotted gray: future scope (v1.3+). Red: gap review. Solid arrows: hard prerequisites. Dashed arrows: remediation dependencies.}}{3}{figure.0.1}%
+\addvspace {10\p@ }
+\contentsline {figure}{\numberline {1.1}{\ignorespaces System context. HANA Cloud (green) provides live schema metadata via the MCP protocol (blue). The vLLM backend (purple) powers taxonomy expansion and data generation. Output is JSONL training data (gold).}}{10}{figure.1.1}%
+\addvspace {10\p@ }
+\addvspace {10\p@ }
+\addvspace {10\p@ }
+\contentsline {figure}{\numberline {4.1}{\ignorespaces The five extraction stages; each emits a well-typed payload to the next.}}{37}{figure.4.1}%
+\addvspace {10\p@ }
+\contentsline {figure}{\numberline {5.1}{\ignorespaces Taxonomy generation stages with iterative refinement.}}{41}{figure.5.1}%
+\addvspace {10\p@ }
+\contentsline {figure}{\numberline {6.1}{\ignorespaces Data generation stages implementing Algorithm 2.}}{47}{figure.6.1}%
+\addvspace {10\p@ }
+\addvspace {10\p@ }
+\addvspace {10\p@ }
+\addvspace {10\p@ }
+\addvspace {10\p@ }
+\addvspace {10\p@ }
+\contentsline {figure}{\numberline {12.1}{\ignorespaces Cross-domain interaction and unified data flow map. Detailed governance logic is defined in \cref {reg:ch:mgf}.}}{86}{figure.12.1}%
+\contentsline {figure}{\numberline {12.2}{\ignorespaces Standard platform handshake for governed tool execution. Audit schemas are detailed in \cref {reg:ch:identity}.}}{87}{figure.12.2}%
+\contentsline {figure}{\numberline {12.3}{\ignorespaces Arabic AP sequence: Scanned PDF to Release. VAT rules are specified in \cref {ar:ch:vat}.}}{87}{figure.12.3}%
+\addvspace {10\p@ }
+\addvspace {10\p@ }
+\addvspace {10\p@ }
+\contentsline {figure}{\numberline {15.1}{\ignorespaces Simula dependency graph. Amber nodes are Must (critical path); blue are Should (consumer-corpus allowance); dotted green are Could (discretionary). Solid arrows are hard prerequisites; dashed arrows indicate conditional starts (the target is unlocked when the upstream completes \emph {and} the v1.3 trigger in \cref {sec:sim-v13-trigger} fires).}}{112}{figure.15.1}%
+\addvspace {10\p@ }
+\contentsline {figure}{\numberline {16.1}{\ignorespaces Simula implementation phases.}}{118}{figure.16.1}%
+\addvspace {10\p@ }
+\addvspace {10\p@ }
+\addvspace {10\p@ }
+\addvspace {10\p@ }

@@ -1,0 +1,147 @@
+\documentclass{sap-oss-apple-minimal}
+
+\title{Test Document}
+\author{SCB GCFO, AI Research \& Development}
+\date{April 2026}
+\setdocsubtitle{WWDC Quality Style Demonstration}
+\setdocref{TEST-001}
+\setdocversion{3.0.0}
+\setbreadcrumbroot{SAP OSS Specs}
+
+\begin{document}
+
+\makesaptitle
+
+\tableofcontents
+\cleardoubleemptypage
+
+\chapter{Introduction}
+
+This document demonstrates the WWDC-quality styling for SAP-OSS technical specifications. The design prioritizes readability, visual hierarchy, and professional presentation.
+
+\section{Design Philosophy}
+
+The styling follows Apple's WWDC keynote aesthetic:
+\begin{itemize}
+  \item Clean typography with generous whitespace
+  \item Dramatic chapter openers with large faded numbers
+  \item Breadcrumb navigation in headers
+  \item Subtle shadows and accent colors
+  \item Minimal tables with thin rules
+\end{itemize}
+
+\subsection{Typography}
+
+Body text uses Inter (or Helvetica as fallback) at 10pt with 1.35× line height and a full-baseline paragraph skip. This provides excellent readability with generous breathing room between paragraphs.
+
+\subsubsection{Heading Hierarchy}
+
+Headings use a clear size progression: 28pt for chapters, 18pt for sections, 14pt for subsections, and 12pt for subsubsections.
+
+\section{Box Environments}
+
+\begin{adrbox}[ADR-001: Use XeLaTeX for Compilation]
+All documents must be compiled with XeLaTeX to ensure proper font rendering and Unicode support. PDFLaTeX is not supported.
+\end{adrbox}
+
+\begin{infobox}[Key Information]
+The document class automatically loads common packages including TikZ, booktabs, tcolorbox, and fontawesome5.
+\end{infobox}
+
+\begin{warningbox}[Caution]
+Ensure the Inter and JetBrains Mono fonts are installed on your system for optimal rendering.
+\end{warningbox}
+
+\begin{successbox}[Validation Passed]
+All tests completed successfully. The document class is ready for production use.
+\end{successbox}
+
+\begin{criticalbox}[Breaking Change]
+This version (v3) is not backward compatible with v1. Update your document preambles accordingly.
+\end{criticalbox}
+
+\begin{notebox}[Implementation Note]
+The chapter opener uses TikZ overlays to position the large faded chapter number.
+\end{notebox}
+
+\section{Status Badges}
+
+Requirements can be tagged with MoSCoW priorities. The \texttt{badgelist} environment keeps descriptors aligned in a consistent column regardless of badge width:
+
+\begin{badgelist}
+  \badgeitem{\statusmust}{Non-negotiable for v1.0. Ship is blocked without these.}
+  \badgeitem{\statusshould}{Important but can slip to a later release if needed.}
+  \badgeitem{\statuscould}{Nice to have once the core is stable and measured.}
+  \badgeitem{\statuswont}{Explicitly out of scope for this phase.}
+\end{badgelist}
+
+\section{Helper Commands}
+
+\begin{itemize}
+  \item File paths: \filepath{src/intelligence/analytics/}
+  \item Artifacts: \artifact{.clinerules}
+  \item Requirement IDs: \reqid{TB-REQ-ES01}
+  \item Schema paths: \schemapath{docs/schema/tb/variance-record.schema.json}
+  \item Enum values: \enumval{approved}
+  \item Field references: \fieldref{variance\_id}
+  \item Tools: \tool{xelatex}
+  \item States: \stateid{COMPLETED}
+\end{itemize}
+
+\subsection{SF Symbols 7}
+
+The helper \texttt{\textbackslash sfsymbol\{<hex>\}} drops any SF Symbols~7 glyph inline using the installed \emph{SF Pro} font. Codepoints are found in the \emph{SF Symbols} app via \emph{Edit \textbar{} Copy \textbar{} Copy as Unicode}, then pasted without the leading \texttt{0x}:
+
+\begin{badgelist}
+  \badgeitem{\sfsymbol{100181}}{Whatever glyph your SF Symbols 7 install maps to \texttt{0x100181}.}
+  \badgeitem{\sfsymbol{100195}}{Glyph at \texttt{0x100195} --- codepoints shift per SF Symbols release.}
+  \badgeitem{\sfsymbol{1001F8}}{Glyph at \texttt{0x1001F8}.}
+  \badgeitem{\sfsymbol{100184}}{Glyph at \texttt{0x100184}.}
+\end{badgelist}
+
+The helper is agnostic to version; copy any codepoint from your SF Symbols app and it will render.
+
+\chapter{Tables and Code}
+
+\section{Metrics Table}
+
+\begin{metricstable}{Key Performance Metrics}
+Accept without edit rate & 72\% & $\geq$70\% \\
+Accept with any edit rate & 96\% & $\geq$95\% \\
+vLLM availability & 99.2\% & $\geq$95\% \\
+vLLM latency P95 & 3200ms & $<$5000ms \\
+\end{metricstable}
+
+\section{Code Listings}
+
+Source code blocks render with an Xcode-style file-path header, line numbers, and syntax highlighting:
+
+\begin{codeblock}[language=Python]{src/training/pipeline/simula_config.py}
+from dataclasses import dataclass
+from pathlib import Path
+
+@dataclass(frozen=True)
+class SimulaConfig:
+    """Configuration for the Simula training pipeline."""
+    corpus_path: Path
+    batch_size: int = 32
+    learning_rate: float = 3e-5
+
+    def validate(self) -> None:
+        if not self.corpus_path.exists():
+            raise FileNotFoundError(self.corpus_path)
+\end{codeblock}
+
+\section{Source Quotations}
+
+\begin{sourcequote}
+``The Trial Balance Review process ensures that account balances are accurate, supported, and reconciled before period close.'' --- TB-BC-001, Section 2.1
+\end{sourcequote}
+
+\makecolophon{%
+This document was typeset with XeLaTeX using the sap-oss-apple-minimal document class.\\[8pt]
+Version 3.0.0 --- April 2026\\[8pt]
+SCB GCFO, AI Research \& Development
+}
+
+\end{document}

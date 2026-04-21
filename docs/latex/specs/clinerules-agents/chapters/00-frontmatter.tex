@@ -1,0 +1,77 @@
+\chapter{Frontmatter}
+\label{ch:frontmatter}
+
+\tableofcontents
+\clearpage
+
+\section{Purpose}
+
+This supplementary specification defines how \artifact{.clinerules}
+files are used as agent contracts across the SAP OSS repository. It is
+not a replacement for the four domain specifications. Instead, it is
+the operational layer that turns those specifications into a governed
+agent fleet: development agents, runtime-monitor agents, and the swarm
+that delivers the artefacts under \filepath{docs/pdf/specs/}.
+
+\section{Normative relationship to the regulations specification}
+
+This document is subordinate to
+\filepath{docs/pdf/specs/regulations-spec.pdf}. The regulations book
+defines the governing obligations for agentic AI; this document
+translates those obligations into repository-level rule-pack patterns,
+path conventions, validation harnesses, and swarm responsibilities.
+
+\section{Scope}
+
+The specification covers:
+\begin{itemize}
+  \item development-time \artifact{.clinerules} files for domain
+    implementation and maintenance agents;
+  \item runtime-monitor \artifact{.clinerules} companions that watch
+    live agent behaviour and evidence;
+  \item path conventions for placing these rule files in the codebase;
+  \item the minimum contract each rule pack must encode;
+  \item the swarm model used to deliver and maintain
+    \filepath{docs/pdf/specs/}.
+\end{itemize}
+
+Out of scope:
+\begin{itemize}
+  \item inventing new governance obligations that contradict the
+    regulations specification;
+  \item replacing the domain specifications with agent rules;
+  \item defining a specific external agent runtime implementation.
+\end{itemize}
+
+\section{Deliverables required by this specification}
+
+\begin{table}[htbp]
+\centering
+\footnotesize
+\caption{Primary deliverables.}
+\label{tab:deliverables}
+\begin{tabularx}{\textwidth}{@{}l l X@{}}
+\toprule
+\textbf{Deliverable} & \textbf{Path pattern} & \textbf{Purpose} \\
+\midrule
+Development agent rule pack & \filepath{src/<domain>/.clinerules} & Implementation, migration, maintenance, and test expectations for a domain or service. \\
+Runtime monitor rule pack & \filepath{src/<domain>/.clinerules.runtime-monitor} & Live monitoring, alerting, evidence correlation, and fail-closed rules. \\
+Supplementary agent spec & \filepath{docs/latex/specs/clinerules-agents/} & Cross-domain operating model for rule packs and swarm delivery. \\
+Validation harness & colocated tests & Structural and benchmark validation of rule packs. \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\section{Current repository examples}
+
+The repository already contains rule-pack precedents:
+\begin{itemize}
+  \item \filepath{.clinerules}
+  \item \filepath{src/generativeUI/.clinerules}
+  \item \filepath{src/training/.clinerules}
+  \item \filepath{src/training/.clinerules.runtime-monitor}
+\end{itemize}
+
+This specification extends that pattern by requiring the regulations
+domain to own its own development and runtime-monitor rule packs under
+\filepath{src/intelligence/}.

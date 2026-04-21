@@ -102,6 +102,14 @@ not merged.
     default per MAS MGF pillar~1.
 \end{itemize}
 
+\section{Agent Rule-Pack Binding}
+\label{sec:agent-rule-binding}
+Before initiating any task in this domain, the agent MUST load the following rule packs in order:
+\begin{enumerate}
+  \item \filepath{.clinerules} (Global Standards)
+  \item \filepath{src/intelligence/.clinerules} (Regulations Envelope)
+\end{enumerate}
+
 \section{Implementation tasks for this domain}
 \label{sec:agent-tasks}
 The tasks below are intent-based: each task states the outcome a

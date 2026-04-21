@@ -103,7 +103,7 @@ enforcement layers are required.} No single mechanism is sufficient.
 The GitHub Actions workflow at \filepath{.github/workflows/spec-drift-audit.yml}
 provides server-side enforcement that \textbf{cannot be bypassed} by developers:
 
-\begin{lstlisting}[language=yaml,caption=CI/CD enforcement configuration]
+\begin{lstlisting}[language=yamlx,caption=CI/CD enforcement configuration]
 on:
   pull_request:
     branches: [main, develop]
@@ -182,7 +182,7 @@ The onboarding checklist is documented in \filepath{scripts/spec-drift/README.md
 The \filepath{docs/schema/spec-code-mapping.yaml} file defines relationships
 between artifacts:
 
-\begin{lstlisting}[language=yaml,caption=Example traceability mapping]
+\begin{lstlisting}[language=yamlx,caption=Example traceability mapping]
 domains:
   simula:
     spec_root: docs/latex/specs/simula
@@ -209,7 +209,7 @@ files as potentially requiring updates.
 
 Temporary exceptions can be granted via \filepath{docs/schema/drift-exceptions.yaml}:
 
-\begin{lstlisting}[language=yaml,caption=Drift exception format]
+\begin{lstlisting}[language=yamlx,caption=Drift exception format]
 exceptions:
   - id: "EXC-001"
     created: "2026-04-21"

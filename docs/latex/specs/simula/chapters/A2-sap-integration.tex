@@ -1,0 +1,573 @@
+\chapter{SAP Integration Guide}
+\label{chap:sap-integration-guide}
+
+This appendix provides detailed technical guidance for integrating Simula with
+SAP technology stack components. It complements the high-level integration
+points described in Chapter~\ref{chap:business-requirements} and
+Chapter~\ref{chap:implementation-roadmap}.
+
+\section{SAP HANA Cloud Integration}
+
+\subsection{Connection Configuration}
+
+Simula requires read-only access to SAP HANA Cloud for schema extraction.
+
+\begin{lstlisting}[language=jsonx,caption={HANA Cloud connection configuration}]
+# Environment variables for HANA Cloud connection
+SIMULA_HANA_HOST=your-hana-instance.hana.ondemand.com
+SIMULA_HANA_PORT=443
+SIMULA_HANA_USER=SIMULA_SERVICE_USER
+SIMULA_HANA_PASSWORD_SECRET=hana-password  # Reference to BTP Credential Store
+SIMULA_HANA_ENCRYPT=true
+SIMULA_HANA_SCHEMA=TRAINING_SOURCE
+
+# Python connection using hdbcli
+from hdbcli import dbapi
+
+connection = dbapi.connect(
+    address=os.environ["SIMULA_HANA_HOST"],
+    port=int(os.environ["SIMULA_HANA_PORT"]),
+    user=os.environ["SIMULA_HANA_USER"],
+    password=get_secret(os.environ["SIMULA_HANA_PASSWORD_SECRET"]),
+    encrypt=True,
+    sslValidateCertificate=True
+)
+\end{lstlisting}
+
+\subsection{Required Database Permissions}
+
+The service user requires the following minimum privileges:
+
+\begin{table}[H]
+\centering
+\caption{HANA Cloud permissions for Simula service user}
+\label{tab:hana-permissions}
+\begin{tabularx}{\textwidth}{@{}l X@{}}
+\toprule
+\textbf{Permission} & \textbf{Purpose} \\
+\midrule
+\texttt{SELECT} on \texttt{SYS.TABLES} & List available tables \\
+\texttt{SELECT} on \texttt{SYS.COLUMNS} & Extract column metadata \\
+\texttt{SELECT} on \texttt{SYS.CONSTRAINTS} & Extract foreign key relationships \\
+\texttt{SELECT} on \texttt{SYS.INDEXES} & Identify indexed columns \\
+\texttt{SELECT} on target schemas & Read table/view definitions \\
+\texttt{CATALOG READ} & Access system views \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\begin{lstlisting}[language=SQL,caption={Granting minimum permissions}]
+-- Create service user
+CREATE USER SIMULA_SERVICE_USER PASSWORD "***" NO FORCE_FIRST_PASSWORD_CHANGE;
+
+-- Grant catalog read
+GRANT CATALOG READ TO SIMULA_SERVICE_USER;
+
+-- Grant schema access (repeat for each source schema)
+GRANT SELECT ON SCHEMA "TRAINING_SOURCE" TO SIMULA_SERVICE_USER;
+
+-- For metadata extraction
+GRANT SELECT ON SYS.TABLES TO SIMULA_SERVICE_USER;
+GRANT SELECT ON SYS.COLUMNS TO SIMULA_SERVICE_USER;
+GRANT SELECT ON SYS.CONSTRAINTS TO SIMULA_SERVICE_USER;
+GRANT SELECT ON SYS.INDEXES TO SIMULA_SERVICE_USER;
+\end{lstlisting}
+
+\subsection{HANA-Specific Type Mapping}
+
+\begin{table}[H]
+\centering
+\caption{HANA type to Simula schema type mapping}
+\label{tab:hana-type-mapping}
+\footnotesize
+\begin{tabularx}{\textwidth}{@{}l l X@{}}
+\toprule
+\textbf{HANA Type} & \textbf{Simula Type} & \textbf{Notes} \\
+\midrule
+\texttt{TINYINT}, \texttt{SMALLINT}, \texttt{INTEGER}, \texttt{BIGINT} & \texttt{integer} & --- \\
+\texttt{DECIMAL}, \texttt{SMALLDECIMAL} & \texttt{decimal} & Preserve precision/scale \\
+\texttt{REAL}, \texttt{DOUBLE} & \texttt{float} & --- \\
+\texttt{VARCHAR}, \texttt{NVARCHAR} & \texttt{string} & Note max length \\
+\texttt{DATE} & \texttt{date} & Format: YYYY-MM-DD \\
+\texttt{TIME} & \texttt{time} & Format: HH:MM:SS \\
+\texttt{TIMESTAMP}, \texttt{SECONDDATE} & \texttt{timestamp} & ISO 8601 format \\
+\texttt{BOOLEAN} & \texttt{boolean} & --- \\
+\texttt{VARBINARY}, \texttt{BLOB} & \texttt{binary} & Excluded from SQL generation \\
+\texttt{CLOB}, \texttt{NCLOB} & \texttt{text} & Large text handling \\
+\texttt{ST\_GEOMETRY}, \texttt{ST\_POINT} & \texttt{geometry} & See \S\ref{sec:spatial-types} \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\subsection{Spatial Type Handling}
+\label{sec:spatial-types}
+
+HANA spatial types require special handling during schema extraction and SQL
+generation:
+
+\begin{lstlisting}[language=jsonx,caption={Spatial type detection and handling}]
+SPATIAL_TYPES = {
+    "ST_GEOMETRY", "ST_POINT", "ST_LINESTRING", "ST_POLYGON",
+    "ST_MULTIPOINT", "ST_MULTILINESTRING", "ST_MULTIPOLYGON",
+    "ST_GEOMETRYCOLLECTION"
+}
+
+def extract_column_metadata(cursor, table_name: str) -> list[ColumnMetadata]:
+    """Extract column metadata with spatial type handling."""
+    query = """
+        SELECT COLUMN_NAME, DATA_TYPE_NAME, LENGTH, SCALE, IS_NULLABLE
+        FROM SYS.COLUMNS
+        WHERE TABLE_NAME = ?
+        ORDER BY POSITION
+    """
+    cursor.execute(query, (table_name,))
+    
+    columns = []
+    for row in cursor.fetchall():
+        col_type = row[1]
+        is_spatial = col_type in SPATIAL_TYPES
+        
+        columns.append(ColumnMetadata(
+            name=row[0],
+            data_type=col_type,
+            simula_type="geometry" if is_spatial else map_hana_type(col_type),
+            length=row[2],
+            scale=row[3],
+            nullable=row[4] == "TRUE",
+            is_spatial=is_spatial,
+            spatial_srid=get_srid(cursor, table_name, row[0]) if is_spatial else None
+        ))
+    
+    return columns
+
+def get_srid(cursor, table_name: str, column_name: str) -> int | None:
+    """Get SRID for spatial column."""
+    query = """
+        SELECT SRS_ID FROM SYS.ST_GEOMETRY_COLUMNS
+        WHERE TABLE_NAME = ? AND COLUMN_NAME = ?
+    """
+    cursor.execute(query, (table_name, column_name))
+    row = cursor.fetchone()
+    return row[0] if row else 4326  # Default to WGS84
+\end{lstlisting}
+
+\textbf{SQL Generation Guidelines for Spatial Columns:}
+\begin{itemize}
+  \item Use \texttt{ST\_AsText()} for human-readable output
+  \item Use \texttt{ST\_Distance()} for proximity queries
+  \item Use \texttt{ST\_Within()} for containment predicates
+  \item Avoid including raw geometry in \texttt{SELECT *} queries
+\end{itemize}
+
+
+\section{SAP AI Core Integration}
+
+\subsection{Deployment Configuration}
+
+Simula can be deployed as an SAP AI Core serving endpoint:
+
+\begin{lstlisting}[language=yamlx,caption={SAP AI Core serving configuration}]
+# ai-core-serving.yaml
+apiVersion: ai.sap.com/v1alpha1
+kind: ServingTemplate
+metadata:
+  name: simula-generator
+  labels:
+    scenarios.ai.sap.com/id: "simula-training"
+    ai.sap.com/version: "1.2.0"
+spec:
+  template:
+    apiVersion: serving.kubeflow.org/v1alpha2
+    spec:
+      predictor:
+        imagePullSecrets:
+          - name: docker-registry-secret
+        containers:
+          - name: simula
+            image: sap-oss/simula:1.2.0
+            ports:
+              - containerPort: 8080
+                protocol: TCP
+            env:
+              - name: SIMULA_VLLM_ENDPOINT
+                valueFrom:
+                  secretKeyRef:
+                    name: simula-secrets
+                    key: vllm-endpoint
+              - name: SIMULA_HANA_HOST
+                valueFrom:
+                  configMapKeyRef:
+                    name: simula-config
+                    key: hana-host
+            resources:
+              requests:
+                memory: "4Gi"
+                cpu: "2"
+              limits:
+                memory: "8Gi"
+                cpu: "4"
+\end{lstlisting}
+
+\subsection{Training Pipeline Integration}
+
+Register Simula outputs with SAP AI Core MLOps:
+
+\begin{lstlisting}[language=jsonx,caption={Registering training data with AI Core}]
+from ai_core_sdk.models import Artifact, ArtifactScenario
+
+def register_training_dataset(
+    ai_core_client,
+    dataset_path: str,
+    run_id: str,
+    metadata: dict
+) -> str:
+    """Register generated dataset as AI Core artifact."""
+    
+    artifact = Artifact(
+        name=f"simula-training-data-{run_id}",
+        kind="dataset",
+        url=dataset_path,  # S3/Object Store URL
+        scenario_id="simula-training",
+        labels={
+            "run_id": run_id,
+            "examples_count": str(metadata["total_examples"]),
+            "coverage_score": str(metadata["coverage"]["global"]),
+            "diversity_score": str(metadata["diversity"]["global"]),
+            "generation_date": metadata["timestamp"]
+        }
+    )
+    
+    result = ai_core_client.artifact.create(artifact)
+    return result.id
+\end{lstlisting}
+
+
+\section{SAP BTP Services Integration}
+
+\subsection{Credential Store}
+
+Store sensitive credentials in SAP BTP Credential Store:
+
+\begin{lstlisting}[language=jsonx,caption={Retrieving secrets from BTP Credential Store}]
+import requests
+from cfenv import AppEnv
+
+def get_secret(secret_name: str) -> str:
+    """Retrieve secret from BTP Credential Store."""
+    env = AppEnv()
+    cred_store = env.get_service(name="credential-store")
+    
+    response = requests.get(
+        f"{cred_store.credentials['url']}/api/v1/credentials/{secret_name}",
+        headers={
+            "Authorization": f"Bearer {get_token(cred_store)}",
+            "Content-Type": "application/json"
+        }
+    )
+    response.raise_for_status()
+    return response.json()["value"]
+\end{lstlisting}
+
+\subsection{Audit Log Service}
+
+Emit audit events to SAP Audit Log Service:
+
+\begin{lstlisting}[language=jsonx,caption={Audit logging integration}]
+from sap_audit_logging import AuditLogger, SecurityMessage
+
+audit_logger = AuditLogger()
+
+def log_generation_event(
+    run_id: str,
+    user_id: str,
+    action: str,
+    details: dict
+):
+    """Log generation event to SAP Audit Log Service."""
+    
+    message = SecurityMessage(
+        user=user_id,
+        action=action,
+        object_type="simula.training.dataset",
+        object_id=run_id,
+        attributes=[
+            {"name": "examples_count", "old": None, "new": str(details.get("count"))},
+            {"name": "source_schema", "old": None, "new": details.get("schema")},
+            {"name": "quality_passed", "old": None, "new": str(details.get("passed"))}
+        ]
+    )
+    
+    audit_logger.log_security_message(message)
+\end{lstlisting}
+
+\subsection{Alert Notification Service}
+
+Configure alerts for quality gate failures:
+
+\begin{lstlisting}[language=jsonx,caption={Alert notification for quality failures}]
+import requests
+
+def send_quality_alert(
+    ans_endpoint: str,
+    run_id: str,
+    failures: list[dict]
+):
+    """Send alert via SAP Alert Notification Service."""
+    
+    alert = {
+        "eventType": "simula.quality.failure",
+        "severity": "WARNING",
+        "category": "NOTIFICATION",
+        "subject": f"Simula quality gate failure: {run_id}",
+        "body": format_failure_report(failures),
+        "resource": {
+            "resourceName": "simula-generator",
+            "resourceType": "application"
+        },
+        "tags": {
+            "run_id": run_id,
+            "failure_count": str(len(failures))
+        }
+    }
+    
+    response = requests.post(
+        f"{ans_endpoint}/cf/producer/v1/resource-events",
+        json=alert,
+        headers={"Content-Type": "application/json"}
+    )
+    response.raise_for_status()
+\end{lstlisting}
+
+
+\section{SAP Analytics Cloud Integration}
+
+\subsection{Cost Tracking Dashboard}
+
+Export generation metrics to SAP Analytics Cloud:
+
+\begin{lstlisting}[language=jsonx,caption={Exporting metrics to Analytics Cloud}]
+def export_metrics_to_sac(
+    sac_client,
+    run_metrics: dict,
+    cost_data: dict
+):
+    """Export run metrics to SAP Analytics Cloud model."""
+    
+    data_row = {
+        "run_id": run_metrics["run_id"],
+        "date": run_metrics["timestamp"][:10],
+        "examples_generated": run_metrics["total_examples"],
+        "llm_calls": cost_data["total_llm_calls"],
+        "llm_tokens_input": cost_data["tokens"]["input"],
+        "llm_tokens_output": cost_data["tokens"]["output"],
+        "cost_usd": cost_data["estimated_cost_usd"],
+        "cost_per_example": cost_data["estimated_cost_usd"] / run_metrics["total_examples"],
+        "coverage_score": run_metrics["coverage"]["global"],
+        "diversity_score": run_metrics["diversity"]["global"],
+        "critic_acceptance_rate": run_metrics["critic"]["acceptance_rate"]
+    }
+    
+    sac_client.import_data(
+        model_id="simula_generation_metrics",
+        data=[data_row]
+    )
+\end{lstlisting}
+
+\subsection{Recommended Dashboard Widgets}
+
+\begin{table}[H]
+\centering
+\caption{SAC dashboard widget recommendations}
+\label{tab:sac-widgets}
+\footnotesize
+\begin{tabularx}{\textwidth}{@{}l l X@{}}
+\toprule
+\textbf{Widget} & \textbf{Type} & \textbf{Metrics} \\
+\midrule
+Generation Volume & Time Series & Examples/day, cumulative total \\
+Cost Analysis & Stacked Bar & Cost by component (LLM, compute, storage) \\
+Quality Trends & Line Chart & Coverage, diversity, critic rate over time \\
+Use Case Distribution & Pie Chart & Examples by taxonomy factor \\
+Cost Efficiency & KPI Card & Cost per example, trend arrow \\
+Quality Gate Status & Traffic Light & Current run pass/fail status \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+
+\section{SAP GRC Integration}
+
+\subsection{Policy Management}
+
+Register synthetic data policies in SAP GRC:
+
+\begin{lstlisting}[language=yamlx,caption={GRC policy registration}]
+# grc-policy-registration.yaml
+policy:
+  id: "SYNTH-DATA-001"
+  name: "Synthetic Training Data Generation Policy"
+  category: "Data Governance"
+  owner: "AI Platform Team"
+  
+  controls:
+    - id: "CTRL-001"
+      name: "Quality Gate Verification"
+      description: "All generated datasets must pass quality gates"
+      test_procedure: "Verify coverage >= 80%, diversity >= 65%"
+      frequency: "Per generation run"
+      
+    - id: "CTRL-002"
+      name: "Provenance Logging"
+      description: "All generation runs must have complete provenance"
+      test_procedure: "Verify audit trail completeness"
+      frequency: "Per generation run"
+      
+    - id: "CTRL-003"
+      name: "Privacy Screening"
+      description: "Generated data must pass privacy checks"
+      test_procedure: "Run membership inference test"
+      frequency: "Before production use"
+\end{lstlisting}
+
+\subsection{Compliance Evidence Collection}
+
+Automatically collect compliance evidence:
+
+\begin{lstlisting}[language=jsonx,caption={GRC evidence collection}]
+def collect_compliance_evidence(run_id: str, metrics: dict) -> dict:
+    """Collect compliance evidence for GRC reporting."""
+    
+    return {
+        "run_id": run_id,
+        "timestamp": datetime.utcnow().isoformat(),
+        "controls": {
+            "CTRL-001": {
+                "status": "PASS" if metrics["coverage"]["global"] >= 0.80 
+                          and metrics["diversity"]["global"] >= 0.65 else "FAIL",
+                "evidence": {
+                    "coverage": metrics["coverage"]["global"],
+                    "diversity": metrics["diversity"]["global"]
+                }
+            },
+            "CTRL-002": {
+                "status": "PASS" if metrics.get("provenance_complete") else "FAIL",
+                "evidence": {
+                    "audit_events": metrics.get("audit_event_count", 0),
+                    "provenance_hash": metrics.get("provenance_hash")
+                }
+            }
+        }
+    }
+\end{lstlisting}
+
+
+\section{SAP Build Apps Integration}
+
+For self-service generation interfaces, Simula exposes a REST API compatible
+with SAP Build Apps:
+
+\subsection{API Endpoints}
+
+\begin{table}[H]
+\centering
+\caption{Simula REST API endpoints for Build Apps}
+\label{tab:api-endpoints}
+\footnotesize
+\begin{tabularx}{\textwidth}{@{}l l X@{}}
+\toprule
+\textbf{Endpoint} & \textbf{Method} & \textbf{Purpose} \\
+\midrule
+\texttt{/api/v1/schemas} & GET & List available schemas \\
+\texttt{/api/v1/taxonomies} & GET, POST & List/create taxonomies \\
+\texttt{/api/v1/runs} & GET, POST & List/create generation runs \\
+\texttt{/api/v1/runs/\{id\}} & GET & Get run status and results \\
+\texttt{/api/v1/runs/\{id\}/cancel} & POST & Cancel running generation \\
+\texttt{/api/v1/artifacts/\{id\}} & GET & Download generated artifacts \\
+\texttt{/api/v1/metrics} & GET & Get aggregated metrics \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\subsection{Build Apps Data Entity}
+
+\begin{lstlisting}[language=jsonx,caption={Build Apps data entity for generation runs}]
+{
+  "name": "SimulaRun",
+  "fields": [
+    {"name": "id", "type": "text", "key": true},
+    {"name": "name", "type": "text"},
+    {"name": "status", "type": "enum", "values": ["pending", "running", "completed", "failed"]},
+    {"name": "target_count", "type": "number"},
+    {"name": "generated_count", "type": "number"},
+    {"name": "coverage_score", "type": "number"},
+    {"name": "diversity_score", "type": "number"},
+    {"name": "created_at", "type": "datetime"},
+    {"name": "completed_at", "type": "datetime"},
+    {"name": "error_message", "type": "text"}
+  ],
+  "dataSource": {
+    "type": "REST",
+    "baseUrl": "https://simula-api.your-domain.com",
+    "authentication": "OAuth2",
+    "endpoints": {
+      "getAll": "/api/v1/runs",
+      "get": "/api/v1/runs/{id}",
+      "create": "/api/v1/runs"
+    }
+  }
+}
+\end{lstlisting}
+
+
+\section{Quick Reference: Environment Variables}
+
+\begin{table}[H]
+\centering
+\caption{Complete environment variable reference}
+\label{tab:env-vars-complete}
+\scriptsize
+\begin{tabularx}{\textwidth}{@{}l l X@{}}
+\toprule
+\textbf{Variable} & \textbf{Default} & \textbf{Description} \\
+\midrule
+\multicolumn{3}{l}{\textit{HANA Cloud Connection}} \\
+\texttt{SIMULA\_HANA\_HOST} & (required) & HANA Cloud host \\
+\texttt{SIMULA\_HANA\_PORT} & 443 & HANA Cloud port \\
+\texttt{SIMULA\_HANA\_USER} & (required) & Service user \\
+\texttt{SIMULA\_HANA\_PASSWORD\_SECRET} & (required) & Credential Store reference \\
+\texttt{SIMULA\_HANA\_SCHEMA} & (required) & Default schema \\
+\midrule
+\multicolumn{3}{l}{\textit{LLM Configuration}} \\
+\texttt{SIMULA\_VLLM\_ENDPOINT} & (required) & vLLM TurboQuant endpoint \\
+\texttt{SIMULA\_TEACHER\_MODEL} & deepseek-coder-33b & Teacher model ID \\
+\texttt{SIMULA\_STUDENT\_MODEL} & codellama-7b & Student model ID \\
+\texttt{SIMULA\_LLM\_TIMEOUT} & 60 & Request timeout (seconds) \\
+\midrule
+\multicolumn{3}{l}{\textit{Taxonomy Configuration}} \\
+\texttt{SIMULA\_TAXONOMY\_DEPTH} & 3 & Default taxonomy depth \\
+\texttt{SIMULA\_BEST\_OF\_N} & 5 & Proposals per node \\
+\texttt{SIMULA\_TAXONOMY\_TEMPERATURE} & 0.8 & Expansion temperature \\
+\midrule
+\multicolumn{3}{l}{\textit{Generation Configuration}} \\
+\texttt{SIMULA\_TARGET\_EXAMPLES} & 10000 & Default target count \\
+\texttt{SIMULA\_COMPLEXIFICATION\_RATIO} & 0.5 & Complexification fraction \\
+\texttt{SIMULA\_SAMPLING\_STRATEGY} & uniform & Node sampling strategy \\
+\texttt{SIMULA\_SCHEMA\_MAX\_TOKENS} & 4096 & Schema context budget \\
+\texttt{SIMULA\_MAX\_COLUMNS\_PER\_TABLE} & 30 & Column limit per table \\
+\midrule
+\multicolumn{3}{l}{\textit{Quality Thresholds}} \\
+\texttt{SIMULA\_COVERAGE\_THRESHOLD\_L1} & 1.0 & Level 1 coverage \\
+\texttt{SIMULA\_COVERAGE\_THRESHOLD\_L2} & 0.95 & Level 2 coverage \\
+\texttt{SIMULA\_COVERAGE\_THRESHOLD\_L3} & 0.80 & Level 3 coverage \\
+\texttt{SIMULA\_DIVERSITY\_THRESHOLD} & 0.65 & Global diversity \\
+\texttt{SIMULA\_CRITIC\_ACCEPT\_MIN} & 0.80 & Min P(accept|correct) \\
+\texttt{SIMULA\_CRITIC\_REJECT\_MAX} & 0.30 & Max P(accept|corrupted) \\
+\midrule
+\multicolumn{3}{l}{\textit{SAP Integration}} \\
+\texttt{SIMULA\_AI\_CORE\_URL} & --- & AI Core endpoint \\
+\texttt{SIMULA\_AUDIT\_LOG\_URL} & --- & Audit Log Service \\
+\texttt{SIMULA\_ANS\_URL} & --- & Alert Notification Service \\
+\texttt{SIMULA\_SAC\_MODEL\_ID} & --- & Analytics Cloud model \\
+\bottomrule
+\end{tabularx}
+\end{table}

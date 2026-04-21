@@ -1,0 +1,89 @@
+% =============================================================================
+% TRIAL BALANCE REVIEW - BUSINESS REQUIREMENTS & LINEAGE
+% HITL Traceability Specification
+% Version: 1.0 - Apple WWDC Style Edition
+% =============================================================================
+% !TEX program = xelatex
+\documentclass[fontsize=11pt,paper=a4paper,twoside=true]{../../shared/sap-oss-apple}
+
+% -----------------------------------------------------------------------------
+% DOCUMENT METADATA
+% -----------------------------------------------------------------------------
+\title{Trial Balance Review}
+\author{SCB GCFO, AI Research \& Development}
+\date{April 2026}
+
+% Title page configuration
+\setdocsubtitle{Business Requirements \& Lineage --- HITL Traceability Specification}
+\setdocref{TB-REQ-LIN-2026-v1.0}
+\setdocversion{1.0.0}
+\setdocteam{SCB GCFO, AI Research \& Development}
+\setsaplogo{../../shared/sap-logo.png}
+\setbrandimage{../../shared/brand-image.jpg}
+
+% -----------------------------------------------------------------------------
+% EXTERNAL REFERENCES (Semantic hyperlinking)
+% -----------------------------------------------------------------------------
+\usepackage{xr-hyper}
+
+% External references to peer specifications
+% Note: These require the referenced documents to be compiled
+% \externaldocument[tb:]{../tb/tb-review-spec}
+% \externaldocument[reg:]{../regulations/regulations-spec}
+% \externaldocument[ar:]{../arabic/arabic-ap-spec}
+% \externaldocument[sim:]{../simula/simula-training-spec}
+
+% -----------------------------------------------------------------------------
+% DOCUMENT BEGINS
+% -----------------------------------------------------------------------------
+\begin{document}
+
+% Custom SAP title page
+\makesaptitle
+
+% Table of contents
+\tableofcontents
+\clearpage
+
+% -----------------------------------------------------------------------------
+% CHAPTERS
+% -----------------------------------------------------------------------------
+
+% --- Incorporated Executive Summary ---
+\chapter{Executive Summary}
+\input{../fragment-executive-summary}
+
+\input{chapters/00-frontmatter}
+\input{chapters/00-visual-traceability-map}
+\input{chapters/01-overview}
+\input{chapters/02-source-documents}
+\input{chapters/03-extraction-layer}
+\input{chapters/04-business-requirements}
+\input{chapters/05-specification-mapping}
+\input{chapters/06-schema-mapping}
+\input{chapters/07-bidirectional-traceability}
+\input{chapters/08-gap-analysis}
+\input{chapters/09-testing-alignment}
+\input{chapters/10-acceptance-criteria}
+\input{chapters/11-governance}
+\input{chapters/12-implementation-roadmap}
+
+% -----------------------------------------------------------------------------
+% APPENDICES
+% -----------------------------------------------------------------------------
+\appendix
+\input{chapters/A1-full-requirement-registry}
+\input{chapters/A2-document-change-log}
+
+% --- Incorporated Universal Chapters ---
+\input{../fragment-cross-spec-dependencies}
+\input{../fragment-master-glossary}
+
+% Colophon
+\makecolophon{%
+  This specification is part of the SAP-OSS AI Platform documentation suite.\\
+  Trial Balance Review module for month-end close controls.\\
+  For questions or feedback, contact the Financial Architecture Team.
+}
+
+\end{document}

@@ -1,0 +1,247 @@
+\chapter{Schema Versioning and Interface Contracts}
+\label{chap:schema-versioning}
+
+This chapter defines the schema versioning policy for the Simula training data
+framework, ensuring stable cross-domain interfaces and controlled evolution of
+data contracts.
+
+\section{Versioning Policy}
+
+\subsection{Semantic Versioning for Schemas}
+
+All Simula schemas follow Semantic Versioning (SemVer) 2.0.0:
+
+\begin{itemize}
+  \item \textbf{MAJOR.MINOR.PATCH} (e.g., \texttt{1.2.0})
+  \item \textbf{MAJOR}: Breaking changes to required fields or core structure
+  \item \textbf{MINOR}: Backward-compatible additions (new optional fields)
+  \item \textbf{PATCH}: Documentation, description, or metadata updates
+\end{itemize}
+
+\subsection{Current Schema Versions}
+
+\begin{table}[htbp]
+\centering
+\caption{Simula schema versions as of v1.2.}
+\label{tab:schema-versions}
+\footnotesize
+\begin{tabularx}{\textwidth}{@{}l l l X@{}}
+\toprule
+\textbf{Schema} & \textbf{Version} & \textbf{Status} & \textbf{Description} \\
+\midrule
+\texttt{training-example.schema.json} & 1.2.0 & Stable & Training example record with critic evaluation \\
+\texttt{taxonomy.schema.json} & 1.2.0 & Stable & Taxonomy tree structure with quality metrics \\
+\texttt{schema-registry.schema.json} & 1.1.0 & Stable & HANA schema registry record \\
+\texttt{evaluation-report.schema.json} & 1.0.0 & Draft & Evaluation framework output \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\section{Schema Evolution Rules}
+
+\subsection{Backward Compatibility Requirements}
+
+\begin{enumerate}
+  \item \textbf{Required fields cannot be removed} in MINOR or PATCH versions.
+  \item \textbf{Required fields cannot be renamed} without a MAJOR version bump.
+  \item \textbf{New optional fields} can be added in MINOR versions.
+  \item \textbf{Enum values can only be added}, not removed, in MINOR versions.
+  \item \textbf{Removing enum values} requires a MAJOR version bump with deprecation notice.
+\end{enumerate}
+
+\subsection{Deprecation Process}
+
+\begin{enumerate}
+  \item Mark field as deprecated in schema description (MINOR version).
+  \item Add \texttt{deprecated: true} metadata if supported by tooling.
+  \item Document migration path in changelog.
+  \item Maintain deprecated field for at least one MINOR release cycle.
+  \item Remove deprecated field in next MAJOR version.
+\end{enumerate}
+
+\section{Cross-Domain Interface Contracts}
+
+\subsection{Schema-In, TrainingExample-Out Contract}
+
+Simula maintains a strict contract with consumer domains:
+
+\begin{lstlisting}[basicstyle=\ttfamily\small,caption={Cross-domain interface contract.}]
+Input (from Arabic AP, TB, Regulations):
+  - Schema files conforming to each domain's schema registry
+  - Fixture files for validation
+
+Output (to consumers):
+  - TrainingExample records conforming to training-example.schema.json v1.2.0
+  - Taxonomy artifacts conforming to taxonomy.schema.json v1.2.0
+  - Evaluation reports conforming to evaluation-report.schema.json v1.0.0
+\end{lstlisting}
+
+\subsection{Interface Versioning}
+
+Each cross-domain interface is versioned independently:
+
+\begin{table}[htbp]
+\centering
+\caption{Cross-domain interface versions.}
+\label{tab:interface-versions}
+\footnotesize
+\begin{tabularx}{\textwidth}{@{}l l l X@{}}
+\toprule
+\textbf{Interface} & \textbf{Version} & \textbf{Consumer} & \textbf{Contract} \\
+\midrule
+Simula $\to$ TB & 1.2 & Trial Balance & TrainingExample output \\
+Simula $\to$ Arabic & 1.2 & Arabic AP & TrainingExample output \\
+Simula $\to$ Regulations & 1.2 & Regulations & TrainingExample output \\
+TB $\to$ Simula & 1.0 & Simula & Schema + fixture input \\
+Arabic $\to$ Simula & 1.0 & Simula & Schema + fixture input \\
+Regulations $\to$ Simula & 1.0 & Simula & Schema + fixture input \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\section{Schema Validation}
+
+\subsection{Validation Points}
+
+Schema validation is enforced at three points:
+
+\begin{enumerate}
+  \item \textbf{Input validation}: Before processing consumer schemas
+  \item \textbf{Output validation}: Before emitting TrainingExample records
+  \item \textbf{Report validation}: Before publishing evaluation reports
+\end{enumerate}
+
+\subsection{Validation Implementation}
+
+\begin{lstlisting}[language=jsonx,caption={Schema validation in the pipeline.}]
+from jsonschema import validate, ValidationError
+import json
+
+def validate_training_example(example: dict) -> bool:
+    """Validate a training example against the schema."""
+    with open("docs/schema/simula/training-example.schema.json") as f:
+        schema = json.load(f)
+    
+    try:
+        validate(instance=example, schema=schema)
+        return True
+    except ValidationError as e:
+        logger.error(f"Schema validation failed: {e.message}")
+        return False
+
+# Usage in the pipeline
+for example in generated_examples:
+    if not validate_training_example(example.to_dict()):
+        raise SchemaValidationError(f"Example {example.id} failed validation")
+\end{lstlisting}
+
+\section{Changelog Management}
+
+\subsection{Schema Changelog Location}
+
+Schema changes are documented in:
+\begin{itemize}
+  \item \texttt{docs/schema/CHANGELOG.md} --- consolidated schema changelog
+  \item Each schema file's \texttt{description} field --- version-specific notes
+\end{itemize}
+
+\subsection{Changelog Entry Format}
+
+\begin{lstlisting}[basicstyle=\ttfamily\small,caption={Changelog entry format.}]
+## [1.2.0] - 2026-04-21
+
+### Added
+- `critic_evaluation` complex field for double-critic results
+- `generation_metadata` for reproducibility tracking
+- `quality_signals` for downstream analysis
+
+### Changed
+- `complexity_score` now required (was optional in 1.1.0)
+
+### Deprecated
+- `difficulty` field (use `complexity_level` instead)
+- `taxonomy_mix` field (use `taxonomy_path` instead)
+
+### Migration
+- Existing producers should add `complexity_score` with default 0.5
+- Replace `difficulty` with `complexity_level` (EASY, MEDIUM, HARD)
+\end{lstlisting}
+
+\section{Version Negotiation}
+
+\subsection{Runtime Version Checking}
+
+The pipeline checks schema versions at runtime:
+
+\begin{lstlisting}[language=jsonx,caption={Version negotiation.}]
+def check_schema_compatibility(
+    schema_path: str,
+    min_version: str = "1.0.0",
+    max_version: str = "2.0.0",
+) -> bool:
+    """Check if schema version is within supported range."""
+    with open(schema_path) as f:
+        schema = json.load(f)
+    
+    schema_id = schema.get("$id", "")
+    # Extract version from $id or metadata
+    version = extract_version(schema_id)
+    
+    return semver.match(version, f">={min_version}") and \
+           semver.match(version, f"<{max_version}")
+\end{lstlisting}
+
+\subsection{Graceful Degradation}
+
+When encountering an unknown schema version:
+
+\begin{enumerate}
+  \item Log a warning with schema ID and version
+  \item Attempt to process with latest known compatible schema
+  \item Flag output with \texttt{schema\_version\_mismatch: true}
+  \item Include warning in generation stats
+\end{enumerate}
+
+\section{Implementation Checklist}
+
+\begin{itemize}
+  \item[\texttt{[x]}] Schema version in \texttt{\$id} field
+  \item[\texttt{[x]}] \texttt{training-example.schema.json} at v1.2.0
+  \item[\texttt{[x]}] \texttt{taxonomy.schema.json} at v1.2.0
+  \item[\texttt{[ ]}] Automated schema validation in CI
+  \item[\texttt{[ ]}] Version negotiation in runtime
+  \item[\texttt{[ ]}] Cross-domain contract tests
+  \item[\texttt{[ ]}] Schema changelog automation
+\end{itemize}
+
+\section{Governance}
+
+\subsection{Schema Change Approval}
+
+Schema changes require:
+
+\begin{enumerate}
+  \item RFC submitted to Controls Architecture Team
+  \item 5-day review period for MINOR changes
+  \item 10-day review period for MAJOR changes
+  \item All consuming spec owners must approve breaking changes
+  \item One-release deprecation window for breaking changes
+\end{enumerate}
+
+\subsection{Change Ownership}
+
+\begin{table}[htbp]
+\centering
+\caption{Schema ownership.}
+\label{tab:schema-ownership}
+\footnotesize
+\begin{tabularx}{\textwidth}{@{}l l X@{}}
+\toprule
+\textbf{Schema} & \textbf{Owner} & \textbf{Approval Authority} \\
+\midrule
+\texttt{training-example.schema.json} & Simula Lead & Simula + Consumer Leads \\
+\texttt{taxonomy.schema.json} & Simula Lead & Simula Lead \\
+\texttt{common/enums.yaml} & Controls Arch & All Domain Leads \\
+\bottomrule
+\end{tabularx}
+\end{table}

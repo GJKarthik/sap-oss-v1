@@ -1,0 +1,126 @@
+% =============================================================================
+% CHAPTER 19: REFERENCES
+% =============================================================================
+\chapter{References}
+\label{chap:references}
+
+\section{Source Documents}
+
+\begin{table}[H]
+\centering
+\caption{Source Documents}
+\begin{tabularx}{\textwidth}{lX}
+\toprule
+\textbf{Document} & \textbf{Path} \\
+\midrule
+Simula Research Paper & \texttt{docs/6171\_Reasoning\_Driven\_Syntheti.pdf} \\
+Trial Balance Spec & \texttt{docs/technical-reports/04-trial-balance-ai-specification.tex} \\
+Arabic AP Spec & \texttt{docs/arabic/structured/} (external) \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\section{Implementation Files}
+
+\begin{table}[H]
+\centering
+\caption{Implementation Files}
+\begin{tabularx}{\textwidth}{lX}
+\toprule
+\textbf{File} & \textbf{Lines} \\
+\midrule
+\texttt{src/training/pipeline/simula\_config.py} & Configuration dataclasses \\
+\texttt{src/training/pipeline/simula\_llm\_client.py} & LLM client with Best-of-N, double-critic \\
+\texttt{src/training/pipeline/hana\_schema\_extractor.py} & HANA MCP extraction \\
+\texttt{src/training/pipeline/simula\_taxonomy\_builder.py} & Algorithm 1 implementation \\
+\texttt{src/training/pipeline/simula\_data\_generator.py} & Algorithm 2 implementation \\
+\texttt{src/training/pipeline/simula\_complexity\_calibrator.py} & Algorithm 3 (Elo scoring) \\
+\texttt{src/training/pipeline/simula\_coverage\_evaluator.py} & Level Ratio Coverage \\
+\texttt{src/training/pipeline/simula\_diversity\_analyzer.py} & Global + local diversity \\
+\texttt{src/training/pipeline/simula\_critic\_validator.py} & Critic calibration \\
+\texttt{src/training/scripts/run\_hana\_pipeline.py} & CLI entry point \\
+\texttt{src/training/scripts/split\_by\_complexity.py} & Complexity split (Figure 7) \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\section{Tools and Dependencies}
+
+\begin{table}[H]
+\centering
+\caption{Tools and Dependencies}
+\begin{tabular}{lll}
+\toprule
+\textbf{Tool} & \textbf{Version} & \textbf{Purpose} \\
+\midrule
+vLLM TurboQuant & $\geq$0.8.x & LLM inference backend \\
+AI Core PAL & 1.x & HANA MCP server \\
+Python & 3.11+ & Runtime \\
+asyncio & stdlib & Async orchestration \\
+httpx & 0.27+ & HTTP client \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{Academic References}
+
+\begin{enumerate}
+\item Elo, A. E., \& Sloan, S. (1978). \emph{The Rating of Chess Players, Past and Present}. Arco.
+
+\item Yu, P., et al. (2023). ``Large Language Models as Simulated Economic Agents.'' 
+      \emph{arXiv preprint arXiv:2305.09857}.
+
+\item Liu, Y., et al. (2024). ``Simula: Reasoning-Driven Synthetic Data Generation for 
+      Domain-Specific Knowledge Distillation.'' \emph{OpenReview NALsdGEPhB}.
+
+\item Brown, T., et al. (2020). ``Language Models are Few-Shot Learners.'' 
+      \emph{Advances in Neural Information Processing Systems}, 33.
+
+\item Wei, J., et al. (2022). ``Chain-of-Thought Prompting Elicits Reasoning in Large 
+      Language Models.'' \emph{NeurIPS 2022}.
+\end{enumerate}
+
+\section{Related Specifications}
+
+\begin{description}
+\item[Arabic AP Specification] \hfill \\
+  \texttt{docs/latex/specs/arabic/arabic-ap-spec.tex}
+  
+\item[Trial Balance Specification] \hfill \\
+  \texttt{docs/latex/specs/tb/tb-review-spec.tex}
+  
+\item[Regulations Framework Specification] \hfill \\
+  \texttt{docs/latex/specs/regulations/regulations-spec.tex}
+  
+\item[Agent Rule Pack Specification] \hfill \\
+  \texttt{docs/latex/specs/clinerules-agents/clinerules-agents-spec.tex}
+\end{description}
+
+\section{Schema Registry}
+
+All schemas referenced in this specification are registered in the unified
+schema registry:
+
+\begin{description}
+\item[Registry Index] \texttt{docs/schema/registry.json}
+\item[Simula Schemas] \texttt{docs/schema/simula/}
+  \begin{itemize}
+    \item \texttt{training-example.schema.json}
+    \item \texttt{taxonomy.schema.json}
+    \item \texttt{hana-schema-entry.schema.json}
+    \item \texttt{config.schema.json}
+    \item \texttt{meta-prompt.schema.json}
+  \end{itemize}
+\item[Common Types] \texttt{docs/schema/common/base-types.schema.json}
+\item[Shared Enums] \texttt{docs/schema/common/enums.yaml}
+\end{description}
+
+\section{External Standards}
+
+\begin{description}
+\item[JSON Schema] Draft-07 (\url{https://json-schema.org/draft-07/schema})
+\item[ODPS 4.1] SAP ODPS Data Product Specification v4.1
+\item[MAS MGF] Monetary Authority of Singapore Model Governance Framework for AI
+\item[AI Verify 2.0] Singapore AI governance testing framework
+\item[Moonshot CI/CD 1.1.0] Red-teaming and benchmark toolkit
+\end{description}

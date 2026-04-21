@@ -1,7 +1,11 @@
 % !TEX program = xelatex
 \documentclass[11pt,a4paper,twoside]{report}
 
-\usepackage{xcolor}
+% --- Shared SAP-OSS Style Packages ------------------------------------------
+\usepackage{sap-oss-colors}
+\usepackage{sap-oss-boxes}
+\usepackage{sap-oss-listings}
+
 \usepackage[a4paper,margin=28mm]{geometry}
 \usepackage{graphicx}
 \usepackage{microtype}
@@ -14,51 +18,31 @@
 \usepackage{multirow}
 \usepackage{enumitem}
 \usepackage{amssymb}
-\usepackage{listings}
+\usepackage{pifont}
+\usepackage{fontawesome5}
 \usepackage[hyphens]{url}
-\usepackage{tcolorbox}
 \usepackage{tikz}
-\usepackage[table]{colortbl}
 \usetikzlibrary{arrows.meta,positioning,shapes.geometric,fit,calc,chains,
                 decorations.pathmorphing,backgrounds}
-
-\newtcolorbox{adrbox}[2][]{colback=blue!5,colframe=blue!75!black,fonttitle=\bfseries,title=ADR: #2,#1}
 
 % --- Semantic Hyperlinking --------------------------------------------------
 \usepackage{xr-hyper}
 \usepackage[hidelinks]{hyperref}
 
 % External references to peer specifications
-\externaldocument[ar:]{../arabic/arabic-ap-spec}
-\externaldocument[tb:]{../tb/tb-review-spec}
-\externaldocument[sim:]{../simula/simula-training-spec}
+\externaldocument[ar:]{arabic-ap-spec}
+\externaldocument[tb:]{tb-review-spec}
+\externaldocument[sim:]{simula-training-spec}
 
 \usepackage{fontspec}
 \usepackage[capitalize,noabbrev]{cleveref}
 
-\definecolor{codebg}{gray}{0.96}
-\definecolor{sapblue}{HTML}{0B5FA5}
-\definecolor{sapgreen}{HTML}{00695C}
-\definecolor{sapamber}{HTML}{B8360F}
-\definecolor{sapgrey}{HTML}{546E7A}
-\definecolor{sapmidnight}{HTML}{1C2B39}
-\definecolor{sapgold}{HTML}{F0AB00}
+% --- Domain-Specific Colors (Supplementing shared palette) ------------------
 \definecolor{regred}{HTML}{B71C1C}
 \definecolor{regblue}{HTML}{1565C0}
 \definecolor{reggreen}{HTML}{2E7D32}
 \definecolor{reggrey}{HTML}{546E7A}
 \definecolor{regamber}{HTML}{F0AB00}
-
-\lstdefinelanguage{jsonx}{
-  basicstyle=\ttfamily\small,
-  columns=fullflexible,
-  breaklines=true,
-  showstringspaces=false,
-  comment=[l]{//},
-  morestring=[b]",
-  stringstyle=\color{sapgreen},
-  keywordstyle=\color{sapblue},
-}
 
 \onehalfspacing
 \setlist{topsep=2pt,itemsep=1pt,parsep=0pt}
@@ -70,12 +54,7 @@
 \newcommand{\corpus}{}
 \newcommand{\tool}{}
 \newcommand{\stateid}[1]{\textsc{\lowercase{#1}}}
-
-% --- Glossary Helper Commands -----------------------------------------------
-\definecolor{pathcolor}{HTML}{004D40}
-\newcommand{\schemapath}[1]{\texttt{\textcolor{pathcolor}{#1}}}
-\newcommand{\enumval}[1]{\texttt{\textcolor{sapgreen}{#1}}}
-\newcommand{\fieldref}[1]{\texttt{\textcolor{sapblue}{#1}}}
+\newcommand{\ar}[1]{#1}
 
 \begin{document}
 

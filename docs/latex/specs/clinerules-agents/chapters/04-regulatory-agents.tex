@@ -1,0 +1,155 @@
+\chapter{Regulatory Agents}
+\label{ch:reg-agents}
+
+\section{Why the regulations agents live in \texttt{src/intelligence}}
+
+The repository does not contain a standalone
+\filepath{src/regulations/} service. The concrete runtime surface for
+regulations obligations lives in and around:
+\begin{itemize}
+  \item \filepath{src/intelligence/ai-core-pal/}
+  \item \filepath{src/intelligence/monitoring/}
+  \item \filepath{src/intelligence/analytics/}
+\end{itemize}
+
+The regulations development and runtime-monitor rule packs therefore
+belong under \filepath{src/intelligence/}.
+
+\section{Required regulatory development agent}
+
+The development pack at \filepath{src/intelligence/.clinerules} must
+govern any work that claims to implement the regulations domain. It
+must be schema-backed by:
+\begin{itemize}
+  \item \filepath{docs/schema/regulations/requirement.schema.json}
+  \item \filepath{docs/schema/regulations/conformance-tool.schema.json}
+  \item \filepath{docs/schema/regulations/agent-identity.schema.json}
+  \item \filepath{docs/schema/regulations/request-identity.schema.json}
+  \item \filepath{docs/schema/regulations/audit-event.schema.json}
+  \item \filepath{docs/schema/regulations/capability-monitoring-metrics.schema.json}
+\end{itemize}
+
+It must point agents to the live implementation surface, including:
+\begin{itemize}
+  \item \filepath{src/intelligence/ai-core-pal/mcp_server/btp_pal_mcp_server.py}
+  \item \filepath{src/intelligence/ai-core-pal/data_products/registry.yaml}
+  \item \filepath{src/intelligence/analytics/anomaly_detector.py}
+  \item \filepath{src/intelligence/monitoring/kill_switch_monitor.py}
+  \item \filepath{src/intelligence/ai-core-pal/tests/test_mcp_server.py}
+\end{itemize}
+
+\section{Required regulatory runtime-monitor agent}
+
+The runtime-monitor pack at
+\filepath{src/intelligence/.clinerules.runtime-monitor} must supervise:
+\begin{itemize}
+  \item allow-list bypass and undeclared tool use;
+  \item missing or partial identity envelopes;
+  \item audit reservation failures and orphaned completions;
+  \item monitoring metric gaps;
+  \item schema-violation surges;
+  \item refusal-rate spikes, latency spikes, topic drift, and related
+    degradation triggers;
+  \item circuit-break conditions and alert routing.
+\end{itemize}
+
+\section{Minimum acceptance criteria for the regulations agent pair}
+
+\begin{enumerate}
+  \item The development pack cites the regulations specification and
+    schema files as source of truth.
+  \item The runtime-monitor pack cites the monitoring and identity
+    chapters as source of truth.
+  \item Both packs name concrete code paths and test entry points that
+    exist in the repository.
+  \item A validation harness checks both packs for structural
+    completeness and benchmark quality.
+  \item The combined pair benchmarks at least as strongly as the
+    existing \filepath{src/generativeUI/.clinerules} baseline on
+    operational specificity.
+\end{enumerate}
+
+\section{Ingress overlay requirements}
+\label{sec:ingress-overlay}
+
+The primary regulatory pair lives under \filepath{src/intelligence/},
+because that is where the core governance runtime lives. However, if a
+service in \filepath{src/generativeUI/gateway/} is the primary entry
+point for external traffic \textbf{AND} it handles
+authentication/authorization token extraction, then a companion pack at
+\filepath{src/generativeUI/gateway/.clinerules.runtime-monitor} is
+\textbf{MANDATORY}, not merely recommended. This mandatory pack SHOULD be
+automatically generated from the primary intelligence pack plus a
+gateway-specific overlay template to minimize maintenance overhead.
+
+\subsection{Mandatory ingress enforcement}
+
+When the gateway is the external traffic entry point, the ingress
+overlay MUST enforce:
+
+\begin{enumerate}
+  \item \textbf{Header propagation validation}: The monitor MUST verify
+    that required headers (\texttt{X-Request-ID}, \texttt{X-Agent-Identity},
+    \texttt{X-Correlation-ID}) are present and correctly formatted before
+    requests reach internal services.
+  \item \textbf{Early rejection of invalid requests}: Requests missing
+    required identity claims MUST be rejected at the gateway level with
+    appropriate HTTP status codes (401/403) and audit logging.
+  \item \textbf{Identity envelope integrity}: The gateway MUST validate
+    that identity tokens have not been tampered with and originate from
+    trusted issuers.
+  \item \textbf{Rate limiting enforcement}: Per-identity rate limits
+    MUST be enforced at the gateway to prevent resource exhaustion attacks.
+\end{enumerate}
+
+\subsection{Ingress overlay minimum contents}
+
+The ingress runtime-monitor pack at
+\filepath{src/generativeUI/gateway/.clinerules.runtime-monitor} MUST
+include:
+
+\begin{table}[htbp]
+\centering
+\footnotesize
+\caption{Ingress overlay minimum requirements.}
+\label{tab:ingress-requirements}
+\begin{tabularx}{\textwidth}{@{}l X@{}}
+\toprule
+\textbf{Section} & \textbf{Required content} \\
+\midrule
+Evidence sources & Gateway access logs, authentication service logs, rate-limiter metrics. \\
+Critical conditions & Missing identity headers, invalid tokens, rate limit exceeded, upstream timeout. \\
+Alert routing & Security team for identity violations; platform team for availability issues. \\
+Circuit-break triggers & 3+ consecutive authentication failures from same source in 1 minute. \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\subsection{Inheritance from primary regulatory pair}
+
+The ingress overlay MUST inherit from (not replace) the primary
+regulatory runtime-monitor at
+\filepath{src/intelligence/.clinerules.runtime-monitor}. Specifically:
+\begin{itemize}
+  \item All safety-critical flags from the parent MUST be preserved or
+    tightened (see \cref{sec:conflict-detection}).
+  \item The ingress overlay MAY add gateway-specific conditions but
+    MUST NOT remove or weaken inherited conditions.
+  \item Audit events from the gateway MUST conform to the same
+    \filepath{docs/schema/regulations/audit-event.schema.json} as the
+    core governance runtime.
+\end{itemize}
+
+\subsection{Exception for non-external gateways}
+
+If the gateway at \filepath{src/generativeUI/gateway/} handles
+\emph{only} internal service-to-service traffic (not external user
+requests), the ingress overlay MAY be designated as \texttt{OPTIONAL}
+with documented justification in the rule pack frontmatter:
+\begin{verbatim}
+# Ingress overlay: OPTIONAL
+# Justification: Gateway handles internal traffic only.
+# External entry point: src/external-gateway/
+# Reviewed by: [Approver ID]
+# Review date: [Date]
+\end{verbatim}
