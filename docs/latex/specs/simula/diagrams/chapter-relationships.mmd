@@ -1,0 +1,42 @@
+---
+title: Chapter Relationship Flowchart
+---
+flowchart LR
+    subgraph Core [Core specification]
+        direction TB
+        C02[Ch.2 Business<br/>Requirements]
+        C03[Ch.3-7 Core<br/>Pipeline]
+        C08[Ch.8 Evaluation<br/>Framework]
+        C12[Ch.12 Implementation<br/>Instructions]
+    end
+
+    subgraph Plan [Planning]
+        direction TB
+        C15[Ch.15 Project<br/>Roadmap v1.2]
+        C16[Ch.16 Implementation<br/>Roadmap]
+        C17[Ch.17 Future<br/>Directions v1.3+]
+    end
+
+    subgraph Appx [Appendix]
+        direction TB
+        A1[App.A1 Gap<br/>Review P0-P2]
+    end
+
+    C02 -->|BR reqs| C15
+    C03 --> C15
+    C08 --> C15
+    C12 --> C15
+    C15 -->|M01-M07| C16
+    C16 -->|v1.3 trigger| C17
+    C15 -->|blocks| A1
+    A1  -.->|remediation| C16
+
+    classDef core fill:#E8F0FC,stroke:#0064D7,color:#1D1D1F
+    classDef plan fill:#FFF4D6,stroke:#FF9500,color:#1D1D1F
+    classDef fut  fill:#E5E5EA,stroke:#8E8E93,color:#1D1D1F,stroke-dasharray: 4 2
+    classDef app  fill:#FDE2E0,stroke:#FF3B30,color:#1D1D1F
+
+    class C02,C03,C08,C12 core
+    class C15,C16 plan
+    class C17 fut
+    class A1 app

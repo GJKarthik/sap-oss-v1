@@ -1,0 +1,19 @@
+---
+title: Cross-Domain Handshake
+---
+sequenceDiagram
+    autonumber
+    participant Orch as Spec Orchestrator
+    participant Simula as Simula Pack
+    participant Reg as Regulations Pack
+    participant TB as Trial Balance Pack
+    participant PDF as PDF Build & Validation
+
+    Orch->>Simula: publish registry v1.2 (manifest frozen)
+    Simula-->>Orch: artefact - schema-registry v1.2
+    Orch->>Reg: consume registry v1.2 (taxonomy IDs)
+    Reg-->>Orch: artefact - governance obligations
+    Orch->>TB: consume registry + obligations
+    TB-->>Orch: artefact - tb-corpus v1.2
+    Orch->>PDF: build spec PDFs
+    PDF-->>Orch: validation pass - spec PDFs published

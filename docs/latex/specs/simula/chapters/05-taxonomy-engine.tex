@@ -1,5 +1,5 @@
 \chapter{Taxonomy Generation Engine}
-\label{chap:taxonomy}
+\label{chap:taxonomy}\label{sim:chap:taxonomy}
 
 \section{Algorithm 1: Reasoning-Driven Taxonomy Generation}
 
@@ -7,30 +7,9 @@ The taxonomy builder implements Algorithm~1 from the Simula research paper. Give
 dataset description $y$ and target depth $D$, it produces a set of taxonomies
 $\mathcal{T} = \{T_i\}_{i=0}^{K}$ that map the conceptual space.
 
-\begin{figure}[H]
-\centering
-\begin{tikzpicture}[
-    node distance=0.6cm and 1.5cm,
-    stepbox/.style={rectangle, draw, rounded corners, fill=llmpurple!10,
-                 minimum width=3cm, minimum height=0.7cm, font=\small,
-                 text width=2.8cm, align=center},
-    arr/.style={-{Stealth[length=2mm]}, thick},
-]
-    \node[stepbox] (f1) {1. Factor Identification};
-    \node[stepbox, below=of f1] (f2) {2. Breadth-First Expansion};
-    \node[stepbox, below=of f2] (f3) {3. Best-of-N Proposal};
-    \node[stepbox, below=of f3] (f4) {4. Critic Refinement};
-    \node[stepbox, below=of f4] (f5) {5. Level Planning};
-    
-    \draw[arr] (f1) -- (f2);
-    \draw[arr] (f2) -- (f3);
-    \draw[arr] (f3) -- (f4);
-    \draw[arr] (f4) -- (f5);
-    \draw[arr, dashed] (f5.east) -- ++(1,0) |- node[right, pos=0.25, font=\tiny]{next level} (f2.east);
-\end{tikzpicture}
-\caption{Taxonomy generation stages with iterative refinement.}
-\label{fig:taxonomy-stages}
-\end{figure}
+\mermaidfig[0.55\textwidth]{diagrams/taxonomy-stages}%
+  {Taxonomy generation stages with iterative refinement.}%
+  {fig:taxonomy-stages}
 
 \section{Step 1: Factor Identification}
 

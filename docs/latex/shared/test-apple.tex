@@ -138,6 +138,17 @@ class SimulaConfig:
 ``The Trial Balance Review process ensures that account balances are accurate, supported, and reconciled before period close.'' --- TB-BC-001, Section 2.1
 \end{sourcequote}
 
+\section{Mermaid Diagrams}
+
+The \texttt{\textbackslash mermaidfig} helper embeds any Mermaid-rendered PDF as a captioned, labelled figure. The source lives next to the document as \filepath{diagrams/<name>.mmd}; \texttt{make diagrams} renders it to \filepath{diagrams/<name>.pdf}. See \cref{fig:test-flow} for the smoke test.
+
+\mermaidfig[0.8\textwidth]{diagrams/test-flow}%
+  {Round-trip: a Mermaid \texttt{.mmd} source becomes a PDF diagram, then a
+    \texttt{\textbackslash mermaidfig} call, and finally a figure in the spec PDF.}%
+  {fig:test-flow}
+
+\Cref{fig:test-flow} above should resolve as a proper ``Figure~2.1''-style reference via \texttt{cleveref}.
+
 \makecolophon{%
 This document was typeset with XeLaTeX using the sap-oss-apple-minimal document class.\\[8pt]
 Version 3.0.0 --- April 2026\\[8pt]

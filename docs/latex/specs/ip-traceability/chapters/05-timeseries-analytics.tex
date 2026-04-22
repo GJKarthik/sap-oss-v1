@@ -1,0 +1,392 @@
+% =============================================================================
+% CHAPTER 5: TIME SERIES ANALYTICS
+% IP Traceability: IP-004 (safety-ntimeseries-mojo.docx)
+% =============================================================================
+
+\chapter{Time Series Analytics}
+\label{chap:timeseries}
+
+\section{IP Document Summary}
+
+\begin{tracerecord}
+\textbf{IP Source ID} & \ipid{IP-004} \\
+\textbf{Document} & safety-ntimeseries-mojo.docx \\
+\textbf{Author} & Craig Turrell, Head of AI \& Design \\
+\textbf{Date} & December 2025 \\
+\textbf{Pages} & 26 \\
+\textbf{Abstract} & Mojo implementation of time series analysis module with formal safety guarantees for Kalman filtering, FFT, and anomaly detection \\
+\end{tracerecord}
+
+\subsection{Document Abstract}
+
+\begin{ipsourcebox}{IP-004, Abstract}
+\textit{``The ntimeseries module provides high-performance time series analysis with formal safety guarantees. We present Mojo implementations of Kalman filtering, Fast Fourier Transform, and robust anomaly detection with MAD (Median Absolute Deviation) estimators. Each algorithm includes mathematical proofs of correctness and bounds on numerical error.''}
+\end{ipsourcebox}
+
+\subsection{Key Contributions}
+
+The IP document introduces:
+\begin{enumerate}[nosep]
+    \item \textbf{Kalman Filter}: State estimation with numerical stability guarantees
+    \item \textbf{FFT}: Fast Fourier Transform with bit-reversal correctness proof
+    \item \textbf{MAD Estimator}: Robust scale estimation for non-normal distributions
+    \item \textbf{Anomaly Detection}: Z-score and MAD-based outlier detection with thresholds
+\end{enumerate}
+
+% =============================================================================
+\section{Key Concepts Identified}
+% =============================================================================
+
+\begin{table}[H]
+\centering
+\caption{IP-004 Key Concepts and Implementation Targets}
+\label{tab:ip004-concepts}
+\begin{tabularx}{\textwidth}{@{}p{3.5cm}Xl@{}}
+\toprule
+\textbf{Concept} & \textbf{Description} & \textbf{Section} \\
+\midrule
+MAD Estimator & Robust scale estimation via median absolute deviation & \ref{sec:ip004-mad} \\
+Shapiro-Wilk Test & Normality testing before method selection & \ref{sec:ip004-shapiro} \\
+Z-score Detection & Standard deviation-based anomaly detection & \ref{sec:ip004-zscore} \\
+Detection Thresholds & Configurable thresholds (Z=3.0, MAD=3.5) & \ref{sec:ip004-thresholds} \\
+Spike/Drop Detection & 25\% period-over-period change detection & \ref{sec:ip004-spike} \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+% =============================================================================
+\section{Concept: MAD Estimator}
+\label{sec:ip004-mad}
+% =============================================================================
+
+\begin{ipsourcebox}{IP-004, Section 7 (Robust Scale Estimation)}
+\textit{``Remark 7 (MAD estimator). The Median Absolute Deviation provides a robust scale estimate:
+$$\text{MAD} = \text{median}(|x_i - \text{median}(x)|)$$
+The scaled MAD $\hat{\sigma} = 1.4826 \cdot \text{MAD}$ is a consistent estimator of standard deviation for normal distributions, but remains robust to outliers and fat-tailed distributions.''}
+\end{ipsourcebox}
+
+\begin{tracerecord}
+\textbf{IP Source ID} & IP-004 \\
+\textbf{IP Location} & Section 7, Remark 7, Page 12 \\
+\textbf{Concept} & MAD as robust scale estimator with 1.4826 consistency constant \\
+\midrule
+\textbf{Implementation Path} & \filepath{src/intelligence/analytics/anomaly\_detector.py} \\
+\textbf{Key Files} & \filepath{anomaly\_detector.py} \\
+\textbf{Functions/Classes} & \funcname{AnomalyDetector.\_mad\_detection()} \\
+\textbf{Adaptation Type} & Direct algorithmic implementation \\
+\end{tracerecord}
+
+\begin{implbox}{src/intelligence/analytics/anomaly\_detector.py, Lines 334--358}
+\begin{lstlisting}[language=Python]
+# MAD consistency constant for normal distribution approximation
+MAD_CONSISTENCY_CONSTANT = 1.4826
+
+def _mad_detection(
+    self,
+    values: np.ndarray,
+) -> Tuple[np.ndarray, np.ndarray]:
+    """
+    MAD (Median Absolute Deviation) based anomaly detection.
+    
+    Robust to outliers and fat-tailed distributions.
+    Implements IP-004 Section 7, Remark 7.
+    
+    Returns:
+        Tuple of (anomaly_mask, modified_z_scores)
+    """
+    median = np.median(values)
+    mad = np.median(np.abs(values - median))
+    
+    # Apply consistency constant for normal distribution approximation
+    mad_adjusted = mad * self.MAD_CONSISTENCY_CONSTANT
+    
+    if mad_adjusted == 0:
+        # All values are at median - no anomalies
+        return np.zeros(len(values), dtype=bool), np.zeros(len(values))
+    
+    modified_z_scores = np.abs(values - median) / mad_adjusted
+    anomaly_mask = modified_z_scores > self.mad_threshold
+    
+    return anomaly_mask, modified_z_scores
+\end{lstlisting}
+\end{implbox}
+
+\begin{adaptbox}
+The IP paper defines the MAD estimator with the consistency constant 1.4826 for normal distribution approximation. The SAP-OSS implementation directly implements this formula in \funcname{\_mad\_detection()}, computing the median, MAD, and scaled MAD exactly as specified. The constant is defined as \texttt{MAD\_CONSISTENCY\_CONSTANT = 1.4826} matching the IP specification precisely.
+\end{adaptbox}
+
+% =============================================================================
+\section{Concept: Shapiro-Wilk Normality Test}
+\label{sec:ip004-shapiro}
+% =============================================================================
+
+\begin{ipsourcebox}{IP-004, Section 9 (Distribution Testing)}
+\textit{``Theorem 24 (Normality-guided method selection). Before applying anomaly detection, test for normality using Shapiro-Wilk:
+\begin{itemize}
+\item If $p > 0.05$: Distribution is approximately normal, use Z-score
+\item If $p \leq 0.05$: Distribution deviates from normal, use MAD (robust for fat tails)
+\end{itemize}
+This adaptive selection ensures appropriate statistical treatment regardless of distribution shape.''}
+\end{ipsourcebox}
+
+\begin{tracerecord}
+\textbf{IP Source ID} & IP-004 \\
+\textbf{IP Location} & Section 9, Theorem 24, Page 15 \\
+\textbf{Concept} & Normality test determines Z-score vs MAD selection \\
+\midrule
+\textbf{Implementation Path} & \filepath{src/intelligence/analytics/anomaly\_detector.py} \\
+\textbf{Key Files} & \filepath{anomaly\_detector.py} \\
+\textbf{Functions/Classes} & \funcname{AnomalyDetector.\_determine\_method()} \\
+\textbf{Adaptation Type} & Direct algorithmic implementation \\
+\end{tracerecord}
+
+\begin{implbox}{src/intelligence/analytics/anomaly\_detector.py, Lines 258--310}
+\begin{lstlisting}[language=Python]
+SHAPIRO_P_THRESHOLD = 0.05
+
+def _determine_method(
+    self,
+    values: np.ndarray,
+) -> Tuple[DetectionMethod, Optional[float]]:
+    """
+    Determine detection method using Shapiro-Wilk normality test.
+    
+    Implements IP-004 Section 9, Theorem 24:
+    - p > 0.05: Use Z-score (normal distribution)
+    - p <= 0.05: Use MAD (non-normal, robust)
+    
+    Returns:
+        Tuple of (method, p_value)
+    """
+    if self.force_method is not None:
+        return self.force_method, None
+    
+    n = len(values)
+    
+    # Check sample size constraints for Shapiro-Wilk
+    if n < self.MIN_SAMPLE_SIZE_SHAPIRO:
+        # Too small for reliable normality test - use robust method
+        return DetectionMethod.MAD, None
+    
+    # Run Shapiro-Wilk test
+    try:
+        _, p_value = stats.shapiro(test_values)
+    except Exception as e:
+        return DetectionMethod.MAD, None
+    
+    # Choose method based on p-value (IP-004 Theorem 24)
+    if p_value > self.shapiro_p_threshold:
+        return DetectionMethod.ZSCORE, p_value
+    else:
+        return DetectionMethod.MAD, p_value
+\end{lstlisting}
+\end{implbox}
+
+\begin{adaptbox}
+The IP paper specifies normality-guided method selection using the Shapiro-Wilk test with $p = 0.05$ threshold. The SAP-OSS implementation directly implements this in \funcname{\_determine\_method()}, using \texttt{scipy.stats.shapiro} for the test and the exact threshold \texttt{SHAPIRO\_P\_THRESHOLD = 0.05}. The method returns the selected detection approach (Z-score or MAD) based on the p-value, exactly matching the IP specification.
+\end{adaptbox}
+
+% =============================================================================
+\section{Concept: Z-score Detection}
+\label{sec:ip004-zscore}
+% =============================================================================
+
+\begin{ipsourcebox}{IP-004, Section 8 (Standard Detection)}
+\textit{``For normally distributed data, the Z-score provides optimal detection:
+$$z_i = \frac{|x_i - \mu|}{\sigma}$$
+where $\mu$ is the sample mean and $\sigma$ is the sample standard deviation. Values with $|z| > 3$ are flagged as anomalies (approximately 0.27\% of normal data).''}
+\end{ipsourcebox}
+
+\begin{tracerecord}
+\textbf{IP Source ID} & IP-004 \\
+\textbf{IP Location} & Section 8, Page 13 \\
+\textbf{Concept} & Z-score computation and anomaly flagging \\
+\midrule
+\textbf{Implementation Path} & \filepath{src/intelligence/analytics/anomaly\_detector.py} \\
+\textbf{Key Files} & \filepath{anomaly\_detector.py} \\
+\textbf{Functions/Classes} & \funcname{AnomalyDetector.\_zscore\_detection()} \\
+\textbf{Adaptation Type} & Direct algorithmic implementation \\
+\end{tracerecord}
+
+\begin{implbox}{src/intelligence/analytics/anomaly\_detector.py, Lines 312--332}
+\begin{lstlisting}[language=Python]
+def _zscore_detection(
+    self,
+    values: np.ndarray,
+) -> Tuple[np.ndarray, np.ndarray]:
+    """
+    Z-score based anomaly detection.
+    
+    Implements IP-004 Section 8: z = |x - mu| / sigma
+    
+    Returns:
+        Tuple of (anomaly_mask, z_scores)
+    """
+    mean = np.mean(values)
+    std = np.std(values)
+    
+    if std == 0:
+        # All values are identical
+        return np.zeros(len(values), dtype=bool), np.zeros(len(values))
+    
+    z_scores = np.abs((values - mean) / std)
+    anomaly_mask = z_scores > self.zscore_threshold
+    
+    return anomaly_mask, z_scores
+\end{lstlisting}
+\end{implbox}
+
+\begin{adaptbox}
+The IP paper defines Z-score computation as $z_i = |x_i - \mu| / \sigma$. The SAP-OSS implementation directly implements this formula in \funcname{\_zscore\_detection()}, computing the sample mean, standard deviation, and Z-scores exactly as specified. The method includes a safety check for zero standard deviation (identical values) which is a practical enhancement not explicitly in the IP but aligned with numerical safety principles.
+\end{adaptbox}
+
+% =============================================================================
+\section{Concept: Detection Thresholds}
+\label{sec:ip004-thresholds}
+% =============================================================================
+
+\begin{ipsourcebox}{IP-004, Section 16 (Threshold Configuration)}
+\textit{``G2 (Anomaly detection thresholds). The following thresholds are recommended for financial time series:
+\begin{itemize}
+\item Z-score threshold: 3.0 (flags 0.27\% of normal data)
+\item MAD threshold: 3.5 (more conservative for robust detection)
+\item Spike/drop threshold: 25\% period-over-period change
+\end{itemize}
+These values balance sensitivity with false positive control.''}
+\end{ipsourcebox}
+
+\begin{tracerecord}
+\textbf{IP Source ID} & IP-004 \\
+\textbf{IP Location} & Section 16, G2, Page 22 \\
+\textbf{Concept} & Specific threshold values for anomaly detection \\
+\midrule
+\textbf{Implementation Path} & \filepath{src/intelligence/analytics/anomaly\_detector.py} \\
+\textbf{Key Files} & \filepath{anomaly\_detector.py} \\
+\textbf{Functions/Classes} & Class constants \\
+\textbf{Adaptation Type} & Direct configuration \\
+\end{tracerecord}
+
+\begin{implbox}{src/intelligence/analytics/anomaly\_detector.py, Lines 63--67}
+\begin{lstlisting}[language=Python]
+class AnomalyDetector:
+    """
+    Anomaly detection with normality testing and MAD fallback.
+    
+    Thresholds from IP-004 Section 16, G2:
+    - Z-score threshold: 3.0
+    - MAD threshold: 3.5
+    - Spike/drop threshold: 25% period-over-period
+    """
+    
+    # Thresholds from IP-004 G2
+    ZSCORE_THRESHOLD = 3.0
+    MAD_THRESHOLD = 3.5
+    SHAPIRO_P_THRESHOLD = 0.05
+    SPIKE_DROP_THRESHOLD = 0.25  # 25% period-over-period
+\end{lstlisting}
+\end{implbox}
+
+\begin{adaptbox}
+The IP paper specifies exact threshold values in G2: Z-score = 3.0, MAD = 3.5, spike/drop = 25\%. The SAP-OSS implementation defines these as class constants with the exact values from the IP specification. The code comments explicitly reference the IP document section (``Thresholds from IP-004 Section 16, G2''), providing direct traceability.
+\end{adaptbox}
+
+% =============================================================================
+\section{Concept: Spike/Drop Detection}
+\label{sec:ip004-spike}
+% =============================================================================
+
+\begin{ipsourcebox}{IP-004, Section 9 (Period-over-Period Analysis)}
+\textit{``For sequential comparison, detect spikes and drops exceeding the 25\% threshold:
+$$\Delta\% = \frac{x_t - x_{t-1}}{|x_{t-1}|}$$
+If $|\Delta\%| \geq 0.25$, flag as:
+\begin{itemize}
+\item ``spike'' if $\Delta\% \geq 0.25$
+\item ``drop'' if $\Delta\% \leq -0.25$
+\end{itemize}''}
+\end{ipsourcebox}
+
+\begin{tracerecord}
+\textbf{IP Source ID} & IP-004 \\
+\textbf{IP Location} & Section 9, Page 14 \\
+\textbf{Concept} & Period-over-period change detection with direction \\
+\midrule
+\textbf{Implementation Path} & \filepath{src/intelligence/analytics/anomaly\_detector.py} \\
+\textbf{Key Files} & \filepath{anomaly\_detector.py} \\
+\textbf{Functions/Classes} & \funcname{AnomalyDetector.detect\_spike\_drop()} \\
+\textbf{Adaptation Type} & Direct algorithmic implementation \\
+\end{tracerecord}
+
+\begin{implbox}{src/intelligence/analytics/anomaly\_detector.py, Lines 224--256}
+\begin{lstlisting}[language=Python]
+def detect_spike_drop(
+    self,
+    current_value: float,
+    prior_value: float,
+) -> Tuple[bool, float, str]:
+    """
+    Detect spike or drop (25% period-over-period change).
+    
+    Implements IP-004 Section 9: delta% = (x_t - x_{t-1}) / |x_{t-1}|
+    
+    Args:
+        current_value: Current period value
+        prior_value: Prior period value
+        
+    Returns:
+        Tuple of (is_anomaly, pct_change, direction)
+    """
+    if prior_value == 0:
+        if current_value == 0:
+            return False, 0.0, "none"
+        else:
+            return True, float('inf'), "new_value"
+    
+    pct_change = (current_value - prior_value) / abs(prior_value)
+    
+    is_anomaly = abs(pct_change) >= self.SPIKE_DROP_THRESHOLD
+    
+    if pct_change >= self.SPIKE_DROP_THRESHOLD:
+        direction = "spike"
+    elif pct_change <= -self.SPIKE_DROP_THRESHOLD:
+        direction = "drop"
+    else:
+        direction = "normal"
+    
+    return is_anomaly, pct_change, direction
+\end{lstlisting}
+\end{implbox}
+
+\begin{adaptbox}
+The IP paper defines spike/drop detection using the formula $\Delta\% = (x_t - x_{t-1}) / |x_{t-1}|$ with a 25\% threshold. The SAP-OSS implementation directly implements this in \funcname{detect\_spike\_drop()}, computing the percentage change and classifying as ``spike'', ``drop'', or ``normal'' based on direction. The implementation adds handling for zero prior value (division safety) which is a practical enhancement.
+\end{adaptbox}
+
+% =============================================================================
+\section{Implementation Summary}
+% =============================================================================
+
+\begin{table}[H]
+\centering
+\caption{IP-004 Concept Implementation Summary}
+\label{tab:ip004-summary}
+\begin{tabularx}{\textwidth}{@{}p{3cm}p{3.5cm}Xc@{}}
+\toprule
+\textbf{Concept} & \textbf{IP Reference} & \textbf{Implementation} & \textbf{Status} \\
+\midrule
+MAD Estimator & Section 7, Remark 7 & \funcname{\_mad\_detection()} & Yes \\
+Shapiro-Wilk & Section 9, Theorem 24 & \funcname{\_determine\_method()} & Yes \\
+Z-score Detection & Section 8 & \funcname{\_zscore\_detection()} & Yes \\
+Thresholds (3.0/3.5) & Section 16, G2 & Class constants & Yes \\
+Spike/Drop (25\%) & Section 9 & \funcname{detect\_spike\_drop()} & Yes \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\paragraph{Key Evidence of IP Implementation:}
+\begin{itemize}[nosep]
+    \item \textbf{Exact constants}: MAD consistency constant 1.4826, thresholds 3.0/3.5/0.25
+    \item \textbf{Algorithm fidelity}: Z-score and MAD formulas match IP specification
+    \item \textbf{Method selection}: Shapiro-Wilk with $p = 0.05$ threshold as specified
+    \item \textbf{Code comments}: Explicit references to IP-004 sections in docstrings
+\end{itemize}
+
+This chapter demonstrates \textbf{direct algorithmic implementation} of IP-004 concepts, with the SAP-OSS code implementing the exact formulas, thresholds, and method selection logic specified in the IP document.

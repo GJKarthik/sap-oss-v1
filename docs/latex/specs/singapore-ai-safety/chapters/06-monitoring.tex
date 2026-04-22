@@ -1,0 +1,258 @@
+% =============================================================================
+% Chapter 6 --- Monitoring, Alerting, and Audit Schema
+% =============================================================================
+\chapter{Monitoring, Alerting, and Audit Schema}
+\label{ch:monitoring}
+
+\section{Monitoring objectives}
+
+Post-deployment monitoring serves four objectives:
+
+\begin{enumerate}
+  \item \textbf{Detect policy violations and drift} in real-time
+  \item \textbf{Maintain complete audit trail} for governance evidence
+  \item \textbf{Enable rapid incident response} and containment
+  \item \textbf{Support continuous improvement} through metrics analysis
+\end{enumerate}
+
+\section{Required audit schema}
+
+Every governed execution must record the following fields per
+\filepath{docs/schema/regulations/audit-event.schema.json}:
+
+\begin{table}[htbp]
+\centering
+\footnotesize
+\caption{Required Audit Event Fields}
+\label{tab:audit-fields}
+\begin{tabularx}{\textwidth}{@{}l l X@{}}
+\toprule
+\textbf{Field} & \textbf{Type} & \textbf{Description} \\
+\midrule
+\texttt{event\_id} & string & Unique audit event identifier (e.g., evt-20260422-abc123) \\
+\texttt{event\_type} & enum & Discriminator: agent\_inference, agent\_write, review\_requested, review\_approved, review\_rejected, agent\_error \\
+\texttt{timestamp} & datetime & ISO 8601 timestamp when event was recorded \\
+\texttt{request\_identity} & object & Request ID, correlation ID, user ID, tenant ID \\
+\texttt{agent\_identity} & object & Agent ID, type, version, service name, deployment ID \\
+\texttt{action} & object & Action type, entity ID, input/output hashes \\
+\texttt{approval\_chain} & array & Ordered approval steps if HITL invoked \\
+\texttt{outcome} & object & Status (success/failure/pending), duration\_ms, error\_code \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\section{Identity attribution requirements}
+
+Per \controlid{AGT-03} and REG-MGF-2.1.2-002, every action must be attributable:
+
+\subsection{Agent identity fields}
+
+\begin{itemize}
+  \item \texttt{agent\_id}: Unique identifier for the agent instance
+  \item \texttt{agent\_type}: Classification (e.g., predictive-analytics)
+  \item \texttt{agent\_version}: Semantic version of agent code
+  \item \texttt{service\_name}: Hosting service identifier
+  \item \texttt{deployment\_id}: Specific deployment instance
+  \item \texttt{model\_id}: Underlying model identifier
+  \item \texttt{trust\_level}: Autonomy level (L1--L4)
+\end{itemize}
+
+\subsection{Request identity fields}
+
+\begin{itemize}
+  \item \texttt{request\_id}: Unique request identifier
+  \item \texttt{correlation\_id}: Correlation ID for distributed tracing
+  \item \texttt{user\_id}: Requesting user (if applicable)
+  \item \texttt{tenant\_id}: Tenant context
+  \item \texttt{timestamp}: Request timestamp
+\end{itemize}
+
+\section{Audit reservation pattern}
+
+The \textbf{reservation-before-action} pattern ensures audit completeness:
+
+\begin{enumerate}
+  \item \textbf{Reserve}: Before executing an action, reserve an audit event
+        with status ``reserved''
+  \item \textbf{Execute}: Perform the action
+  \item \textbf{Complete}: Update the audit event with outcome (success/failure)
+\end{enumerate}
+
+If the action crashes without completing the audit, the reservation becomes
+an ``orphan'' that indicates a governance failure requiring investigation.
+
+\begin{tcolorbox}[colback=sgamber!10,colframe=sgamber!70,title=\faIcon{exclamation-triangle} Critical Requirement]
+No irreversible action may execute without a successful audit reservation.
+If the reservation fails, the action must be blocked.
+\end{tcolorbox}
+
+\section{Alert severity classes}
+
+\begin{table}[htbp]
+\centering
+\caption{Alert Severity Classes}
+\label{tab:alert-classes}
+\begin{tabularx}{\textwidth}{@{}l l X@{}}
+\toprule
+\textbf{Severity} & \textbf{Response Time} & \textbf{Example Conditions} \\
+\midrule
+Critical & $< 15$ minutes & Identity missing, audit failure, circuit breaker open \\
+High & $< 1$ hour & Orphaned audit, topic drift, latency spike \\
+Medium & $< 4$ hours & Metric degradation, approval bottlenecks \\
+Informational & Next business day & Successful operations, recovered services \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\section{Condition codes}
+
+Condition codes provide machine-readable alert classification:
+
+\begin{table}[htbp]
+\centering
+\footnotesize
+\caption{Governance Condition Codes}
+\label{tab:condition-codes}
+\begin{tabularx}{\textwidth}{@{}l l l X@{}}
+\toprule
+\textbf{Code} & \textbf{Severity} & \textbf{Control} & \textbf{Description} \\
+\midrule
+REG-ING-001 & Critical & AGT-02 & Tool called not in allow-list \\
+REG-ING-002 & Critical & AGT-03 & Identity envelope missing \\
+REG-AUD-001 & Critical & MON-01 & Audit reservation failed \\
+REG-AUD-002 & High & MON-01 & Orphaned audit event detected \\
+REG-SCHEMA-001 & High & MON-01 & Audit payload schema violation \\
+REG-DRIFT-001 & High & EVAL-01 & Topic similarity below threshold \\
+REG-LATENCY-001 & High & MON-02 & P95 latency exceeded threshold \\
+REG-REFUSAL-001 & Medium & EVAL-01 & Refusal rate elevated \\
+REG-CB-001 & Critical & MON-02 & Circuit breaker opened \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\section{Circuit-break rules}
+
+Circuit breakers protect against cascade failures:
+
+\begin{table}[htbp]
+\centering
+\caption{Circuit-Break Triggers}
+\label{tab:circuit-break}
+\begin{tabularx}{\textwidth}{@{}X l l@{}}
+\toprule
+\textbf{Trigger Condition} & \textbf{Duration} & \textbf{Recovery} \\
+\midrule
+3 consecutive critical alerts in 15 minutes & Open until manual close & Human verification required \\
+5 consecutive failed health checks & 30 seconds auto-retry & Auto-close on success \\
+$>$ 10\% error rate in 5-minute window & Open until manual close & Investigation required \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\section{Drift and anomaly detection}
+
+\subsection{Population Stability Index (PSI)}
+
+For detecting distribution drift in model inputs/outputs:
+
+\begin{equation}
+\boxed{
+PSI = \sum_{i=1}^{k} (A_i - E_i) \cdot \ln\left(\frac{A_i}{E_i}\right)
+}
+\label{eq:psi}
+\end{equation}
+
+where $A_i$ is actual proportion in bin $i$ and $E_i$ is expected proportion.
+
+\begin{table}[htbp]
+\centering
+\caption{PSI Interpretation}
+\begin{tabular}{l l}
+\toprule
+\textbf{PSI Range} & \textbf{Interpretation} \\
+\midrule
+$PSI < 0.10$ & No significant drift \\
+$0.10 \leq PSI < 0.25$ & Moderate drift, investigate \\
+$PSI \geq 0.25$ & Significant drift, action required \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Robust Z-Score}
+
+For anomaly detection with outlier resistance:
+
+\begin{equation}
+\boxed{
+Z_{\text{robust}} = \frac{x - \text{median}(X)}{1.4826 \times \text{MAD}(X)}
+}
+\label{eq:robust-z}
+\end{equation}
+
+where MAD is the Median Absolute Deviation. The factor 1.4826 normalizes MAD
+to be consistent with standard deviation for normal distributions.
+
+\begin{table}[htbp]
+\centering
+\caption{Z-Score Thresholds}
+\begin{tabular}{l l}
+\toprule
+\textbf{Z-Score} & \textbf{Action} \\
+\midrule
+$|Z| < 2$ & Normal \\
+$2 \leq |Z| < 3$ & Monitor \\
+$|Z| \geq 3$ & Alert \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{Required alert payload}
+
+Every alert must include:
+
+\begin{table}[htbp]
+\centering
+\footnotesize
+\caption{Required Alert Payload Fields}
+\begin{tabularx}{\textwidth}{@{}l l X@{}}
+\toprule
+\textbf{Field} & \textbf{Type} & \textbf{Description} \\
+\midrule
+\texttt{request\_id} & string & Request that triggered the alert \\
+\texttt{correlation\_id} & string & Correlation for distributed tracing \\
+\texttt{agent\_id} & string & Agent that generated the condition \\
+\texttt{severity} & enum & Critical, High, Medium, Informational \\
+\texttt{condition\_code} & string & Machine-readable condition code \\
+\texttt{condition\_message} & string & Human-readable description \\
+\texttt{evidence\_source} & string & Path to supporting evidence \\
+\texttt{observed\_value} & string & The value that triggered the alert \\
+\texttt{threshold\_value} & string & The threshold that was violated \\
+\texttt{recommended\_action} & string & Suggested remediation \\
+\texttt{timestamp} & datetime & When the condition was detected \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\section{Operator triage checklist}
+
+When an alert is received:
+
+\begin{enumerate}
+  \item Confirm the request\_id and correlation\_id
+  \item Confirm the agent\_id and deployment context
+  \item Confirm the condition\_code and severity
+  \item Verify the observed value against the threshold
+  \item Check the evidence source for additional context
+  \item Determine if this is a known issue (check Known Issues Registry)
+  \item Execute recommended action or escalate
+  \item Document resolution in incident ticket
+\end{enumerate}
+
+\section{Minimum evidence to close an alert}
+
+\begin{itemize}
+  \item Root cause identified
+  \item Mitigation applied
+  \item Audit trail shows successful processing post-fix
+  \item No recurrence within observation window (15 minutes minimum)
+\end{itemize}

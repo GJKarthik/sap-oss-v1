@@ -24,6 +24,35 @@ in the four-domain architecture:
   \item \textbf{Downstream}: Training JSONL $\rightarrow$ Model fine-tuning
 \end{itemize}
 
+\subsection{Cross-domain handshake}
+\label{sec:cross-domain-handshake}
+
+Inter-domain coordination proceeds through the spec orchestrator and is
+mediated entirely by checked-in artefacts---no direct network calls between
+domain packs (see the inter-agent signaling rules in the Clinerules Agents
+specification). \Cref{fig:cross-domain-handshake} shows the reference sequence
+for a v1.2 release cycle.
+
+\mermaidfig[\textwidth]{diagrams/cross-domain-handshake}%
+  {Reference sequence for a cross-domain handshake. Each arrow is a
+    request or artefact-presence signal mediated by the repository; no direct
+    network traffic between domain packs.}%
+  {fig:cross-domain-handshake}
+
+\subsection{Wave-dependency manifest}
+\label{sec:wave-dependency}
+
+\Cref{fig:wave-dependency} consolidates the global wave-dependency graph
+across all four domains. Wave 1 (blue) establishes identity and intake; wave 2
+(amber) builds domain-specific runtimes; wave 3 (green) produces consumer
+corpora and evidence rollups.
+
+\mermaidfig[\textwidth]{diagrams/wave-dependency}%
+  {Global wave-dependency manifest. Blue: wave 1 (foundations). Amber: wave 2
+    (runtime). Green: wave 3 (consumer corpora and rollup). Arrows are hard
+    prerequisites.}%
+  {fig:wave-dependency}
+
 % -----------------------------------------------------------------------------
 \section{Schema Dependencies}
 \label{sec:schema-deps}

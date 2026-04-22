@@ -100,22 +100,9 @@ readiness, infrastructure availability, and competing priorities.
 
 \section{Roadmap Overview}
 
-\begin{figure}[htbp]
-\centering
-\begin{tikzpicture}[
-    phase/.style={rectangle, draw, rounded corners, minimum width=4cm, minimum height=1.5cm, align=center},
-    arrow/.style={->, thick, >=stealth}
-]
-    \node[phase, fill=blue!20] (p1) at (0,0) {\textbf{Phase 1}\\Foundation\\Capability Building};
-    \node[phase, fill=green!20] (p2) at (5.5,0) {\textbf{Phase 2}\\Scaled\\Deployment};
-    \node[phase, fill=orange!20] (p3) at (11,0) {\textbf{Phase 3}\\Mature Operations\\Continuous Optimization};
-    
-    \draw[arrow] (p1) -- (p2);
-    \draw[arrow] (p2) -- (p3);
-\end{tikzpicture}
-\caption{Simula implementation phases.}
-\label{fig:phases}
-\end{figure}
+\mermaidfig[\textwidth]{diagrams/phases}%
+  {Simula implementation phases.}%
+  {fig:phases}
 
 \subsection{Phase Dependencies}
 

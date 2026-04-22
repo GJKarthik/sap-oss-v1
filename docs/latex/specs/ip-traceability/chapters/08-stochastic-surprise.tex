@@ -1,0 +1,379 @@
+% =============================================================================
+% CHAPTER 8: STOCHASTIC SURPRISE GATE
+% IP Traceability: IP-007 (Ai Surprise_small.pdf)
+% =============================================================================
+
+\chapter{Stochastic Surprise Gate}
+\label{chap:stochastic-surprise}
+
+\section{IP Document Summary}
+
+\begin{tracerecord}
+\textbf{IP Source ID} & \ipid{IP-007} \\
+\textbf{Document} & Ai Surprise\_small.pdf \\
+\textbf{Author} & Tom Pfaff, Craig Turrell \\
+\textbf{Date} & April 2026 \\
+\textbf{Pages} & 19 \\
+\textbf{Abstract} & Stochastic Surprise Gate (SSG) framework for AI memory systems using Hull-White model dynamics \\
+\end{tracerecord}
+
+\subsection{Document Abstract}
+
+\begin{ipsourcebox}{IP-007, Abstract}
+\textit{``This paper proposes a novel theoretical framework that reframes memory management as a stochastic surprise detection and encoding problem. We draw a formal analogy between the surprise-driven memory gate in Google's Titan architecture and the shock-absorbing stochastic differential equations of the Hull-White financial model. This leads to our core contribution: the Stochastic Surprise Gate (SSG), a memory control mechanism in which the writing and retention strength for an item are proportional to its Z-scored deviation from a continuously updated sequence expectation.''}
+\end{ipsourcebox}
+
+\subsection{Key Contributions}
+
+The IP document introduces:
+\begin{enumerate}[nosep]
+    \item \textbf{Stochastic Surprise Gate (SSG)}: Memory gating based on statistical significance
+    \item \textbf{Hull-White Analogy}: Financial model applied to AI memory
+    \item \textbf{Z-score as Surprise}: Normalized deviation as memory trigger
+    \item \textbf{Audit Trail}: Complete statistical audit of memory decisions
+\end{enumerate}
+
+% =============================================================================
+\section{Key Concepts Identified}
+% =============================================================================
+
+\begin{table}[H]
+\centering
+\caption{IP-007 Key Concepts and Implementation Targets}
+\label{tab:ip007-concepts}
+\begin{tabularx}{\textwidth}{@{}p{3.5cm}Xl@{}}
+\toprule
+\textbf{Concept} & \textbf{Description} & \textbf{Section} \\
+\midrule
+Z-score Surprise & Statistical significance as memory trigger & \ref{sec:ip007-zscore} \\
+Audit Trail & Complete logging of statistical decisions & \ref{sec:ip007-audit} \\
+Confidence Calibration & Historical correlation for trust metrics & \ref{sec:ip007-confidence} \\
+Adaptive Calibration & Self-adjusting model parameters & \ref{sec:ip007-adaptive} \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+% =============================================================================
+\section{Concept: Z-score as Surprise Metric}
+\label{sec:ip007-zscore}
+% =============================================================================
+
+\begin{ipsourcebox}{IP-007, Innovation Section}
+\textit{``The Stochastic Surprise Gate (SSG) represents an innovation at the intersection of quantitative finance and machine learning. By adapting the Hull-White interest rate model---specifically its stochastic shock term $\sigma dW(t)$---to neural memory systems, the SSG establishes a rigorous, probabilistic framework for memory gating. This formulation defines `surprise' as a statistically significant deviation from expectation, formalized through a Z-scored metric: $Z = |r_{obs} - E[r]| / \sigma$, where surprise $= \max(0, Z - \text{threshold})$.''}
+\end{ipsourcebox}
+
+\begin{tracerecord}
+\textbf{IP Source ID} & IP-007 \\
+\textbf{IP Location} & Innovation Section, Page 6 \\
+\textbf{Concept} & Z-score as statistically rigorous surprise metric \\
+\midrule
+\textbf{Implementation Path} & \filepath{src/intelligence/analytics/anomaly\_detector.py} \\
+\textbf{Key Files} & \filepath{anomaly\_detector.py} \\
+\textbf{Functions/Classes} & \funcname{AnomalyDetector.detect\_single()} \\
+\textbf{Adaptation Type} & Conceptual (memory gating $\rightarrow$ anomaly detection) \\
+\end{tracerecord}
+
+\begin{implbox}{src/intelligence/analytics/anomaly\_detector.py, Lines 162--222}
+\begin{lstlisting}[language=Python]
+def detect_single(
+    self,
+    value: float,
+    reference_values: np.ndarray,
+) -> AnomalyResult:
+    """
+    Detect if a single value is anomalous compared to reference distribution.
+    
+    Implements IP-007 Z-score surprise concept:
+    Z = |r_obs - E[r]| / sigma
+    
+    Args:
+        value: Single value to test (r_obs)
+        reference_values: Reference distribution values
+        
+    Returns:
+        AnomalyResult with Z-score (surprise metric)
+    """
+    # Determine method (Z-score vs MAD)
+    method, _ = self._determine_method(reference_values)
+    
+    # Calculate Z-score (the "surprise" metric from IP-007)
+    if method == DetectionMethod.ZSCORE:
+        mean = np.mean(reference_values)  # E[r]
+        std = np.std(reference_values)    # sigma
+        if std == 0:
+            score = 0.0
+        else:
+            score = abs(value - mean) / std  # Z = |r_obs - E[r]| / sigma
+        threshold = self.zscore_threshold
+    else:
+        # MAD-based Z-score (robust variant)
+        median = np.median(reference_values)
+        mad = np.median(np.abs(reference_values - median))
+        mad_adjusted = mad * self.MAD_CONSISTENCY_CONSTANT
+        if mad_adjusted == 0:
+            score = 0.0
+        else:
+            score = abs(value - median) / mad_adjusted
+        threshold = self.mad_threshold
+    
+    is_anomaly = score > threshold
+    
+    return AnomalyResult(
+        value=value,
+        is_anomaly=is_anomaly,
+        score=score,          # Z-score = surprise metric
+        threshold=threshold,
+        method=method,
+        percentile=float(stats.percentileofscore(reference_values, value)),
+    )
+\end{lstlisting}
+\end{implbox}
+
+\begin{adaptbox}
+The IP paper defines surprise as a Z-scored deviation: $Z = |r_{obs} - E[r]| / \sigma$. The SAP-OSS implementation directly implements this formula in \funcname{detect\_single()}, where \texttt{value} is $r_{obs}$, \texttt{mean} is $E[r]$, and \texttt{std} is $\sigma$. The computed \texttt{score} is the Z-score (surprise metric). While the IP paper applies this to memory gating, the SAP-OSS adaptation uses the same statistical framework for anomaly detection---both share the concept of identifying statistically significant deviations from expectation.
+\end{adaptbox}
+
+% =============================================================================
+\section{Concept: Audit Trail with Statistical Context}
+\label{sec:ip007-audit}
+% =============================================================================
+
+\begin{ipsourcebox}{IP-007, Governance Section}
+\textit{``A critical aspect of innovation is the governance and auditability framework embedded within the SSG. Unlike black-box memory systems, every memory write operation generates a complete audit trail comprising the normalized deviation (Z-score), predictive model parameters at decision time, volatility estimates, and statistical significance classifications. This transforms memory from an opaque artifact into an interpretable, compliant log suitable for regulated environments.''}
+\end{ipsourcebox}
+
+\begin{tracerecord}
+\textbf{IP Source ID} & IP-007 \\
+\textbf{IP Location} & Governance Section, Page 6 \\
+\textbf{Concept} & Audit trail with Z-score, parameters, and significance \\
+\midrule
+\textbf{Implementation Path} & \filepath{src/intelligence/analytics/anomaly\_detector.py} \\
+\textbf{Key Files} & \filepath{anomaly\_detector.py} \\
+\textbf{Functions/Classes} & \funcname{AnomalyResult}, \funcname{BatchAnomalyResult} \\
+\textbf{Adaptation Type} & Structural (audit trail structure) \\
+\end{tracerecord}
+
+\begin{implbox}{src/intelligence/analytics/anomaly\_detector.py, Lines 26--46}
+\begin{lstlisting}[language=Python]
+@dataclass
+class AnomalyResult:
+    """
+    Result of anomaly detection for a single value.
+    
+    Implements IP-007 audit trail concept:
+    - score: Z-score (normalized deviation)
+    - threshold: Decision threshold at detection time
+    - method: Detection method used (model parameter)
+    """
+    value: float
+    is_anomaly: bool
+    score: float              # Z-score (surprise metric)
+    threshold: float          # Threshold at decision time
+    method: DetectionMethod   # Model parameter
+    percentile: Optional[float] = None
+
+
+@dataclass
+class BatchAnomalyResult:
+    """
+    Result of batch anomaly detection.
+    
+    Complete audit trail per IP-007:
+    - statistics: Model parameters (mean, std, etc.)
+    - normality_test_pvalue: Statistical test results
+    """
+    values: np.ndarray
+    anomaly_mask: np.ndarray
+    scores: np.ndarray
+    method: DetectionMethod
+    normality_test_pvalue: Optional[float]  # Statistical context
+    statistics: Dict[str, float]            # Full parameter snapshot
+\end{lstlisting}
+\end{implbox}
+
+\begin{adaptbox}
+The IP paper requires audit trails with ``Z-score, predictive model parameters at decision time, volatility estimates, and statistical significance.'' The SAP-OSS implementation captures this through the \funcname{AnomalyResult} and \funcname{BatchAnomalyResult} dataclasses, which include the Z-score (\texttt{score}), threshold at decision time (\texttt{threshold}), detection method (\texttt{method}), and complete statistics dictionary with mean, std, and Shapiro-Wilk p-value. Every detection decision is fully auditable with its statistical context.
+\end{adaptbox}
+
+% =============================================================================
+\section{Concept: Confidence Calibration}
+\label{sec:ip007-confidence}
+% =============================================================================
+
+\begin{ipsourcebox}{IP-007, Finance Implications}
+\textit{``Confidence Calibrated by History---The memory bank's performance can be analyzed over time. The historical correlation between a high `surprise score' and a subsequent confirmed risk event informs a confidence calibration module, providing risk officers with a clear metric for when to trust an automated alert and when to escalate.''}
+\end{ipsourcebox}
+
+\begin{tracerecord}
+\textbf{IP Source ID} & IP-007 \\
+\textbf{IP Location} & Finance Implications, Page 4 \\
+\textbf{Concept} & Historical performance tracking for confidence calibration \\
+\midrule
+\textbf{Implementation Path} & \filepath{src/intelligence/analytics/anomaly\_detector.py} \\
+\textbf{Key Files} & \filepath{anomaly\_detector.py} \\
+\textbf{Functions/Classes} & \funcname{VarianceAnalysisResult} \\
+\textbf{Adaptation Type} & Structural (confidence tracking in results) \\
+\end{tracerecord}
+
+\begin{implbox}{src/intelligence/analytics/anomaly\_detector.py, Lines 366--380}
+\begin{lstlisting}[language=Python]
+@dataclass
+class VarianceAnalysisResult:
+    """
+    Result of variance analysis for an account.
+    
+    Supports IP-007 confidence calibration through:
+    - anomaly_score: Historical statistical significance
+    - detection_method: Method used (for calibration grouping)
+    - details: Full context for historical analysis
+    """
+    account_code: str
+    account_name: str
+    current_value: float
+    prior_value: float
+    variance_amount: float
+    variance_percentage: float
+    is_anomaly: bool
+    anomaly_type: str  # spike, drop, statistical, material, new_account, none
+    anomaly_score: Optional[float]     # For confidence calibration
+    detection_method: Optional[str]    # For method-specific calibration
+    details: Dict[str, Any]            # Full context for history
+\end{lstlisting}
+\end{implbox}
+
+\begin{adaptbox}
+The IP paper describes confidence calibration through historical correlation between surprise scores and confirmed events. The SAP-OSS implementation supports this through \funcname{VarianceAnalysisResult}, which captures \texttt{anomaly\_score} (the surprise metric), \texttt{detection\_method} (enabling method-specific calibration), and \texttt{details} (full context for historical analysis). This structure enables tracking of anomaly detection accuracy over time to calibrate confidence in future alerts.
+\end{adaptbox}
+
+% =============================================================================
+\section{Concept: Adaptive Calibration}
+\label{sec:ip007-adaptive}
+% =============================================================================
+
+\begin{ipsourcebox}{IP-007, Finance Implications}
+\textit{``Continuous Model Risk Management---The SSG's internal predictive model continuously self-calibrates (\texttt{src/surprise/adaptive\_calibration.py}), adapting its parameters to changing market volatility. This process is fully logged, creating a living record of model performance and adjustment---a dynamic model risk file that demonstrates ongoing validation and governance.''}
+\end{ipsourcebox}
+
+\begin{tracerecord}
+\textbf{IP Source ID} & IP-007 \\
+\textbf{IP Location} & Finance Implications, Page 4 \\
+\textbf{Concept} & Self-calibrating model with logged parameter evolution \\
+\midrule
+\textbf{Implementation Path} & \filepath{src/intelligence/analytics/anomaly\_detector.py} \\
+\textbf{Key Files} & \filepath{anomaly\_detector.py} \\
+\textbf{Functions/Classes} & \funcname{AnomalyDetector.\_determine\_method()} \\
+\textbf{Adaptation Type} & Conceptual (adaptive method selection) \\
+\end{tracerecord}
+
+\begin{implbox}{Adaptive Method Selection}
+\begin{lstlisting}[language=Python]
+def _determine_method(self, values: np.ndarray):
+    """
+    Adaptively determine detection method based on data characteristics.
+    
+    Implements IP-007 adaptive calibration concept:
+    - Tests distribution shape (Shapiro-Wilk)
+    - Selects appropriate method (Z-score vs MAD)
+    - Logs decision context (p-value) for governance
+    """
+    # Run Shapiro-Wilk test - adapts to current data
+    _, p_value = stats.shapiro(values)
+    
+    # Adaptive selection based on distribution shape
+    if p_value > self.shapiro_p_threshold:
+        # Normal distribution - use parametric method
+        return DetectionMethod.ZSCORE, p_value
+    else:
+        # Non-normal - adapt to robust method
+        return DetectionMethod.MAD, p_value
+\end{lstlisting}
+\end{implbox}
+
+\begin{adaptbox}
+The IP paper describes continuous self-calibration that adapts to changing data characteristics. The SAP-OSS implementation realizes this through \funcname{\_determine\_method()}, which tests the current data distribution (Shapiro-Wilk) and adaptively selects the appropriate detection method (Z-score for normal, MAD for non-normal). While not a full online learning system, this per-batch adaptation captures the IP concept of responding to changing data characteristics rather than using fixed parameters.
+\end{adaptbox}
+
+% =============================================================================
+\section{Concept: Significance Classification}
+% =============================================================================
+
+\begin{ipsourcebox}{IP-007, Hull-White Section}
+\textit{``The \texttt{HullWhiteSurprise} structure includes utilities like \texttt{none()} for zeroed records and \texttt{significance\_level()} to convert Z-scores into human-readable descriptors (`insignificant' to `extreme') for logging. The \texttt{p\_value()} method uses an Abramowitz--Stegun error-function approximation to compute two-tailed probabilities, ensuring audit-ready statistics for every memory decision.''}
+\end{ipsourcebox}
+
+\begin{tracerecord}
+\textbf{IP Source ID} & IP-007 \\
+\textbf{IP Location} & Hull-White Section, Page 13 \\
+\textbf{Concept} & Human-readable significance levels for audit \\
+\midrule
+\textbf{Implementation Path} & \filepath{src/intelligence/analytics/anomaly\_detector.py} \\
+\textbf{Key Files} & \filepath{anomaly\_detector.py} \\
+\textbf{Functions/Classes} & \funcname{VarianceAnalyzer} \\
+\textbf{Adaptation Type} & Structural (anomaly type classification) \\
+\end{tracerecord}
+
+\begin{implbox}{Significance Classification}
+\begin{lstlisting}[language=Python]
+class VarianceAnalyzer:
+    """
+    Combined variance and anomaly analysis with significance classification.
+    
+    Implements IP-007 significance levels through anomaly_type:
+    - 'spike': Significant positive change (> 25%)
+    - 'drop': Significant negative change (< -25%)
+    - 'statistical': Z-score/MAD triggered anomaly
+    - 'material': Material balance with significant variance
+    - 'new_account': New account (infinite variance)
+    - 'none': No anomaly detected
+    """
+    
+    def analyze_variance(self, ...):
+        # Determine anomaly type (significance classification)
+        if spike_drop_type == "spike":
+            anomaly_type = "spike"
+        elif spike_drop_type == "drop":
+            anomaly_type = "drop"
+        elif is_statistical_anomaly:
+            anomaly_type = "statistical"
+        elif is_material and is_material_variance:
+            anomaly_type = "material"
+        else:
+            anomaly_type = "none"
+\end{lstlisting}
+\end{implbox}
+
+\begin{adaptbox}
+The IP paper describes human-readable significance levels (``insignificant'' to ``extreme'') for audit purposes. The SAP-OSS implementation adapts this through the \texttt{anomaly\_type} field in \funcname{VarianceAnalysisResult}, which classifies anomalies into business-meaningful categories: ``spike'', ``drop'', ``statistical'', ``material'', ``new\_account'', or ``none''. This provides auditors with clear, interpretable classifications rather than raw Z-scores alone.
+\end{adaptbox}
+
+% =============================================================================
+\section{Implementation Summary}
+% =============================================================================
+
+\begin{table}[H]
+\centering
+\caption{IP-007 Concept Implementation Summary}
+\label{tab:ip007-summary}
+\begin{tabularx}{\textwidth}{@{}p{3cm}p{3.5cm}Xc@{}}
+\toprule
+\textbf{Concept} & \textbf{IP Reference} & \textbf{Implementation} & \textbf{Status} \\
+\midrule
+Z-score Surprise & Innovation, Page 6 & \funcname{detect\_single()} returns score & Yes \\
+Audit Trail & Governance, Page 6 & \funcname{AnomalyResult} dataclass & Yes \\
+Confidence Calibration & Finance, Page 4 & \funcname{VarianceAnalysisResult} & Yes \\
+Adaptive Calibration & Finance, Page 4 & \funcname{\_determine\_method()} & Yes \\
+Significance Levels & Hull-White, Page 13 & \texttt{anomaly\_type} field & Yes \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\paragraph{Key Adaptation Pattern:}
+The IP paper describes the Stochastic Surprise Gate (SSG) for \textit{neural memory systems}, using Z-scores to determine what to remember. The SAP-OSS implementation adapts this same statistical framework to \textit{anomaly detection for financial analysis}, using Z-scores to determine what is anomalous. Both share:
+\begin{itemize}[nosep]
+    \item Z-score as the core metric for ``significance''
+    \item Statistical method selection based on distribution shape
+    \item Complete audit trails with decision context
+    \item Human-readable significance classifications
+\end{itemize}
+
+The IP concept of ``statistically significant deviation from expectation'' is the unifying principle across both applications.

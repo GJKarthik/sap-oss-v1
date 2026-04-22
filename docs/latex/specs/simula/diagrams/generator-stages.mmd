@@ -1,0 +1,14 @@
+---
+title: Data Generation Stages (Algorithm 2)
+---
+flowchart TB
+    G1[1. Mix Sampling]
+    G2[2. Meta-Prompt Generation]
+    G3["3. Complexification (c=0.5)"]
+    G4[4. Example Generation]
+    G5[5. Double-Critic Filtering]
+
+    G1 --> G2 --> G3 --> G4 --> G5
+
+    classDef stage fill:#FFF4D6,stroke:#FF9500,stroke-width:1.5px,color:#1D1D1F
+    class G1,G2,G3,G4,G5 stage

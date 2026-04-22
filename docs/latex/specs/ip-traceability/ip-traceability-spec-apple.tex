@@ -1,0 +1,97 @@
+% =============================================================================
+% IP TRACEABILITY SPECIFICATION
+% Evidence of Intellectual Property Implementation in SAP-OSS Codebase
+% Version: 1.0.0
+% =============================================================================
+\documentclass[fontsize=10pt,paper=a4paper,twoside=true]{../../shared/sap-oss-apple}
+
+% --- Additional packages for IP Traceability --------------------------------
+\usepackage{longtable}
+\usepackage{multirow}
+\usepackage{float}
+
+% --- Domain-Specific Colors -------------------------------------------------
+\definecolor{sourcegreen}{HTML}{2E7D32}
+\definecolor{implblue}{HTML}{1565C0}
+\definecolor{adaptamber}{HTML}{F0AB00}
+\definecolor{ipgrey}{HTML}{546E7A}
+\definecolor{codepurple}{HTML}{6A1B9A}
+
+% --- Custom Commands for IP Traceability ------------------------------------
+% Note: \filepath is already defined in sap-oss-apple class
+\newcommand{\ipid}[1]{\textbf{\textcolor{sourcegreen}{#1}}}
+\newcommand{\funcname}[1]{\texttt{\textcolor{codepurple}{#1}}}
+\newcommand{\concept}[1]{\textit{#1}}
+
+% --- IP Source Box ----------------------------------------------------------
+\newtcolorbox{ipsourcebox}[2][]{%
+    colback=sourcegreen!5,
+    colframe=sourcegreen!70,
+    title={\faIcon{file-alt} IP Source: #2},
+    fonttitle=\bfseries,
+    breakable,
+    #1
+}
+
+% --- Implementation Box -----------------------------------------------------
+\newtcolorbox{implbox}[2][]{%
+    colback=implblue!5,
+    colframe=implblue!70,
+    title={\faIcon{code} Implementation: #2},
+    fonttitle=\bfseries,
+    breakable,
+    #1
+}
+
+% --- Adaptation Box ---------------------------------------------------------
+\newtcolorbox{adaptbox}[1][]{%
+    colback=adaptamber!5,
+    colframe=adaptamber!70,
+    title={\faIcon{exchange-alt} Concept Adaptation},
+    fonttitle=\bfseries,
+    breakable,
+    #1
+}
+
+% --- Traceability Record Environment ----------------------------------------
+\newenvironment{tracerecord}{%
+    \begin{tabular}{@{}lp{10cm}@{}}
+    \toprule
+}{%
+    \bottomrule
+    \end{tabular}
+}
+
+\title{IP Traceability Specification\\
+\large Evidence of Intellectual Property Implementation in the SAP-OSS Codebase}
+\author{SAP Controls Architecture Team}
+\date{April 2026 -- Version 1.0.0}
+
+\begin{document}
+\maketitle
+
+\tableofcontents
+\newpage
+
+% --- Chapters ---------------------------------------------------------------
+\input{chapters/00-frontmatter}
+\input{chapters/01-overview}
+\input{chapters/02-ai-governance}
+\input{chapters/03-deductive-database}
+\input{chapters/04-llm-inference}
+\input{chapters/05-timeseries-analytics}
+\input{chapters/06-mathematical-foundations}
+\input{chapters/07-earnings-analysis}
+\input{chapters/08-stochastic-surprise}
+\input{chapters/09-digital-twin}
+\input{chapters/10-narrative-stability}
+\input{chapters/11-traceability-matrix}
+\input{chapters/12-adaptation-registry}
+\input{chapters/13-future-roadmap}
+
+% --- Appendices -------------------------------------------------------------
+\appendix
+\input{chapters/A1-source-document-index}
+\input{chapters/A2-code-reference-guide}
+
+\end{document}

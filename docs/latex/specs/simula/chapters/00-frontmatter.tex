@@ -128,56 +128,11 @@ This specification is organized into five parts plus appendices:
 
 The following flowchart shows how the planning and future directions chapters (15--17) relate to other parts of the specification. This centralized view reduces the need to repeat integration context within each chapter.
 
-\begin{figure}[htbp]
-\centering
-\begin{tikzpicture}[
-  node distance=4mm and 8mm,
-  core/.style={draw,rounded corners=2pt,align=center,font=\scriptsize,
-               fill=sapblue!15,draw=sapblue!60,
-               minimum height=8mm,minimum width=28mm},
-  plan/.style={draw,rounded corners=2pt,align=center,font=\scriptsize,
-               fill=sapgold!20,draw=sapgold!80,
-               minimum height=8mm,minimum width=28mm},
-  future/.style={draw,rounded corners=2pt,align=center,font=\scriptsize,
-               fill=gray!15,draw=gray!60,dotted,
-               minimum height=8mm,minimum width=28mm},
-  appendix/.style={draw,rounded corners=2pt,align=center,font=\scriptsize,
-               fill=red!10,draw=red!60,
-               minimum height=8mm,minimum width=28mm},
-  dep/.style={-{Latex[length=2mm]},thick},
-  soft/.style={-{Latex[length=2mm]},thick,dashed},
-  note/.style={font=\tiny\itshape,text=gray}
-]
-  % Core specification (left column)
-  \node[core] (ch02) at (0,0) {Ch.2 Business\\Requirements};
-  \node[core,below=of ch02] (ch03) {Ch.3--7 Core\\Pipeline};
-  \node[core,below=of ch03] (ch08) {Ch.8 Evaluation\\Framework};
-  \node[core,below=of ch08] (ch12) {Ch.12 Implementation\\Instructions};
-  
-  % Planning chapters (middle column)
-  \node[plan,right=18mm of ch02] (ch15) {Ch.15 Project\\Roadmap (v1.2)};
-  \node[plan,below=of ch15] (ch16) {Ch.16 Implementation\\Roadmap};
-  \node[future,below=of ch16] (ch17) {Ch.17 Future\\Directions (v1.3+)};
-  
-  % Appendices (right column)
-  \node[appendix,right=18mm of ch15] (a1) {App.A1 Gap\\Review (P0--P2)};
-  
-  % Arrows showing relationships
-  \draw[dep] (ch02) -- (ch15) node[midway,above,note] {BR reqs};
-  \draw[dep] (ch03) -- (ch15);
-  \draw[dep] (ch08) -- (ch15);
-  \draw[dep] (ch12) -- (ch15);
-  
-  \draw[dep] (ch15) -- (ch16) node[midway,right,note] {M01--M07};
-  \draw[dep] (ch16) -- (ch17) node[midway,right,note] {v1.3 trigger};
-  
-  \draw[dep] (ch15) -- (a1) node[midway,above,note] {blocks};
-  \draw[soft] (a1) -- (ch16);
-  
-\end{tikzpicture}
-\caption{Chapter relationship flowchart. Blue: core specification. Gold: planning chapters (v1.2 scope). Dotted gray: future scope (v1.3+). Red: gap review. Solid arrows: hard prerequisites. Dashed arrows: remediation dependencies.}
-\label{fig:chapter-relationships}
-\end{figure}
+\mermaidfig[\textwidth]{diagrams/chapter-relationships}%
+  {Chapter relationship flowchart. Blue: core specification. Gold: planning
+    chapters (v1.2 scope). Dotted gray: future scope (v1.3+). Red: gap review.
+    Solid arrows: hard prerequisites. Dashed arrows: remediation dependencies.}%
+  {fig:chapter-relationships}
 
 \noindent
 \textbf{Key Reading Paths:}

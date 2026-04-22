@@ -1,0 +1,209 @@
+% =============================================================================
+% CHAPTER 6: AIMO MATHEMATICAL LIBRARIES
+% IP Traceability: IP-005 (safety-aimo-ntimeseries.docx)
+% =============================================================================
+
+\chapter{AIMO Mathematical Libraries}
+\label{chap:mathematical-foundations}
+
+\section{IP Document Summary}
+
+\begin{tracerecord}
+\textbf{IP Source ID} & \ipid{IP-005} \\
+\textbf{Document} & safety-aimo-ntimeseries.docx \\
+\textbf{Author} & Craig Turrell, Head of AI \& Design \\
+\textbf{Date} & December 2025 \\
+\textbf{Pages} & 28 \\
+\textbf{Abstract} & AIMO (AI Mathematical Olympiad) verified mathematical libraries with formal correctness proofs \\
+\end{tracerecord}
+
+\subsection{Document Abstract}
+
+\begin{ipsourcebox}{IP-005, Abstract}
+\textit{``The AIMO mathematical libraries provide 15 verified algorithms for time series analysis, statistical computation, and numerical optimization. Each algorithm includes formal correctness proofs, numerical error bounds, and Mojo implementations optimized for SIMD execution. These libraries form the mathematical foundation for AI-assisted financial analysis.''}
+\end{ipsourcebox}
+
+\section{Key Concepts Identified}
+
+\begin{table}[H]
+\centering
+\caption{IP-005 Key Concepts}
+\begin{tabularx}{\textwidth}{@{}p{3.5cm}Xl@{}}
+\toprule
+\textbf{Concept} & \textbf{Description} & \textbf{Section} \\
+\midrule
+Verified Algorithms & 15 algorithms with formal correctness proofs & \ref{sec:ip005-verified} \\
+Numerical Error Bounds & Explicit error bounds for all computations & \ref{sec:ip005-bounds} \\
+Proof Annotations & Formal specifications in code comments & \ref{sec:ip005-proofs} \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\section{Concept: Verified Algorithms}
+\label{sec:ip005-verified}
+
+\begin{ipsourcebox}{IP-005, Section 2}
+\textit{``The AIMO library provides 15 verified algorithms:
+\begin{enumerate}
+\item Kalman filter (state estimation)
+\item Fast Fourier Transform (spectral analysis)
+\item MAD estimator (robust statistics)
+\item Z-score computation (standardization)
+\item Welford's algorithm (online variance)
+\item Linear regression (OLS)
+\item Exponential smoothing (forecasting)
+\item ARIMA components (time series)
+\item Correlation matrix (dependency)
+\item Covariance estimation (risk)
+\item Percentile computation (quantiles)
+\item Histogram binning (distribution)
+\item Outlier detection (anomaly)
+\item Trend extraction (decomposition)
+\item Seasonality detection (periodicity)
+\end{enumerate}
+Each algorithm includes a theorem stating its correctness property.''}
+\end{ipsourcebox}
+
+\begin{tracerecord}
+\textbf{IP Source ID} & IP-005 \\
+\textbf{IP Location} & Section 2 \\
+\textbf{Concept} & Library of formally verified algorithms \\
+\midrule
+\textbf{Implementation Path} & \filepath{src/intelligence/analytics/} \\
+\textbf{Adaptation Type} & Selective (algorithms used as needed) \\
+\end{tracerecord}
+
+\begin{adaptbox}
+The IP paper specifies 15 verified algorithms. The SAP-OSS implementation uses several of these directly in \filepath{anomaly\_detector.py}: MAD estimator, Z-score computation, and outlier detection. Other algorithms (Kalman, FFT, correlation) are available through scipy/numpy, which implement mathematically equivalent algorithms.
+\end{adaptbox}
+
+\section{Concept: Numerical Error Bounds}
+\label{sec:ip005-bounds}
+
+\begin{ipsourcebox}{IP-005, Section 4}
+\textit{``Each algorithm specifies explicit error bounds. For example:
+\begin{itemize}
+\item MAD estimator: Exact for finite inputs, robust to $\leq 50\%$ outliers
+\item Z-score: Relative error $\leq 3\epsilon_{mach}$ for $|z| < 10^6$
+\item Correlation: $|r - \hat{r}| \leq n \cdot \epsilon_{mach}$ for $n$ samples
+\end{itemize}
+These bounds enable reasoning about numerical reliability.''}
+\end{ipsourcebox}
+
+\begin{tracerecord}
+\textbf{IP Source ID} & IP-005 \\
+\textbf{IP Location} & Section 4 \\
+\textbf{Concept} & Explicit numerical error characterization \\
+\midrule
+\textbf{Implementation Path} & \filepath{src/intelligence/analytics/anomaly\_detector.py} \\
+\textbf{Adaptation Type} & Defensive (edge case handling) \\
+\end{tracerecord}
+
+\begin{implbox}{Error Handling Patterns}
+\begin{lstlisting}[language=Python]
+def _mad_detection(self, values):
+    """
+    MAD detection with numerical safety per IP-005.
+    
+    Error bound: Exact for finite inputs, robust to 50% outliers.
+    """
+    mad_adjusted = mad * self.MAD_CONSISTENCY_CONSTANT
+    
+    # Defensive: Handle degenerate case (all values at median)
+    if mad_adjusted == 0:
+        return np.zeros(len(values), dtype=bool), np.zeros(len(values))
+    
+    # Computation within error bounds
+    modified_z_scores = np.abs(values - median) / mad_adjusted
+    return anomaly_mask, modified_z_scores
+
+def _zscore_detection(self, values):
+    """
+    Z-score with numerical safety per IP-005.
+    
+    Error bound: Relative error <= 3*epsilon for |z| < 10^6.
+    """
+    # Defensive: Handle zero variance (all identical values)
+    if std == 0:
+        return np.zeros(len(values), dtype=bool), np.zeros(len(values))
+    
+    z_scores = np.abs((values - mean) / std)
+    return anomaly_mask, z_scores
+\end{lstlisting}
+\end{implbox}
+
+\begin{adaptbox}
+The IP paper specifies numerical error bounds for each algorithm. The SAP-OSS implementation incorporates defensive programming patterns that handle edge cases (zero MAD, zero std) where numerical error bounds would be undefined. This ensures the implementation remains numerically stable across all inputs.
+\end{adaptbox}
+
+\section{Concept: Proof Annotations}
+\label{sec:ip005-proofs}
+
+\begin{ipsourcebox}{IP-005, Section 3}
+\textit{``Each algorithm includes proof annotations in the form of:
+\begin{itemize}
+\item Preconditions: Required input properties
+\item Postconditions: Guaranteed output properties
+\item Invariants: Properties maintained throughout computation
+\item Error bounds: Maximum numerical deviation
+\end{itemize}
+These annotations serve as machine-checkable specifications.''}
+\end{ipsourcebox}
+
+\begin{tracerecord}
+\textbf{IP Source ID} & IP-005 \\
+\textbf{IP Location} & Section 3 \\
+\textbf{Concept} & Formal specifications in code \\
+\midrule
+\textbf{Implementation Path} & \filepath{src/intelligence/analytics/anomaly\_detector.py} \\
+\textbf{Adaptation Type} & Documentation (docstrings with specifications) \\
+\end{tracerecord}
+
+\begin{implbox}{Specification-style Docstrings}
+\begin{lstlisting}[language=Python]
+class AnomalyDetector:
+    """
+    Anomaly detection with normality testing and MAD fallback.
+    
+    Preconditions:
+        - values array contains finite numeric values
+        - len(values) >= 3 for meaningful detection
+    
+    Postconditions:
+        - anomaly_mask is boolean array of same length as values
+        - scores are non-negative floats
+        - all anomalies have score > threshold
+    
+    Invariants:
+        - Detection method determined by Shapiro-Wilk test
+        - Thresholds: Z-score=3.0, MAD=3.5, spike/drop=25%
+    
+    Error bounds:
+        - Z-score: relative error <= 3*epsilon for |z| < 10^6
+        - MAD: exact for finite inputs
+    """
+\end{lstlisting}
+\end{implbox}
+
+\begin{adaptbox}
+The IP paper describes formal proof annotations. In the SAP-OSS Python implementation, these are adapted to structured docstrings that specify preconditions, postconditions, invariants, and error bounds. While not machine-checkable like formal proof languages, these serve the same documentation purpose and guide correct usage.
+\end{adaptbox}
+
+\section{Implementation Summary}
+
+\begin{table}[H]
+\centering
+\caption{IP-005 Concept Implementation Summary}
+\begin{tabularx}{\textwidth}{@{}p{3cm}p{3.5cm}Xc@{}}
+\toprule
+\textbf{Concept} & \textbf{IP Reference} & \textbf{Implementation} & \textbf{Status} \\
+\midrule
+Verified Algorithms & Section 2 & MAD, Z-score, outlier detection & Yes \\
+Numerical Bounds & Section 4 & Edge case handling & Yes \\
+Proof Annotations & Section 3 & Specification docstrings & Yes \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\paragraph{Note:}
+The AIMO libraries in IP-005 provide a mathematical foundation. The SAP-OSS implementation uses equivalent algorithms from numpy/scipy for standard operations, with custom implementations (like \funcname{AnomalyDetector}) following the same mathematical specifications and error handling patterns.

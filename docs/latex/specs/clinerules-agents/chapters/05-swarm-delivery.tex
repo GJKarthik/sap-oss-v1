@@ -31,32 +31,9 @@ PDF build and validation agent & docs-local pack or build contract & Build PDFs,
 
 \section{Interaction model}
 
-\begin{figure}[htbp]
-\centering
-\begin{tikzpicture}[
-  node distance=10mm and 16mm,
-  box/.style={draw,rounded corners,minimum width=34mm,minimum height=11mm,align=center,font=\small,fill=blue!5},
-  ctrl/.style={draw,rounded corners,minimum width=36mm,minimum height=11mm,align=center,font=\small,fill=orange!10},
-  t/.style={-{Latex[length=2mm]},thick}
-]
-\node[ctrl] (lead) {Spec Orchestrator};
-\node[box,below left=of lead] (regdev) {Regulations\\Development};
-\node[box,below right=of lead] (regmon) {Regulations\\Runtime Monitor};
-\node[box,below=of regdev] (sim) {Simula\\Pack};
-\node[box,below=of regmon] (gui) {Generative UI\\Pack};
-\node[ctrl,below right=of sim] (pdf) {PDF Build \&\\Validation};
-
-\draw[t] (lead) -- (regdev);
-\draw[t] (lead) -- (regmon);
-\draw[t] (regdev) -- (sim);
-\draw[t] (regdev) -- (gui);
-\draw[t] (sim) -- (pdf);
-\draw[t] (gui) -- (pdf);
-\draw[t] (regmon) -- (pdf);
-\end{tikzpicture}
-\caption{Minimum swarm for governed spec delivery.}
-\label{fig:swarm}
-\end{figure}
+\mermaidfig[0.7\textwidth]{diagrams/swarm}%
+  {Minimum swarm for governed spec delivery.}%
+  {fig:swarm}
 
 \section{Inter-agent signaling}
 \label{sec:inter-agent-signaling}

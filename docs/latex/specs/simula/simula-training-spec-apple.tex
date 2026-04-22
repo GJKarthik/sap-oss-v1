@@ -4,7 +4,7 @@
 % Version: 1.2.0 - Apple WWDC Style Edition
 % =============================================================================
 % !TEX program = xelatex
-\documentclass[fontsize=11pt,paper=a4paper,twoside=true]{../../shared/sap-oss-apple}
+\documentclass[fontsize=10pt,paper=a4paper,twoside=true]{../../shared/sap-oss-apple}
 
 % -----------------------------------------------------------------------------
 % DOCUMENT METADATA
@@ -26,6 +26,55 @@
 % -----------------------------------------------------------------------------
 \usepackage{algorithm}
 \usepackage{algpseudocode}
+
+% -----------------------------------------------------------------------------
+% CROSS-SPEC REFERENCE STUBS
+% -----------------------------------------------------------------------------
+% This spec cites chapters from sibling specs (Regulations, Arabic AP, Trial
+% Balance) that live in separate PDFs. Without these stub labels, every
+% \ref{reg:ch:...} etc. prints as `??'. We register a \newlabel for each known
+% external anchor so the reference resolves to a human-readable short tag
+% rather than the LaTeX undefined-reference glyph. Keep this list in sync with
+% the anchors used under chapters/ and the fragment-* files.
+% `\newlabel' is normally installed in the .aux file after a successful
+% compile; we pre-register stubs for external anchors here so undefined
+% references to sibling specs do not print as `??'. Using \AfterEndPreamble
+% guarantees this runs AFTER hyperref has patched \newlabel with its 5-arg
+% form but BEFORE the first chapter is typeset.
+% `\cref' stores labels via \newlabel{<label>@cref} in a structure cleveref
+% parses internally. To stub external labels cleanly, we override \cref at
+% the top level: if the label exists, fall through to the real cleveref
+% implementation; otherwise emit a human-readable short tag. Known external
+% anchors are registered with \SIMextref{<label>}{<short tag>} below.
+\makeatletter
+\newcommand{\SIMextref}[2]{%
+  \expandafter\def\csname SIM@ext@#1\endcsname{#2}%
+}
+% Redirect \cref to our fallback-aware version. Original cleveref \cref
+% is preserved as \origcref.
+\let\origcref\cref
+\renewcommand{\cref}[1]{%
+  \@ifundefined{SIM@ext@#1}{\origcref{#1}}{\csname SIM@ext@#1\endcsname}%
+}
+\let\origCref\Cref
+\renewcommand{\Cref}[1]{%
+  \@ifundefined{SIM@ext@#1}{\origCref{#1}}{\csname SIM@ext@#1\endcsname}%
+}
+% External-spec chapter anchors. Short tags render as italic prose so the
+% reader sees "(see Regulations spec, MGF chapter)" rather than "??".
+\SIMextref{reg:ch:mgf}{the Regulations spec (MGF chapter)}
+\SIMextref{reg:ch:identity}{the Regulations spec (Identity chapter)}
+\SIMextref{reg:ch:monitoring}{the Regulations spec (Monitoring chapter)}
+\SIMextref{ar:ch:ap}{the Arabic AP spec (Intake chapter)}
+\SIMextref{ar:ch:ai}{the Arabic AP spec (AI chapter)}
+\SIMextref{ar:ch:vat}{the Arabic AP spec (VAT chapter)}
+\SIMextref{ar:ch:vat-impl}{the Arabic AP spec (VAT implementation)}
+\SIMextref{tb:ch:controls}{the Trial Balance spec (Controls chapter)}
+\SIMextref{tb:ch:controls-engine}{the Trial Balance spec (Controls Engine)}
+\SIMextref{tb:ch:ai}{the Trial Balance spec (AI chapter)}
+\SIMextref{tb:ch:workflow}{the Trial Balance spec (Workflow chapter)}
+\SIMextref{tb:ch:review-dashboard}{the Trial Balance spec (Review Dashboard)}
+\makeatother
 
 % -----------------------------------------------------------------------------
 % DOCUMENT BEGINS

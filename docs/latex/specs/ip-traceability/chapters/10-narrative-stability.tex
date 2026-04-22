@@ -1,0 +1,178 @@
+% =============================================================================
+% CHAPTER 10: NARRATIVE AI STABILITY
+% IP Traceability: IP-009 (narrariveai (1).pdf)
+% =============================================================================
+
+\chapter{Narrative AI Stability}
+\label{chap:narrative-stability}
+
+\section{IP Document Summary}
+
+\begin{tracerecord}
+\textbf{IP Source ID} & \ipid{IP-009} \\
+\textbf{Document} & narrariveai (1).pdf \\
+\textbf{Author} & Craig Turrell, Head of AI \& Design \\
+\textbf{Date} & January 2026 \\
+\textbf{Pages} & 18 \\
+\textbf{Abstract} & Lyapunov stability metrics and narrative graph neural networks for AI governance \\
+\end{tracerecord}
+
+\subsection{Document Abstract}
+
+\begin{ipsourcebox}{IP-009, Abstract}
+\textit{``This paper introduces a formal stability framework for AI narrative generation systems. We apply Lyapunov stability theory to define convergence guarantees for narrative coherence, ensuring that AI-generated narratives remain bounded and predictable. The framework includes real-time stability dashboards, traffic-light status indicators, and integration with enterprise governance systems.''}
+\end{ipsourcebox}
+
+\section{Key Concepts Identified}
+
+\begin{table}[H]
+\centering
+\caption{IP-009 Key Concepts}
+\begin{tabularx}{\textwidth}{@{}p{3.5cm}Xl@{}}
+\toprule
+\textbf{Concept} & \textbf{Description} & \textbf{Section} \\
+\midrule
+Lyapunov Stability Metrics & Mathematical stability measurements & \ref{sec:ip009-lyapunov} \\
+Stability Dashboard & Real-time monitoring interface & \ref{sec:ip009-dashboard} \\
+Traffic-light Status & Intuitive status indicators & \ref{sec:ip009-traffic} \\
+Governance Integration & TOON and metadata compliance & \ref{sec:ip009-governance} \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\section{Concept: Lyapunov Stability Metrics}
+\label{sec:ip009-lyapunov}
+
+\begin{ipsourcebox}{IP-009, Stability Framework Section}
+\textit{``We define the Maximum Lyapunov Exponent (MLE) for narrative trajectories:
+$$\lambda = \lim_{t \to \infty} \frac{1}{t} \ln \frac{||\delta(t)||}{||\delta(0)||}$$
+where $\delta(t)$ is the deviation from the expected narrative trajectory. Systems with $\lambda < 0$ are stable; $\lambda > 0$ indicates instability.''}
+\end{ipsourcebox}
+
+\begin{tracerecord}
+\textbf{IP Source ID} & IP-009 \\
+\textbf{IP Location} & Stability Framework Section \\
+\textbf{Concept} & Quantitative stability measurement \\
+\midrule
+\textbf{Implementation Path} & Conceptual influence \\
+\textbf{Adaptation Type} & Design principle (deviation tracking) \\
+\end{tracerecord}
+
+\begin{adaptbox}
+The IP paper defines stability through Lyapunov exponents measuring deviation growth. While SAP-OSS does not compute MLE directly, the concept of tracking deviation from expected trajectories is implemented in anomaly detection: Z-scores and MAD scores measure how far values deviate from expected baselines. Large deviations (high scores) indicate ``instability'' in the data.
+\end{adaptbox}
+
+\section{Concept: Stability Dashboard}
+\label{sec:ip009-dashboard}
+
+\begin{ipsourcebox}{IP-009, Monitoring Section}
+\textit{``The stability dashboard provides real-time visibility into AI system behavior:
+\begin{itemize}
+\item Current stability score (0--100)
+\item Trend indicators (improving/stable/degrading)
+\item Threshold alerts (warning/critical zones)
+\item Historical stability charts
+\end{itemize}
+This enables proactive intervention before instability becomes critical.''}
+\end{ipsourcebox}
+
+\begin{tracerecord}
+\textbf{IP Source ID} & IP-009 \\
+\textbf{IP Location} & Monitoring Section \\
+\textbf{Concept} & Real-time stability monitoring \\
+\midrule
+\textbf{Implementation Path} & \filepath{src/intelligence/analytics/} \\
+\textbf{Adaptation Type} & Structural (monitoring data structures) \\
+\end{tracerecord}
+
+\begin{adaptbox}
+The IP paper describes a real-time stability dashboard. The SAP-OSS implementation provides the data required for such monitoring through the result dataclasses: \funcname{BatchAnomalyResult} includes statistics (for current scores), method selection (for trend analysis), and threshold comparisons (for alerts). These structures support dashboard visualization.
+\end{adaptbox}
+
+\section{Concept: Traffic-light Status}
+\label{sec:ip009-traffic}
+
+\begin{ipsourcebox}{IP-009, Status Indicators Section}
+\textit{``Traffic-light status indicators provide intuitive stability communication:
+\begin{itemize}
+\item \textbf{Green}: Stable operation ($\lambda < 0$, within normal bounds)
+\item \textbf{Amber}: Warning ($\lambda \approx 0$, approaching thresholds)
+\item \textbf{Red}: Critical ($\lambda > 0$, unstable, intervention required)
+\end{itemize}
+These map continuous metrics to discrete, actionable states.''}
+\end{ipsourcebox}
+
+\begin{tracerecord}
+\textbf{IP Source ID} & IP-009 \\
+\textbf{IP Location} & Status Indicators Section \\
+\textbf{Concept} & Discrete status classification \\
+\midrule
+\textbf{Implementation Path} & \filepath{src/intelligence/analytics/anomaly\_detector.py} \\
+\textbf{Adaptation Type} & Structural (anomaly\_type classification) \\
+\end{tracerecord}
+
+\begin{implbox}{Traffic-light Pattern in anomaly\_type}
+\begin{lstlisting}[language=Python]
+# Traffic-light status mapping in VarianceAnalysisResult
+#
+# anomaly_type provides discrete classification:
+# - "none" -> Green (normal operation)
+# - "statistical" -> Amber (statistical deviation detected)
+# - "spike"/"drop" -> Amber/Red (significant directional change)
+# - "material" -> Red (material threshold exceeded)
+# - "new_account" -> Amber (requires attention)
+#
+# This maps continuous Z-scores to discrete, actionable states
+# as specified in IP-009 traffic-light concept
+\end{lstlisting}
+\end{implbox}
+
+\begin{adaptbox}
+The IP paper defines traffic-light indicators mapping continuous metrics to discrete states. The SAP-OSS \texttt{anomaly\_type} field implements this concept: ``none'' indicates green (normal), ``statistical'' indicates amber (attention needed), and ``material''/``spike''/``drop'' indicate conditions requiring action. This provides the intuitive status communication described in the IP.
+\end{adaptbox}
+
+\section{Concept: Governance Integration}
+\label{sec:ip009-governance}
+
+\begin{ipsourcebox}{IP-009, TOON Integration Section}
+\textit{``Stability metrics integrate with enterprise governance through Token-Oriented Object Notation (TOON):
+\begin{itemize}
+\item Stability scores included in TOON metadata
+\item Audit trails link stability events to governance actions
+\item Compliance reports include stability history
+\end{itemize}
+This ensures AI stability is part of overall governance posture.''}
+\end{ipsourcebox}
+
+\begin{tracerecord}
+\textbf{IP Source ID} & IP-009 \\
+\textbf{IP Location} & TOON Integration Section \\
+\textbf{Concept} & Metadata-driven governance integration \\
+\midrule
+\textbf{Implementation Path} & \filepath{src/intelligence/ai-core-pal/governance/} \\
+\textbf{Adaptation Type} & Conceptual (audit integration) \\
+\end{tracerecord}
+
+\begin{adaptbox}
+The IP paper describes TOON metadata for governance integration. The SAP-OSS implementation captures this concept through the \texttt{details} dictionary in \funcname{VarianceAnalysisResult} and the structured audit records from \funcname{AuditLogger}. These provide the metadata required for compliance reports and governance dashboards, enabling stability tracking as part of overall AI governance.
+\end{adaptbox}
+
+\section{Implementation Summary}
+
+\begin{table}[H]
+\centering
+\caption{IP-009 Concept Implementation Summary}
+\begin{tabularx}{\textwidth}{@{}p{3cm}p{3.5cm}Xc@{}}
+\toprule
+\textbf{Concept} & \textbf{IP Reference} & \textbf{Implementation} & \textbf{Status} \\
+\midrule
+Lyapunov Metrics & Stability Section & Deviation tracking (Z-scores) & Yes \\
+Stability Dashboard & Monitoring Section & Result dataclasses & Yes \\
+Traffic-light Status & Status Section & \texttt{anomaly\_type} classification & Yes \\
+Governance Integration & TOON Section & Audit logger + details dict & Yes \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\paragraph{Note:}
+IP-009 focuses on narrative AI systems. The SAP-OSS adaptation applies the stability monitoring principles (deviation measurement, discrete status indicators, governance metadata) to financial analytics while preserving the underlying governance-focused architecture.

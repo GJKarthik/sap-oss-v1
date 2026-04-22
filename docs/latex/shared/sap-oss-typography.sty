@@ -4,7 +4,7 @@
 % Professional typography with Inter and JetBrains Mono
 % =============================================================================
 \NeedsTeXFormat{LaTeX2e}
-\ProvidesPackage{sap-oss-typography}[2026/04/21 SAP-OSS WWDC-Style Typography v2.0.1]
+\ProvidesPackage{sap-oss-typography}[2026/04/21 SAP-OSS WWDC-Style Typography v2.1.0]
 
 % Require fontspec for XeLaTeX/LuaLaTeX
 \RequirePackage{fontspec}
@@ -45,9 +45,11 @@
   }
 }
 
-% Monospace font - with robust fallback
+% Monospace font - with robust fallback. JetBrains Mono Contextual Alternates
+% turn on the programming ligatures (`->', `=>', `!=', `===', `<=', `>=').
+% The feature tag is `calt' which fontspec exposes as Contextuals=Alternate.
 \IfFontExistsTF{JetBrains Mono}{%
-  \setmonofont{JetBrains Mono}[Scale=0.88]
+  \setmonofont{JetBrains Mono}[Scale=0.88,Contextuals=Alternate]
 }{%
   \IfFontExistsTF{Menlo}{%
     \setmonofont{Menlo}[Scale=0.88]
@@ -75,9 +77,10 @@
 % -----------------------------------------------------------------------------
 % LINE SPACING - WWDC BREATHING ROOM
 % -----------------------------------------------------------------------------
-% Base line spread for body text - Apple HIG spec leading (tightened from
-% 1.45 which read like a double-spaced essay to 1.25 for spec density).
-\linespread{1.25}
+% Base line spread for body text. 1.35 gives keynote-deck breathing room
+% without drifting into essay-double-spaced territory (1.45+). Tuned to the
+% 11pt body of the full class and 10pt body of the minimal class.
+\linespread{1.35}
 
 % -----------------------------------------------------------------------------
 % FONT SIZE COMMANDS - DRAMATIC SCALE

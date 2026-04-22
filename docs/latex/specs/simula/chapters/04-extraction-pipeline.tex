@@ -1,31 +1,11 @@
 \chapter{HANA Schema Extraction Pipeline}
-\label{chap:extraction}
+\label{chap:extraction}\label{sim:chap:extraction}
 
 \section{Pipeline at a Glance}
 
-\begin{figure}[H]
-\centering
-\begin{tikzpicture}[
-    node distance=0.8cm,
-    stage/.style={rectangle, draw, rounded corners, fill=sapblue!10, 
-                  minimum width=2.5cm, minimum height=0.8cm, font=\small,
-                  text width=2.3cm, align=center},
-    arr/.style={-{Stealth[length=2mm]}, thick},
-]
-    \node[stage] (s1) {1. MCP Discovery};
-    \node[stage, right=of s1] (s2) {2. Table Enumeration};
-    \node[stage, right=of s2] (s3) {3. Column Extraction};
-    \node[stage, right=of s3] (s4) {4. Registry Population};
-    \node[stage, right=of s4] (s5) {5. JSON Export};
-    
-    \draw[arr] (s1) -- (s2);
-    \draw[arr] (s2) -- (s3);
-    \draw[arr] (s3) -- (s4);
-    \draw[arr] (s4) -- (s5);
-\end{tikzpicture}
-\caption{The five extraction stages; each emits a well-typed payload to the next.}
-\label{fig:extraction-pipeline}
-\end{figure}
+\mermaidfig[\textwidth]{diagrams/extraction-pipeline}%
+  {The five extraction stages; each emits a well-typed payload to the next.}%
+  {fig:extraction-pipeline}
 
 \section{Stage 1 --- MCP Discovery}
 

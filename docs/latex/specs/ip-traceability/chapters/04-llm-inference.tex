@@ -1,0 +1,149 @@
+% =============================================================================
+% CHAPTER 4: LLM INFERENCE SAFETY
+% IP Traceability: IP-003 (safety-nlocalmodels-mojo.docx)
+% =============================================================================
+
+\chapter{LLM Inference Safety}
+\label{chap:llm-inference}
+
+\section{IP Document Summary}
+
+\begin{tracerecord}
+\textbf{IP Source ID} & \ipid{IP-003} \\
+\textbf{Document} & safety-nlocalmodels-mojo.docx \\
+\textbf{Author} & Craig Turrell, Head of AI \& Design \\
+\textbf{Date} & December 2025 \\
+\textbf{Pages} & 22 \\
+\textbf{Abstract} & Numerical safety guarantees for LLM inference engines in Mojo \\
+\end{tracerecord}
+
+\subsection{Document Abstract}
+
+\begin{ipsourcebox}{IP-003, Abstract}
+\textit{``Local LLM inference requires numerical stability guarantees that cloud APIs abstract away. This paper establishes safety bounds for softmax computation, rotary position embeddings (RoPE), quantization error propagation, and sampling procedures. We provide Mojo implementations with formal proofs of bounded numerical error.''}
+\end{ipsourcebox}
+
+\section{Key Concepts Identified}
+
+\begin{table}[H]
+\centering
+\caption{IP-003 Key Concepts}
+\begin{tabularx}{\textwidth}{@{}p{3.5cm}Xl@{}}
+\toprule
+\textbf{Concept} & \textbf{Description} & \textbf{Section} \\
+\midrule
+Softmax Stability & Numerically stable softmax with max-subtraction & \ref{sec:ip003-softmax} \\
+RoPE Orthogonality & Position embedding preserves inner products & \ref{sec:ip003-rope} \\
+Quantization Bounds & Error bounds for INT8/INT4 quantization & \ref{sec:ip003-quant} \\
+Sampling Integrity & Temperature and top-p sampling safety & \ref{sec:ip003-sampling} \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\section{Concept: Softmax Stability}
+\label{sec:ip003-softmax}
+
+\begin{ipsourcebox}{IP-003, Section 4}
+\textit{``Theorem 8 (Stable softmax). For input vector $x \in \mathbb{R}^n$, the numerically stable softmax computes:
+$$\text{softmax}(x)_i = \frac{\exp(x_i - \max(x))}{\sum_j \exp(x_j - \max(x))}$$
+This prevents overflow by ensuring all exponent arguments are $\leq 0$, with maximum relative error bounded by $n \cdot \epsilon_{mach}$.''}
+\end{ipsourcebox}
+
+\begin{tracerecord}
+\textbf{IP Source ID} & IP-003 \\
+\textbf{IP Location} & Section 4, Theorem 8 \\
+\textbf{Concept} & Max-subtraction for numerical stability \\
+\midrule
+\textbf{Implementation Path} & \filepath{src/intelligence/vllm-turboquant/} \\
+\textbf{Adaptation Type} & Algorithmic (standard practice in vLLM) \\
+\end{tracerecord}
+
+\begin{adaptbox}
+The IP paper formalizes the max-subtraction technique for numerically stable softmax. This is a standard practice in production LLM inference engines including vLLM. The SAP-OSS vLLM integration inherits this stability guarantee from the underlying vLLM implementation, which uses the same numerical technique.
+\end{adaptbox}
+
+\section{Concept: RoPE Orthogonality}
+\label{sec:ip003-rope}
+
+\begin{ipsourcebox}{IP-003, Section 5}
+\textit{``Theorem 12 (RoPE orthogonality). Rotary position embeddings preserve inner products: for position-encoded vectors $q_m$ and $k_n$, the attention score $q_m \cdot k_n$ depends only on relative position $(m-n)$, with the rotation matrix satisfying $R_\theta^T R_\theta = I$.''}
+\end{ipsourcebox}
+
+\begin{tracerecord}
+\textbf{IP Source ID} & IP-003 \\
+\textbf{IP Location} & Section 5, Theorem 12 \\
+\textbf{Concept} & Orthogonal rotation preserves attention semantics \\
+\midrule
+\textbf{Implementation Path} & \filepath{src/intelligence/vllm-turboquant/} \\
+\textbf{Adaptation Type} & Inherited (vLLM model implementations) \\
+\end{tracerecord}
+
+\begin{adaptbox}
+The IP paper proves that RoPE maintains orthogonality, ensuring position-relative attention. The SAP-OSS deployment uses vLLM's native RoPE implementation for supported models (Llama, Mistral), which implements the same mathematical rotation as specified in the IP paper.
+\end{adaptbox}
+
+\section{Concept: Quantization Bounds}
+\label{sec:ip003-quant}
+
+\begin{ipsourcebox}{IP-003, Section 6}
+\textit{``Theorem 15 (Quantization error bound). For symmetric INT8 quantization with scale $s$, the maximum quantization error is bounded by $s/2$. For asymmetric quantization with zero-point $z$, the error bound is $s \cdot |z|$. AWQ and GPTQ maintain these bounds while optimizing for activation-aware scaling.''}
+\end{ipsourcebox}
+
+\begin{tracerecord}
+\textbf{IP Source ID} & IP-003 \\
+\textbf{IP Location} & Section 6, Theorem 15 \\
+\textbf{Concept} & Bounded error for weight quantization \\
+\midrule
+\textbf{Implementation Path} & \filepath{src/intelligence/vllm-turboquant/} \\
+\textbf{Adaptation Type} & Configuration (quantization method selection) \\
+\end{tracerecord}
+
+\begin{adaptbox}
+The IP paper establishes error bounds for INT8/INT4 quantization. The SAP-OSS vLLM-TurboQuant configuration supports AWQ and GPTQ quantization methods, which implement the bounded-error quantization described in the IP paper. Model deployment configurations specify the quantization method to use.
+\end{adaptbox}
+
+\section{Concept: Sampling Integrity}
+\label{sec:ip003-sampling}
+
+\begin{ipsourcebox}{IP-003, Section 7}
+\textit{``Sampling parameters must be validated to ensure well-defined probability distributions:
+\begin{itemize}
+\item Temperature $T > 0$ (division by zero prevention)
+\item Top-p $\in (0, 1]$ (valid probability mass)
+\item Top-k $\geq 1$ (at least one token selectable)
+\end{itemize}
+Invalid parameters must be rejected before sampling begins.''}
+\end{ipsourcebox}
+
+\begin{tracerecord}
+\textbf{IP Source ID} & IP-003 \\
+\textbf{IP Location} & Section 7 \\
+\textbf{Concept} & Parameter validation for valid sampling \\
+\midrule
+\textbf{Implementation Path} & \filepath{src/intelligence/vllm-turboquant/} \\
+\textbf{Adaptation Type} & Configuration (sampling parameter defaults) \\
+\end{tracerecord}
+
+\begin{adaptbox}
+The IP paper specifies valid ranges for sampling parameters. The SAP-OSS vLLM deployment configuration enforces these constraints through parameter validation and sensible defaults (e.g., temperature $= 0.7$, top-p $= 0.9$), ensuring all inference requests produce valid probability distributions.
+\end{adaptbox}
+
+\section{Implementation Summary}
+
+\begin{table}[H]
+\centering
+\caption{IP-003 Concept Implementation Summary}
+\begin{tabularx}{\textwidth}{@{}p{3cm}p{3.5cm}Xc@{}}
+\toprule
+\textbf{Concept} & \textbf{IP Reference} & \textbf{Implementation} & \textbf{Status} \\
+\midrule
+Softmax Stability & Section 4, Thm 8 & vLLM native implementation & Yes \\
+RoPE Orthogonality & Section 5, Thm 12 & vLLM model support & Yes \\
+Quantization Bounds & Section 6, Thm 15 & AWQ/GPTQ configuration & Yes \\
+Sampling Integrity & Section 7 & Parameter validation & Yes \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\paragraph{Note on Adaptation:}
+IP-003 concepts are primarily inherited from the underlying vLLM inference engine, which implements industry-standard numerical stability techniques. The SAP-OSS adaptation ensures proper configuration and deployment of these capabilities rather than reimplementing them.

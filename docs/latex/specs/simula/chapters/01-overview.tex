@@ -65,61 +65,11 @@ ESG Analytics & \texttt{ESG\_METRICS}, \texttt{FINANCED\_EMISSIONS} & Scope clas
 
 \section{System Context}
 
-\begin{figure}[H]
-\centering
-\begin{tikzpicture}[
-    node distance=1.2cm and 2cm,
-    box/.style={rectangle, draw, rounded corners, minimum width=2.5cm, minimum height=1cm, align=center, font=\small},
-    hana/.style={box, fill=hanagreen!20, draw=hanagreen},
-    mcp/.style={box, fill=sapblue!20, draw=sapblue},
-    llm/.style={box, fill=llmpurple!20, draw=llmpurple},
-    output/.style={box, fill=sapgold!20, draw=sapgold},
-    arr/.style={-{Stealth[length=3mm]}, thick},
-]
-    % HANA Layer
-    \node[hana] (hana) {SAP HANA\\Cloud};
-    
-    % MCP Layer
-    \node[mcp, right=of hana] (mcp) {AI Core PAL\\MCP :8084};
-    
-    % Extraction
-    \node[box, right=of mcp, fill=saplight] (extract) {Schema\\Extractor};
-    
-    % Registry
-    \node[box, below=of extract, fill=saplight] (registry) {Schema\\Registry};
-    
-    % LLM
-    \node[llm, right=2.5cm of extract] (llm) {vLLM\\TurboQuant\\:9180};
-    
-    % Taxonomy
-    \node[box, below=of llm, fill=saplight] (taxonomy) {Taxonomy\\Builder};
-    
-    % Generator
-    \node[box, below=of taxonomy, fill=saplight] (generator) {Data\\Generator};
-    
-    % Output
-    \node[output, right=of generator] (output) {Training Data\\(.jsonl)};
-    
-    % Arrows
-    \draw[arr] (hana) -- node[above, font=\tiny]{SYS.TABLE\_COLUMNS} (mcp);
-    \draw[arr] (mcp) -- node[above, font=\tiny]{execute\_sql} (extract);
-    \draw[arr] (extract) -- (registry);
-    \draw[arr] (registry) -- (taxonomy);
-    \draw[arr, dashed] (llm) -- node[right, font=\tiny]{Best-of-N} (taxonomy);
-    \draw[arr] (taxonomy) -- (generator);
-    \draw[arr, dashed] (llm) -- node[right, font=\tiny]{Critic} (generator);
-    \draw[arr] (generator) -- (output);
-    
-    % Labels
-    \node[below=0.3cm of hana, font=\tiny\color{hanagreen}] {Database};
-    \node[below=0.3cm of mcp, font=\tiny\color{sapblue}] {Protocol};
-    \node[below=0.3cm of llm, font=\tiny\color{llmpurple}] {LLM Backend};
-\end{tikzpicture}
-\caption{System context. HANA Cloud (green) provides live schema metadata via the MCP
-protocol (blue). The vLLM backend (purple) powers taxonomy expansion and data generation.
-Output is JSONL training data (gold).}
-\label{fig:system-context}
-\end{figure}
+\mermaidfig[\textwidth]{diagrams/system-context}%
+  {System context. HANA Cloud (green) provides live schema metadata via the MCP
+    protocol (blue). The vLLM backend (purple) powers taxonomy expansion and data
+    generation. Output is JSONL training data (gold).}%
+  {fig:system-context}
 
 \section{Research Paper Traceability}
 

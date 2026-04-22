@@ -1,0 +1,85 @@
+{
+  "theme": "base",
+  "themeVariables": {
+    "fontFamily": "Inter, -apple-system, BlinkMacSystemFont, sans-serif",
+    "fontSize": "14px",
+
+    "primaryColor": "#E8F0FC",
+    "primaryTextColor": "#1D1D1F",
+    "primaryBorderColor": "#0064D7",
+
+    "secondaryColor": "#F4F6F9",
+    "secondaryTextColor": "#1D1D1F",
+    "secondaryBorderColor": "#8E8E93",
+
+    "tertiaryColor": "#FFFFFF",
+    "tertiaryTextColor": "#1D1D1F",
+    "tertiaryBorderColor": "#C7C7CC",
+
+    "lineColor": "#636366",
+    "textColor": "#1D1D1F",
+    "mainBkg": "#FFFFFF",
+    "nodeBorder": "#0064D7",
+    "clusterBkg": "#F4F6F9",
+    "clusterBorder": "#C7C7CC",
+    "edgeLabelBackground": "#FFFFFF",
+
+    "labelBoxBkgColor": "#E8F0FC",
+    "labelBoxBorderColor": "#0064D7",
+    "labelTextColor": "#1D1D1F",
+    "loopTextColor": "#1D1D1F",
+
+    "noteBkgColor": "#FFF5E6",
+    "noteBorderColor": "#FF9500",
+    "noteTextColor": "#1D1D1F",
+
+    "activationBorderColor": "#0064D7",
+    "activationBkgColor": "#E8F0FC",
+    "sequenceNumberColor": "#FFFFFF",
+
+    "sectionBkgColor": "#E8F0FC",
+    "altSectionBkgColor": "#F4F6F9",
+    "sectionBkgColor2": "#E5E5EA",
+    "taskBkgColor": "#0064D7",
+    "taskTextColor": "#FFFFFF",
+    "taskTextLightColor": "#FFFFFF",
+    "taskTextOutsideColor": "#1D1D1F",
+    "taskTextClickableColor": "#FFFFFF",
+    "activeTaskBkgColor": "#34C759",
+    "activeTaskBorderColor": "#34C759",
+    "gridColor": "#E5E5EA",
+    "doneTaskBkgColor": "#8E8E93",
+    "doneTaskBorderColor": "#636366",
+    "critBkgColor": "#FF3B30",
+    "critBorderColor": "#FF3B30",
+    "todayLineColor": "#FF9500"
+  },
+  "flowchart": {
+    "curve": "basis",
+    "padding": 20,
+    "nodeSpacing": 50,
+    "rankSpacing": 60,
+    "htmlLabels": false,
+    "useMaxWidth": true
+  },
+  "sequence": {
+    "actorMargin": 60,
+    "boxMargin": 10,
+    "mirrorActors": false,
+    "bottomMarginAdj": 10,
+    "useMaxWidth": true,
+    "rightAngles": false,
+    "showSequenceNumbers": false
+  },
+  "gantt": {
+    "titleTopMargin": 25,
+    "barHeight": 20,
+    "barGap": 4,
+    "topPadding": 50,
+    "leftPadding": 120,
+    "gridLineStartPadding": 35,
+    "fontSize": 12,
+    "sectionFontSize": 14,
+    "numberSectionStyles": 3
+  }
+}

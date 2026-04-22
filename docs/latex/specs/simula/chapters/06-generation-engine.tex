@@ -1,34 +1,14 @@
 \chapter{Training Data Generation Engine}
-\label{chap:generator}
+\label{chap:generator}\label{sim:chap:generator}
 
 \section{Algorithm 2: Agentic Data Synthesis}
 
 Given taxonomies $\mathcal{T}$ and a target size $N$, the generator produces a synthetic
 dataset optimized for diversity, complexity, and quality.
 
-\begin{figure}[H]
-\centering
-\begin{tikzpicture}[
-    node distance=0.6cm and 1.5cm,
-    stepbox/.style={rectangle, draw, rounded corners, fill=sapgold!10,
-                 minimum width=3cm, minimum height=0.7cm, font=\small,
-                 text width=2.8cm, align=center},
-    arr/.style={-{Stealth[length=2mm]}, thick},
-]
-    \node[stepbox] (s1) {1. Mix Sampling};
-    \node[stepbox, below=of s1] (s2) {2. Meta-Prompt Generation};
-    \node[stepbox, below=of s2] (s3) {3. Complexification ($c=0.5$)};
-    \node[stepbox, below=of s3] (s4) {4. Example Generation};
-    \node[stepbox, below=of s4] (s5) {5. Double-Critic Filtering};
-    
-    \draw[arr] (s1) -- (s2);
-    \draw[arr] (s2) -- (s3);
-    \draw[arr] (s3) -- (s4);
-    \draw[arr] (s4) -- (s5);
-\end{tikzpicture}
-\caption{Data generation stages implementing Algorithm 2.}
-\label{fig:generator-stages}
-\end{figure}
+\mermaidfig[0.55\textwidth]{diagrams/generator-stages}%
+  {Data generation stages implementing Algorithm 2.}%
+  {fig:generator-stages}
 
 \section{Step 1: Mix Sampling (Global Diversity)}
 

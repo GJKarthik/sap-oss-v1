@@ -2,7 +2,7 @@
 % SAP-OSS Apple Document Class - WWDC Quality Edition
 % =============================================================================
 \NeedsTeXFormat{LaTeX2e}
-\ProvidesClass{sap-oss-apple-minimal}[2026/04/21 SAP-OSS Apple-Style Document Class v8 WWDC+SF+µtype]
+\ProvidesClass{sap-oss-apple-minimal}[2026/04/21 SAP-OSS Apple-Style Document Class v9 WWDC+SF+µtype+Mermaid]
 % Note: this class uses `remember picture,overlay' TikZ overlays in chapter
 % openers. Run xelatex TWICE to resolve overlay positions correctly.
 
@@ -142,8 +142,11 @@
 }
 \newcommand{\sfsymbol}[1]{{\sfsymbolsfont\symbol{"#1}}}
 
+% JetBrains Mono with Contextual Alternates (calt) enables the programming
+% ligatures for `->', `=>', `!=', `===', `<=', `>=' that Xcode-style code
+% blocks are known for. Menlo/Courier fall back silently.
 \IfFontExistsTF{JetBrains Mono}{%
-  \setmonofont{JetBrains Mono}[Scale=0.85]
+  \setmonofont{JetBrains Mono}[Scale=0.85,Contextuals=Alternate]
 }{%
   \IfFontExistsTF{Menlo}{%
     \setmonofont{Menlo}[Scale=0.85]
@@ -188,11 +191,12 @@
 \tolerance=1200
 \setlength{\emergencystretch}{3em}
 
-% Apple HIG-style leading: 1.25 is tighter and reads more like a spec than
-% a double-spaced essay. Paragraph skip kept generous for breathing room.
-\setlength{\parskip}{0.8\baselineskip}
+% Keynote-deck breathing room: 1.35 linespread + full-baselineskip parskip
+% gives prose room to breathe per reviewer. Paragraph indent stays at 0pt
+% (Apple-style: paragraph break is signalled by space, not indent).
+\setlength{\parskip}{1\baselineskip}
 \setlength{\parindent}{0pt}
-\linespread{1.25}
+\linespread{1.35}
 
 % -----------------------------------------------------------------------------
 % HEADERS AND FOOTERS - BREADCRUMB NAVIGATION
@@ -332,26 +336,29 @@
 \RequirePackage{titletoc}
 \renewcommand{\contentsname}{Contents}
 
+% Apple-HIG TOC: thin rule leader (not dots) for chapters, dotted leaders
+% for sections/subsections, page numbers in applegray1 so the eye tracks
+% chapter titles first. "Chapter" prefix is dropped per reviewer.
 \titlecontents{chapter}
   [0pt]
-  {\addvspace{14pt}\bfseries\large}
+  {\addvspace{16pt}\sfdisplaysemi\large\color{appleblack}}
   {\color{sapblue}\thecontentslabel\quad}
   {}
-  {\hfill\contentspage}
+  {\hfill\color{applegray1}\contentspage}
 
 \titlecontents{section}
   [20pt]
-  {\addvspace{4pt}}
+  {\addvspace{4pt}\color{appleblack}}
   {\thecontentslabel\quad}
   {}
-  {\titlerule*[8pt]{.}\contentspage}
+  {\quad\titlerule*[8pt]{{\color{applegray3}.}}\color{applegray1}\contentspage}
 
 \titlecontents{subsection}
   [45pt]
   {\small\color{applegray1}}
   {\thecontentslabel\quad}
   {}
-  {\titlerule*[8pt]{.}\contentspage}
+  {\quad\titlerule*[8pt]{{\color{applegray3}.}}\contentspage}
 
 % -----------------------------------------------------------------------------
 % LISTS
@@ -379,7 +386,7 @@
 \NewDocumentEnvironment{metricstable}{m}{%
   \begin{table}[htbp]
   \centering
-  \small\tabularfigures
+  \tabularfigures
   \setlength{\tabcolsep}{14pt}
   \renewcommand{\arraystretch}{1.6}
   \begin{tabular}{@{}llr@{}}
@@ -393,11 +400,10 @@
   \end{table}
 }
 
-% Specification table environment
+% Specification table environment. Body size matches main text (10pt).
 \NewDocumentEnvironment{spectable}{m}{%
   \begin{table}[htbp]
   \centering
-  \small
   \setlength{\tabcolsep}{12pt}
   \renewcommand{\arraystretch}{1.5}
   \begin{tabularx}{\textwidth}{@{}lX@{}}
@@ -415,11 +421,31 @@
 \RequirePackage{float}
 \RequirePackage{caption}
 \captionsetup{
-  font={small,sf},
+  font={small,sf,color=applegray1},
   labelfont={bf,color=sapblue},
+  labelsep=endash,
   format=plain,
   margin=20pt,
   skip=12pt
+}
+
+% More space before/after floats so figures breathe between paragraphs.
+\setlength{\textfloatsep}{18pt plus 2pt minus 4pt}
+\setlength{\intextsep}{18pt plus 2pt minus 4pt}
+\setlength{\floatsep}{14pt plus 2pt minus 4pt}
+
+% \mermaidfig{<path-without-ext>}{<caption>}{<label>}
+% One-liner helper for Mermaid-rendered PDF diagrams. Expands to a full
+% figure environment with \caption + \label, enabling \cref{fig:...}. The
+% path is resolved relative to the spec's .tex file (i.e. the chapter or
+% top-level), not to this class. Width is 0.85\textwidth by default.
+\NewDocumentCommand{\mermaidfig}{O{0.85\textwidth} m m m}{%
+  \begin{figure}[htbp]%
+    \centering
+    \includegraphics[width=#1]{#2.pdf}%
+    \caption{#3}%
+    \label{#4}%
+  \end{figure}%
 }
 
 % -----------------------------------------------------------------------------
@@ -446,10 +472,39 @@
   backgroundcolor=\color{codebg},
   xleftmargin=28pt,
   xrightmargin=10pt,
-  aboveskip=12pt,
-  belowskip=12pt,
+  aboveskip=16pt,
+  belowskip=16pt,
   framesep=6pt,
   framexleftmargin=0pt,
+}
+
+% Language definitions mirrored from sap-oss-listings.sty so specs that use
+% `language=pythonx|jsonx|yamlx' compile with the minimal class too.
+\lstdefinelanguage{pythonx}{
+  language=Python,
+  morekeywords={self,True,False,None,async,await,yield,with,as,lambda,nonlocal,
+                match,case,dataclass,field,Optional,List,Dict,Set,Tuple,Union,
+                Any,Callable,TypeVar,Generic,Protocol,Literal,Final,ClassVar},
+  morecomment=[l]{\#},
+  morestring=[b]",
+  morestring=[b]',
+}
+\lstdefinelanguage{jsonx}{
+  morestring=[b]",
+  morecomment=[l]{//},
+  literate=
+    *{:}{{{\color{sapblue}:}}}1
+    {,}{{{\color{sapblue},}}}1
+    {true}{{{\color{sapblue}true}}}4
+    {false}{{{\color{sapblue}false}}}5
+    {null}{{{\color{sapblue}null}}}4,
+}
+\lstdefinelanguage{yamlx}{
+  keywords={true,false,null,yes,no,on,off},
+  sensitive=false,
+  morecomment=[l]{\#},
+  morestring=[b]',
+  morestring=[b]",
 }
 
 % Code block with file path header (uses lstnewenvironment for verbatim support)
@@ -578,17 +633,21 @@
 % -----------------------------------------------------------------------------
 % HELPER COMMANDS
 % -----------------------------------------------------------------------------
-\newcommand{\filepath}[1]{{\color{pathcolor}\faIcon{folder}\hspace{4pt}\texttt{\small #1}}}
-\newcommand{\artifact}[1]{\texttt{\small\color{sapblue}#1}}
-\newcommand{\reqid}[1]{\textbf{\color{sapblue}\texttt{#1}}}
-\newcommand{\corpus}[1]{\texttt{\small\color{applegray1}#1}}
-\newcommand{\tool}[1]{\texttt{\small\color{tealdark}#1}}
+% Path/code helpers use \detokenize to survive literal strings containing
+% `_', `<', `>', `#', `&' etc. without requiring the author to escape them.
+% The argument must be a literal string (no macro expansion); this is the
+% correct semantic for file paths, schema paths and identifiers.
+\newcommand{\filepath}[1]{{\color{pathcolor}\faIcon{folder}\hspace{4pt}\texttt{\small\detokenize{#1}}}}
+\newcommand{\artifact}[1]{\texttt{\small\color{sapblue}\detokenize{#1}}}
+\newcommand{\reqid}[1]{\textbf{\color{sapblue}\texttt{\detokenize{#1}}}}
+\newcommand{\corpus}[1]{\texttt{\small\color{applegray1}\detokenize{#1}}}
+\newcommand{\tool}[1]{\texttt{\small\color{tealdark}\detokenize{#1}}}
 \newcommand{\stateid}[1]{\textsc{\small\color{applepurple}\MakeLowercase{#1}}}
 \newcommand{\ar}[1]{#1}
-\newcommand{\schemapath}[1]{\texttt{\small\color{pathcolor}#1}}
-\newcommand{\enumval}[1]{\texttt{\small\color{applegreen}#1}}
-\newcommand{\fieldref}[1]{\texttt{\small\color{sapblue}#1}}
-\newcommand{\srcref}[1]{\texttt{\small #1}}
+\newcommand{\schemapath}[1]{\texttt{\small\color{pathcolor}\detokenize{#1}}}
+\newcommand{\enumval}[1]{\texttt{\small\color{applegreen}\detokenize{#1}}}
+\newcommand{\fieldref}[1]{\texttt{\small\color{sapblue}\detokenize{#1}}}
+\newcommand{\srcref}[1]{\texttt{\small\detokenize{#1}}}
 \newcommand{\reqref}[1]{\texttt{\small #1}}
 \newcommand{\specref}[1]{\texttt{\small #1}}
 \newcommand{\schemaref}[1]{\texttt{\small #1}}

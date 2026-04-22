@@ -51,51 +51,13 @@ schedule and scope can absorb delivery risk without a release slip.
 
 \section{Dependency graph}\label{sec:sim-dependency-graph}
 
-\begin{figure}[htbp]
-\centering
-\begin{tikzpicture}[
-  node distance=5mm and 10mm,
-  must/.style={draw,rounded corners=2pt,align=center,font=\scriptsize,
-               fill=sapgold!20,draw=sapgold!80,
-               minimum height=7mm,minimum width=32mm},
-  should/.style={draw,rounded corners=2pt,align=center,font=\scriptsize,
-               fill=sapblue!15,draw=sapblue!60,
-               minimum height=7mm,minimum width=32mm},
-  could/.style={draw,rounded corners=2pt,align=center,font=\scriptsize,
-               fill=hanagreen!15,draw=hanagreen!60,dotted,
-               minimum height=7mm,minimum width=32mm},
-  dep/.style={-{Latex[length=2mm]},thick},
-  soft/.style={-{Latex[length=2mm]},thick,dashed}
-]
-  \node[must] (m01) {M01 SIM-ENG-001 \\ \scriptsize extraction pipeline};
-  \node[must,below=of m01] (m02) {M02 SIM-ENG-002 \\ \scriptsize taxonomy engine};
-  \node[must,below=of m02] (m03) {M03 SIM-ENG-003 \\ \scriptsize generation engine};
-  \node[must,right=14mm of m02] (m04) {M04 SIM-ENV-001 \\ \scriptsize environment CLI};
-  \node[must,right=14mm of m04] (m05) {M05 SIM-HANA-001 \\ \scriptsize spatial policy};
-  \node[must,below=of m05] (m06) {M06 SIM-RUN-TB \\ \scriptsize TB reference run};
-  \node[must,below=of m06] (m07) {M07 SIM-RELEASE-001 \\ \scriptsize v1.2 tag};
-  \node[should,right=14mm of m07] (s01) {S01 SIM-RUN-AP \\ \scriptsize AP corpus};
-  \node[should,above=of s01] (s02) {S02 SIM-RUN-REG \\ \scriptsize Reg corpus};
-  \node[could,above=of s02] (c01) {C01 SIM-V13-EXPLORE \\ \scriptsize v1.3 scope};
-
-  \draw[dep] (m01) -- (m02);
-  \draw[dep] (m02) -- (m03);
-  \draw[dep] (m03) -- (m04);
-  \draw[dep] (m04) -- (m05);
-  \draw[dep] (m05) -- (m06);
-  \draw[dep] (m06) -- (m07);
-  \draw[dep] (m07) -- (s01);
-  \draw[dep] (s01) -- (s02);
-  \draw[soft] (s02) -- (c01);
-\end{tikzpicture}
-\caption{Simula dependency graph. Amber nodes are Must (critical
-path); blue are Should (consumer-corpus allowance); dotted green are
-Could (discretionary). Solid arrows are hard prerequisites; dashed
-arrows indicate conditional starts (the target is unlocked when the
-upstream completes \emph{and} the v1.3 trigger in \cref{sec:sim-v13-trigger}
-fires).}
-\label{fig:sim-dependency-graph}
-\end{figure}
+\mermaidfig[\textwidth]{diagrams/dependency-graph}%
+  {Simula dependency graph. Amber nodes are Must (critical path); blue are
+    Should (consumer-corpus allowance); dotted green are Could (discretionary).
+    Solid arrows are hard prerequisites; dashed arrows indicate conditional
+    starts (the target is unlocked when the upstream completes \emph{and} the
+    v1.3 trigger in \cref{sec:sim-v13-trigger} fires).}%
+  {fig:sim-dependency-graph}
 
 \section{Project milestones}\label{sec:sim-milestones}
 

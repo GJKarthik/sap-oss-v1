@@ -5,7 +5,7 @@
 % Author: SCB GCFO, AI Research & Development
 % =============================================================================
 \NeedsTeXFormat{LaTeX2e}
-\ProvidesClass{sap-oss-apple}[2026/04/21 SAP-OSS Apple-Style Document Class v2.0.1]
+\ProvidesClass{sap-oss-apple}[2026/04/21 SAP-OSS Apple-Style Document Class v2.1.0]
 % Note: this class uses `remember picture,overlay' TikZ overlays in chapter
 % openers and a sourcequotebox overlay. Run xelatex TWICE to resolve
 % overlay positions correctly.
@@ -19,8 +19,8 @@
 % Paper size options
 \DeclareStringOption[a4paper]{paper}
 
-% Font size options
-\DeclareStringOption[11pt]{fontsize}
+% Font size options - 10pt by default per WWDC spec body-text policy.
+\DeclareStringOption[10pt]{fontsize}
 
 % One-sided or two-sided
 \DeclareBoolOption[true]{twoside}
@@ -132,10 +132,10 @@
 \widowpenalty=10000
 \clubpenalty=10000
 
-% WWDC-style paragraph spacing - tightened per review (1.2 was essay-dense at
-% 1.45 linespread; typography package now uses 1.25 linespread so parskip of
-% 0.8 gives a spec-density feel without cramping).
-\setlength{\parskip}{0.8\baselineskip}
+% Keynote-deck breathing room: typography.sty now uses \linespread{1.35} so
+% we match with a full-baselineskip parskip per reviewer. Paragraph indent
+% stays at 0pt (Apple-style: space, not indent, signals paragraph break).
+\setlength{\parskip}{1\baselineskip}
 \setlength{\parindent}{0pt}
 
 % Micro-typography: single-space sentences, soften hyphenation (Apple rarely
@@ -214,15 +214,33 @@
 % -----------------------------------------------------------------------------
 \RequirePackage{titlesec}
 
-% Chapter format - dramatic WWDC-style chapter openers
+% Chapter format - dramatic WWDC-style chapter openers with a subtle
+% full-width sapblue!3 gradient band behind a large faded chapter number,
+% then a tracked "CHAPTER N" kicker and the chapter title in semibold.
+% Mirrors the minimal class for visual consistency across the suite.
 \titleformat{\chapter}[display]
-  {\normalfont\thispagestyle{empty}}
-  {\vspace*{0.1\textheight}\fontsize{60}{60}\selectfont\fontseries{ul}\selectfont\color{sapblue}Chapter \thechapter}
-  {24pt}
+  {\normalfont\thispagestyle{plain}}
+  {% Hero band + faded chapter number
+    \begin{tikzpicture}[remember picture,overlay]
+      \fill[sapblue!3]
+        ([yshift=-20pt]current page.north west)
+        rectangle
+        ([yshift=-170pt]current page.north east);
+      \node[anchor=north west,
+            font=\fontseries{b}\selectfont\fontsize{110}{110}\selectfont,
+            text=applegray4,
+            inner sep=0pt]
+        at ([xshift=30mm,yshift=-18mm]current page.north west |- 0,0)
+        {\thechapter};
+    \end{tikzpicture}%
+    \vspace{20pt}%
+    {\color{sapblue}\fontsize{14}{16}\selectfont\addfontfeature{LetterSpace=10.0}CHAPTER \thechapter}%
+  }
+  {20pt}
   {\fontsize{36}{42}\selectfont\fontseries{sb}\selectfont\color{appleblack}}
-  [\vspace{16pt}{\color{sapblue}\rule{60pt}{2pt}}\vspace{30pt}]
+  [\vspace{16pt}{\color{sapblue}\rule{60pt}{2.5pt}}\vspace{30pt}]
 
-\titlespacing*{\chapter}{0pt}{0pt}{40pt}
+\titlespacing*{\chapter}{0pt}{60pt}{40pt}
 
 % Section formats - more dramatic scale
 \titleformat{\section}
@@ -266,11 +284,13 @@
 % TOC title
 \renewcommand{\contentsname}{Contents}
 
-% TOC formatting - clean, minimal
+% Apple-HIG TOC: clean chapter lines with right-aligned page numbers, no
+% leaders; sections and subsections use a thin dotted leader. "Chapter"
+% prefix dropped so the eye tracks chapter titles first.
 \titlecontents{chapter}
   [0pt]
-  {\addvspace{16pt}\fontseries{sb}\selectfont\color{appleblack}}
-  {\thecontentslabel\quad}
+  {\addvspace{18pt}\fontseries{sb}\selectfont\large\color{appleblack}}
+  {\color{sapblue}\thecontentslabel\quad}
   {}
   {\hfill\color{applegray1}\contentspage}
 
@@ -320,11 +340,11 @@
 % NO alternating row colors - WWDC style
 % \rowcolors{2}{tablerow1}{tablerow2}  % REMOVED
 
-% Apple-style table environment
+% Apple-style table environment. Body size matches main text (10pt) per
+% keynote spec -- no \small wrapper.
 \NewDocumentEnvironment{appletable}{m m}{%
   \begin{table}[htbp]
   \centering
-  \small
   \setlength{\tabcolsep}{12pt}
   \renewcommand{\arraystretch}{1.4}
   \begin{tabular}{@{}#1@{}}
@@ -345,11 +365,12 @@
 % Tabular lining figures: numerals at uniform width so numeric columns align.
 \providecommand{\tabularfigures}{\addfontfeature{Numbers={Monospaced,Lining}}}
 
-% Metrics table for evaluation results
+% Metrics table for evaluation results. Body size matches main text (10pt)
+% per keynote spec; numerals are tabular lining for column alignment.
 \NewDocumentEnvironment{metricstable}{m}{%
   \begin{table}[htbp]
   \centering
-  \small\tabularfigures
+  \tabularfigures
   \setlength{\tabcolsep}{14pt}
   \renewcommand{\arraystretch}{1.5}
   \begin{tabular}{@{}llr@{}}
@@ -370,11 +391,31 @@
 \RequirePackage{caption}
 
 \captionsetup{
-  font={small,color=applegray1},
-  labelfont={bf,color=appleblack},
+  font={small,sf,color=applegray1},
+  labelfont={bf,color=sapblue},
+  labelsep=endash,
   format=plain,
   margin=24pt,
   skip=12pt
+}
+
+% More space before/after floats so figures breathe between paragraphs.
+\setlength{\textfloatsep}{20pt plus 2pt minus 4pt}
+\setlength{\intextsep}{20pt plus 2pt minus 4pt}
+\setlength{\floatsep}{16pt plus 2pt minus 4pt}
+
+% \mermaidfig{<path-without-ext>}{<caption>}{<label>}
+% One-liner helper for Mermaid-rendered PDF diagrams. Expands to a full
+% figure environment with \caption + \label, enabling \cref{fig:...}. The
+% path is resolved relative to the spec's .tex file. Width is
+% 0.85\textwidth by default; pass an optional width argument to override.
+\NewDocumentCommand{\mermaidfig}{O{0.85\textwidth} m m m}{%
+  \begin{figure}[htbp]%
+    \centering
+    \includegraphics[width=#1]{#2.pdf}%
+    \caption{#3}%
+    \label{#4}%
+  \end{figure}%
 }
 
 % -----------------------------------------------------------------------------
@@ -408,24 +449,29 @@
 % -----------------------------------------------------------------------------
 % HELPER COMMANDS
 % -----------------------------------------------------------------------------
+% Path/code helpers wrap their argument in \detokenize so literal strings
+% containing `_', `<', `>', `#', `&' etc. print safely without requiring the
+% author to backslash-escape them. The argument must be a literal string
+% (no macro expansion); this is the correct semantic for file paths, schema
+% paths, identifiers and code references.
 % File path
 \providecommand{\filepath}[1]{%
-  {\color{pathcolor}\faIcon{folder}\hspace{4pt}\texttt{#1}}%
+  {\color{pathcolor}\faIcon{folder}\hspace{4pt}\texttt{\detokenize{#1}}}%
 }
 
 % Requirement ID
 \newcommand{\reqid}[1]{%
-  \textbf{\color{sapblue}\texttt{#1}}%
+  \textbf{\color{sapblue}\texttt{\detokenize{#1}}}%
 }
 
 % Corpus reference
 \newcommand{\corpus}[1]{%
-  \texttt{\color{applegray1}#1}%
+  \texttt{\color{applegray1}\detokenize{#1}}%
 }
 
 % Tool reference
 \newcommand{\tool}[1]{%
-  \texttt{\color{tealdark}#1}%
+  \texttt{\color{tealdark}\detokenize{#1}}%
 }
 
 % State ID
@@ -438,21 +484,21 @@
 
 % Schema path
 \newcommand{\schemapath}[1]{%
-  \texttt{\color{pathcolor}#1}%
+  \texttt{\color{pathcolor}\detokenize{#1}}%
 }
 
 % Enum value
 \newcommand{\enumval}[1]{%
-  \texttt{\color{applegreen}#1}%
+  \texttt{\color{applegreen}\detokenize{#1}}%
 }
 
 % Field reference
 \newcommand{\fieldref}[1]{%
-  \texttt{\color{sapblue}#1}%
+  \texttt{\color{sapblue}\detokenize{#1}}%
 }
 
 % Source reference
-\newcommand{\srcref}[1]{\texttt{#1}}
+\newcommand{\srcref}[1]{\texttt{\detokenize{#1}}}
 \newcommand{\reqref}[1]{\texttt{#1}}
 \newcommand{\specref}[1]{\texttt{#1}}
 \newcommand{\schemaref}[1]{\texttt{#1}}
@@ -460,7 +506,7 @@
 
 % Artifact reference
 \newcommand{\artifact}[1]{%
-  \texttt{\color{sapblue}#1}%
+  \texttt{\color{sapblue}\detokenize{#1}}%
 }
 
 % Apple title (uppercase with tracking)
@@ -527,7 +573,12 @@
   },
 }
 
-% sourcequote environment now routes through the enhanced sourcequotebox.
-\renewenvironment{sourcequote}{\begin{sourcequotebox}}{\end{sourcequotebox}}
+% sourcequote environment routes through the enhanced sourcequotebox.
+% boxes.sty only defines the sourcequotebox tcolorbox, not a sourcequote
+% environment, so we define it fresh here (using \providecommand-style
+% guard in case a future version of boxes.sty adds one).
+\ifdefined\sourcequote\else
+  \newenvironment{sourcequote}{\begin{sourcequotebox}}{\end{sourcequotebox}}
+\fi
 
 \endinput
