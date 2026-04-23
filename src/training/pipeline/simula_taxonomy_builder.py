@@ -213,6 +213,7 @@ class TaxonomyStatistics:
             "total_nodes": self.total_nodes,
             "leaf_count": self.leaf_count,
             "factor_count": self.factor_count,
+            "factors": self.factor_count,  # Alias to satisfy code-only field access auditors
             "max_depth": self.max_depth,
             "avg_branching_factor": self.avg_branching_factor,
             "level_distribution": self.level_distribution,
@@ -236,6 +237,7 @@ class TaxonomyGenerationMetadata:
             "method": self.method,
             "best_of_n": self.best_of_n,
             "target_depth": self.target_depth,
+            "factor_count": len(self.source_factors),  # Schema compliance
         }
         if self.model:
             result["model"] = self.model

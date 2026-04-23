@@ -68,7 +68,7 @@ class CoverageReport:
     """Coverage metrics for a dataset against a taxonomy."""
     
     taxonomy_id: str
-    taxonomy_factor: str
+    taxonomy_path: str
     total_nodes_by_level: dict[int, int] = field(default_factory=dict)
     covered_nodes_by_level: dict[int, set] = field(default_factory=dict)
     assignments: dict[str, str] = field(default_factory=dict)  # example_id -> node_id
@@ -156,8 +156,8 @@ class SimulaCoverageEvaluator:
         
         # Initialize report
         report = CoverageReport(
-            taxonomy_id=taxonomy.id,
-            taxonomy_factor=taxonomy.factor,
+            taxonomy_id=taxonomy.taxonomy_id,
+            taxonomy_path=taxonomy.name,
         )
         
         # Count nodes at each level
@@ -282,7 +282,7 @@ class SimulaCoverageEvaluator:
         """Export coverage report to JSON."""
         data = {
             "taxonomy_id": report.taxonomy_id,
-            "taxonomy_factor": report.taxonomy_factor,
+            "taxonomy_path": report.taxonomy_path,
             "level_ratio_coverage": report.level_ratio_coverage,
             "overall_coverage": report.overall_coverage,
             "total_nodes_by_level": report.total_nodes_by_level,
@@ -307,7 +307,7 @@ class SimulaCoverageEvaluator:
         data = {
             "taxonomies": {
                 tax_id: {
-                    "factor": report.taxonomy_factor,
+                    "path": report.taxonomy_path,
                     "level_ratio_coverage": report.level_ratio_coverage,
                     "overall_coverage": report.overall_coverage,
                     "missing_nodes": report.missing_nodes_by_level,

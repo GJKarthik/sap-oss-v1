@@ -1044,6 +1044,48 @@ minimum dashboard fields are:
   \item active retraining jobs, blocked deployments, and owner assignment.
 \end{itemize}
 
+\section{Drift Metrics and Alert Schema}\label{sec:drift-schema}
+
+Drift detection outputs are serialized using \texttt{tts-drift-metrics.schema.json}
+and \texttt{tts-drift-alert.schema.json}. These records enable automated
+monitoring and UI visualization of Text-to-SQL health.
+
+\begin{table}[htbp]
+\centering
+\caption{Fields of \texttt{tts-drift-metrics.schema.json}.}
+\label{tab:drift-metrics-fields}
+\small
+\begin{tabularx}{\linewidth}{@{}l l c X@{}}
+\toprule
+\textbf{Field} & \textbf{Type} & \textbf{Req.} & \textbf{Notes} \\ \midrule
+\texttt{scr}             & number & \checkmark & Schema Coverage Rate (TTS-M01). \\
+\texttt{sas}             & number & \checkmark & Semantic Alignment Score (TTS-M05). \\
+\texttt{esr}             & number & \checkmark & Execution Success Rate (TTS-M09). \\
+\texttt{tts\_eval}       & number & \checkmark & Composite evaluation score (Eq. 18.1). \\
+\texttt{drift\_alerts[]} & array  & --         & List of active \texttt{DriftAlert} objects. \\
+\texttt{sample\_size}    & integer& \checkmark & Count of production queries evaluated. \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\begin{table}[htbp]
+\centering
+\caption{Fields of \texttt{tts-drift-alert.schema.json}.}
+\label{tab:drift-alert-fields}
+\small
+\begin{tabularx}{\linewidth}{@{}l l c X@{}}
+\toprule
+\textbf{Field} & \textbf{Type} & \textbf{Req.} & \textbf{Notes} \\ \midrule
+\texttt{alert\_id}       & string & \checkmark & Unique tracking ID. \\
+\texttt{severity}       & enum   & \checkmark & \textsc{low}, \textsc{medium}, \textsc{high}, \textsc{critical}. \\
+\texttt{drift\_type}     & string & \checkmark & TTS-DRIFT code (e.g., \texttt{TTS-DRIFT-001}). \\
+\texttt{metric\_code}    & string & \checkmark & Triggering metric (e.g., \texttt{TTS-M09}). \\
+\texttt{delta\_percent}  & number & --         & Percentage deviation from baseline. \\
+\texttt{baseline\_id}    & string & \checkmark & ID of the active approved baseline. \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
 \section{CI/CD Integration}
 
 \subsection{Training Data Generation Gate}

@@ -219,6 +219,33 @@ Total: approximately 4.5 LLM calls per accepted example (accounting for rejectio
 At \$0.002/1K tokens and ~1K tokens per call, the cost is approximately
 \$0.01 per accepted example, or \$100 per 10,000 examples.
 
+\section{Taxonomy Metadata and Schema}\label{sec:taxonomy-schema}
+
+Every taxonomy produced by the engine validates against \texttt{taxonomy.schema.json}.
+The schema defines both the tree structure and the evaluation metadata required
+for the Simula quality gate.
+
+\begin{table}[htbp]
+\centering
+\caption{Fields of \texttt{taxonomy.schema.json}.}
+\label{tab:taxonomy-fields}
+\small
+\begin{tabularx}{\linewidth}{@{}l l c X@{}}
+\toprule
+\textbf{Field} & \textbf{Type} & \textbf{Req.} & \textbf{Notes} \\ \midrule
+\texttt{taxonomy\_id}    & string & \checkmark & Unique identifier for the taxonomy run. \\
+\texttt{name}           & string & \checkmark & Factor name (e.g., \texttt{time\_range}). \\
+\texttt{root}           & object & \checkmark & Recursive \texttt{TaxonomyNode} structure. \\
+\texttt{domain}         & string & --         & Target domain (e.g., \texttt{trial\_balance}). \\
+\texttt{generated\_at}   & string & --         & ISO 8601 timestamp of generation. \\
+\texttt{best\_of\_n}      & integer& --         & Proprosal count used in Algorithm 1. \\
+\texttt{completeness}   & number & --         & Fraction of expert nodes covered (0--1). \\
+\texttt{coverage\_ratio} & number & --         & Fraction of nodes covered by training data. \\
+\texttt{avg\_branching}  & number & --         & Mean children per non-leaf node. \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
 \section{Worked Example: Trial Balance Taxonomy}
 
 \begin{table}[H]

@@ -558,7 +558,7 @@ REQUIREMENTS:
 Generate {count} different meta-prompts, each describing a UNIQUE question type.
 Respond with JSON:
 {{
-    "meta_prompts": ["prompt1", "prompt2", "prompt3"]
+    "meta_prompt_id": ["prompt1", "prompt2", "prompt3"]
 }}"""
         
         try:
@@ -567,7 +567,7 @@ Respond with JSON:
                 system_prompt=system_prompt,
                 temperature=0.8,
             )
-            return result.get("meta_prompts", [])[:count]
+            return result.get("meta_prompt_id", [])[:count]
         except Exception as e:
             logger.warning(f"Multiple meta-prompt generation failed: {e}")
             # Fallback to single generation

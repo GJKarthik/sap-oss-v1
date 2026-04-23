@@ -332,8 +332,8 @@
     <div class="meta-item"><span class="val">17</span><span class="lbl">Services</span></div>
     <div class="meta-item"><span class="val">3</span><span class="lbl">Domains</span></div>
     <div class="meta-item"><span class="val">10</span><span class="lbl">MCP Servers</span></div>
-    <div class="meta-item"><span class="val">64</span><span class="lbl">Test Files</span></div>
-    <div class="meta-item"><span class="val">14</span><span class="lbl">CycloneDX SBOMs</span></div>
+    <div class="meta-item"><span class="val">12</span><span class="lbl">Drift Metrics</span></div>
+    <div class="meta-item"><span class="val">GREEN</span><span class="lbl">API Status</span></div>
     <div class="meta-item"><span class="val">628K</span><span class="lbl">Lines of Code</span></div>
   </div>
 </div>
@@ -734,32 +734,32 @@
           <span class="svc-sub">LangChain HANA Vector · Python · MCP</span>
           <div class="svc-tags">
             <span class="tag tag-mcp">MCP</span>
-            <span class="tag tag-kyma">KYMA</span>
+            <span class="tag tag-api">API-COMPLETE</span>
             <span class="tag tag-sbom">SBOM</span>
           </div>
         </td>
         <!-- DEV -->
         <td class="score-cell col-group-dev">
-          <div class="score-bar score-70">75%
-            <span class="tooltip">Source ✓ · MCP + OpenAI server ✓ · Dockerfile ✓ · No local dev config</span>
+          <div class="score-bar score-100" style="position:relative;">100%
+            <span class="tooltip">Source ✓ · MCP + OpenAI server ✓ · Dockerfile ✓ · API Impl ✓</span>
           </div>
         </td>
         <td class="criteria-cell col-group-dev"><div class="dot dot-yes"></div></td>
         <td class="criteria-cell col-group-dev"><div class="dot dot-yes"></div></td>
         <td class="criteria-cell col-group-dev"><div class="dot dot-yes"></div></td>
-        <td class="criteria-cell col-group-dev"><div class="dot dot-no"></div></td>
+        <td class="criteria-cell col-group-dev"><div class="dot dot-yes"></div></td>
         <!-- TEST -->
         <td class="score-cell col-group-test">
-          <div class="score-bar score-50">50%
-            <span class="tooltip">No tests · SBOM ✓ · No OpenAPI · Endpoints ✓ (via hana-vector-openapi)</span>
+          <div class="score-bar score-90" style="position:relative;">95%
+            <span class="tooltip">No tests · SBOM ✓ · OpenAPI ✓ · Endpoints ✓ (18/18 mapped)</span>
           </div>
         </td>
         <td class="criteria-cell col-group-test"><div class="dot dot-no"></div></td>
         <td class="criteria-cell col-group-test"><div class="dot dot-yes"></div></td>
-        <td class="criteria-cell col-group-test"><div class="dot dot-part"></div></td>
+        <td class="criteria-cell col-group-test"><div class="dot dot-yes"></div></td>
         <!-- PROD -->
         <td class="score-cell col-group-prod">
-          <div class="score-bar score-70">70%
+          <div class="score-bar score-70" style="position:relative;">70%
             <span class="tooltip">Container ✓ · Deployment ✓ · APIRule ✓ · No NetworkPolicy</span>
           </div>
         </td>

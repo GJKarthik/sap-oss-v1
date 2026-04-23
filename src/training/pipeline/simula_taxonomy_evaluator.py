@@ -61,6 +61,10 @@ class TaxonomyQualityReport:
                 "novelty": self.novelty,
                 "coverage": self.coverage,
             },
+            "thresholds": {
+                "completeness": 0.7,
+                "soundness": 0.9,
+            },
             "counts": {
                 "expert_nodes": self.expert_node_count,
                 "generated_nodes": self.generated_node_count,

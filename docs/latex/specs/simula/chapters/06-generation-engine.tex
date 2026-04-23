@@ -252,6 +252,35 @@ Schema pruning has measurable impact on generation quality:
 The v1.3 roadmap includes adaptive pruning based on taxonomy complexity---complex
 taxonomy paths will automatically receive larger schema budgets.
 
+\section{Training Example Schema}\label{sec:example-schema}
+
+All generated training examples are serialized according to
+\texttt{training-example.schema.json}. This schema captures the primary SQL task
+as well as the taxonomic and quality metadata used for rejection sampling and
+curation.
+
+\begin{table}[htbp]
+\centering
+\caption{Fields of \texttt{training-example.schema.json}.}
+\label{tab:example-fields}
+\small
+\begin{tabularx}{\linewidth}{@{}l l c X@{}}
+\toprule
+\textbf{Field} & \textbf{Type} & \textbf{Req.} & \textbf{Notes} \\ \midrule
+\texttt{id}              & string & \checkmark & Globally unique example identifier. \\
+\texttt{question}        & string & \checkmark & Natural language user query. \\
+\texttt{sql}             & string & \checkmark & Target HANA SQL statement. \\
+\texttt{complexity\_score} & number & \checkmark & Calibrated score (0--1). \\
+\texttt{taxonomy\_path}   & array  & --         & Hierarchical path in the generating taxonomy. \\
+\texttt{meta\_prompt\_id}  & string & --         & ID of the meta-prompt that guided generation. \\
+\texttt{critic\_passed}    & boolean& \checkmark & Result of double-critic evaluation. \\
+\texttt{elo\_rating}       & number & --         & Elo-calibrated complexity rating (Algorithm 3). \\
+\texttt{is\_complexified}  & boolean& --         & True if example underwent Step 3. \\
+\texttt{original\_sql}     & string & --         & The SQL before complexification (if applicable). \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
 \section{Output Format}
 
 Generated examples are written to JSONL:

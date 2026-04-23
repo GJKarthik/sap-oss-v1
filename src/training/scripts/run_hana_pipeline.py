@@ -97,7 +97,41 @@ async def run_pipeline(config: SimulaConfig) -> dict:
     with open(schema_file, "w") as f:
         json.dump(registry.to_dict(), f, indent=2)
     logger.info(f"Saved schema to {schema_file}")
-    
+
+    # =========================================================================
+    # Phase 1.5: NL Readiness Assessment
+    # =========================================================================
+    logger.info("=" * 60)
+    logger.info("PHASE 1.5: Assessing Natural Language Readiness")
+    logger.info("=" * 60)
+
+    spec_drift_dir = Path(__file__).resolve().parents[3] / "scripts" / "spec-drift"
+    if str(spec_drift_dir) not in sys.path:
+        sys.path.insert(0, str(spec_drift_dir))
+    from nl_readiness_assessor import assess_schema_readiness, load_vocabulary_registry
+
+    vocab_registry = load_vocabulary_registry()
+    readiness_report = assess_schema_readiness(str(schema_file), vocab_registry)
+
+    stats["nl_readiness"] = readiness_report.to_dict()
+    logger.info(f"Readiness Score: {readiness_report.overall_score}/100")
+    logger.info(f"Readiness Grade: {readiness_report.readiness_grade}")
+
+    if not readiness_report.agent_ready:
+        error_msg = (
+            f"Pipeline halted: Schema readiness ({readiness_report.overall_score}) "
+            f"is below AGENT_READY threshold. Please add business descriptions."
+        )
+        logger.error(error_msg)
+        stats["error"] = error_msg
+        return stats
+
+    if not readiness_report.human_ready:
+        logger.warning(
+            f"Schema readiness ({readiness_report.overall_score}) is below HUMAN_READY threshold. "
+            f"Human-facing artifacts will be degraded."
+        )
+
     # =========================================================================
     # Phase 2: Build taxonomies
     # =========================================================================

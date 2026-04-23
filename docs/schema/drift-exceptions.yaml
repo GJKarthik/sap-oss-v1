@@ -67,6 +67,45 @@ exceptions:
       Complete migration by 2026-05-15 and remove this exception.
     tracking_issue: null
 
+  # Simula readiness vocabulary rollout
+  - id: "EXC-SIMULA-VOCAB-001"
+    created: "2026-04-23"
+    expires: "2026-05-23"
+    owner: "controls-architecture-team"
+    drift_type: "DRIFT-005"
+    file_pattern: "docs/schema/common/enums\\.yaml"
+    rfc: "RFC-SIMULA-NL-READINESS-2026-04-23"
+    rationale: |
+      The common enum file change in the Simula readiness update repaired
+      YAML header syntax only. It did not add, remove, or rename enum values,
+      so TB, Arabic, Simula, and Regulations schema consumers do not require
+      contract updates.
+    resolution_plan: |
+      Re-run the cross-domain registry check during the next monthly drift
+      review. Remove this exception after the 2026-05-21 review confirms no
+      enum value contract changed.
+    tracking_issue: null
+
+  - id: "EXC-SIMULA-VOCAB-002"
+    created: "2026-04-23"
+    expires: "2026-05-23"
+    owner: "controls-architecture-team"
+    drift_type: "DRIFT-005"
+    file_pattern: "docs/schema/common/synonyms\\.yaml"
+    rfc: "RFC-SIMULA-NL-READINESS-2026-04-23"
+    rationale: |
+      The synonym registry update added entity mappings under domains.simula
+      to support NL readiness and hallucination controls for Simula training.
+      Existing TB, Arabic, and Regulations vocabulary sections were not
+      changed, so those consumers do not require schema or prompt updates for
+      this Simula-only vocabulary rollout.
+    resolution_plan: |
+      During the next monthly drift review, either split per-domain synonym
+      ownership in the mapping registry or confirm the shared registry model
+      should continue to use explicit DRIFT-005 exceptions for domain-scoped
+      vocabulary updates.
+    tracking_issue: null
+
 # -----------------------------------------------------------------------------
 # EXPIRED EXCEPTIONS (for audit trail)
 # -----------------------------------------------------------------------------
@@ -119,3 +158,10 @@ reviews:
     actions_taken:
       - "Created exception registry structure"
       - "Added prototype and documentation migration exceptions"
+  - date: "2026-04-23"
+    reviewer: "codex"
+    notes: "Recorded Simula NL readiness vocabulary rollout exceptions"
+    actions_taken:
+      - "Added EXC-SIMULA-VOCAB-001 for enum header syntax repair"
+      - "Added EXC-SIMULA-VOCAB-002 for Simula-only synonym/entity mappings"
+      - "Updated pre-commit audit to apply active drift exceptions"

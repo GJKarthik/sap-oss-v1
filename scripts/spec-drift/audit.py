@@ -2181,6 +2181,7 @@ def run_precommit_audit(changed_files: List[str]) -> AuditReport:
     """Run lightweight pre-commit audit."""
     mapping_registry = load_mapping_registry()
     schema_registry = load_schema_registry()
+    exceptions = load_drift_exceptions()
     
     report = AuditReport(
         report_id=f"DRIFT-AUDIT-{datetime.now().strftime('%Y%m%d%H%M%S')}",
@@ -2251,6 +2252,20 @@ def run_precommit_audit(changed_files: List[str]) -> AuditReport:
     report.findings.extend(
         detect_cross_domain_drift(changed_files, changed_set, mapping_registry)
     )
+
+    # Apply active exceptions in pre-commit mode too. Without this, documented
+    # DRIFT-005 waivers still appear as high-confidence blocking findings.
+    active_exceptions = [
+        e for e in exceptions.get("exceptions", [])
+        if not is_exception_expired(e)
+    ]
+
+    for finding in report.findings:
+        for exc in active_exceptions:
+            if matches_exception(finding, exc):
+                finding.severity = Severity.INFO
+                finding.blocking = False
+                finding.message += f" [Exception: {exc.get('id')}]"
     
     return report
 
@@ -2638,7 +2653,8 @@ def matches_exception(finding: DriftFinding, exception: Dict[str, Any]) -> bool:
     if exc_file and not re.match(exc_file, finding.source_file):
         return False
     
-    if exc_type and finding.drift_type.name != exc_type:
+    normalized_exc_type = exc_type.replace("-", "_")
+    if exc_type and finding.drift_type.name != normalized_exc_type:
         return False
     
     return True

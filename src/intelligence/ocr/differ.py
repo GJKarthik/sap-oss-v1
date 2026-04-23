@@ -56,10 +56,12 @@ class DiffReport:
             "pages_regressed": self.pages_regressed,
             "avg_confidence_a": round(self.avg_confidence_a, 2),
             "avg_confidence_b": round(self.avg_confidence_b, 2),
+            "confidence": round(self.avg_confidence_b, 2),  # Use result_b as the authoritative confidence
             "page_diffs": [
                 {
                     "page_number": p.page_number,
                     "text_changed": p.text_changed,
+                    "confidence": round(p.confidence_b, 2),  # Use b as primary
                     "confidence_a": round(p.confidence_a, 2),
                     "confidence_b": round(p.confidence_b, 2),
                     "confidence_delta": round(p.confidence_delta, 2),
