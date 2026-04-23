@@ -1,0 +1,186 @@
+% =============================================================================
+% CHAPTER 1: OVERVIEW AND TRACEABILITY METHODOLOGY
+% IP Traceability Specification
+% =============================================================================
+
+\chapter{Overview and Traceability Methodology}
+\label{chap:overview}
+
+\section{Purpose}
+
+This specification provides \textbf{auditable evidence} demonstrating how the intellectual property (IP) described in nine source documents has been implemented---through conceptual adaptation---into the SAP-OSS codebase. The purpose is not to show code copying, but to evidence that the \textit{ideas, concepts, and architectural patterns} from the IP papers have shaped the structures and implementations in the codebase.
+
+\section{Scope}
+
+\subsection{IP Sources Traced}
+
+This specification traces concepts from the following nine IP documents to their implementations:
+
+\begin{table}[H]
+\centering
+\caption{IP Source Documents and Primary Implementation Targets}
+\label{tab:ip-sources}
+\begin{tabularx}{\textwidth}{@{}llX@{}}
+\toprule
+\textbf{IP ID} & \textbf{Document} & \textbf{Primary Codebase Target} \\
+\midrule
+IP-001 & safety-ai-governance & \filepath{src/intelligence/ai-core-pal/governance/} \\
+IP-002 & safety-ndeductivedatabase-mangle & Datalog/governance concepts \\
+IP-003 & safety-nlocalmodels-mojo & \filepath{src/intelligence/vllm-turboquant/} \\
+IP-004 & safety-ntimeseries-mojo & \filepath{src/intelligence/analytics/} \\
+IP-005 & safety-aimo-ntimeseries & Mathematical foundations \\
+IP-006 & AI Earnings Analysis Module & NLP/analytics concepts \\
+IP-007 & Ai Surprise\_small & \filepath{src/intelligence/analytics/anomaly\_detector.py} \\
+IP-008 & digitaltwin & World model concepts \\
+IP-009 & narrariveai & Stability/governance concepts \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\subsection{Codebase Scope}
+
+The implementation evidence is drawn from the following codebase directories:
+
+\begin{itemize}[nosep]
+    \item \filepath{src/intelligence/} -- AI core services, analytics, OCR, vLLM
+    \item \filepath{src/training/} -- Training pipelines and schema integration
+    \item \filepath{src/generativeUI/} -- Generative UI components
+    \item \filepath{src/data/} -- LangChain integration, OData vocabularies
+\end{itemize}
+
+\section{Traceability Methodology}
+
+\subsection{Evidence Types}
+
+Each IP concept is traced using the following evidence hierarchy:
+
+\begin{enumerate}[nosep]
+    \item \textbf{Verbatim Quotation}: Exact text from the IP source document
+    \item \textbf{Concept Identification}: The specific idea or pattern being traced
+    \item \textbf{Implementation Location}: File path, class, or function name
+    \item \textbf{Code Evidence}: Actual code snippet demonstrating the concept
+    \item \textbf{Adaptation Notes}: How the concept was adapted (not copied)
+\end{enumerate}
+
+\subsection{Traceability Levels}
+
+Implementation evidence is provided at three levels of granularity:
+
+\begin{table}[H]
+\centering
+\caption{Traceability Granularity Levels}
+\label{tab:trace-levels}
+\begin{tabularx}{\textwidth}{@{}lXl@{}}
+\toprule
+\textbf{Level} & \textbf{Description} & \textbf{Example} \\
+\midrule
+Service & High-level architectural component & \filepath{src/intelligence/} \\
+Module & Specific Python/Mojo module & \filepath{analytics/anomaly\_detector.py} \\
+Function & Individual function or method & \funcname{\_mad\_detection()} \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\subsection{Evidence Format}
+
+Each traced concept follows this standardized format:
+
+\begin{ipsourcebox}{IP-XXX, Section Y}
+\textit{``Verbatim quoted text from the IP document describing the concept...''}
+\end{ipsourcebox}
+
+\begin{tracerecord}
+\textbf{IP Source ID} & IP-XXX \\
+\textbf{IP Document} & Document filename \\
+\textbf{IP Location} & Section, Page, Lines \\
+\textbf{Concept} & Brief concept description \\
+\midrule
+\textbf{Implementation Path} & \filepath{src/path/to/file.py} \\
+\textbf{Key Files} & List of implementing files \\
+\textbf{Functions/Classes} & \funcname{ClassName}, \funcname{function\_name} \\
+\textbf{Adaptation Type} & Conceptual / Algorithmic / Structural \\
+\end{tracerecord}
+
+\begin{implbox}{Implementation Evidence}
+Code snippet demonstrating the concept implementation.
+\end{implbox}
+
+\begin{adaptbox}
+Explanation of how the IP concept was adapted into the implementation, noting any differences between the original concept and its realization.
+\end{adaptbox}
+
+\section{IP to Codebase Mapping Overview}
+
+\subsection{Conceptual Flow}
+
+The following diagram illustrates how IP concepts flow into the codebase:
+
+\begin{center}
+\begin{tikzpicture}[
+    node distance=1.5cm,
+    ipbox/.style={rectangle, draw=sourcegreen, fill=sourcegreen!10, 
+                  text width=3cm, align=center, rounded corners, minimum height=1cm},
+    codebox/.style={rectangle, draw=implblue, fill=implblue!10,
+                    text width=3cm, align=center, rounded corners, minimum height=1cm},
+    arrow/.style={->, >=stealth, thick}
+]
+    % IP Documents
+    \node[ipbox] (ip1) {IP-001--IP-005\\Safety Papers};
+    \node[ipbox, below=of ip1] (ip2) {IP-006--IP-009\\AI/ML Papers};
+    
+    % Adaptation Layer
+    \node[rectangle, draw=orange, fill=orange!10, 
+          text width=2.5cm, align=center, rounded corners,
+          right=2cm of ip1, yshift=-0.75cm] (adapt) {Concept\\Adaptation};
+    
+    % Codebase
+    \node[codebox, right=2cm of adapt, yshift=0.75cm] (code1) {src/intelligence/\\governance/};
+    \node[codebox, below=of code1] (code2) {src/intelligence/\\analytics/};
+    
+    % Arrows
+    \draw[arrow] (ip1.east) -- (adapt.west |- ip1.east);
+    \draw[arrow] (ip2.east) -- (adapt.west |- ip2.east);
+    \draw[arrow] (adapt.east |- code1.west) -- (code1.west);
+    \draw[arrow] (adapt.east |- code2.west) -- (code2.west);
+\end{tikzpicture}
+\end{center}
+
+\subsection{Key Concept Categories}
+
+The IP documents contribute concepts in four primary categories:
+
+\begin{table}[H]
+\centering
+\caption{IP Concept Categories}
+\label{tab:concept-categories}
+\begin{tabularx}{\textwidth}{@{}lXl@{}}
+\toprule
+\textbf{Category} & \textbf{Description} & \textbf{IP Sources} \\
+\midrule
+Safety/Governance & Blanket control, audit trails, safety gates & IP-001, IP-002 \\
+Numerical Stability & Softmax, RoPE, quantization bounds & IP-003, IP-005 \\
+Analytics/Anomaly & MAD, Z-score, Kalman, FFT & IP-004, IP-007 \\
+AI Architecture & LNN, world models, stability metrics & IP-006, IP-008, IP-009 \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\section{Document Structure}
+
+The remainder of this specification is organized as follows:
+
+\begin{itemize}[nosep]
+    \item \textbf{Chapters 2--10}: Individual IP document traceability (one chapter per IP)
+    \item \textbf{Chapter 11}: Consolidated traceability matrix
+    \item \textbf{Chapter 12}: Concept adaptation registry
+    \item \textbf{Appendix A1}: Complete IP source document index
+    \item \textbf{Appendix A2}: Code reference guide
+\end{itemize}
+
+Each chapter follows the same structure:
+\begin{enumerate}[nosep]
+    \item IP Document Summary
+    \item Key Concepts Identified
+    \item Traceability Evidence (per concept)
+    \item Implementation Summary
+\end{enumerate}

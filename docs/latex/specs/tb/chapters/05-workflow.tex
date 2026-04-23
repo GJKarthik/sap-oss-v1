@@ -1,0 +1,228 @@
+\chapter{Workflow and Approval Engine}\label{ch:workflow}
+
+\section{Source}
+
+The workflow engine formalises the 28-state BPMN diagram captured in
+\corpus\texttt{structured/workflows/tb-review-glo.json}. The diagram
+is derived from two source artefacts:
+
+\begin{itemize}
+  \item \corpus\texttt{source/Operation of Month End Close Controls\ \ - Trial Balance Review - GLO (1).pdf}
+        --- the control narrative that defines the seven DOI activities,
+  \item \corpus\texttt{source/Business case - Trial Balance (2).doc}
+        --- the business case that expands the activities into the
+        eight process steps of \texttt{TB-REQ-001}.
+\end{itemize}
+
+\section{State inventory}
+
+\Cref{tab:states} enumerates the 28 states. Tasks are numbered
+sequentially; gateways and events are marked in the \textbf{Type}
+column.
+
+\begin{table}[htbp]
+\caption{States in \texttt{tb-review-glo} (28 in total).}\label{tab:states}
+\centering
+\footnotesize
+\begin{tabularx}{\linewidth}{@{}llllX@{}}
+\toprule
+\textbf{\#} & \textbf{State ID} & \textbf{Type} & \textbf{Timing} & \textbf{Name} \\ \midrule
+1  & START                         & start        & ---        & Prepare Schedule Work Day \\
+2  & ROLL\_FORWARD                 & task         & M-3        & Roll Forward Prior Month File \\
+3  & DOWNLOAD\_PSGL                & task         & M-3        & Download PSGL Master Account File \\
+4  & UPDATE\_ACCOUNTS\_MASTER      & task         & M-3        & Update Accounts Master Sheet \\
+5  & UPDATE\_PARAMETERS            & task         & M-3        & Update Parameters and Comparatives \\
+6  & EXTRACT\_TB                   & task         & M-3..M+5   & Extract Trial Balance \\
+7  & UPDATE\_TB\_DETAILS           & task         & M-2..M+5   & Update TB Details (EUC-002) \\
+8  & CALCULATE\_VARIANCE           & task         & M-2..M+5   & Calculate Variance \\
+9  & FILTER\_VARIANCES             & task         & M-2..M+5   & Filter Variances \\
+10 & CHECK\_MATERIAL\_VARIANCES    & gw-excl      & M-2..M+5   & Material variance? (DP-001) \\
+11 & SEEK\_COMMENTARIES            & task         & M-2..M+5   & Seek Commentaries \\
+12 & RECEIVE\_COMMENTARIES         & intermediate & M-2..M+5   & Receive Commentaries \\
+13 & UPDATE\_COMMENTARIES          & task         & M-2..M+5   & Update Commentaries \\
+14 & UPDATE\_VARIANCE\_COMMENTARIES & task        & M-2..M+5   & Finalise Commentaries \\
+15 & IS\_JOURNAL\_POSTED           & gw-excl      & M-2..M+5   & Journal posted? (DP-002) \\
+16 & SEND\_JOURNAL\_REQUEST        & task         & M-2..M+5   & Send Posting Request \\
+17 & CHECK\_FURTHER\_INVESTIGATION & gw-excl      & M-2..M+5   & Investigate? (DP-003) \\
+18 & CHECK\_ENTRIES\_STATUS        & task         & M-2..M+5   & Check with Team \\
+19 & CHECK\_CONFIRMATION           & gw-excl      & M-2..M+5   & M+4 received? (DP-004) \\
+20 & TRACK\_ENTRIES                & task         & M-2..M+5   & Track and Risk Analyse \\
+21 & UPDATE\_RISK                  & task         & M-2..M+5   & Update Risk Assessment \\
+22 & CHECK\_UNEXPLAINED            & gw-excl      & M-2..M+5   & Unexplained? (DP-005) \\
+23 & CATEGORIZE\_UNEXPLAINED       & task         & M-2..M+5   & Categorise Unexplained \\
+24 & PREPARE\_SUMMARY              & task         & M-2..M+5   & Prepare Summary \\
+25 & SEND\_INTERNAL\_REVIEW        & task         & M+5        & Send for Internal Review \\
+26 & REVIEW\_INCORPORATE           & task         & M+5        & Review (EUC-003) \\
+27 & SEND\_FORTM                   & task         & M+5        & Send FORTM Summary \\
+28 & END                           & end          & ---        & TB Review Completed \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\section{Preparation phase (M-3)}
+
+\Cref{fig:prep-phase} shows states 1--6. Execution is strictly
+sequential; every state has exactly one outgoing transition.
+
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}[
+  node distance=4mm and 7mm,
+  task/.style={draw,rounded corners=2pt,align=center,font=\scriptsize,
+               fill=tbblue!12,draw=tbblue!60,minimum height=7mm,
+               minimum width=28mm},
+  ev/.style={circle,draw,align=center,font=\scriptsize,
+             fill=tbgreen!15,draw=tbgreen!60,minimum size=7mm},
+  arr/.style={-{Latex[length=2mm]},thin}
+]
+  \node[ev]   (s) {};
+  \node[task,right=of s]         (rf) {Roll forward};
+  \node[task,right=of rf]        (dp) {Download PSGL};
+  \node[task,below=of dp]        (am) {Update master};
+  \node[task,left=of am]         (pa) {Update params};
+  \node[task,left=of pa]         (ex) {Extract TB};
+  \foreach \a/\b in {s/rf,rf/dp,dp/am,am/pa,pa/ex}
+      \draw[arr] (\a) -- (\b);
+\end{tikzpicture}
+\caption{Preparation phase (states 1--6). EUC-001 governs the PSGL
+download and TB extraction steps.}\label{fig:prep-phase}
+\end{figure}
+
+\section{Analysis phase (M-2 to M+5)}
+
+The analysis phase is the control-rich core of the process. It holds
+all five gateways, all commentary handling, and the journal-posting
+cycle. \Cref{fig:analysis-phase} shows states 7--24.
+
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}[
+  node distance=4mm and 7mm,
+  task/.style={draw,rounded corners=2pt,align=center,font=\tiny,
+               fill=tbblue!12,draw=tbblue!60,minimum height=6mm,
+               minimum width=24mm},
+  gw/.style={diamond,draw,aspect=1.8,inner sep=1pt,align=center,
+             font=\tiny,fill=tbamber!15,draw=tbamber!60,
+             minimum height=7mm,minimum width=20mm},
+  arr/.style={-{Latex[length=2mm]},thin}
+]
+  \node[task] (u)  {UPDATE\_TB\_DETAILS};
+  \node[task,below=of u] (c) {CALCULATE\_VARIANCE};
+  \node[task,below=of c] (f) {FILTER\_VARIANCES};
+  \node[gw,below=of f]   (m) {DP-001};
+  \node[task,right=of m] (sc) {SEEK\_COMMENT.};
+  \node[task,right=of sc] (rc) {RECEIVE\_COMM.};
+  \node[task,below=of rc] (uc) {UPDATE\_COMM.};
+  \node[task,below=of uc] (fc) {FINALISE};
+  \node[gw,left=of fc]   (j) {DP-002};
+  \node[task,below=of j] (sr) {SEND\_REQUEST};
+  \node[gw,left=of sr]   (inv) {DP-003};
+  \node[task,below=of inv] (ce) {CHECK\_ENTRIES};
+  \node[gw,left=of ce]   (cf) {DP-004};
+  \node[task,above=of cf] (tr) {TRACK\_ENTRIES};
+  \node[task,above=of tr] (ur) {UPDATE\_RISK};
+  \node[gw,above=of ur]   (un) {DP-005};
+  \node[task,right=of un] (cat) {CATEGORIZE};
+  \node[task,above=of un] (ps) {PREPARE\_SUMMARY};
+
+  \foreach \a/\b in {u/c,c/f,f/m}             \draw[arr] (\a) -- (\b);
+  \draw[arr] (m)  -- node[above,font=\tiny]{material} (sc);
+  \draw[arr] (sc) -- (rc);
+  \draw[arr] (rc) -- (uc);
+  \draw[arr] (uc) -- (fc);
+  \draw[arr] (fc) -- (j);
+  \draw[arr] (j)  -- node[right,font=\tiny]{required} (sr);
+  \draw[arr] (sr) -- (inv);
+  \draw[arr] (inv) -- node[below,font=\tiny]{yes} (ce);
+  \draw[arr] (ce)  -- (cf);
+  \draw[arr] (cf)  -- node[right,font=\tiny]{late} (tr);
+  \draw[arr] (tr)  -- (ur);
+  \draw[arr] (ur)  -- (un);
+  \draw[arr] (un)  -- node[above,font=\tiny]{none} (ps);
+  \draw[arr] (un)  -- node[above,font=\tiny]{some} (cat);
+  \draw[arr] (cat) -- (ps);
+\end{tikzpicture}
+\caption{Analysis phase. Gateways DP-001..DP-005 are diamond nodes;
+commentary loop sits to the right of DP-001; journal-posting loop sits
+below DP-002. Not all transitions are drawn; see the full JSON for
+completeness.}\label{fig:analysis-phase}
+\end{figure}
+
+\section{Review phase (M+5)}
+
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}[
+  node distance=4mm and 8mm,
+  task/.style={draw,rounded corners=2pt,align=center,font=\scriptsize,
+               fill=tbblue!12,draw=tbblue!60,minimum height=7mm,
+               minimum width=30mm},
+  ev/.style={circle,draw,align=center,font=\scriptsize,
+             fill=tbamber!15,draw=tbamber!60,minimum size=7mm},
+  arr/.style={-{Latex[length=2mm]},thin}
+]
+  \node[task] (ps) {PREPARE\_SUMMARY};
+  \node[task,right=of ps] (si) {SEND\_INTERNAL\_REVIEW};
+  \node[task,right=of si] (ri) {REVIEW\_INCORPORATE \\ \scriptsize EUC-003};
+  \node[task,below=of ri] (sf) {SEND\_FORTM};
+  \node[ev,  left=of sf]  (e)  {END};
+  \foreach \a/\b in {ps/si,si/ri,ri/sf,sf/e}
+      \draw[arr] (\a) -- (\b);
+\end{tikzpicture}
+\caption{Review phase: senior sign-off (EUC-003) gates the FORTM
+submission.}\label{fig:review-phase}
+\end{figure}
+
+\section{Approval matrix}
+
+\begin{table}[htbp]
+\caption{Approval and review responsibilities.}\label{tab:approval}
+\centering
+\small
+\begin{tabularx}{\linewidth}{@{}llXl@{}}
+\toprule
+\textbf{State} & \textbf{Participant} & \textbf{Decision} & \textbf{Control} \\ \midrule
+UPDATE\_TB\_DETAILS     & GFS Analyst        & File integrity            & EUC-002 \\
+UPDATE\_COMMENTARIES    & GFS Analyst        & Draft accept/edit/reject  & ---      \\
+REVIEW\_INCORPORATE     & Head of Africa GFS & Senior sign-off           & EUC-003 \\
+SEND\_FORTM             & Head of Africa GFS & Release to Group          & ---      \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\section{Data objects}
+
+The five data objects declared on the workflow are listed in
+\cref{tab:dataobjects}.
+
+\begin{table}[htbp]
+\caption{Workflow data objects.}\label{tab:dataobjects}
+\centering
+\small
+\begin{tabularx}{\linewidth}{@{}llXl@{}}
+\toprule
+\textbf{ID} & \textbf{Name} & \textbf{Description} & \textbf{EUC} \\ \midrule
+DO-001 & Variance Analysis File   & Primary working file              & EUC-002 \\
+DO-002 & Shared Drive             & Evidence store                    & ---     \\
+DO-003 & PSGL Master Account File & Master data extract               & EUC-001 \\
+DO-004 & SC Bridge                & Extract interface                 & ---     \\
+DO-005 & FORTM Pack               & Group-level reporting package     & EUC-003 \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\section{Exception paths}
+
+The workflow diagram encodes the happy path and the four
+gateway-driven loops. Two operational exceptions are not drawn but
+are handled by the engine:
+
+\begin{enumerate}
+  \item \textbf{SC Bridge failure.} If \stateid{EXTRACT\_TB} cannot
+        read from the bridge, the state is parked and a human
+        notification is emitted. Re-entry resumes from
+        \stateid{EXTRACT\_TB}; earlier states are not replayed.
+  \item \textbf{Late FORTM change.} If Group requests a revision after
+        \stateid{END}, a new run is created with a suffix
+        \texttt{-revN}; evidence for the original run is retained.
+\end{enumerate}

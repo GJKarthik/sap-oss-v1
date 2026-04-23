@@ -1,0 +1,252 @@
+% =============================================================================
+% Chapter 4 --- Risk Scoring Model
+% =============================================================================
+\chapter{Risk Scoring Model}
+\label{ch:risk}
+
+\section{Purpose of risk scoring}
+
+The risk scoring model provides a quantitative, repeatable method to:
+
+\begin{enumerate}
+  \item Classify use cases into risk tiers (Low, Medium, High, Critical)
+  \item Determine applicable control profiles
+  \item Calculate residual risk after controls are applied
+  \item Gate production deployment based on numeric thresholds
+\end{enumerate}
+
+\section{Normalized risk factors}
+
+For each use case $u$, assign the following normalized factors in the
+interval $[0,1]$:
+
+\begin{table}[htbp]
+\centering
+\footnotesize
+\caption{Normalized Risk Factors}
+\label{tab:risk-factors}
+\begin{tabularx}{\textwidth}{@{}l l c X@{}}
+\toprule
+\textbf{Factor} & \textbf{Name} & \textbf{Weight} & \textbf{Normalisation Rule} \\
+\midrule
+$DS_u$ & Data sensitivity & 0.20 & Public=0.10, internal=0.35, confidential=0.70, personal=0.90, restricted=1.00 \\
+$AA_u$ & Action authority & 0.20 & Read-only=0.10, internal write=0.50, external write=0.80, payment/delete/deploy=1.00 \\
+$AU_u$ & Autonomy level & 0.15 & Human operates=0.10, collaborate=0.40, human approves critical=0.70, human observes only=1.00 \\
+$EC_u$ & Environmental connectivity & 0.15 & None=0.10, internal services=0.40, third-party APIs=0.70, browser/MCP=1.00 \\
+$RV_u$ & Irreversibility & 0.10 & Fully reversible=0.10, partially=0.60, irreversible=1.00 \\
+$UI_u$ & User/legal impact & 0.10 & Low=0.20, medium=0.50, high=0.80, critical=1.00 \\
+$MU_u$ & Model uncertainty & 0.05 & Deterministic=0.20, narrow model=0.50, general LLM=0.80, multi-agent=1.00 \\
+$TD_u$ & Third-party dependency & 0.05 & None=0.10, controlled vendor=0.50, unverified=1.00 \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\section{Inherent Risk Score (IRS)}
+
+The \textbf{Inherent Risk Score} for use case $u$ is the weighted sum of
+normalized risk factors:
+
+\begin{equation}
+\boxed{
+IRS_u = 100 \times \left(
+  0.20 \cdot DS_u + 
+  0.20 \cdot AA_u + 
+  0.15 \cdot AU_u + 
+  0.15 \cdot EC_u + 
+  0.10 \cdot RV_u + 
+  0.10 \cdot UI_u + 
+  0.05 \cdot MU_u + 
+  0.05 \cdot TD_u
+\right)
+}
+\label{eq:irs}
+\end{equation}
+
+\subsection{IRS interpretation}
+
+\begin{table}[htbp]
+\centering
+\caption{Inherent Risk Score Interpretation}
+\label{tab:irs-interpretation}
+\begin{tabular}{l l l}
+\toprule
+\textbf{Score Band} & \textbf{Tier} & \textbf{Control Implications} \\
+\midrule
+$0 \leq IRS < 25$ & Low & Standard controls \\
+$25 \leq IRS < 50$ & Medium & Enhanced controls \\
+$50 \leq IRS < 75$ & High & Critical controls required \\
+$75 \leq IRS \leq 100$ & Critical & Full control suite + review board \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Worked example: UC-10 Agent/tool orchestration}
+
+\begin{align*}
+DS &= 0.70 \quad \text{(confidential data)} \\
+AA &= 0.80 \quad \text{(external writes via MCP)} \\
+AU &= 0.70 \quad \text{(human approves critical only)} \\
+EC &= 1.00 \quad \text{(MCP/browser connectivity)} \\
+RV &= 0.60 \quad \text{(partially reversible)} \\
+UI &= 0.80 \quad \text{(high user impact)} \\
+MU &= 1.00 \quad \text{(multi-agent)} \\
+TD &= 0.50 \quad \text{(controlled vendor)}
+\end{align*}
+
+\begin{align*}
+IRS &= 100 \times (0.20 \times 0.70 + 0.20 \times 0.80 + 0.15 \times 0.70 + 0.15 \times 1.00 \\
+    &\quad + 0.10 \times 0.60 + 0.10 \times 0.80 + 0.05 \times 1.00 + 0.05 \times 0.50) \\
+    &= 100 \times (0.14 + 0.16 + 0.105 + 0.15 + 0.06 + 0.08 + 0.05 + 0.025) \\
+    &= 100 \times 0.77 = \mathbf{77}
+\end{align*}
+
+Result: \textbf{Critical tier} ($IRS \geq 75$).
+
+\section{Applicability-Weighted Control Coverage (AWCC)}
+
+Let $a_{u,j} \in \{0,1\}$ indicate whether control $j$ applies to use case $u$.
+Let $p_{u,j}$ be the control outcome score:
+
+\[
+p_{u,j} = \begin{cases}
+1.0 & \text{control passes} \\
+0.5 & \text{partial or compensating pass} \\
+0.0 & \text{control fails}
+\end{cases}
+\]
+
+The \textbf{Applicability-Weighted Control Coverage} is:
+
+\begin{equation}
+\boxed{
+AWCC_u = \frac{\sum_{j=1}^{23} a_{u,j} \cdot p_{u,j}}{\sum_{j=1}^{23} a_{u,j}}
+}
+\label{eq:awcc}
+\end{equation}
+
+\subsection{AWCC interpretation}
+
+\begin{table}[htbp]
+\centering
+\caption{Control Coverage Interpretation}
+\begin{tabular}{l l}
+\toprule
+\textbf{AWCC Range} & \textbf{Interpretation} \\
+\midrule
+$AWCC \geq 0.95$ & Full coverage \\
+$0.85 \leq AWCC < 0.95$ & Acceptable with monitoring \\
+$0.70 \leq AWCC < 0.85$ & Gaps require remediation \\
+$AWCC < 0.70$ & Significant gaps, not production-ready \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{Penalty terms}
+
+Penalty terms add fixed risk points for specific control failures:
+
+\begin{equation}
+\boxed{
+Penalty_u = 15 \cdot N^{audit}_u + 15 \cdot N^{checkpoint}_u + 10 \cdot N^{external}_u + 20 \cdot N^{privacy}_u
+}
+\label{eq:penalty}
+\end{equation}
+
+where:
+\begin{itemize}
+  \item $N^{audit}_u = 1$ if full audit trace is missing (\controlid{MON-01} fails), else $0$
+  \item $N^{checkpoint}_u = 1$ if a required human checkpoint is missing
+        (\controlid{HUM-01} fails), else $0$
+  \item $N^{external}_u = 1$ if untrusted external tools/services are used
+        (\controlid{SEC-02} fails), else $0$
+  \item $N^{privacy}_u = 1$ if personal-data handling lacks lawful basis
+        (\controlid{DATA-02} fails), else $0$
+\end{itemize}
+
+\section{Residual Risk Score (RRS)}
+
+The \textbf{Residual Risk Score} combines inherent risk, control coverage, and
+penalties:
+
+\begin{equation}
+\boxed{
+RRS_u = \min\left(100, \; IRS_u \times (1 - 0.55 \cdot AWCC_u) + Penalty_u\right)
+}
+\label{eq:rrs}
+\end{equation}
+
+The $0.55$ coefficient means that perfect control coverage ($AWCC = 1.0$)
+reduces inherent risk by 55\%.
+
+\subsection{RRS interpretation}
+
+\begin{table}[htbp]
+\centering
+\caption{Residual Risk Score Interpretation}
+\label{tab:rrs-interpretation}
+\begin{tabular}{l l}
+\toprule
+\textbf{Score Band} & \textbf{Interpretation} \\
+\midrule
+$0 \leq RRS \leq 20$ & Acceptable for defined control context \\
+$20 < RRS \leq 30$ & Acceptable with enhanced monitoring \\
+$30 < RRS \leq 45$ & Review-board approval required \\
+$RRS > 45$ & \textbf{Not production-ready} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{tcolorbox}[colback=sgred!5,colframe=sgred!70,title=\faIcon{exclamation-circle} Production Gate]
+A use case with $RRS > 45$ cannot be approved for production deployment.
+\end{tcolorbox}
+
+\section{Deployment Readiness Score (DRS)}
+
+The \textbf{Deployment Readiness Score} is a composite metric combining
+evaluation results, residual risk, control coverage, and training:
+
+\begin{equation}
+\boxed{
+DRS_u = 0.4 \cdot EVAL_u + 0.3 \cdot (100 - RRS_u) + 0.2 \cdot (AWCC_u \times 100) + 0.1 \cdot TC_u
+}
+\label{eq:drs}
+\end{equation}
+
+where:
+\begin{itemize}
+  \item $EVAL_u$ is the evaluation score (see Chapter~\ref{ch:metrics})
+  \item $RRS_u$ is the residual risk score
+  \item $AWCC_u$ is the control coverage
+  \item $TC_u$ is the training coverage percentage
+\end{itemize}
+
+\subsection{DRS interpretation}
+
+\begin{table}[htbp]
+\centering
+\caption{Deployment Readiness Score Interpretation}
+\begin{tabular}{l l}
+\toprule
+\textbf{Score Band} & \textbf{Interpretation} \\
+\midrule
+$DRS \geq 85$ & Fully ready for production \\
+$70 \leq DRS < 85$ & Ready with conditions \\
+$55 \leq DRS < 70$ & Needs improvement \\
+$DRS < 55$ & \textbf{Not ready for production} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{Production gate summary}
+
+A use case $u$ is eligible for production deployment if and only if:
+
+\begin{enumerate}
+  \item $RRS_u \leq 45$ (residual risk within tolerance)
+  \item $DRS_u \geq 70$ (deployment readiness met)
+  \item All critical controls pass (see Chapter~\ref{ch:controls})
+  \item All metric $LCB_{95}$ values meet thresholds (see Chapter~\ref{ch:metrics})
+\end{enumerate}
+
+All four conditions must be satisfied; failing any one blocks production
+deployment.

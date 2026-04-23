@@ -1,0 +1,164 @@
+% =============================================================================
+% CHAPTER 0: FRONTMATTER
+% IP Traceability Specification - Document Control and Registry
+% =============================================================================
+
+\chapter*{Document Control}
+\addcontentsline{toc}{chapter}{Document Control}
+
+\section*{Document Information}
+
+\begin{tabularx}{\textwidth}{@{}lX@{}}
+\toprule
+\textbf{Attribute} & \textbf{Value} \\
+\midrule
+Document Title & IP Traceability Specification \\
+Document ID & SAP-OSS-IP-TRACE-001 \\
+Version & 1.0.0 \\
+Status & Draft \\
+Classification & Internal \\
+Author & SAP Controls Architecture Team \\
+Owner & GCFO AI Platform Team \\
+Created & April 2026 \\
+Last Updated & April 2026 \\
+\bottomrule
+\end{tabularx}
+
+\section*{Purpose}
+
+This document provides \textbf{auditable evidence} that the intellectual property (IP) described in the source documents listed in \cref{chap:source-documents} has been implemented---through conceptual adaptation, not direct copying---into the SAP-OSS codebase. Each chapter traces specific concepts from their IP source to their implementation in the codebase, documenting:
+
+\begin{itemize}[nosep]
+    \item Verbatim quotations from IP source documents
+    \item The adaptation methodology (how concepts were translated)
+    \item Specific code locations (files, classes, functions)
+    \item Evidence of implementation (code snippets, design patterns)
+\end{itemize}
+
+\section*{Revision History}
+
+\begin{tabularx}{\textwidth}{@{}llXl@{}}
+\toprule
+\textbf{Version} & \textbf{Date} & \textbf{Changes} & \textbf{Author} \\
+\midrule
+1.0.0 & 2026-04-22 & Initial document creation & Controls Architecture \\
+\bottomrule
+\end{tabularx}
+
+\newpage
+
+% =============================================================================
+% IP SOURCE REGISTRY
+% =============================================================================
+
+\chapter*{IP Source Registry}
+\addcontentsline{toc}{chapter}{IP Source Registry}
+\label{chap:ip-registry}
+
+This registry provides a complete inventory of all intellectual property source documents traced in this specification.
+
+\section*{Document Inventory}
+
+\begin{longtable}{@{}p{1.2cm}p{4.5cm}p{3cm}p{4.5cm}@{}}
+\toprule
+\textbf{IP ID} & \textbf{Document} & \textbf{Type} & \textbf{Primary Concepts} \\
+\midrule
+\endfirsthead
+\toprule
+\textbf{IP ID} & \textbf{Document} & \textbf{Type} & \textbf{Primary Concepts} \\
+\midrule
+\endhead
+\midrule
+\multicolumn{4}{r}{\textit{Continued on next page...}} \\
+\endfoot
+\bottomrule
+\endlastfoot
+
+\ipid{IP-001} & safety-ai-governance.docx & Technical Paper & Blanket control, Mangle rules, ODPS compliance, safety gates \\
+\addlinespace
+
+\ipid{IP-002} & safety-ndeductivedatabase-mangle.docx & Technical Paper & Fixed-point evaluation, fact store integrity, LLM fact injection \\
+\addlinespace
+
+\ipid{IP-003} & safety-nlocalmodels-mojo.docx & Technical Paper & Softmax stability, RoPE orthogonality, quantization bounds \\
+\addlinespace
+
+\ipid{IP-004} & safety-ntimeseries-mojo.docx & Technical Paper & Kalman filter, FFT, MAD estimator, anomaly detection \\
+\addlinespace
+
+\ipid{IP-005} & safety-aimo-ntimeseries.docx & Technical Paper & AIMO mathematical libraries, 15 verified algorithms \\
+\addlinespace
+
+\ipid{IP-006} & AI Earnings Analysis Module.pdf & Specification & Earnings analytics, constitutional AI, neurotransmitter pathways \\
+\addlinespace
+
+\ipid{IP-007} & Ai Surprise\_small.pdf & Technical Paper & Stochastic Surprise Gate (SSG), Hull-White model, Z-score gating \\
+\addlinespace
+
+\ipid{IP-008} & digitaltwin.pdf & Technical Paper & Liquid Neural Networks, Physics World Model, Lyapunov stability \\
+\addlinespace
+
+\ipid{IP-009} & narrariveai (1).pdf & Technical Paper & Lyapunov metrics, narrative GNN, stability governance \\
+
+\end{longtable}
+
+\section*{Author Information}
+
+All IP documents were authored by the GCFO AI Platform Team:
+
+\begin{itemize}[nosep]
+    \item \textbf{Craig Turrell} -- Head of AI \& Design, Standard Chartered Bank, GCFO
+    \item \textbf{Tom Pfaff} -- AI Platform Team
+\end{itemize}
+
+\section*{IP Location}
+
+All IP source documents are stored in the repository at:
+
+\begin{center}
+\filepath{docs/ip\_traceability/}
+\end{center}
+
+\newpage
+
+% =============================================================================
+% ABBREVIATIONS
+% =============================================================================
+
+\chapter*{Abbreviations}
+\addcontentsline{toc}{chapter}{Abbreviations}
+
+\begin{longtable}{@{}p{3cm}p{10cm}@{}}
+\toprule
+\textbf{Abbreviation} & \textbf{Definition} \\
+\midrule
+\endfirsthead
+\toprule
+\textbf{Abbreviation} & \textbf{Definition} \\
+\midrule
+\endhead
+\bottomrule
+\endlastfoot
+
+AIMO & AI Mathematical Olympiad (verified mathematical libraries) \\
+CfC & Closed-form Continuous-time (neural networks) \\
+CTQ & Critical-to-Quality (performance thresholds) \\
+DOI & Document of Instructions \\
+FFT & Fast Fourier Transform \\
+GNN & Graph Neural Network \\
+IP & Intellectual Property \\
+LLM & Large Language Model \\
+LNN & Liquid Neural Network \\
+LTC & Liquid Time-Constant (networks) \\
+MAD & Median Absolute Deviation \\
+MLE & Maximum Lyapunov Exponent \\
+MoE & Mixture of Experts \\
+ODPS & Open Data Product Standard \\
+RoPE & Rotary Position Embedding \\
+SSG & Stochastic Surprise Gate \\
+TOON & Token-Oriented Object Notation \\
+vLLM & Virtual Large Language Model (inference engine) \\
+
+\end{longtable}
+
+\newpage

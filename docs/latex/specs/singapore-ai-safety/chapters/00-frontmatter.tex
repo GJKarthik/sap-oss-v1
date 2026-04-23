@@ -1,0 +1,61 @@
+% =============================================================================
+% Chapter 0 --- Frontmatter (Executive Summary and ToC)
+% =============================================================================
+
+\chapter*{Executive Summary}
+\addcontentsline{toc}{chapter}{Executive Summary}
+
+This specification establishes a single governance baseline across all AI-enabled
+system surfaces in the SAP-OSS repository. The framework is aligned with
+Singapore's regulatory guidance on AI governance and safety, particularly:
+
+\begin{itemize}
+  \item IMDA Model AI Governance Framework for Agentic AI (January 2026)
+  \item IMDA Starter Kit for Testing LLM-Based Applications
+  \item PDPC Model AI Governance Framework (Second Edition)
+  \item PDPC Advisory Guidelines on Use of Personal Data in AI
+  \item CSA Guidelines on Securing AI Systems
+\end{itemize}
+
+The specification covers five core artefacts:
+
+\begin{enumerate}
+  \item \textbf{Normative source hierarchy} --- exact regulatory documents and
+        their precedence order
+  \item \textbf{System use-case inventory} --- 12 operational use cases with
+        risk classifications
+  \item \textbf{Mandatory control catalogue} --- 23 controls with evidence
+        requirements
+  \item \textbf{Quantitative metrics} --- 12 metrics with mathematical scoring
+        models
+  \item \textbf{Implementation design} --- repository structure and compliance
+        mapping
+\end{enumerate}
+
+\section*{Universal Policy Position}
+
+\begin{tcolorbox}[colback=sgblue!5,colframe=sgblue!70,title=Universal Governance Policy]
+No AI-enabled use case may enter production, or remain in production, unless it has:
+\begin{enumerate}
+  \item a registered owner
+  \item a bounded use-case profile
+  \item a quantitative risk score
+  \item an applicable control profile
+  \item documented test results against thresholds
+  \item production monitoring and incident handling
+  \item a complete audit and evidence trail
+\end{enumerate}
+\end{tcolorbox}
+
+\section*{Production Gate Summary}
+
+A use case is eligible for production deployment if and only if:
+
+\begin{enumerate}
+  \item Residual Risk Score (RRS) $\leq 45$
+  \item Deployment Readiness Score (DRS) $\geq 70$
+  \item All critical controls pass
+  \item All metric $LCB_{95}$ values meet thresholds
+\end{enumerate}
+
+\tableofcontents

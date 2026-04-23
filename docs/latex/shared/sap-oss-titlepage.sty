@@ -1,0 +1,312 @@
+% =============================================================================
+% SAP-OSS Title Page Package - WWDC Keynote Quality
+% Version: 2.0.0
+% Professional title pages with SCB GCFO branding
+% =============================================================================
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{sap-oss-titlepage}[2026/04/21 SAP-OSS WWDC-Style Title Pages v2]
+
+% Required packages
+\RequirePackage{tikz}
+\RequirePackage{graphicx}
+\RequirePackage{xparse}
+
+% -----------------------------------------------------------------------------
+% TITLE PAGE VARIABLES
+% -----------------------------------------------------------------------------
+\newcommand{\@docsubtitle}{}
+\newcommand{\@docref}{}
+\newcommand{\@docversion}{}
+\newcommand{\@docteam}{SCB GCFO, AI Research \& Development}
+\newcommand{\@saplogo}{../../shared/sap-logo.png}
+\newcommand{\@brandimage}{}
+
+% Setters
+\newcommand{\setdocsubtitle}[1]{\renewcommand{\@docsubtitle}{#1}}
+\newcommand{\setdocref}[1]{\renewcommand{\@docref}{#1}}
+\newcommand{\setdocversion}[1]{\renewcommand{\@docversion}{#1}}
+\newcommand{\setdocteam}[1]{\renewcommand{\@docteam}{#1}}
+\newcommand{\setsaplogo}[1]{\renewcommand{\@saplogo}{#1}}
+\newcommand{\setbrandimage}[1]{\renewcommand{\@brandimage}{#1}}
+
+% -----------------------------------------------------------------------------
+% MAIN TITLE PAGE - WWDC KEYNOTE STYLE
+% -----------------------------------------------------------------------------
+\newcommand{\makesaptitle}{%
+  \begin{titlepage}
+    \thispagestyle{empty}
+    
+    % Background gradient effect
+    \begin{tikzpicture}[remember picture, overlay]
+      % Subtle gradient from top
+      \fill[applewhite] (current page.south west) rectangle (current page.north east);
+      
+      % Top accent bar
+      \fill[sapblue] ([yshift=-60pt]current page.north west) rectangle (current page.north east);
+      
+      % Bottom accent
+      \fill[sapblue!10] (current page.south west) rectangle ([yshift=80pt]current page.south east);
+      
+      % Decorative element (subtle geometric)
+      \node[opacity=0.03, anchor=south east] at ([xshift=-40pt, yshift=120pt]current page.south east) {
+        \fontsize{400}{400}\selectfont\fontseries{ul}\selectfont S
+      };
+    \end{tikzpicture}
+    
+    % Logo at top
+    \vspace*{-20pt}
+    \begin{flushleft}
+      \hspace{-8pt}%
+      \IfFileExists{\@saplogo}{%
+        \includegraphics[height=28pt]{\@saplogo}%
+      }{%
+        {\fontseries{sb}\selectfont\color{white}\large SCB}%
+      }
+    \end{flushleft}
+    
+    \vspace{0.18\textheight}
+    
+    % Main title area
+    \begin{flushleft}
+      % Document type label
+      {\addfontfeature{LetterSpace=10.0}\color{sapblue}\small\fontseries{m}\selectfont SPECIFICATION DOCUMENT}
+      
+      \vspace{16pt}
+      
+      % Main title - dramatic size
+      {\fontsize{42}{48}\selectfont\fontseries{sb}\selectfont\color{appleblack}\@title}
+      
+      \vspace{16pt}
+      
+      % Subtitle
+      \ifx\@docsubtitle\empty\else
+        {\fontsize{18}{24}\selectfont\color{applegray1}\@docsubtitle}
+        \vspace{16pt}
+      \fi
+      
+      % Decorative rule
+      {\color{sapblue}\rule{80pt}{3pt}}
+    \end{flushleft}
+    
+    \vfill
+    
+    % Metadata section
+    \begin{flushleft}
+      % Version and reference
+      \begin{tabular}{@{}ll@{}}
+        \ifx\@docversion\empty\else
+          {\small\color{applegray2}Version} & {\small\fontseries{sb}\selectfont\color{appleblack}\@docversion} \\[4pt]
+        \fi
+        \ifx\@docref\empty\else
+          {\small\color{applegray2}Reference} & {\small\ttfamily\color{applegray1}\@docref} \\[4pt]
+        \fi
+        {\small\color{applegray2}Date} & {\small\color{appleblack}\@date} \\[4pt]
+        {\small\color{applegray2}Author} & {\small\color{appleblack}\@docteam} \\
+      \end{tabular}
+    \end{flushleft}
+    
+    \vspace{30pt}
+    
+    % Footer with classification
+    \begin{tikzpicture}[remember picture, overlay]
+      \node[anchor=south, yshift=30pt] at (current page.south) {
+        {\small\color{applegray2}Internal Use Only \textbullet{} Confidential}
+      };
+    \end{tikzpicture}
+    
+  \end{titlepage}
+  \cleardoublepage
+}
+
+% -----------------------------------------------------------------------------
+% ALTERNATE TITLE PAGE - MINIMAL STYLE
+% -----------------------------------------------------------------------------
+\newcommand{\makeminimaltitle}{%
+  \begin{titlepage}
+    \thispagestyle{empty}
+    
+    \vspace*{0.25\textheight}
+    
+    \begin{center}
+      % Title
+      {\fontsize{36}{42}\selectfont\fontseries{sb}\selectfont\color{appleblack}\@title}
+      
+      \vspace{20pt}
+      
+      % Subtitle
+      \ifx\@docsubtitle\empty\else
+        {\large\color{applegray1}\@docsubtitle}
+        \vspace{20pt}
+      \fi
+      
+      % Rule
+      {\color{sapblue}\rule{60pt}{2pt}}
+      
+      \vspace{40pt}
+      
+      % Author
+      {\color{applegray2}\@docteam}
+      
+      \vspace{10pt}
+      
+      % Date
+      {\color{applegray2}\@date}
+    \end{center}
+    
+    \vfill
+    
+    % Version at bottom
+    \begin{center}
+      \ifx\@docversion\empty\else
+        {\small\color{applegray2}Version \@docversion}
+      \fi
+    \end{center}
+    
+  \end{titlepage}
+  \cleardoublepage
+}
+
+% -----------------------------------------------------------------------------
+% CHAPTER TITLE PAGE - WWDC DRAMATIC STYLE
+% -----------------------------------------------------------------------------
+\newcommand{\makechapterpage}[2]{%
+  \clearpage
+  \thispagestyle{empty}
+  
+  \vspace*{0.2\textheight}
+  
+  \begin{flushleft}
+    % Large, thin chapter number
+    {\fontsize{72}{72}\selectfont\fontseries{ul}\selectfont\color{sapblue}%
+      Chapter #1%
+    }
+    
+    \vspace{24pt}
+    
+    % Title - dramatic size
+    {\fontsize{36}{42}\selectfont\fontseries{sb}\selectfont\color{appleblack}%
+      #2%
+    }
+    
+    \vspace{16pt}
+    
+    % Decorative rule
+    {\color{sapblue}\rule{60pt}{2pt}}
+  \end{flushleft}
+  
+  \vfill
+  \null
+  \clearpage
+}
+
+% -----------------------------------------------------------------------------
+% PART TITLE PAGE
+% -----------------------------------------------------------------------------
+\newcommand{\makepartpage}[2]{%
+  \clearpage
+  \thispagestyle{empty}
+  
+  % Background
+  \begin{tikzpicture}[remember picture, overlay]
+    \fill[sapblue!5] (current page.south west) rectangle (current page.north east);
+  \end{tikzpicture}
+  
+  \vspace*{0.3\textheight}
+  
+  \begin{center}
+    % Part number
+    {\addfontfeature{LetterSpace=15.0}\color{sapblue}\small\fontseries{m}\selectfont PART #1}
+    
+    \vspace{24pt}
+    
+    % Part title
+    {\fontsize{42}{48}\selectfont\fontseries{sb}\selectfont\color{appleblack}#2}
+    
+    \vspace{20pt}
+    
+    {\color{sapblue}\rule{80pt}{3pt}}
+  \end{center}
+  
+  \vfill
+  \null
+  \clearpage
+}
+
+% -----------------------------------------------------------------------------
+% COLOPHON PAGE
+% -----------------------------------------------------------------------------
+\newcommand{\makecolophon}[1]{%
+  \clearpage
+  \thispagestyle{empty}
+  
+  \vspace*{\fill}
+  
+  \begin{center}
+    % Logo
+    \IfFileExists{\@saplogo}{%
+      \includegraphics[height=24pt]{\@saplogo}%
+    }{%
+      {\fontseries{sb}\selectfont\color{sapblue}\large SCB}%
+    }
+    
+    \vspace{24pt}
+    
+    % Colophon text
+    {\small\color{applegray2}
+      #1
+    }
+    
+    \vspace{24pt}
+    
+    % Technical details
+    {\footnotesize\color{applegray3}
+      Typeset with Xe\LaTeX{} using the sap-oss-apple document class.\\
+      Typography: Inter (body), JetBrains Mono (code).\\
+      \ifx\@docversion\empty\else Version \@docversion{} \textbullet{} \fi\@date
+    }
+  \end{center}
+  
+  \vspace{40pt}
+}
+
+% -----------------------------------------------------------------------------
+% HALF-TITLE PAGE
+% -----------------------------------------------------------------------------
+\newcommand{\makehalftitle}{%
+  \begin{titlepage}
+    \thispagestyle{empty}
+    
+    \vspace*{0.35\textheight}
+    
+    \begin{center}
+      {\fontsize{28}{32}\selectfont\fontseries{sb}\selectfont\color{appleblack}\@title}
+    \end{center}
+    
+    \vfill
+  \end{titlepage}
+  \cleardoublepage
+}
+
+% -----------------------------------------------------------------------------
+% SECTION BREAK PAGE (for major transitions)
+% -----------------------------------------------------------------------------
+\newcommand{\makesectionbreak}[1]{%
+  \clearpage
+  \thispagestyle{empty}
+  
+  \vspace*{0.4\textheight}
+  
+  \begin{center}
+    {\fontsize{24}{28}\selectfont\fontseries{sb}\selectfont\color{applegray1}#1}
+    
+    \vspace{16pt}
+    
+    {\color{sapblue}\rule{40pt}{2pt}}
+  \end{center}
+  
+  \vfill
+  \null
+  \clearpage
+}
+
+\endinput

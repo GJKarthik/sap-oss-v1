@@ -1,0 +1,362 @@
+# =============================================================================
+# .clinerules - TB-HITL Specification Standards
+# Trial Balance Business Requirements & Lineage Specification
+# =============================================================================
+# This file defines rules and standards for maintaining the TB-HITL 
+# traceability specification to ensure consistency and prevent errors.
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# DOCUMENT STANDARDS
+# -----------------------------------------------------------------------------
+
+## Requirement Derivation Rules
+
+When deriving business requirements from source documents:
+
+1. **Always quote source text verbatim**
+   - Use italics for quoted text
+   - Preserve exact wording from source document
+   - Do NOT paraphrase unless explicitly noted
+
+2. **Include precise location references**
+   - Format: "TB-BC-001, Section X, Paragraph Y, Page Z (Lines N-M in extracted MD)"
+   - Include line numbers from machine-readable extraction when available
+   - Reference employee/author ID when known (e.g., "Created by: 1498002")
+
+3. **Use MoSCoW prioritization for ALL requirements**
+   - MUST: Non-negotiable for v1.0
+   - SHOULD: Important but can slip
+   - COULD: Nice to have
+   - WON'T: Explicitly out of scope (this phase)
+
+4. **Every requirement needs acceptance criteria**
+   - Format: AC-<REQ-ID>-<NUMBER> (e.g., AC-ES01-1, AC-ES01-2)
+   - Criteria must be measurable and verifiable
+   - Include specific thresholds (numbers, percentages, timeframes)
+
+## Requirement ID Conventions
+
+| Category | Prefix | Example |
+|----------|--------|---------|
+| Executive Summary | TB-REQ-ES | TB-REQ-ES01 |
+| Scope | TB-REQ-SC | TB-REQ-SC01 |
+| Process Step | TB-REQ-PS | TB-REQ-PS01 |
+| AI Augmentation | TB-REQ-AI | TB-REQ-AI01 |
+| BSS Risk Assessment | BSS-REQ | BSS-REQ-01 |
+
+## Citation Format
+
+```latex
+\begin{tcolorbox}[colback=sourcegreen!5,colframe=sourcegreen!70,title=Source Quotation]
+\textit{``Exact quoted text from source document...''}
+\end{tcolorbox}
+
+\begin{tabularx}{\textwidth}{@{}lX@{}}
+\toprule
+\textbf{Attribute} & \textbf{Value} \\
+\midrule
+\textbf{Requirement ID} & TB-REQ-XXnn \\
+\textbf{MoSCoW Priority} & MUST/SHOULD/COULD/WON'T \\
+\textbf{Source Document} & Full document name \\
+\textbf{Source ID} & TB-BC-001/TB-BPMN-001/etc. \\
+\textbf{Source Location} & Section, Paragraph, Page (Lines) \\
+\bottomrule
+\end{tabularx}
+```
+
+# -----------------------------------------------------------------------------
+# SCHEMA STANDARDS
+# -----------------------------------------------------------------------------
+
+## Enum Governance
+
+1. **All shared enums MUST reference docs/schema/common/enums.yaml**
+   - Never redefine shared enums locally
+   - Use $ref to common definitions
+   - Changes require RFC with spec owner approval
+
+2. **Shared enums include:**
+   - risk_status (TB + BSS)
+   - decision_outcome (TB + Arabic + Regulations)
+   - variance_type (TB)
+   - workflow_state_type (TB + BSS)
+   - audit_action (TB + BSS + Arabic)
+   - source_system (TB + Arabic)
+
+3. **Adding new enums:**
+   - Submit RFC to Controls Architecture Team
+   - 5-day review period
+   - All consuming spec owners must approve
+   - One-release deprecation window for breaking changes
+
+## JSON Schema Requirements
+
+1. Use JSON Schema Draft 2020-12 or later
+2. Every schema MUST include:
+   - `$schema` declaration
+   - `$id` with unique identifier
+   - `title` and `description`
+   - `required` array for mandatory fields
+   - `additionalProperties: false` to prevent schema drift
+
+3. Field naming conventions:
+   - Use snake_case for all fields
+   - Prefix audit fields with `audit_` (e.g., `audit_id`, `audit_timestamp`)
+   - Suffix identifiers with `_id` (e.g., `persona_id`, `resource_id`)
+
+## Schema File Naming
+
+| Type | Pattern | Example |
+|------|---------|---------|
+| Record schema | noun-noun.schema.json | variance-record.schema.json |
+| Entry schema | noun-entry.schema.json | audit-trail-entry.schema.json |
+| Extract schema | noun-extract.schema.json | tb-extract.schema.json |
+| Params schema | noun-params.schema.json | entity-params.schema.json |
+
+# -----------------------------------------------------------------------------
+# IMPLEMENTATION STANDARDS
+# -----------------------------------------------------------------------------
+
+## State Machine (28 States - Authoritative)
+
+**CRITICAL: The authoritative state count is 28, NOT 27.**
+
+States 1-24: Primary workflow states
+States 25-27: Error handling states (AWAITING_CLARIFICATION, ESCALATED_TO_FINANCE, MANUAL_OVERRIDE)
+State 28: COMPLETED (end state)
+
+All state transitions MUST:
+- Be logged to audit trail with timestamp and persona_id
+- Include before_state and after_state snapshots
+- Use optimistic locking (version field)
+
+## API Response Codes
+
+| Code | Meaning | Use Case |
+|------|---------|----------|
+| 200 | Success | All items succeeded |
+| 207 | Multi-Status | Partial success (bulk operations) |
+| 400 | Bad Request | Invalid request body |
+| 401 | Unauthorized | Token missing/expired |
+| 403 | Forbidden | Insufficient permissions |
+| 409 | Conflict | Race condition (item already claimed) |
+| 429 | Too Many Requests | Rate limit exceeded |
+| 500 | Internal Error | Server-side failure |
+| 503 | Service Unavailable | vLLM/backend unavailable |
+| 504 | Gateway Timeout | Request timeout |
+
+## Quality Thresholds
+
+| Metric | Target | Kill-Switch Trigger |
+|--------|--------|---------------------|
+| accept_without_edit_rate | ≥70% | <50% |
+| accept_with_any_edit_rate | ≥95% | <85% |
+| vLLM availability | ≥95% | <95% |
+| vLLM latency P95 | <5000ms | >5000ms |
+| vLLM error rate | <10% | >10% |
+
+## Anomaly Detection Thresholds
+
+1. **Normality Test First (Shapiro-Wilk)**
+   - If p-value > 0.05: Use Z-score
+   - If p-value ≤ 0.05: Use MAD (robust for fat tails)
+
+2. **Thresholds:**
+   - Z-score threshold: 3.0
+   - MAD threshold: 3.5
+   - Spike/drop threshold: 25% period-over-period
+
+## vLLM Fallback Triggers
+
+Switch to template-based commentary when ANY of:
+- vLLM latency P95 > 5000ms (5-minute rolling window)
+- vLLM error rate > 10% (5-minute rolling window)
+- Health check fails 3 consecutive probes
+
+Template confidence capped at 75% (vs LLM typical 85%+)
+
+# -----------------------------------------------------------------------------
+# FILE NAMING CONVENTIONS
+# -----------------------------------------------------------------------------
+
+## LaTeX Files
+
+| Type | Pattern | Example |
+|------|---------|---------|
+| Chapters | chapters/XX-name.tex | chapters/04-business-requirements.tex |
+| Visual aids | chapters/00-name.tex | chapters/00-visual-traceability-map.tex |
+| Fragments | fragment-name.tex | fragment-executive-summary.tex |
+| Main doc | spec-name.tex | tb-business-requirements-traceability.tex |
+| Merged doc | spec-name-merged.tex | tb-business-requirements-traceability-merged.tex |
+
+## Entity Parameters
+
+- Path: docs/schema/tb/entity-params/<LE-CODE>.yaml
+- Example: docs/schema/tb/entity-params/HKG.yaml
+- Contents: legal_entity_code, materiality_thresholds, review_config
+
+# -----------------------------------------------------------------------------
+# AUDIT FINDING RESOLUTION FORMAT
+# -----------------------------------------------------------------------------
+
+When documenting audit findings and resolutions:
+
+```latex
+\begin{tcolorbox}[colback=red!5,colframe=red!70,title=\faIcon{exclamation-triangle} Finding ID: Description]
+\textbf{Location:} Document reference, page, section \\
+\textbf{Issue:} Clear description of the problem \\
+\textbf{Impact:} What breaks if not fixed \\
+\textbf{Severity:} \textbf{P0/P1/P2} - Critical/High/Medium \\
+\textbf{Owner:} Responsible person/team \\
+\textbf{Timeline:} X days/weeks
+\end{tcolorbox}
+
+\textbf{Resolution:}
+\begin{tcolorbox}[colback=green!5,colframe=green!70,title=\faIcon{check-circle} Resolution Applied]
+[Detailed resolution with code/schema/config examples]
+\end{tcolorbox}
+```
+
+## Severity Codes
+
+| Code | Severity | Timeline | Blocks Release? |
+|------|----------|----------|-----------------|
+| P0 | Critical | 1-2 weeks | Yes |
+| P1 | High | 4 weeks | Conditional |
+| P2 | Medium | 8 weeks | No |
+| P3 | Low | Backlog | No |
+
+# -----------------------------------------------------------------------------
+# REVIEW CHECKLIST
+# -----------------------------------------------------------------------------
+
+## Auditor Validation Points
+
+Before sign-off, verify:
+
+- [ ] All requirements quote source text verbatim
+- [ ] Location references are precise (section, paragraph, page, line)
+- [ ] Derivation rationale is documented
+- [ ] Acceptance criteria are measurable
+- [ ] MoSCoW priority is assigned
+- [ ] Traceability exceptions are documented (Table 14.X)
+- [ ] Shared enums reference enums.yaml (not local definitions)
+- [ ] State count is 28 (not 27)
+- [ ] Gaps have owners and timelines
+
+## Implementor Ready Criteria
+
+Before starting development, verify:
+
+- [ ] State transition table is embedded (35+ transitions)
+- [ ] LLM Service Contract is specified (endpoint, request/response, errors)
+- [ ] Bulk operation HTTP codes are defined (200/207/409)
+- [ ] UI tech stack is documented (Angular + NgRx + SAP UI5)
+- [ ] Entity-params loader spec is complete
+- [ ] Anomaly detection thresholds are specified (Z-score + MAD)
+- [ ] vLLM fallback triggers are documented
+- [ ] Template library (TPL-001 to TPL-007) is specified
+- [ ] Audit trail schema exists (audit-trail-entry.schema.json)
+
+## Business Owner Ready Criteria
+
+Before approval, verify:
+
+- [ ] G-001 financial analysis has preliminary ROI estimate
+- [ ] ML timeline is caveated (not committed)
+- [ ] Commentary quality remediation protocol exists
+- [ ] Cross-spec governance is documented
+- [ ] Exit gates and kill-switch conditions are defined
+- [ ] EUC retirement plan is specified (12-month deprecation)
+
+# -----------------------------------------------------------------------------
+# OPEN GAPS TRACKING
+# -----------------------------------------------------------------------------
+
+| Gap ID | Description | Owner | Target | Status |
+|--------|-------------|-------|--------|--------|
+| G-001 | Financial Analysis TBD | S1 Badrinath | Before GA | ⚠️ Accelerate |
+| G-002 | DOI images not OCR'd | Technical Lead | 2026-05-15 | 🟡 Planned |
+| G-003 | BSS vocabulary alignment | Controls Arch | Complete | ✅ Resolved |
+| P2-1 | Kill-switch automation | Platform Team | 8 weeks | 🟡 Planned |
+
+# -----------------------------------------------------------------------------
+# SPEC-DRIFT PREVENTION
+# -----------------------------------------------------------------------------
+
+## Spec-Drift Audit Agent
+
+This repository includes an automated spec-drift auditor that monitors for 
+synchronization between LaTeX specifications, JSON schemas, and implementation code.
+
+### Quick Commands
+
+```bash
+# Run full spec-drift audit
+make audit-spec-drift
+
+# Audit specific domain
+make audit-spec-drift-domain DOMAIN=simula
+
+# Quick check on changed files
+make audit-spec-drift-quick
+
+# Install pre-commit hook
+make audit-install-hook
+
+# Review drift exceptions
+make audit-exceptions-review
+```
+
+### Key Files
+
+| File | Purpose |
+|------|---------|
+| `.clinerules.spec-drift-auditor` | Agent rules for drift detection |
+| `docs/schema/spec-code-mapping.yaml` | Mapping between specs, schemas, and code |
+| `docs/schema/drift-exceptions.yaml` | Approved drift exceptions |
+| `scripts/spec-drift/audit.py` | Audit script implementation |
+| `.github/workflows/spec-drift-audit.yml` | CI/CD integration |
+
+### Drift Types
+
+| Code | Description | Severity |
+|------|-------------|----------|
+| DRIFT-001 | Schema-Spec Drift | HIGH/MEDIUM |
+| DRIFT-002 | Code-Schema Drift | CRITICAL/HIGH |
+| DRIFT-003 | Code-Spec Drift | CRITICAL/HIGH |
+| DRIFT-004 | Version Drift | HIGH/MEDIUM |
+| DRIFT-005 | Cross-Domain Drift | CRITICAL/HIGH |
+| DRIFT-006 | Threshold Drift | HIGH/MEDIUM |
+| DRIFT-007 | State Machine Drift | CRITICAL/HIGH |
+| DRIFT-008 | API Contract Drift | CRITICAL/HIGH |
+
+### Before Merging PRs
+
+1. Check for spec-drift audit results in PR comments
+2. Address any CRITICAL or HIGH severity findings
+3. For intentional drift, add exception in `docs/schema/drift-exceptions.yaml`
+4. Ensure related artifacts are updated in the same PR
+
+### Adding New Specs/Schemas
+
+When adding new specifications or schemas:
+
+1. Update `docs/schema/spec-code-mapping.yaml` with the new artifact
+2. Define relationships to related schemas and code
+3. Specify sync rules for the new artifact
+4. Run `make audit-check-mapping` to validate the registry
+
+# -----------------------------------------------------------------------------
+# VERSION HISTORY
+# -----------------------------------------------------------------------------
+
+| Version | Date | Changes |
+|---------|------|---------|
+| 1.1.0 | 2026-04-21 | Added spec-drift prevention section |
+| 1.0.0 | 2026-04-20 | Initial .clinerules for TB-HITL specification |
+
+# =============================================================================
+# END OF .clinerules
+# =============================================================================

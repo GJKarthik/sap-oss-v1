@@ -1,0 +1,226 @@
+% =============================================================================
+% Chapter 7 --- References, hashes, traceability
+% =============================================================================
+\chapter{References and traceability}
+\label{ch:refs}
+
+\section{Source hashes (sha256)}
+
+\begin{table}[h]
+\centering
+\small
+\begin{tabularx}{\textwidth}{p{4.4cm}p{1.2cm}X}
+\toprule
+\textbf{Source file} & \textbf{Pages} & \textbf{sha256 (truncated to first 16 hex)} \\
+\midrule
+\path{source/mgf-for-agentic-ai.pdf}    & 29 & \ttfamily\footnotesize b84c8c94f6392cf2\ldots aeef7b \\
+\path{source/2025-AI-Agent-Index.pdf}   & 39 & \ttfamily\footnotesize c67a30469fd061e9\ldots 0e267f \\
+\path{source/2503.18238v3.pdf}          & 59 & \ttfamily\footnotesize b680f58422e4684e\ldots cd7877 \\
+\bottomrule
+\end{tabularx}
+\caption{Content hashes of the three source regulations.}
+\label{tab:src-hashes}
+\end{table}
+
+\section{Structured records on disk}
+
+\begin{table}[h]
+\centering
+\small
+\begin{tabularx}{\textwidth}{p{6.6cm}X}
+\toprule
+\textbf{Path (relative to repo root)} & \textbf{Role} \\
+\midrule
+\path{docs/schema/regulations/}                       & JSON Schemas (Draft-07) for regulation, requirement, conformance-tool, and corpus records. \\
+\path{docs/schema/common/enums.yaml}                  & Controlled vocabularies shared across the four domain specs. \\
+\path{docs/schema/registry.json}                      & Master schema index (all domains). \\
+\path{docs/schema/validate.py}                        & Unified offline validator (registry check + per-document check). \\
+\path{docs/regulations/machine-readable/}             & Per-source extracted text and RAG artefacts (see \cref{tab:machine-readable-inventory}). \\
+\path{docs/regulations/machine-readable/specification-addendum.yaml} & Requirement records (20 requirements across MGF, Agent Index, Ju \& Aral). \\
+\bottomrule
+\end{tabularx}
+\caption{Structured layer inventory (unified-schema layout, April 2026).}
+\label{tab:struct-inventory}
+\end{table}
+
+\begin{table}[h]
+\centering
+\small
+\begin{tabularx}{\textwidth}{p{6.6cm}X}
+\toprule
+\textbf{Path} & \textbf{Role} \\
+\midrule
+\path{mgf-for-agentic-ai.txt}            & Extracted text of the IMDA MGF PDF. \\
+\path{2025-AI-Agent-Index.txt}           & Extracted text of the 2025 AI Agent Index. \\
+\path{2503.18238v3.txt}                  & Extracted text of the Ju \& Aral pre-print. \\
+\path{rag_chunks.jsonl}                  & Deterministic chunks ready for embedding. \\
+\path{rag_embedding_records.jsonl}       & Embedding records (re-upsertable into Qdrant). \\
+\path{rag_manifest.json}                 & Manifest of chunk / embedding counts + hashes. \\
+\path{scripts/}                          & Re-chunk and re-upsert scripts. \\
+\bottomrule
+\end{tabularx}
+\caption{Contents of \texttt{docs/regulations/machine-readable/}.}
+\label{tab:machine-readable-inventory}
+\end{table}
+
+\section{Corpus index excerpt}
+
+\begin{lstlisting}[language=jsonx,caption={Excerpt of \texttt{docs/schema/registry.json} (regulations domain).}]
+{
+  "schema_version": "1.0",
+  "generated": "2026-04-18",
+  "domains": {
+    "regulations": {
+      "status": "stable",
+      "schemas": [
+        { "id": "regulation",
+          "path": "docs/schema/regulations/regulation.schema.json" },
+        { "id": "requirement",
+          "path": "docs/schema/regulations/requirement.schema.json" },
+        { "id": "conformance-tool",
+          "path": "docs/schema/regulations/conformance-tool.schema.json" },
+        { "id": "corpus",
+          "path": "docs/schema/regulations/corpus.schema.json" }
+      ],
+      "records": "docs/regulations/machine-readable/specification-addendum.yaml"
+    }
+  }
+}
+\end{lstlisting}
+
+\section{Consolidated traceability matrix}
+
+Table~\ref{tab:trace} is the single view a reviewer needs. Every row is
+one requirement record and shows its status, the primary implementation
+pointer, and its verification link.
+
+\footnotesize
+\setlength{\tabcolsep}{4pt}
+\begin{longtable}{p{3.5cm}p{1.6cm}p{4.6cm}p{3.6cm}}
+\toprule
+\textbf{Req.\ id} & \textbf{Status} & \textbf{Primary implementation} & \textbf{Primary verification} \\
+\midrule
+\endfirsthead
+\toprule
+\textbf{Req.\ id} & \textbf{Status} & \textbf{Primary implementation} & \textbf{Primary verification} \\
+\midrule
+\endhead
+REG-MGF-2.1.1-001 & partial       & tb spec ch.1 + TB business reqs             & process-checklist \\
+REG-MGF-2.1.2-001 & partial       & MCP server + data-product registry          & test\_mcp\_server + adversarial \\
+REG-MGF-2.1.2-002 & partial$^\dagger$ & \S\ref{ch:identity} spec + aicore\_pal\_agent.py & test\_hana\_connection + audit-trail verifier \\
+REG-MGF-2.1.2-003 & partial       & TB data-product classification              & manual review \\
+REG-MGF-2.2.1-001 & partial$^*$   & TB EUC-001..003 + workflow participants     & process-checklist \\
+REG-MGF-2.2.1-002 & partial       & GFAIC charter (federated under GAISC)       & process-checklist + minutes \\
+REG-MGF-2.2.2-001 & partial       & TB DP-001/003/005 + workflow gateways       & test\_pal\_algorithms \\
+REG-MGF-2.2.2-002 & partial       & TB KPI pack                                 & manual review \\
+REG-MGF-2.3.1-001 & partial       & agent + MCP + decision-point schema         & test\_mcp\_server + adversarial \\
+REG-MGF-2.3.2-001 & partial       & PAL algorithm + MCP tests                   & Moonshot 4-benchmark sweep \\
+REG-MGF-2.3.2-002 & partial$^*$   & evaluation/trajectory\_evaluator.py         & test + adversarial \\
+REG-MGF-2.3.3-001 & partial       & deploy\_to\_aicore.sh + README              & process-checklist \\
+REG-MGF-2.3.3-002 & partial       & monitoring/drift\_monitor.py                & test + hallucination in CI \\
+REG-MGF-2.4.2-001 & partial       & TB workflow + controls spec                 & onboarding checklist \\
+REG-MGF-2.4.3-001 & partial       & docs/training/agent-oversight-curriculum.md & process-checklist + LMS \\
+REG-AGENTIDX-3.6-001 & partial    & this chapter + TB controls                  & process-checklist + reports \\
+REG-AGENTIDX-3.3-001 & partial    & TB workflow + spec ch.5                     & manual review \\
+REG-JU-ARAL-3-001 & partial       & this chapter                                & manual review \\
+REG-JU-ARAL-4-001 & partial       & TB KPI pack                                 & manual review \\
+REG-JU-ARAL-5-001 & n/a           & (creative use cases only)                   & --- \\
+\bottomrule
+\caption{Full requirement traceability matrix.}
+\label{tab:trace}
+\end{longtable}
+
+\normalsize
+\noindent\textbf{Status legend and corrections (April 2026 review):}
+\begin{itemize}[nosep]
+  \item $^\dagger$\textbf{partial (upgraded from missing, April 2026):}
+        Chapter~\ref{ch:identity} specifies the per-request
+        identity-attribution schema, the reserve-before-action audit
+        protocol, and the WORM-backed immutable storage design
+        (\cref{sec:audit-failure-handling}). Status is ``partial''
+        rather than ``implemented'' because the audit service itself
+        and the three pipeline integrations (TB, Arabic AP, Simula)
+        are scheduled in \cref{tab:identity-rollout} and are not yet
+        in production.
+  \item $^*$\textbf{Downgraded from ``implemented'':} Code artifact exists but has not been
+        validated in production. Retained as ``partial'' pending pilot validation.
+  \item \textbf{All other ``implemented'' rows downgraded:} Original ``implemented'' status
+        assumed code existence equals conformance. Corrected to ``partial'' where
+        production validation is pending (e.g., REG-JU-ARAL-3-001 relies on this
+        chapter only---no operational evidence).
+\end{itemize}
+
+\section{Rebuild and revalidate}
+
+\begin{lstlisting}[language=bash,caption={Commands to re-run validation
+and rebuild the PDF.}]
+# Offline registry + schema validation (all domains).
+python3 docs/schema/validate.py --registry-check
+
+# Per-document validation for the regulations domain.
+python3 docs/schema/validate.py --domain regulations \
+    --schema requirement.schema.json \
+    --file docs/regulations/machine-readable/specification-addendum.yaml
+
+# Re-chunk + re-embed (needs OPENAI_API_KEY + QDRANT_URL).
+python3 docs/regulations/machine-readable/scripts/prepare_embedding_records.py
+python3 docs/regulations/machine-readable/scripts/upsert_qdrant.py \
+    --input docs/regulations/machine-readable/rag_embedding_records.jsonl \
+    --collection regulations_rag
+
+# Rebuild this PDF (XeLaTeX).
+cd docs/latex/specs/regulations && latexmk -xelatex regulations-spec-apple.tex
+\end{lstlisting}
+
+\section{Further resources}
+
+\begin{itemize}
+  \item AI Verify Foundation. \emph{What is AI Verify.}
+        \url{https://aiverifyfoundation.sg/what-is-ai-verify/}
+  \item AI Verify Foundation. \emph{Project Moonshot.}
+        \url{https://aiverifyfoundation.sg/project-moonshot/}
+  \item IMDA Singapore. \emph{LLM Starter Kit for Safety Testing of
+        LLM-Based Applications.}
+  \item 2025 AI Agent Index. \url{https://aiagentindex.mit.edu/}
+  \item Ju, H. and Aral, S. (2026). \emph{Collaborating with AI Agents:
+        A Field Experiment on Teamwork, Productivity, and Performance.}
+        arXiv:2503.18238v3 [cs.CY].
+\end{itemize}
+
+\section{Unified Schema Registry}
+
+As of 18 April 2026, all JSON Schemas across the four domain specifications are
+published in the unified registry at \path{docs/schema/}. Migration status is
+\emph{complete} (see \path{docs/schema/registry.json} field
+\texttt{migration.status}). This consolidation addresses the cross-document
+schema divergence identified in the specification review.
+
+\begin{description}
+  \item[Registry index.] \path{docs/schema/registry.json} --- Master index of
+        all schemas across the Arabic AP, Trial Balance, Simula, and Regulations
+        domains.
+  \item[Common types.] \path{docs/schema/common/base-types.schema.json} ---
+        Shared definitions (\texttt{Metadata}, \texttt{SHA256Hash},
+        \texttt{FilePath}) referenced via JSON Schema \texttt{\$ref}.
+  \item[Consolidated enums.] \path{docs/schema/common/enums.yaml} --- Single
+        source of truth for enumeration values including \texttt{requirement\_status},
+        \texttt{obligation\_level}, and \texttt{jurisdiction}.
+  \item[Regulations schemas.] \path{docs/schema/regulations/} ---
+        Domain-specific schemas: \texttt{regulation.schema.json},
+        \texttt{requirement.schema.json}, \texttt{conformance-tool.schema.json},
+        and \texttt{corpus.schema.json}. All marked \texttt{status: stable}.
+\end{description}
+
+\noindent
+The registry uses JSON Schema Draft-07 with the canonical \texttt{\$id} prefix
+\url{https://sap-oss.github.io/schema/}. Validation:
+
+\begin{lstlisting}[language=bash]
+python3 docs/schema/validate.py --registry-check
+python3 docs/schema/validate.py --domain regulations \
+    --schema requirement.schema.json --file requirement-REG-MGF-2-001.json
+\end{lstlisting}
+
+\noindent
+CI runs \texttt{--registry-check} on every pull request touching
+\path{docs/schema/} or any spec chapter that references these schemas.

@@ -1,0 +1,283 @@
+\chapter{Machine-Readable Extraction Layer}
+\label{ch:extraction-layer}
+
+This chapter documents the extraction process that transforms source
+documents into machine-readable formats, providing the foundation for
+automated validation and requirements traceability.
+
+% =============================================================================
+\section{Extraction Process Overview}
+\label{sec:extraction-overview}
+
+Source documents were processed using automated extraction scripts to
+produce machine-readable formats suitable for:
+
+\begin{itemize}[noitemsep]
+  \item Text analysis and requirement derivation
+  \item Schema validation and data quality checks
+  \item RAG (Retrieval-Augmented Generation) pipeline ingestion
+  \item Version control and change tracking
+\end{itemize}
+
+\begin{table}[h]
+\centering
+\caption{Extraction Scripts and Outputs}
+\label{tab:extraction-scripts}
+\begin{tabularx}{\textwidth}{@{}L{3.5cm}L{4cm}L{6.5cm}@{}}
+\toprule
+\textbf{Script} & \textbf{Source Types} & \textbf{Output Format} \\
+\midrule
+\texttt{extract\_docs.py} & .doc, .docx & Markdown with YAML frontmatter \\
+\texttt{extract\_pdf.py} & .pdf (BPMN) & Markdown + BPMN elements JSON \\
+\texttt{extract\_xlsx.py} & .xlsm workbooks & YAML schemas + CSV samples \\
+\texttt{build\_rag\_chunks.py} & All extracted text & JSONL chunks for RAG \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+% =============================================================================
+\section{Extracted Document Mapping}
+\label{sec:extracted-mapping}
+
+\begin{longtable}{@{}C{2cm}L{5cm}L{6.5cm}@{}}
+\caption{Source to Extracted Document Mapping}
+\label{tab:extracted-mapping} \\
+\toprule
+\textbf{Source ID} & \textbf{Extracted File} & \textbf{Extraction Notes} \\
+\midrule
+\endfirsthead
+\toprule
+\textbf{Source ID} & \textbf{Extracted File} & \textbf{Extraction Notes} \\
+\midrule
+\endhead
+\srcref{TB-BC-001} & \texttt{business-case-trial-balance.md} & Full text extraction; tables converted to markdown; 1,172 words \\
+\srcref{TB-BC-002} & \texttt{business-case-bss-risk-assessment.md} & Full text extraction; 8,908 bytes \\
+\srcref{TB-DOI-001} & \texttt{doi-trial-balance-process.md} & Text + 4 images extracted to \texttt{doi-images/} \\
+\srcref{TB-BPMN-001} & \texttt{bpmn-tb-review-glo.md} + \texttt{bpmn-elements.json} & Process text + structured BPMN elements \\
+\srcref{TB-WB-001} & \texttt{hkg-tb-schema.yaml} + \texttt{hkg-tb-sample.csv} & Schema for 13 sheets; 100-row sample \\
+\srcref{TB-WB-002} & \texttt{hkg-pl-schema.yaml} + \texttt{hkg-pl-sample.csv} & Schema for 14 sheets; 100-row sample \\
+\bottomrule
+\end{longtable}
+
+% =============================================================================
+\section{Extraction File Inventory}
+\label{sec:extraction-inventory}
+
+\subsection{Extracted Text Files}
+
+\begin{longtable}{@{}L{6cm}C{2cm}C{2cm}L{3.5cm}@{}}
+\caption{Extracted Text File Inventory}
+\label{tab:extracted-text-inventory} \\
+\toprule
+\textbf{File Path} & \textbf{Size} & \textbf{Format} & \textbf{Source Ref} \\
+\midrule
+\endfirsthead
+\toprule
+\textbf{File Path} & \textbf{Size} & \textbf{Format} & \textbf{Source Ref} \\
+\midrule
+\endhead
+\texttt{extracted/business-case-trial-balance.md} & 9,824 B & Markdown & \srcref{TB-BC-001} \\
+\texttt{extracted/business-case-bss-risk-assessment.md} & 8,908 B & Markdown & \srcref{TB-BC-002} \\
+\texttt{extracted/doi-trial-balance-process.md} & 865 B & Markdown & \srcref{TB-DOI-001} \\
+\texttt{extracted/bpmn-tb-review-glo.md} & 9,154 B & Markdown & \srcref{TB-BPMN-001} \\
+\texttt{extracted/bpmn-elements.json} & 2,264 B & JSON & \srcref{TB-BPMN-001} \\
+\bottomrule
+\end{longtable}
+
+\subsection{Extracted Image Files}
+
+\begin{longtable}{@{}L{6cm}C{2cm}C{2cm}L{3.5cm}@{}}
+\caption{Extracted Image File Inventory}
+\label{tab:extracted-image-inventory} \\
+\toprule
+\textbf{File Path} & \textbf{Size} & \textbf{Format} & \textbf{Source Ref} \\
+\midrule
+\endfirsthead
+\toprule
+\textbf{File Path} & \textbf{Size} & \textbf{Format} & \textbf{Source Ref} \\
+\midrule
+\endhead
+\texttt{extracted/doi-images/doi-image-001.emf} & 8,148 B & EMF & \srcref{TB-DOI-001} \\
+\texttt{extracted/doi-images/doi-image-002.emf} & 8,272 B & EMF & \srcref{TB-DOI-001} \\
+\texttt{extracted/doi-images/doi-image-003.png} & 43,650 B & PNG & \srcref{TB-DOI-001} \\
+\texttt{extracted/doi-images/doi-image-004.emf} & 8,132 B & EMF & \srcref{TB-DOI-001} \\
+\bottomrule
+\end{longtable}
+
+\subsection{Training Data Files}
+
+\begin{longtable}{@{}L{6cm}C{2cm}C{2cm}L{3.5cm}@{}}
+\caption{Training Data File Inventory}
+\label{tab:training-data-inventory} \\
+\toprule
+\textbf{File Path} & \textbf{Size} & \textbf{Format} & \textbf{Source Ref} \\
+\midrule
+\endfirsthead
+\toprule
+\textbf{File Path} & \textbf{Size} & \textbf{Format} & \textbf{Source Ref} \\
+\midrule
+\endhead
+\texttt{training-data/hkg-tb-schema.yaml} & 20,228 B & YAML & \srcref{TB-WB-001} \\
+\texttt{training-data/hkg-tb-sample.csv} & 17,916 B & CSV & \srcref{TB-WB-001} \\
+\texttt{training-data/hkg-pl-schema.yaml} & 16,982 B & YAML & \srcref{TB-WB-002} \\
+\texttt{training-data/hkg-pl-sample.csv} & 19,110 B & CSV & \srcref{TB-WB-002} \\
+\bottomrule
+\end{longtable}
+
+% =============================================================================
+\section{Extraction Frontmatter Format}
+\label{sec:extraction-frontmatter}
+
+Each extracted markdown file includes YAML frontmatter for traceability
+and metadata validation:
+
+\begin{lstlisting}[language=yamlx,caption=Extraction Frontmatter Example]
+---
+source_file: 'Business case - Trial Balance (2).doc'
+source_type: 'doc'
+extracted_at: '2026-04-13T06:16:45.446975+00:00'
+word_count: 1172
+source_ref: 'TB-BC-001'
+---
+# Business Case: Trial Balance
+
+## 1. Executive Summary
+...
+\end{lstlisting}
+
+\paragraph{Frontmatter Fields:}
+
+\begin{table}[h]
+\centering
+\caption{Extraction Frontmatter Schema}
+\label{tab:frontmatter-schema}
+\begin{tabularx}{\textwidth}{@{}L{3cm}C{2cm}L{8.5cm}@{}}
+\toprule
+\textbf{Field} & \textbf{Type} & \textbf{Description} \\
+\midrule
+\texttt{source\_file} & string & Original filename \\
+\texttt{source\_type} & enum & File extension (.doc, .docx, .pdf, .xlsm) \\
+\texttt{extracted\_at} & ISO 8601 & Timestamp of extraction \\
+\texttt{word\_count} & integer & Word count of extracted text \\
+\texttt{source\_ref} & string & Traceability reference ID \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+% =============================================================================
+\section{BPMN Elements Extraction}
+\label{sec:bpmn-extraction}
+
+The BPMN process map (\srcref{TB-BPMN-001}) was parsed into structured
+JSON to enable automated workflow validation:
+
+\begin{lstlisting}[language=jsonx,caption=BPMN Elements Structure]
+{
+  "workflowId": "tb-review-glo",
+  "version": "1.0.0",
+  "states": [
+    {
+      "stateId": "START",
+      "type": "start_event",
+      "name": "Prepare Schedule Work Day",
+      "transitions": [{"target": "ROLL_FORWARD"}]
+    },
+    {
+      "stateId": "ROLL_FORWARD",
+      "type": "task",
+      "name": "Roll Forward Prior Month File",
+      "timing": "M-3",
+      "systems": ["MS Excel", "Shared Drive"],
+      "transitions": [{"target": "DOWNLOAD_PSGL"}]
+    }
+  ],
+  "gateways": [...],
+  "dataObjects": [...],
+  "participants": [...]
+}
+\end{lstlisting}
+
+\paragraph{Extracted BPMN Statistics:}
+
+\begin{table}[h]
+\centering
+\caption{BPMN Extraction Statistics}
+\label{tab:bpmn-statistics}
+\begin{tabular}{@{}lr@{}}
+\toprule
+\textbf{Element Type} & \textbf{Count} \\
+\midrule
+Start Events & 1 \\
+Task States & 21 \\
+Gateway States & 5 \\
+Error-Handling States & 3 \\
+End Events & 1 \\
+\midrule
+\textbf{Total States} & \textbf{27} \\
+\midrule
+Data Objects & 6 \\
+Participants & 3 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+% =============================================================================
+\section{Workbook Schema Extraction}
+\label{sec:workbook-schema}
+
+Excel workbooks were processed to extract structural schemas without
+copying sensitive data:
+
+\subsection{HKG TB Review Schema (\srcref{TB-WB-001})}
+
+\begin{table}[h]
+\centering
+\caption{HKG TB Review Sheet Inventory}
+\label{tab:hkg-tb-sheets}
+\begin{tabularx}{\textwidth}{@{}L{4cm}C{2cm}L{7.5cm}@{}}
+\toprule
+\textbf{Sheet Name} & \textbf{Fields} & \textbf{Purpose} \\
+\midrule
+IFRS Summary BS & -- & IFRS balance sheet summary view \\
+Count of Comments & 7 & Commentary tracking (reviewer, status, hours) \\
+BS Variance & 5 & Balance sheet variance analysis with thresholds \\
+PL Variance & 4 & P\&L variance analysis \\
+GCOA & 5 & Global Chart of Accounts definitions \\
+Dept Mapping & 12 & Department-to-vertical mapping \\
+Base file & 13 & Account-level base data with mappings \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+% =============================================================================
+\section{Extraction Quality Metrics}
+\label{sec:extraction-quality}
+
+\begin{table}[h]
+\centering
+\caption{Extraction Quality Metrics}
+\label{tab:extraction-quality}
+\begin{tabularx}{\textwidth}{@{}L{5cm}C{2.5cm}L{6cm}@{}}
+\toprule
+\textbf{Metric} & \textbf{Value} & \textbf{Human Validation Required} \\
+\midrule
+Source documents processed & 6 of 6 & Verify all documents included \\
+Total extracted text size & 522 KB & Verify no truncation occurred \\
+Tables extracted & 12 & Verify table structure preserved \\
+Images extracted & 4 & Verify images are referenced correctly \\
+BPMN elements parsed & 27 states & Verify state machine completeness \\
+Workbook sheets processed & 27 & Verify key sheets included \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\begin{hitlbox}{H2 -- Extraction Accuracy Verification}
+The human reviewer must verify the following for checkpoint H2:
+\begin{enumerate}[noitemsep]
+  \item Sample extracted text against original documents (minimum 3 paragraphs per document)
+  \item Table formatting is preserved in markdown conversion
+  \item BPMN state names and transitions match the source PDF
+  \item Workbook schema field names match column headers
+  \item No content truncation or corruption occurred
+\end{enumerate}
+\end{hitlbox}

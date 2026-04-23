@@ -1,0 +1,454 @@
+% =============================================================================
+% Chapter 15: Implementation Addendum - Implementor & Business Owner Issues
+% =============================================================================
+\chapter{Implementation Addendum}
+\label{ch:implementation-addendum}
+
+This chapter addresses specific concerns raised in the implementor and 
+business owner review, providing detailed specifications that were identified 
+as missing or insufficiently detailed.
+
+% =============================================================================
+\section{Implementor Specifications}
+\label{sec:implementor-specs}
+% =============================================================================
+
+% -----------------------------------------------------------------------------
+\subsection{State Transition Table}
+\label{sec:state-transitions}
+% -----------------------------------------------------------------------------
+
+The 28-state workflow machine is referenced from 
+\texttt{structured/workflows/tb-review-glo.json}. For implementor convenience,
+the complete state transition table is embedded here:
+
+\begin{longtable}{p{3.5cm} p{3.5cm} p{5.5cm}}
+\caption{Complete State Transition Table (28 States)} \\
+\toprule
+\textbf{From State} & \textbf{To State} & \textbf{Condition} \\
+\midrule
+\endfirsthead
+\toprule
+\textbf{From State} & \textbf{To State} & \textbf{Condition} \\
+\midrule
+\endhead
+START & ROLL\_FORWARD & M-3 trigger \\
+ROLL\_FORWARD & DOWNLOAD\_PSGL & Roll-forward complete \\
+DOWNLOAD\_PSGL & UPDATE\_ACCOUNTS\_MASTER & Download complete \\
+UPDATE\_ACCOUNTS\_MASTER & EXTRACT\_TB & Master updated \\
+EXTRACT\_TB & UPDATE\_COMPARATIVES & Extraction complete \\
+UPDATE\_COMPARATIVES & CALC\_VARIANCE & Comparatives updated \\
+CALC\_VARIANCE & FILTER\_VARIANCES & Calculation complete \\
+FILTER\_VARIANCES & UPDATE\_COMMENTARIES & Filtering complete \\
+UPDATE\_COMMENTARIES & CHECK\_JOURNAL\_POSTED & Commentaries updated \\
+CHECK\_JOURNAL\_POSTED & SEND\_JOURNAL\_REQUEST & journal\_posted = FALSE \\
+CHECK\_JOURNAL\_POSTED & UPDATE\_RISK\_SUMMARY & journal\_posted = TRUE \\
+SEND\_JOURNAL\_REQUEST & UPDATE\_RISK\_SUMMARY & Request sent \\
+UPDATE\_RISK\_SUMMARY & PREPARE\_SUMMARY & Summary updated \\
+PREPARE\_SUMMARY & INVESTIGATE\_VARIANCE & variance\_exists = TRUE \\
+PREPARE\_SUMMARY & INTERNAL\_REVIEW & variance\_exists = FALSE \\
+INVESTIGATE\_VARIANCE & CHECK\_MATERIAL & Investigation complete \\
+CHECK\_MATERIAL & CATEGORIZE\_UNEXPLAINED & is\_material = TRUE \\
+CHECK\_MATERIAL & INTERNAL\_REVIEW & is\_material = FALSE \\
+CATEGORIZE\_UNEXPLAINED & CHECK\_TEAM\_ENTRIES & Categorized \\
+CHECK\_TEAM\_ENTRIES & CONFIRM\_ENTRIES & team\_response = PENDING \\
+CHECK\_TEAM\_ENTRIES & SEEK\_COMMENTARIES & team\_response = CONFIRMED \\
+CONFIRM\_ENTRIES & SEEK\_COMMENTARIES & Entries confirmed \\
+CONFIRM\_ENTRIES & AWAITING\_CLARIFICATION & timeout \textgreater 48h \\
+SEEK\_COMMENTARIES & RECEIVE\_COMMENTARIES & Commentary requested \\
+RECEIVE\_COMMENTARIES & PERFORM\_RISK\_ANALYSIS & Commentary received \\
+RECEIVE\_COMMENTARIES & ESCALATED\_TO\_FINANCE & commentary\_rejected \\
+PERFORM\_RISK\_ANALYSIS & UPDATE\_VARIANCE\_COMMENTARIES & Risk analyzed \\
+UPDATE\_VARIANCE\_COMMENTARIES & TRACK\_ENTRIES & Variance commented \\
+TRACK\_ENTRIES & INTERNAL\_REVIEW & Entries tracked \\
+INTERNAL\_REVIEW & SEND\_FORTM\_SUMMARY & Review approved \\
+INTERNAL\_REVIEW & MANUAL\_OVERRIDE & override\_required = TRUE \\
+AWAITING\_CLARIFICATION & CHECK\_TEAM\_ENTRIES & clarification\_received \\
+ESCALATED\_TO\_FINANCE & PERFORM\_RISK\_ANALYSIS & finance\_resolution \\
+MANUAL\_OVERRIDE & INTERNAL\_REVIEW & override\_applied \\
+SEND\_FORTM\_SUMMARY & COMPLETED & M+5 \\
+\bottomrule
+\end{longtable}
+
+\textbf{State Machine Implementation Notes:}
+\begin{itemize}
+    \item Error states (25-27) can be reached from any active state via timeout or explicit escalation
+    \item All transitions are logged to audit trail with timestamp and persona\_id
+    \item State persistence: PostgreSQL \texttt{workflow\_states} table with optimistic locking
+\end{itemize}
+
+% -----------------------------------------------------------------------------
+\subsection{LLM Service Contract}
+\label{sec:llm-contract}
+% -----------------------------------------------------------------------------
+
+\begin{tcolorbox}[colback=blue!5,colframe=blue!70,title=LLM Service Contract: vLLM Commentary Generation]
+
+\textbf{Endpoint:}
+\begin{verbatim}
+POST https://ai-core.internal.sap/v1/tb-commentary/generate
+\end{verbatim}
+
+\textbf{Authentication:}
+\begin{itemize}
+    \item Same SAP IAS OAuth 2.0 Bearer token as dashboard API
+    \item Token claim \texttt{scope} must include \texttt{tb:commentary:generate}
+\end{itemize}
+
+\textbf{Request:}
+\begin{lstlisting}[language=jsonx]
+{
+  "request_id": "uuid-v4",
+  "variance_record": {
+    "account_code": "4100001",
+    "account_name": "Revenue - Product Sales",
+    "legal_entity": "HKG",
+    "period": "2026-03",
+    "prior_balance": 1500000.00,
+    "current_balance": 1875000.00,
+    "variance_amount": 375000.00,
+    "variance_percentage": 0.25,
+    "variance_type": "spike",
+    "related_transactions": [
+      {"date": "2026-03-15", "amount": 200000, "description": "Contract #A123"}
+    ]
+  },
+  "context": {
+    "historical_periods": 12,
+    "include_trend_analysis": true
+  },
+  "preferences": {
+    "tone": "formal",
+    "max_length": 500,
+    "language": "en"
+  }
+}
+\end{lstlisting}
+
+\textbf{Response (Success - 200):}
+\begin{lstlisting}[language=jsonx]
+{
+  "commentary_id": "uuid-v4",
+  "text": "Revenue from Product Sales increased by $375,000 (25%) 
+          compared to prior month. This spike is primarily attributed 
+          to Contract #A123 signed on March 15, contributing $200,000 
+          to the variance. Historical analysis indicates this is the 
+          highest monthly increase in the past 12 months.",
+  "confidence": 0.87,
+  "source_references": ["Contract #A123", "GL Entry 2026-03-15"],
+  "model_version": "tb-commentary-v1.2",
+  "processing_time_ms": 1250,
+  "fallback_used": false
+}
+\end{lstlisting}
+
+\textbf{Error Codes:}
+\begin{tabular}{lll}
+\toprule
+\textbf{Code} & \textbf{Meaning} & \textbf{Client Action} \\
+\midrule
+400 & Invalid variance\_record schema & Fix request body \\
+401 & Token missing or expired & Re-authenticate \\
+403 & Insufficient scope & Check token claims \\
+429 & Rate limit exceeded & Backoff and retry \\
+500 & Model error & Fallback to template \\
+503 & vLLM unavailable & Fallback to template \\
+504 & Timeout (>5s) & Fallback to template \\
+\bottomrule
+\end{tabular}
+
+\textbf{Timeout and Retry Configuration:}
+\begin{itemize}
+    \item Connect timeout: 1000ms
+    \item Read timeout: 5000ms
+    \item Max retries: 2 (with exponential backoff)
+    \item Circuit breaker: Open after 5 consecutive failures (30s reset)
+\end{itemize}
+\end{tcolorbox}
+
+% -----------------------------------------------------------------------------
+\subsection{Bulk Operation Semantics Clarification}
+\label{sec:bulk-semantics}
+% -----------------------------------------------------------------------------
+
+\begin{tcolorbox}[colback=green!5,colframe=green!70,title=Bulk Operation Specification]
+
+\textbf{Transaction Semantics:}
+
+Bulk operations are processed \textbf{per-item with individual audit records}. 
+Failures do NOT roll back successful items.
+
+\textbf{HTTP Response Codes:}
+\begin{itemize}
+    \item \textbf{200 OK:} All items succeeded
+    \item \textbf{207 Multi-Status:} Partial success; response body contains per-item status
+    \item \textbf{409 Conflict:} All items failed due to race condition
+\end{itemize}
+
+\textbf{207 Multi-Status Response Example:}
+\begin{lstlisting}[language=jsonx]
+{
+  "bulk_operation_id": "uuid-bulk-123",
+  "summary": {
+    "total": 50,
+    "success": 48,
+    "failed": 2
+  },
+  "results": [
+    {"id": "var-001", "status": 200, "message": "Assigned"},
+    {"id": "var-002", "status": 409, "message": "Already claimed by 1234567"},
+    ...
+  ]
+}
+\end{lstlisting}
+
+\textbf{Locking Semantics:}
+\begin{itemize}
+    \item Each item is claimed with optimistic locking (\texttt{version} field)
+    \item Two reviewers claiming overlapping sets: first claim wins; second gets 409
+    \item UI should refresh and show updated claimant on 409
+\end{itemize}
+\end{tcolorbox}
+
+% -----------------------------------------------------------------------------
+\subsection{Dashboard UI Technology Stack}
+\label{sec:ui-stack}
+% -----------------------------------------------------------------------------
+
+\begin{tabular}{ll}
+\toprule
+\textbf{Component} & \textbf{Technology} \\
+\midrule
+Framework & Angular 17+ \\
+State Management & NgRx (Redux pattern) \\
+Component Library & SAP UI5 Web Components for Angular \\
+HTTP Client & Auto-generated from OpenAPI spec (\texttt{ng-openapi-gen}) \\
+Testing & Jest (unit), Cypress (E2E) \\
+Build & Nx monorepo with \texttt{@nrwl/angular} \\
+Deployment & Docker container on SAP BTP Cloud Foundry \\
+\bottomrule
+\end{tabular}
+
+\textbf{Reference:}
+\begin{verbatim}
+src/generativeUI/ui5-webcomponents-ngx-main/
+\end{verbatim}
+
+% =============================================================================
+\section{Business Owner Specifications}
+\label{sec:business-specs}
+% =============================================================================
+
+% -----------------------------------------------------------------------------
+\subsection{G-001: Preliminary Financial Analysis}
+\label{sec:g001-financial}
+% -----------------------------------------------------------------------------
+
+\begin{tcolorbox}[colback=yellow!10,colframe=yellow!50!black,title=\faIcon{exclamation-triangle} G-001: Financial Analysis - Preliminary Estimates]
+
+\textbf{Note:} Final financial analysis is pending (owner: S1 Badrinath, target: Q2 2026).
+The following are \textbf{preliminary estimates} with $\pm 30\%$ confidence band.
+
+\vspace{0.5em}
+\textbf{Cost Estimate (Year 1):}
+\begin{tabular}{lrr}
+\toprule
+\textbf{Category} & \textbf{Estimate} & \textbf{Range ($\pm 30\%$)} \\
+\midrule
+AI Architect (100 days) & \$150,000 & \$105,000 - \$195,000 \\
+AI Engineer (100 days) & \$100,000 & \$70,000 - \$130,000 \\
+Infrastructure (AI Core) & \$50,000 & \$35,000 - \$65,000 \\
+SME/Testing (15 days $\times$ 4) & \$45,000 & \$31,500 - \$58,500 \\
+\midrule
+\textbf{Total Year 1} & \textbf{\$345,000} & \$241,500 - \$448,500 \\
+\bottomrule
+\end{tabular}
+
+\textbf{Benefit Estimate (Year 1):}
+\begin{tabular}{lrr}
+\toprule
+\textbf{Category} & \textbf{Estimate} & \textbf{Range} \\
+\midrule
+FTE savings (5 FTE $\times$ \$80K) & \$400,000 & \$280,000 - \$520,000 \\
+Reduced audit costs & \$50,000 & \$35,000 - \$65,000 \\
+Fast close enablement & \$25,000 & \$17,500 - \$32,500 \\
+\midrule
+\textbf{Total Year 1 Benefits} & \textbf{\$475,000} & \$332,500 - \$617,500 \\
+\bottomrule
+\end{tabular}
+
+\textbf{Preliminary ROI:}
+\begin{align*}
+\text{ROI} &= \frac{\text{Benefits} - \text{Cost}}{\text{Cost}} \times 100\% \\
+&= \frac{\$475,000 - \$345,000}{\$345,000} \times 100\% \\
+&= \textbf{37.7\%} \text{ (range: -27\% to +156\%)}
+\end{align*}
+
+\textbf{Payback Period:} $\approx$ 9 months (range: 6--18 months)
+
+\vspace{0.5em}
+\textbf{Action:} Final analysis required before GA cutover. This estimate is 
+for planning purposes only.
+\end{tcolorbox}
+
+% -----------------------------------------------------------------------------
+\subsection{Cross-Spec Governance}
+\label{sec:cross-spec-governance}
+% -----------------------------------------------------------------------------
+
+\begin{tcolorbox}[colback=blue!5,colframe=blue!70,title=Cross-Spec Governance Protocol]
+
+Shared enums are maintained in:
+\begin{verbatim}
+docs/schema/common/enums.yaml
+\end{verbatim}
+
+\textbf{Change Process:}
+\begin{enumerate}
+    \item RFC (Request for Comment) submitted to Controls Architecture Team
+    \item All consuming spec owners (TB, BSS, Arabic AP) are notified
+    \item 5-day review period; majority approval required
+    \item One-release deprecation window for breaking changes
+    \item CI validation blocks PRs with local enum redefinitions
+\end{enumerate}
+
+\textbf{Ownership:}
+\begin{tabular}{lll}
+\toprule
+\textbf{Enum} & \textbf{Maintainer} & \textbf{Consumers} \\
+\midrule
+risk\_status & Controls Architecture & TB, BSS \\
+decision\_outcome & Workflow Architecture & TB, Arabic, Regulations \\
+variance\_type & Financial Analytics & TB \\
+audit\_action & Controls Architecture & TB, BSS, Arabic \\
+\bottomrule
+\end{tabular}
+\end{tcolorbox}
+
+% -----------------------------------------------------------------------------
+\subsection{ML Timeline Caveat}
+\label{sec:ml-caveat}
+% -----------------------------------------------------------------------------
+
+\begin{tcolorbox}[colback=red!10,colframe=red!70,title=\faIcon{exclamation-triangle} ML Timeline Caveat - Important]
+
+\textbf{The ML-based anomaly detection timeline (Chapter 10) is conditional 
+and illustrative, NOT committed.}
+
+\textbf{Dependencies:}
+\begin{itemize}
+    \item No ML model exists today
+    \item No labelled anomaly corpus exists
+    \item Requires $\geq 2$ quarters of production dashboard decisions to build corpus
+    \item Isolation Forest prototype target (Q1 2027) depends on data availability
+\end{itemize}
+
+\textbf{Business Implication:}
+\begin{itemize}
+    \item v1.0 business case should NOT include ML-driven benefits
+    \item ML savings are Phase 2+ benefits only
+    \item Missing ML timeline does NOT block v1.0 release
+    \item Steering committee should be briefed on this caveat
+\end{itemize}
+
+\textbf{Data Collection Trigger:} ML labelling begins when:
+\begin{enumerate}
+    \item Dashboard has been in production for $\geq 2$ months
+    \item At least 1,000 accept/reject decisions have been recorded
+    \item Decision quality metrics (accept rate $\geq 70\%$) are stable
+\end{enumerate}
+\end{tcolorbox}
+
+% -----------------------------------------------------------------------------
+\subsection{Commentary Quality Metrics Remediation}
+\label{sec:quality-remediation}
+% -----------------------------------------------------------------------------
+
+\begin{tcolorbox}[colback=orange!5,colframe=orange!70,title=Quality Metrics Remediation Protocol]
+
+\textbf{Targets:}
+\begin{itemize}
+    \item \texttt{accept\_without\_edit\_rate} $\geq 70\%$
+    \item \texttt{accept\_with\_any\_edit\_rate} $\geq 95\%$
+\end{itemize}
+
+\textbf{Remediation Trigger:}
+
+If \textbf{either} target is missed for \textbf{two consecutive months}:
+
+\begin{enumerate}
+    \item Root-cause analysis is triggered (owner: AI Architect)
+    \item Commentary generation is switched to \textbf{template-only mode}
+    \item Model retuning initiated with expanded training data
+    \item LLM-based generation resumes only after pilot shows target compliance
+\end{enumerate}
+
+\textbf{Escalation Path:}
+\begin{itemize}
+    \item Month 1 miss: Warning alert to AI team
+    \item Month 2 miss: Automatic switch to template mode + Jira escalation
+    \item Month 3+ template mode: Steering committee briefing required
+\end{itemize}
+
+\textbf{Recovery Criteria:}
+
+Return to LLM mode when:
+\begin{itemize}
+    \item Pilot (50 variances) achieves $\geq 70\%$ accept-without-edit
+    \item No factual errors detected in pilot sample
+    \item AI Architect sign-off obtained
+\end{itemize}
+\end{tcolorbox}
+
+% =============================================================================
+\section{Implementation Priority Order}
+\label{sec:impl-priority}
+% =============================================================================
+
+Based on the implementor review, the recommended priority order is:
+
+\begin{enumerate}
+    \item \textbf{Set up unified schema registry and validation pipeline}
+    \begin{itemize}
+        \item Clone \texttt{docs/schema/} to development environment
+        \item Integrate \texttt{validate.py --registry-check} into CI
+        \item Generate TypeScript types from JSON Schema
+    \end{itemize}
+    
+    \item \textbf{Implement entity-params loader}
+    \begin{itemize}
+        \item Create \texttt{EntityParamsRegistry.load\_all()} class
+        \item Implement per-LE materiality threshold lookup
+        \item Add graceful missing-LE handling
+    \end{itemize}
+    
+    \item \textbf{Build anomaly detection with Shapiro-Wilk + MAD fallback}
+    \begin{itemize}
+        \item Implement \texttt{AnomalyDetector} class (see P1-2 resolution)
+        \item Add normality test before Z-score application
+        \item Configure thresholds in entity-params
+    \end{itemize}
+    
+    \item \textbf{Implement vLLM commentary with template fallback}
+    \begin{itemize}
+        \item Use LLM Service Contract (Section~\ref{sec:llm-contract})
+        \item Implement \texttt{CommentaryService} with fallback logic
+        \item Create 7 template variants (TPL-001 to TPL-007)
+    \end{itemize}
+    
+    \item \textbf{Build dashboard queue and review views}
+    \begin{itemize}
+        \item Follow UI stack (Angular + NgRx + SAP UI5)
+        \item Auto-generate API client from OpenAPI spec
+        \item Implement audit trail logging for all actions
+    \end{itemize}
+\end{enumerate}
+
+\textbf{Dependencies to Request from Architecture Team:}
+\begin{itemize}
+    \item Full \texttt{tb-review-glo.json} workflow file (Section~\ref{sec:state-transitions} provides summary)
+    \item vLLM API endpoint and credentials (Section~\ref{sec:llm-contract} provides contract)
+    \item SAP IAS OAuth configuration for development environment
+\end{itemize}
+
+\end{document}

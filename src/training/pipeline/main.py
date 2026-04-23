@@ -2,10 +2,28 @@
 # =============================================================================
 # main.py — Text-to-SQL pipeline CLI (Python + SAP HANA Cloud)
 #
-# Replaces the former Zig pipeline with a pure-Python implementation backed
-# by SAP HANA Cloud for schema metadata and training data storage.
+# ⚠️  DEPRECATION NOTICE (Simula v1.2)
+# ═══════════════════════════════════════════════════════════════════════════════
+# This legacy template/Spider pipeline is DEPRECATED as of Simula v1.2.
 #
-# Usage:
+# The authoritative pipeline is now the Simula HANA-direct flow:
+#   python -m scripts.run_hana_pipeline [options]
+#
+# Or via Make:
+#   make simula-pipeline
+#
+# This legacy pipeline will be removed in v1.3. Please migrate to the Simula
+# pipeline for spec-compliant training data generation with:
+# - HANA schema extraction
+# - Reasoning-driven taxonomy generation (Algorithm 1)
+# - Agentic data synthesis with double-critic filtering (Algorithm 2)
+# - Elo-calibrated complexity scoring (Algorithm 3)
+# - Full evaluation framework (coverage, diversity, critic calibration)
+#
+# See: docs/latex/specs/simula/chapters/12-implementation-instructions.tex
+# ═══════════════════════════════════════════════════════════════════════════════
+#
+# LEGACY Usage (deprecated):
 #   python -m pipeline extract-schema <staging_csv> <output_json>
 #   python -m pipeline parse-templates <templates_csv> <domain> <output_json>
 #   python -m pipeline expand <templates_csv> <output_pairs_json> [max]
@@ -16,6 +34,7 @@ from __future__ import annotations
 
 import json
 import sys
+import warnings
 from pathlib import Path
 
 from . import __version__
@@ -25,6 +44,32 @@ from .schema_registry import SchemaRegistry
 from .spider_formatter import format_for_spider, write_spider_dataset
 from .template_expander import expand_all
 from .template_parser import parse_templates_csv
+
+# Deprecation warning
+_DEPRECATION_MESSAGE = """
+╔═══════════════════════════════════════════════════════════════════════════════╗
+║  ⚠️  DEPRECATION WARNING: Legacy Template/Spider Pipeline                      ║
+╠═══════════════════════════════════════════════════════════════════════════════╣
+║  This pipeline is DEPRECATED as of Simula v1.2.                               ║
+║                                                                               ║
+║  Please migrate to the Simula HANA-direct pipeline:                           ║
+║    python -m scripts.run_hana_pipeline [options]                              ║
+║    make simula-pipeline                                                       ║
+║                                                                               ║
+║  This legacy pipeline will be REMOVED in v1.3.                                ║
+╚═══════════════════════════════════════════════════════════════════════════════╝
+"""
+
+
+def _emit_deprecation_warning() -> None:
+    """Emit deprecation warning to stderr."""
+    warnings.warn(
+        "Legacy template/Spider pipeline is deprecated. Use Simula HANA-direct pipeline instead. "
+        "See: python -m scripts.run_hana_pipeline --help",
+        DeprecationWarning,
+        stacklevel=3,
+    )
+    print(_DEPRECATION_MESSAGE, file=sys.stderr)
 
 
 def _usage() -> None:
@@ -141,8 +186,15 @@ def main() -> None:
         "upload": cmd_upload,
     }
 
+    # Always emit deprecation warning for legacy pipeline commands
+    if command in commands:
+        _emit_deprecation_warning()
+
     if command in ("version", "--version"):
-        print(f"text2sql-pipeline v{__version__}")
+        print(f"text2sql-pipeline v{__version__} [DEPRECATED - use Simula pipeline]")
+    elif command in ("help", "--help", "-h"):
+        _usage()
+        print("\n⚠️  This legacy pipeline is DEPRECATED. Use: make simula-pipeline")
     elif command in commands:
         commands[command](rest)
     else:

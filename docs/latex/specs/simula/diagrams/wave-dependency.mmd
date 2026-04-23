@@ -1,0 +1,40 @@
+---
+title: Global Wave Dependency Manifest
+---
+flowchart TB
+    REG_W1[REG-W1<br/>Identity & Audit Schema]
+    ARA_W1[ARA-W1<br/>Invoice Intake & OCR]
+    SIM_W1[SIM-W1<br/>HANA Extraction Pipeline]
+    TB_W1[TB-W1<br/>Identity Wiring]
+
+    SIM_W2[SIM-W2<br/>Taxonomy & Synthesis]
+    REG_W2[REG-W2<br/>Governance Runtime]
+    TB_W2[TB-W2<br/>Controls & Workflow]
+    ARA_W2[ARA-W2<br/>Field Extraction Corpus]
+
+    SIM_W3[SIM-W3<br/>Consumer Corpora]
+    TB_W3[TB-W3<br/>Variance Commentary]
+    REG_W3[REG-W3<br/>Evidence Rollup]
+
+    REG_W1 --> ARA_W1
+    REG_W1 --> SIM_W1
+    REG_W1 --> TB_W1
+
+    SIM_W1 --> TB_W2
+    SIM_W1 --> REG_W2
+    SIM_W1 --> SIM_W2
+    ARA_W1 --> ARA_W2
+
+    SIM_W2 --> SIM_W3
+    REG_W2 --> REG_W3
+    TB_W2  --> TB_W3
+    SIM_W3 --> TB_W3
+    SIM_W3 --> ARA_W2
+
+    classDef wave1 fill:#E8F0FC,stroke:#0064D7,color:#1D1D1F
+    classDef wave2 fill:#FFF4D6,stroke:#FF9500,color:#1D1D1F
+    classDef wave3 fill:#D7F3E3,stroke:#34C759,color:#1D1D1F
+
+    class REG_W1,ARA_W1,SIM_W1,TB_W1 wave1
+    class SIM_W2,REG_W2,TB_W2,ARA_W2 wave2
+    class SIM_W3,TB_W3,REG_W3 wave3

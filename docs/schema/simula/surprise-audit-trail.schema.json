@@ -1,0 +1,224 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://sap-oss.github.io/schema/simula/surprise-audit-trail.schema.json",
+  "title": "Surprise Audit Trail",
+  "description": "Schema for Stochastic Surprise Gate (SSG) audit records (Chapter 18)",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "audit_id",
+    "timestamp",
+    "observable_type",
+    "observed_value",
+    "predicted_value",
+    "residual",
+    "z_score",
+    "p_value",
+    "significance",
+    "trigger",
+    "hull_white_state"
+  ],
+  "properties": {
+    "audit_id": {
+      "type": "string",
+      "description": "Unique audit record identifier",
+      "pattern": "^ssg-audit-[a-f0-9]{12}$"
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO 8601 timestamp of the observation"
+    },
+    "observable_type": {
+      "type": "string",
+      "enum": ["code", "schema", "prompt", "toon"],
+      "description": "Type of drift-sensitive artifact being monitored"
+    },
+    "metric_code": {
+      "type": "string",
+      "enum": ["TTS-M16", "TTS-M17", "TTS-M18", "TTS-M19"],
+      "description": "SSG metric code (CSS, SSS-HW, PSS, TSS)"
+    },
+    "observed_value": {
+      "type": "number",
+      "description": "Raw observed value x_t"
+    },
+    "predicted_value": {
+      "type": "number",
+      "description": "Hull-White predicted value x̂_t"
+    },
+    "residual": {
+      "type": "number",
+      "description": "Innovation ε_t = x_t - x̂_t"
+    },
+    "z_score": {
+      "type": "number",
+      "minimum": 0,
+      "description": "Surprise Z-score: |ε_t| / σ_t"
+    },
+    "p_value": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1,
+      "description": "Two-tailed p-value: erfc(Z / √2)"
+    },
+    "significance": {
+      "type": "string",
+      "enum": ["normal", "noteworthy", "significant", "extreme"],
+      "description": "Statistical significance classification"
+    },
+    "trigger": {
+      "type": "boolean",
+      "description": "Whether the surprise gate was triggered (Z > threshold)"
+    },
+    "hull_white_state": {
+      "$ref": "#/definitions/hull_white_state",
+      "description": "Model state at decision time"
+    },
+    "calibrator_state": {
+      "$ref": "#/definitions/calibrator_state",
+      "description": "Online calibrator state (optional)"
+    },
+    "mitigation_action": {
+      "type": ["string", "null"],
+      "description": "Action taken if trigger was true"
+    },
+    "mitigation_details": {
+      "type": "object",
+      "description": "Additional details about the mitigation action",
+      "properties": {
+        "action_type": {
+          "type": "string",
+          "enum": [
+            "ci_block",
+            "generator_freeze",
+            "fallback_template",
+            "dspy_reoptimize",
+            "alert_only",
+            "escalate"
+          ]
+        },
+        "target_artifact": { "type": "string" },
+        "rollback_available": { "type": "boolean" }
+      }
+    },
+    "context": {
+      "type": "object",
+      "description": "Additional context for root cause analysis",
+      "properties": {
+        "source_file": { "type": "string" },
+        "commit_hash": { "type": "string" },
+        "user_id": { "type": "string" },
+        "session_id": { "type": "string" },
+        "prompt_snippet": { "type": "string", "maxLength": 500 },
+        "sql_snippet": { "type": "string", "maxLength": 500 },
+        "token_sequence": {
+          "type": "array",
+          "items": { "type": "string" },
+          "maxItems": 20
+        }
+      }
+    },
+    "compliance": {
+      "type": "object",
+      "description": "Regulatory compliance information",
+      "properties": {
+        "compliant_with": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "List of standards this audit satisfies",
+          "examples": [["MAS-TRH-2024", "ISO-42001", "EU-AI-Act"]]
+        },
+        "retention_days": {
+          "type": "integer",
+          "minimum": 365,
+          "default": 2555,
+          "description": "Retention period in days (default 7 years)"
+        },
+        "immutable": {
+          "type": "boolean",
+          "default": true,
+          "description": "Whether this record is immutable"
+        }
+      }
+    },
+    "metadata": {
+      "$ref": "https://sap-oss.github.io/schema/common/base-types.schema.json#/definitions/Metadata",
+      "description": "Record metadata"
+    }
+  },
+  "definitions": {
+    "hull_white_state": {
+      "type": "object",
+      "description": "Hull-White model parameters at decision time",
+      "required": ["mean_reversion", "long_run_mean", "volatility"],
+      "properties": {
+        "mean_reversion": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 10,
+          "description": "Mean reversion speed 'a'"
+        },
+        "long_run_mean": {
+          "type": "number",
+          "description": "Long-run mean θ(t)"
+        },
+        "long_run_mean_schedule": {
+          "type": "string",
+          "enum": ["constant", "linear", "piecewise", "exponential"],
+          "default": "constant",
+          "description": "Type of θ(t) schedule"
+        },
+        "linear_drift_rate": {
+          "type": ["number", "null"],
+          "description": "β in θ(t) = θ₀ + βt (for linear schedule)"
+        },
+        "volatility": {
+          "type": "number",
+          "minimum": 0,
+          "description": "Current volatility σ_t"
+        },
+        "variance_estimate": {
+          "type": "number",
+          "minimum": 0,
+          "description": "Current variance estimate σ²_t"
+        },
+        "last_prediction": {
+          "type": "number",
+          "description": "Previous prediction x̂_{t-1}"
+        }
+      }
+    },
+    "calibrator_state": {
+      "type": "object",
+      "description": "Online calibrator state",
+      "properties": {
+        "forgetting_factor": {
+          "type": "number",
+          "minimum": 0.9,
+          "maximum": 0.999,
+          "default": 0.98,
+          "description": "Exponential forgetting factor λ"
+        },
+        "covariance_estimate": {
+          "type": "number",
+          "minimum": 0,
+          "description": "RLS covariance P"
+        },
+        "observations_since_reset": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Number of observations since last reset"
+        },
+        "calibrator_version": {
+          "type": "string",
+          "description": "Version of the calibrator algorithm"
+        },
+        "last_calibration_timestamp": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    }
+  }
+}

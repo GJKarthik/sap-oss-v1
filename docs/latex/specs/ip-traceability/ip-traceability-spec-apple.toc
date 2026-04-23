@@ -1,0 +1,179 @@
+\contentsline {chapter}{Document Control}{13}{chapter*.2}%
+\contentsline {chapter}{IP Source Registry}{15}{chapter*.3}%
+\contentsline {chapter}{Abbreviations}{19}{chapter*.4}%
+\contentsline {chapter}{\numberline {1}Overview and Traceability Methodology}{21}{chapter.1}%
+\contentsline {section}{\numberline {1.1}Purpose}{21}{section.1.1}%
+\contentsline {section}{\numberline {1.2}Scope}{22}{section.1.2}%
+\contentsline {subsection}{\numberline {1.2.1}IP Sources Traced}{22}{subsection.1.2.1}%
+\contentsline {subsection}{\numberline {1.2.2}Codebase Scope}{22}{subsection.1.2.2}%
+\contentsline {section}{\numberline {1.3}Traceability Methodology}{23}{section.1.3}%
+\contentsline {subsection}{\numberline {1.3.1}Evidence Types}{23}{subsection.1.3.1}%
+\contentsline {subsection}{\numberline {1.3.2}Traceability Levels}{23}{subsection.1.3.2}%
+\contentsline {subsection}{\numberline {1.3.3}Evidence Format}{24}{subsection.1.3.3}%
+\contentsline {section}{\numberline {1.4}IP to Codebase Mapping Overview}{24}{section.1.4}%
+\contentsline {subsection}{\numberline {1.4.1}Conceptual Flow}{25}{subsection.1.4.1}%
+\contentsline {subsection}{\numberline {1.4.2}Key Concept Categories}{25}{subsection.1.4.2}%
+\contentsline {section}{\numberline {1.5}Document Structure}{25}{section.1.5}%
+\contentsline {chapter}{\numberline {2}AI Governance Framework}{27}{chapter.2}%
+\contentsline {section}{\numberline {2.1}IP Document Summary}{28}{section.2.1}%
+\contentsline {subsection}{\numberline {2.1.1}Document Abstract}{28}{subsection.2.1.1}%
+\contentsline {subsection}{\numberline {2.1.2}Key Contributions}{28}{subsection.2.1.2}%
+\contentsline {section}{\numberline {2.2}Key Concepts Identified}{29}{section.2.2}%
+\contentsline {section}{\numberline {2.3}Concept: Blanket Control}{29}{section.2.3}%
+\contentsline {section}{\numberline {2.4}Concept: Safety Gates}{31}{section.2.4}%
+\contentsline {section}{\numberline {2.5}Concept: ODPS Compliance}{33}{section.2.5}%
+\contentsline {section}{\numberline {2.6}Concept: Audit Trail}{34}{section.2.6}%
+\contentsline {section}{\numberline {2.7}Concept: CTQ Thresholds}{36}{section.2.7}%
+\contentsline {section}{\numberline {2.8}Implementation Summary}{38}{section.2.8}%
+\contentsline {paragraph}{Key Adaptation Patterns:}{38}{table.caption.9}%
+\contentsline {chapter}{\numberline {3}Deductive Database Engine}{39}{chapter.3}%
+\contentsline {section}{\numberline {3.1}IP Document Summary}{40}{section.3.1}%
+\contentsline {subsection}{\numberline {3.1.1}Document Abstract}{40}{subsection.3.1.1}%
+\contentsline {section}{\numberline {3.2}Key Concepts Identified}{41}{section.3.2}%
+\contentsline {section}{\numberline {3.3}Concept: Fixed-point Evaluation}{41}{section.3.3}%
+\contentsline {section}{\numberline {3.4}Concept: Closed-world Semantics}{42}{section.3.4}%
+\contentsline {section}{\numberline {3.5}Concept: Fact Store Integrity}{43}{section.3.5}%
+\contentsline {section}{\numberline {3.6}Concept: LLM Fact Injection}{43}{section.3.6}%
+\contentsline {section}{\numberline {3.7}Implementation Summary}{44}{section.3.7}%
+\contentsline {chapter}{\numberline {4}LLM Inference Safety}{45}{chapter.4}%
+\contentsline {section}{\numberline {4.1}IP Document Summary}{45}{section.4.1}%
+\contentsline {subsection}{\numberline {4.1.1}Document Abstract}{46}{subsection.4.1.1}%
+\contentsline {section}{\numberline {4.2}Key Concepts Identified}{46}{section.4.2}%
+\contentsline {section}{\numberline {4.3}Concept: Softmax Stability}{46}{section.4.3}%
+\contentsline {section}{\numberline {4.4}Concept: RoPE Orthogonality}{47}{section.4.4}%
+\contentsline {section}{\numberline {4.5}Concept: Quantization Bounds}{48}{section.4.5}%
+\contentsline {section}{\numberline {4.6}Concept: Sampling Integrity}{49}{section.4.6}%
+\contentsline {section}{\numberline {4.7}Implementation Summary}{50}{section.4.7}%
+\contentsline {paragraph}{Note on Adaptation:}{50}{table.caption.13}%
+\contentsline {chapter}{\numberline {5}Time Series Analytics}{51}{chapter.5}%
+\contentsline {section}{\numberline {5.1}IP Document Summary}{51}{section.5.1}%
+\contentsline {subsection}{\numberline {5.1.1}Document Abstract}{52}{subsection.5.1.1}%
+\contentsline {subsection}{\numberline {5.1.2}Key Contributions}{52}{subsection.5.1.2}%
+\contentsline {section}{\numberline {5.2}Key Concepts Identified}{53}{section.5.2}%
+\contentsline {section}{\numberline {5.3}Concept: MAD Estimator}{53}{section.5.3}%
+\contentsline {section}{\numberline {5.4}Concept: Shapiro-Wilk Normality Test}{55}{section.5.4}%
+\contentsline {section}{\numberline {5.5}Concept: Z-score Detection}{57}{section.5.5}%
+\contentsline {section}{\numberline {5.6}Concept: Detection Thresholds}{59}{section.5.6}%
+\contentsline {section}{\numberline {5.7}Concept: Spike/Drop Detection}{60}{section.5.7}%
+\contentsline {section}{\numberline {5.8}Implementation Summary}{63}{section.5.8}%
+\contentsline {paragraph}{Key Evidence of IP Implementation:}{63}{table.caption.15}%
+\contentsline {chapter}{\numberline {6}AIMO Mathematical Libraries}{65}{chapter.6}%
+\contentsline {section}{\numberline {6.1}IP Document Summary}{66}{section.6.1}%
+\contentsline {subsection}{\numberline {6.1.1}Document Abstract}{66}{subsection.6.1.1}%
+\contentsline {section}{\numberline {6.2}Key Concepts Identified}{67}{section.6.2}%
+\contentsline {section}{\numberline {6.3}Concept: Verified Algorithms}{67}{section.6.3}%
+\contentsline {section}{\numberline {6.4}Concept: Numerical Error Bounds}{69}{section.6.4}%
+\contentsline {section}{\numberline {6.5}Concept: Proof Annotations}{70}{section.6.5}%
+\contentsline {section}{\numberline {6.6}Implementation Summary}{72}{section.6.6}%
+\contentsline {paragraph}{Note:}{72}{table.caption.17}%
+\contentsline {chapter}{\numberline {7}Earnings Analysis Module}{73}{chapter.7}%
+\contentsline {section}{\numberline {7.1}IP Document Summary}{74}{section.7.1}%
+\contentsline {subsection}{\numberline {7.1.1}Document Abstract}{74}{subsection.7.1.1}%
+\contentsline {section}{\numberline {7.2}Key Concepts Identified}{75}{section.7.2}%
+\contentsline {section}{\numberline {7.3}Concept: Constitutional AI Framework}{75}{section.7.3}%
+\contentsline {section}{\numberline {7.4}Concept: Multi-modal Analysis}{76}{section.7.4}%
+\contentsline {section}{\numberline {7.5}Concept: Complete Audit Trail}{77}{section.7.5}%
+\contentsline {section}{\numberline {7.6}Concept: Confidence Metrics}{78}{section.7.6}%
+\contentsline {section}{\numberline {7.7}Implementation Summary}{79}{section.7.7}%
+\contentsline {chapter}{\numberline {8}Stochastic Surprise Gate}{81}{chapter.8}%
+\contentsline {section}{\numberline {8.1}IP Document Summary}{82}{section.8.1}%
+\contentsline {subsection}{\numberline {8.1.1}Document Abstract}{82}{subsection.8.1.1}%
+\contentsline {subsection}{\numberline {8.1.2}Key Contributions}{82}{subsection.8.1.2}%
+\contentsline {section}{\numberline {8.2}Key Concepts Identified}{83}{section.8.2}%
+\contentsline {section}{\numberline {8.3}Concept: Z-score as Surprise Metric}{83}{section.8.3}%
+\contentsline {section}{\numberline {8.4}Concept: Audit Trail with Statistical Context}{86}{section.8.4}%
+\contentsline {section}{\numberline {8.5}Concept: Confidence Calibration}{88}{section.8.5}%
+\contentsline {section}{\numberline {8.6}Concept: Adaptive Calibration}{89}{section.8.6}%
+\contentsline {section}{\numberline {8.7}Concept: Significance Classification}{91}{section.8.7}%
+\contentsline {section}{\numberline {8.8}Implementation Summary}{93}{section.8.8}%
+\contentsline {paragraph}{Key Adaptation Pattern:}{93}{table.caption.21}%
+\contentsline {chapter}{\numberline {9}Adaptive Digital Twin}{95}{chapter.9}%
+\contentsline {section}{\numberline {9.1}IP Document Summary}{95}{section.9.1}%
+\contentsline {subsection}{\numberline {9.1.1}Document Abstract}{96}{subsection.9.1.1}%
+\contentsline {section}{\numberline {9.2}Key Concepts Identified}{96}{section.9.2}%
+\contentsline {section}{\numberline {9.3}Concept: Liquid Neural Networks}{97}{section.9.3}%
+\contentsline {section}{\numberline {9.4}Concept: Physics World Model}{98}{section.9.4}%
+\contentsline {section}{\numberline {9.5}Concept: Lyapunov Stability}{99}{section.9.5}%
+\contentsline {section}{\numberline {9.6}Concept: Adaptive Learning}{100}{section.9.6}%
+\contentsline {section}{\numberline {9.7}Implementation Summary}{101}{section.9.7}%
+\contentsline {paragraph}{Note:}{101}{table.caption.23}%
+\contentsline {chapter}{\numberline {10}Narrative AI Stability}{103}{chapter.10}%
+\contentsline {section}{\numberline {10.1}IP Document Summary}{103}{section.10.1}%
+\contentsline {subsection}{\numberline {10.1.1}Document Abstract}{104}{subsection.10.1.1}%
+\contentsline {section}{\numberline {10.2}Key Concepts Identified}{104}{section.10.2}%
+\contentsline {section}{\numberline {10.3}Concept: Lyapunov Stability Metrics}{105}{section.10.3}%
+\contentsline {section}{\numberline {10.4}Concept: Stability Dashboard}{106}{section.10.4}%
+\contentsline {section}{\numberline {10.5}Concept: Traffic-light Status}{107}{section.10.5}%
+\contentsline {section}{\numberline {10.6}Concept: Governance Integration}{108}{section.10.6}%
+\contentsline {section}{\numberline {10.7}Implementation Summary}{109}{section.10.7}%
+\contentsline {paragraph}{Note:}{109}{table.caption.25}%
+\contentsline {chapter}{\numberline {11}Implementation Traceability Matrix}{111}{chapter.11}%
+\contentsline {section}{\numberline {11.1}Master Traceability Matrix}{111}{section.11.1}%
+\contentsline {section}{\numberline {11.2}Implementation Coverage by IP Document}{115}{section.11.2}%
+\contentsline {section}{\numberline {11.3}Codebase Coverage by Directory}{116}{section.11.3}%
+\contentsline {section}{\numberline {11.4}Cross-IP Concept Relationships}{117}{section.11.4}%
+\contentsline {section}{\numberline {11.5}Key Implementation Files}{117}{section.11.5}%
+\contentsline {section}{\numberline {11.6}Traceability Evidence Summary}{118}{section.11.6}%
+\contentsline {paragraph}{Direct Algorithmic Implementation:}{118}{section.11.6}%
+\contentsline {paragraph}{Conceptual Adaptation:}{118}{section.11.6}%
+\contentsline {paragraph}{Structural Implementation:}{119}{section.11.6}%
+\contentsline {chapter}{\numberline {12}Concept Adaptation Registry}{121}{chapter.12}%
+\contentsline {section}{\numberline {12.1}Adaptation Type Definitions}{122}{section.12.1}%
+\contentsline {section}{\numberline {12.2}Direct Implementations}{122}{section.12.2}%
+\contentsline {section}{\numberline {12.3}Algorithmic Adaptations}{123}{section.12.3}%
+\contentsline {section}{\numberline {12.4}Structural Adaptations}{123}{section.12.4}%
+\contentsline {section}{\numberline {12.5}Conceptual Adaptations}{124}{section.12.5}%
+\contentsline {section}{\numberline {12.6}Inherited Implementations}{125}{section.12.6}%
+\contentsline {section}{\numberline {12.7}Configuration-based Implementations}{125}{section.12.7}%
+\contentsline {section}{\numberline {12.8}Auditor Guidance}{126}{section.12.8}%
+\contentsline {subsection}{\numberline {12.8.1}Evaluating Direct Implementations}{126}{subsection.12.8.1}%
+\contentsline {subsection}{\numberline {12.8.2}Evaluating Conceptual Adaptations}{126}{subsection.12.8.2}%
+\contentsline {subsection}{\numberline {12.8.3}Evaluating Inherited Implementations}{126}{subsection.12.8.3}%
+\contentsline {section}{\numberline {12.9}Summary Statistics}{127}{section.12.9}%
+\contentsline {chapter}{\numberline {13}Future Development Roadmap}{129}{chapter.13}%
+\contentsline {section}{\numberline {13.1}Implementation Maturity Model}{130}{section.13.1}%
+\contentsline {section}{\numberline {13.2}Current Maturity Assessment}{130}{section.13.2}%
+\contentsline {section}{\numberline {13.3}Innovation Opportunities}{131}{section.13.3}%
+\contentsline {subsection}{\numberline {13.3.1}Near-Term Opportunities (Q2-Q3 2026)}{132}{subsection.13.3.1}%
+\contentsline {subsection}{\numberline {13.3.2}Medium-Term Opportunities (Q4 2026 - Q1 2027)}{133}{subsection.13.3.2}%
+\contentsline {subsection}{\numberline {13.3.3}Long-Term Vision (2027+)}{134}{subsection.13.3.3}%
+\contentsline {section}{\numberline {13.4}Development Roadmap}{134}{section.13.4}%
+\contentsline {section}{\numberline {13.5}Maturity Progression Path}{135}{section.13.5}%
+\contentsline {section}{\numberline {13.6}Value Realization}{135}{section.13.6}%
+\contentsline {paragraph}{Differentiation:}{135}{section.13.6}%
+\contentsline {paragraph}{Risk Reduction:}{135}{section.13.6}%
+\contentsline {paragraph}{Competitive Advantage:}{135}{section.13.6}%
+\contentsline {section}{\numberline {13.7}Summary}{136}{section.13.7}%
+\contentsline {chapter}{\numberline {A}Source Document Index}{137}{appendix.A}%
+\contentsline {section}{\numberline {A.1}IP Document Repository}{137}{section.A.1}%
+\contentsline {section}{\numberline {A.2}Document Catalog}{138}{section.A.2}%
+\contentsline {section}{\numberline {A.3}Document Metadata}{138}{section.A.3}%
+\contentsline {subsection}{\numberline {A.3.1}IP-001: AI Governance Framework}{139}{subsection.A.3.1}%
+\contentsline {subsection}{\numberline {A.3.2}IP-002: Deductive Database Engine}{139}{subsection.A.3.2}%
+\contentsline {subsection}{\numberline {A.3.3}IP-003: LLM Inference Safety}{140}{subsection.A.3.3}%
+\contentsline {subsection}{\numberline {A.3.4}IP-004: Time Series Analytics}{140}{subsection.A.3.4}%
+\contentsline {subsection}{\numberline {A.3.5}IP-005: AIMO Mathematical Libraries}{141}{subsection.A.3.5}%
+\contentsline {subsection}{\numberline {A.3.6}IP-006: Earnings Analysis Module}{141}{subsection.A.3.6}%
+\contentsline {subsection}{\numberline {A.3.7}IP-007: Stochastic Surprise Gate}{142}{subsection.A.3.7}%
+\contentsline {subsection}{\numberline {A.3.8}IP-008: Adaptive Digital Twin}{142}{subsection.A.3.8}%
+\contentsline {subsection}{\numberline {A.3.9}IP-009: Narrative AI Stability}{143}{subsection.A.3.9}%
+\contentsline {section}{\numberline {A.4}Authorship}{143}{section.A.4}%
+\contentsline {section}{\numberline {A.5}Document Versioning}{144}{section.A.5}%
+\contentsline {chapter}{\numberline {B}Code Reference Guide}{145}{appendix.B}%
+\contentsline {section}{\numberline {B.1}Codebase Overview}{145}{section.B.1}%
+\contentsline {section}{\numberline {B.2}Primary Implementation Files}{146}{section.B.2}%
+\contentsline {subsection}{\numberline {B.2.1}src/intelligence/analytics/anomaly\_detector.py}{146}{subsection.B.2.1}%
+\contentsline {subsubsection}{Key Classes and Functions}{146}{subsection.B.2.1}%
+\contentsline {subsubsection}{Key Constants}{147}{table.B.1}%
+\contentsline {subsection}{\numberline {B.2.2}src/intelligence/ai-core-pal/governance/audit.py}{147}{subsection.B.2.2}%
+\contentsline {subsubsection}{Key Classes}{147}{subsection.B.2.2}%
+\contentsline {subsection}{\numberline {B.2.3}src/intelligence/ai-core-pal/governance/identity.py}{148}{subsection.B.2.3}%
+\contentsline {subsection}{\numberline {B.2.4}src/intelligence/ai-core-pal/data\_products/registry.yaml}{148}{subsection.B.2.4}%
+\contentsline {subsubsection}{ODPS Fields}{148}{subsection.B.2.4}%
+\contentsline {section}{\numberline {B.3}Directory by IP Source}{150}{section.B.3}%
+\contentsline {section}{\numberline {B.4}Code Navigation for Auditors}{150}{section.B.4}%
+\contentsline {subsection}{\numberline {B.4.1}Finding IP Concept Implementations}{150}{subsection.B.4.1}%
+\contentsline {subsection}{\numberline {B.4.2}Verification Checklist}{151}{subsection.B.4.2}%
+\contentsline {section}{\numberline {B.5}External Dependencies}{151}{section.B.5}%
+\contentsline {section}{\numberline {B.6}Test Coverage}{152}{section.B.6}%
+\contentsfinish 

@@ -1,0 +1,210 @@
+% =============================================================================
+% CHAPTER 12: CONCEPT ADAPTATION REGISTRY
+% Classification of how IP concepts were adapted to implementation
+% =============================================================================
+
+\chapter{Concept Adaptation Registry}
+\label{chap:adaptation-registry}
+
+This chapter provides a classification of how each IP concept was adapted into the SAP-OSS codebase, organizing adaptations by type and providing guidance for auditors reviewing the traceability evidence.
+
+\section{Adaptation Type Definitions}
+
+\begin{table}[H]
+\centering
+\caption{Adaptation Type Definitions}
+\label{tab:adaptation-types}
+\begin{tabularx}{\textwidth}{@{}lXl@{}}
+\toprule
+\textbf{Type} & \textbf{Definition} & \textbf{Evidence Level} \\
+\midrule
+Direct & Algorithm/formula implemented exactly as specified & Highest \\
+Algorithmic & Same algorithm with language/framework adaptation & High \\
+Structural & Data structures/patterns adapted from concepts & Medium \\
+Conceptual & High-level principle applied to different domain & Medium \\
+Inherited & Concept implemented by underlying framework & Indirect \\
+Configuration & Concept realized through configuration values & High \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\section{Direct Implementations}
+
+Concepts with exact algorithmic fidelity to IP specifications:
+
+\begin{longtable}{@{}p{1.2cm}p{4cm}p{4cm}p{3.5cm}@{}}
+\toprule
+\textbf{IP ID} & \textbf{Concept} & \textbf{Implementation} & \textbf{Evidence} \\
+\midrule
+\endfirsthead
+\toprule
+\textbf{IP ID} & \textbf{Concept} & \textbf{Implementation} & \textbf{Evidence} \\
+\midrule
+\endhead
+\bottomrule
+\endlastfoot
+
+IP-004 & MAD Estimator (1.4826) & \funcname{\_mad\_detection()} & Exact constant match \\
+IP-004 & Z-score formula & \funcname{\_zscore\_detection()} & Exact formula match \\
+IP-004 & Shapiro-Wilk ($p=0.05$) & \funcname{\_determine\_method()} & Exact threshold match \\
+IP-004 & Z-score threshold (3.0) & Class constant & Exact value \\
+IP-004 & MAD threshold (3.5) & Class constant & Exact value \\
+IP-004 & Spike/drop (25\%) & \funcname{detect\_spike\_drop()} & Exact threshold \\
+IP-007 & Z-score surprise formula & \funcname{detect\_single()} & Exact formula match \\
+
+\end{longtable}
+
+\section{Algorithmic Adaptations}
+
+Concepts with same algorithm adapted to Python/SAP-OSS framework:
+
+\begin{longtable}{@{}p{1.2cm}p{3.5cm}p{4cm}p{3cm}@{}}
+\toprule
+\textbf{IP ID} & \textbf{Concept} & \textbf{Adaptation} & \textbf{Fidelity} \\
+\midrule
+\endfirsthead
+\bottomrule
+\endlastfoot
+
+IP-001 & Datalog safety gates & Python \funcname{SafetyGate} class & Logic preserved \\
+IP-001 & Mangle audit facts & \funcname{AuditLogger} records & Structure preserved \\
+IP-002 & Fixed-point evaluation & Governance iteration pattern & Semantics preserved \\
+IP-002 & Closed-world assumption & Explicit YAML booleans & Default preserved \\
+IP-003 & Softmax stability & vLLM implementation & Algorithm inherited \\
+IP-003 & Sampling validation & Parameter defaults & Constraints preserved \\
+
+\end{longtable}
+
+\section{Structural Adaptations}
+
+Concepts implemented through data structures and patterns:
+
+\begin{longtable}{@{}p{1.2cm}p{3.5cm}p{4cm}p{3cm}@{}}
+\toprule
+\textbf{IP ID} & \textbf{Concept} & \textbf{Structure} & \textbf{Mapping} \\
+\midrule
+\endfirsthead
+\bottomrule
+\endlastfoot
+
+IP-001 & ODPS 9 predicates & YAML registry fields & 1:1 field mapping \\
+IP-002 & Fact immutability & Append-only records & Same guarantee \\
+IP-006 & Audit trail structure & \funcname{AnomalyResult} dataclass & Fields mapped \\
+IP-007 & Statistical context & \funcname{BatchAnomalyResult} & Audit fields \\
+IP-009 & Traffic-light status & \texttt{anomaly\_type} enum & Status mapping \\
+
+\end{longtable}
+
+\section{Conceptual Adaptations}
+
+High-level principles applied to financial analytics domain:
+
+\begin{longtable}{@{}p{1.2cm}p{3cm}p{3.5cm}p{3cm}@{}}
+\toprule
+\textbf{IP ID} & \textbf{IP Domain} & \textbf{SAP-OSS Domain} & \textbf{Principle} \\
+\midrule
+\endfirsthead
+\bottomrule
+\endlastfoot
+
+IP-001 & Mangle rules & Python governance & Universal enforcement \\
+IP-007 & Memory gating & Anomaly detection & Statistical significance \\
+IP-008 & Robotics control & Financial analytics & Adaptive response \\
+IP-008 & Physics models & Statistical baselines & Deviation detection \\
+IP-009 & Narrative stability & Analytics monitoring & Bounded behavior \\
+
+\end{longtable}
+
+\section{Inherited Implementations}
+
+Concepts provided by underlying frameworks:
+
+\begin{longtable}{@{}p{1.2cm}p{3cm}p{3cm}p{3cm}@{}}
+\toprule
+\textbf{IP ID} & \textbf{Concept} & \textbf{Framework} & \textbf{Inheritance} \\
+\midrule
+\endfirsthead
+\bottomrule
+\endlastfoot
+
+IP-003 & Softmax stability & vLLM & Native implementation \\
+IP-003 & RoPE embeddings & vLLM + HuggingFace & Model support \\
+IP-003 & AWQ/GPTQ quantization & vLLM & Quantization support \\
+IP-005 & FFT, correlation, etc. & numpy/scipy & Library functions \\
+
+\end{longtable}
+
+\section{Configuration-based Implementations}
+
+Concepts realized through configuration values:
+
+\begin{longtable}{@{}p{1.2cm}p{3.5cm}p{3cm}p{3cm}@{}}
+\toprule
+\textbf{IP ID} & \textbf{Concept} & \textbf{Config Location} & \textbf{Value} \\
+\midrule
+\endfirsthead
+\bottomrule
+\endlastfoot
+
+IP-001 & CTQ latency threshold & Service config & 1500ms \\
+IP-001 & CTQ TPS threshold & Service config & 15 TPS \\
+IP-003 & Temperature default & vLLM config & 0.7 \\
+IP-003 & Top-p default & vLLM config & 0.9 \\
+IP-004 & Z-score threshold & Class constant & 3.0 \\
+IP-004 & MAD threshold & Class constant & 3.5 \\
+
+\end{longtable}
+
+\section{Auditor Guidance}
+
+\subsection{Evaluating Direct Implementations}
+
+For direct implementations, auditors should verify:
+\begin{itemize}[nosep]
+    \item Constants match exactly (e.g., 1.4826, 3.0, 3.5)
+    \item Formulas are mathematically equivalent
+    \item Threshold comparisons use same direction ($>$, $<$, $\geq$, $\leq$)
+\end{itemize}
+
+\subsection{Evaluating Conceptual Adaptations}
+
+For conceptual adaptations, auditors should verify:
+\begin{itemize}[nosep]
+    \item The underlying principle is preserved
+    \item The adaptation rationale is documented
+    \item The implementation achieves the same goal in the new domain
+\end{itemize}
+
+\subsection{Evaluating Inherited Implementations}
+
+For inherited implementations, auditors should verify:
+\begin{itemize}[nosep]
+    \item The underlying framework implements the concept correctly
+    \item The SAP-OSS configuration enables the feature
+    \item Version compatibility is maintained
+\end{itemize}
+
+\section{Summary Statistics}
+
+\begin{table}[H]
+\centering
+\caption{Adaptation Type Distribution}
+\label{tab:adaptation-stats}
+\begin{tabular}{@{}lcc@{}}
+\toprule
+\textbf{Adaptation Type} & \textbf{Count} & \textbf{Percentage} \\
+\midrule
+Direct & 7 & 18\% \\
+Algorithmic & 6 & 16\% \\
+Structural & 5 & 13\% \\
+Conceptual & 5 & 13\% \\
+Inherited & 4 & 11\% \\
+Configuration & 6 & 16\% \\
+Design Principle & 5 & 13\% \\
+\midrule
+\textbf{Total} & \textbf{38} & \textbf{100\%} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The distribution shows a healthy mix of adaptation types, with direct and algorithmic implementations (34\%) providing strong evidence of IP utilization, complemented by structural and configuration implementations (29\%) that realize concepts through architecture and settings.

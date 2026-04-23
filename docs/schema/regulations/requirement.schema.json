@@ -1,0 +1,122 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://sap-oss.github.io/schema/regulations/requirement.schema.json",
+  "title": "Requirement with Status",
+  "description": "Schema for regulatory requirements with implementation status (Chapter 7)",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["requirement_id", "regulation_id", "description", "status"],
+  "properties": {
+    "requirement_id": {
+      "type": "string",
+      "description": "Unique ID (e.g., REG-MGF-2.1.1-001)"
+    },
+    "regulation_id": {
+      "type": "string",
+      "description": "Parent regulation ID"
+    },
+    "section_reference": {
+      "type": "string",
+      "description": "Source document section (e.g., 2.1.1)"
+    },
+    "description": {
+      "type": "string",
+      "description": "Requirement description"
+    },
+    "obligation_level": {
+      "type": "string",
+      "enum": ["must", "should", "may"],
+      "description": "Normative strength per docs/schema/common/enums.yaml"
+    },
+    "status": {
+      "type": "string",
+      "enum": ["implemented", "partial", "gap", "na", "missing"],
+      "description": "Implementation status per docs/schema/common/enums.yaml"
+    },
+    "status_note": {
+      "type": "string",
+      "description": "Note explaining status (e.g., reason for partial/missing)"
+    },
+    "status_marker": {
+      "type": "string",
+      "enum": ["*", "†"],
+      "description": "Special marker (* = downgraded from implemented, † = completely absent)"
+    },
+    "implementation": {
+      "$ref": "#/definitions/implementation_reference"
+    },
+    "verification": {
+      "$ref": "#/definitions/verification_reference"
+    },
+    "applicability": {
+      "type": "array",
+      "items": {"type": "string"},
+      "description": "Domains this applies to (e.g., ['tb', 'arabic', 'simula'])"
+    },
+    "last_reviewed": {
+      "type": "string",
+      "format": "date",
+      "description": "Date of last status review"
+    },
+    "metadata": {
+      "$ref": "https://sap-oss.github.io/schema/common/base-types.schema.json#/definitions/Metadata"
+    }
+  },
+  "definitions": {
+    "implementation_reference": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "primary": {
+          "type": "string",
+          "description": "Primary implementation pointer (file path or document ref)"
+        },
+        "code_files": {
+          "type": "array",
+          "items": {"type": "string"},
+          "description": "Concrete code file paths (not document references)"
+        },
+        "spec_sections": {
+          "type": "array",
+          "items": {"type": "string"},
+          "description": "Specification section references"
+        },
+        "is_concrete": {
+          "type": "boolean",
+          "description": "Whether pointer is to actual code vs documentation"
+        }
+      }
+    },
+    "verification_reference": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "primary": {
+          "type": "string",
+          "description": "Primary verification method"
+        },
+        "test_files": {
+          "type": "array",
+          "items": {"type": "string"},
+          "description": "Test file paths"
+        },
+        "aiverify_plugin": {
+          "type": "string",
+          "description": "AI Verify plugin reference (if applicable)"
+        },
+        "moonshot_benchmark": {
+          "type": "string",
+          "description": "Moonshot benchmark reference (if applicable)"
+        },
+        "manual_process": {
+          "type": "string",
+          "description": "Manual verification process"
+        },
+        "is_automated": {
+          "type": "boolean",
+          "description": "Whether verification is automated"
+        }
+      }
+    }
+  }
+}

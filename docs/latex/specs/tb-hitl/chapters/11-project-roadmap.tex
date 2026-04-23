@@ -1,0 +1,205 @@
+\chapter{Project Roadmap}
+\label{ch:project-roadmap}
+
+This chapter outlines the project roadmap for the HITL Requirements
+Traceability framework, including milestones, deliverables, and
+timeline for gap resolution.
+
+% =============================================================================
+\section{Roadmap Overview}
+\label{sec:roadmap-overview}
+
+\begin{figure}[h]
+\centering
+\begin{tikzpicture}[
+    node distance=0.3cm,
+    milestone/.style={rectangle, rounded corners, draw=sapblue, fill=sapblue!15,
+                      thick, minimum width=3cm, minimum height=0.8cm, font=\footnotesize},
+    phase/.style={rectangle, draw=sapgrey, fill=sapgrey!10,
+                  thick, minimum width=13cm, minimum height=0.8cm, font=\small\bfseries},
+]
+    % Phases
+    \node[phase] (P1) {Phase 1: Foundation (Complete)};
+    \node[phase, below=0.8cm of P1] (P2) {Phase 2: Gap Resolution (In Progress)};
+    \node[phase, below=0.8cm of P2] (P3) {Phase 3: Validation (Upcoming)};
+    \node[phase, below=0.8cm of P3] (P4) {Phase 4: Maintenance (Future)};
+    
+    % Milestones
+    \node[milestone, below right=0.2cm and -5.5cm of P1] (M1) {v1.0 Release};
+    \node[milestone, right=0.3cm of M1] (M2) {HITL Review};
+    \node[milestone, right=0.3cm of M2] (M3) {Schema Complete};
+    
+    \node[milestone, below right=0.2cm and -5.5cm of P2] (M4) {G-001 Resolved};
+    \node[milestone, right=0.3cm of M4] (M5) {G-002 OCR};
+    \node[milestone, right=0.3cm of M5] (M6) {v1.1 Release};
+    
+    \node[milestone, below right=0.2cm and -5.5cm of P3] (M7) {Checkpoints Pass};
+    \node[milestone, right=0.3cm of M7] (M8) {Sign-Off};
+    \node[milestone, right=0.3cm of M8] (M9) {Production Ready};
+\end{tikzpicture}
+\caption{HITL Traceability Roadmap}
+\label{fig:roadmap}
+\end{figure}
+
+% =============================================================================
+\section{Phase Details}
+\label{sec:phase-details}
+
+\subsection{Phase 1: Foundation (Complete)}
+
+\begin{table}[h]
+\centering
+\caption{Phase 1 Deliverables}
+\label{tab:phase1-deliverables}
+\begin{tabularx}{\textwidth}{@{}L{5cm}C{2.5cm}L{6cm}@{}}
+\toprule
+\textbf{Deliverable} & \textbf{Status} & \textbf{Notes} \\
+\midrule
+Source document inventory & Complete & 6 documents catalogued \\
+Machine-readable extraction & Complete & 7 files extracted \\
+Requirements derivation & Complete & 27 requirements documented \\
+Specification mapping & Complete & 22 specifications mapped \\
+Schema mapping & Complete & 6 schemas with field traceability \\
+HITL specification document & Complete & This document (v1.0) \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\subsection{Phase 2: Gap Resolution (In Progress)}
+
+\begin{table}[h]
+\centering
+\caption{Phase 2 Deliverables}
+\label{tab:phase2-deliverables}
+\begin{tabularx}{\textwidth}{@{}L{5cm}C{2.5cm}L{6cm}@{}}
+\toprule
+\textbf{Deliverable} & \textbf{Target Date} & \textbf{Dependencies} \\
+\midrule
+\gapref{G-001} resolution & 2026-Q2 & Business case author input \\
+\gapref{G-002} OCR processing & 2026-05-15 & OCR pipeline deployment \\
+Financial requirements addition & 2026-Q2 & \gapref{G-001} resolution \\
+v1.1 specification release & 2026-05-30 & All gap resolutions \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\subsection{Phase 3: Validation (Upcoming)}
+
+\begin{table}[h]
+\centering
+\caption{Phase 3 Deliverables}
+\label{tab:phase3-deliverables}
+\begin{tabularx}{\textwidth}{@{}L{5cm}C{2.5cm}L{6cm}@{}}
+\toprule
+\textbf{Deliverable} & \textbf{Target Date} & \textbf{Dependencies} \\
+\midrule
+HITL checkpoint reviews (H1-H6) & 2026-06-15 & v1.1 release \\
+Sign-off documentation & 2026-06-30 & All checkpoints passed \\
+Production readiness certification & 2026-07-15 & Sign-off complete \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\subsection{Phase 4: Maintenance (Future)}
+
+\begin{itemize}[noitemsep]
+  \item Ongoing traceability link validation (automated)
+  \item Periodic source document refresh (quarterly)
+  \item Schema evolution tracking
+  \item New requirement integration from change requests
+\end{itemize}
+
+% =============================================================================
+\section{Timeline}
+\label{sec:timeline}
+
+\begin{table}[h]
+\centering
+\caption{Project Timeline}
+\label{tab:project-timeline}
+\begin{tabularx}{\textwidth}{@{}C{2.5cm}L{6cm}C{2.5cm}C{2.5cm}@{}}
+\toprule
+\textbf{Date} & \textbf{Milestone} & \textbf{Phase} & \textbf{Status} \\
+\midrule
+2026-04-13 & Source document extraction & Phase 1 & Complete \\
+2026-04-15 & Requirements derivation & Phase 1 & Complete \\
+2026-04-18 & Specification mapping & Phase 1 & Complete \\
+2026-04-20 & HITL Spec v1.0 release & Phase 1 & Complete \\
+2026-05-15 & \gapref{G-002} OCR processing & Phase 2 & Planned \\
+2026-Q2 & \gapref{G-001} resolution & Phase 2 & Planned \\
+2026-05-30 & HITL Spec v1.1 release & Phase 2 & Planned \\
+2026-06-15 & HITL checkpoint reviews & Phase 3 & Planned \\
+2026-06-30 & Sign-off documentation & Phase 3 & Planned \\
+2026-07-15 & Production readiness & Phase 3 & Planned \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+% =============================================================================
+\section{Risk Register}
+\label{sec:risk-register}
+
+\begin{longtable}{@{}C{1cm}L{4cm}C{2cm}C{2cm}L{4cm}@{}}
+\caption{Project Risk Register}
+\label{tab:risk-register} \\
+\toprule
+\textbf{ID} & \textbf{Risk} & \textbf{Probability} & \textbf{Impact} & \textbf{Mitigation} \\
+\midrule
+\endfirsthead
+\toprule
+\textbf{ID} & \textbf{Risk} & \textbf{Probability} & \textbf{Impact} & \textbf{Mitigation} \\
+\midrule
+\endhead
+R1 & \gapref{G-001} not resolved by Q2 & Medium & High & Escalate to project sponsor; proceed with partial approval \\
+R2 & New source documents added & Low & Medium & Change management process; incremental updates \\
+R3 & Schema changes break traceability & Low & High & Automated validation scripts; versioned schemas \\
+R4 & Reviewer availability delays & Medium & Medium & Identify backup reviewers; parallel review streams \\
+\bottomrule
+\end{longtable}
+
+% =============================================================================
+\section{Success Criteria}
+\label{sec:success-criteria}
+
+The HITL Requirements Traceability framework will be considered
+successful when:
+
+\begin{enumerate}
+  \item All 6 HITL checkpoints (H1--H6) receive ``Approved'' or
+        ``Conditionally Approved'' status
+  \item 100\% of business requirements (excluding documented gaps)
+        have verified traceability to source documents
+  \item 100\% of specifications have verified traceability to requirements
+  \item All identified gaps have documented resolution plans with
+        assigned owners
+  \item Sign-off declaration is completed by designated approver
+  \item Automated validation scripts pass for all traceability links
+\end{enumerate}
+
+% =============================================================================
+\section{Future Enhancements}
+\label{sec:future-enhancements}
+
+\subsection{v2.0 Planned Enhancements}
+
+\begin{itemize}[noitemsep]
+  \item \textbf{Automated Traceability Validation:} CI/CD pipeline to
+        validate all links on every document change
+  \item \textbf{Interactive Dashboard:} Web-based visualization of
+        traceability matrix with drill-down capability
+  \item \textbf{Change Impact Analysis:} Automated identification of
+        downstream impacts when source documents change
+  \item \textbf{ML-Assisted Extraction:} Use LLM to improve requirement
+        extraction accuracy from unstructured documents
+\end{itemize}
+
+\subsection{Cross-Domain Expansion}
+
+The HITL framework established for TB Review can be extended to:
+
+\begin{itemize}[noitemsep]
+  \item Arabic AP processing (parallel development)
+  \item Regulations compliance tracking
+  \item Simula training data validation
+  \item General enterprise document processing
+\end{itemize}

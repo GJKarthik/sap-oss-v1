@@ -28,7 +28,6 @@ export const TRAINING_ROUTE_LINKS: TrainingRouteLink[] = [
   { path: '/dashboard', labelKey: 'nav.dashboard', icon: 'home', group: 'home', tier: 'primary', modeRelevance: ['chat', 'cowork', 'training'] },
 
   // -- Hub 2: Data Work --
-  { path: '/data-explorer', labelKey: 'nav.dataExplorer', icon: 'folder', group: 'data', tier: 'primary', modeRelevance: ['training'] },
   { path: '/data-cleaning', labelKey: 'nav.dataCleaning', icon: 'edit', group: 'data', tier: 'primary', modeRelevance: ['training'] },
   { path: '/schema-browser', labelKey: 'nav.schemaBrowser', icon: 'table-view', group: 'data', tier: 'primary', modeRelevance: ['cowork', 'training'] },
   { path: '/data-products', labelKey: 'nav.dataProducts', icon: 'product', group: 'data', tier: 'primary', modeRelevance: ['training'] },
@@ -64,7 +63,7 @@ export const TRAINING_ROUTE_LINKS: TrainingRouteLink[] = [
 
 export const TRAINING_NAV_GROUPS: TrainingNavGroup[] = [
   { id: 'home', labelKey: 'navGroup.home', defaultPath: '/dashboard' },
-  { id: 'data', labelKey: 'navGroup.data', defaultPath: '/data-explorer' },
+  { id: 'data', labelKey: 'navGroup.data', defaultPath: '/data-products' },
   { id: 'assist', labelKey: 'navGroup.assist', defaultPath: '/chat' },
   { id: 'operations', labelKey: 'navGroup.operations', defaultPath: '/pipeline' },
 ];

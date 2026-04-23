@@ -1,0 +1,18 @@
+---
+title: Taxonomy Generation Stages
+---
+flowchart TB
+    F1[1. Factor Identification]
+    F2[2. Breadth-First Expansion]
+    F3[3. Best-of-N Proposal]
+    F4[4. Critic Refinement]
+    F5[5. Level Planning]
+
+    F1 --> F2
+    F2 --> F3
+    F3 --> F4
+    F4 --> F5
+    F5 -.->|next level| F2
+
+    classDef stage fill:#F3E8FC,stroke:#AF52DE,stroke-width:1.5px,color:#1D1D1F
+    class F1,F2,F3,F4,F5 stage

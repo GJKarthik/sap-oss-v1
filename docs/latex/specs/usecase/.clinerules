@@ -1,0 +1,136 @@
+# =============================================================================
+# .clinerules - Use Case Specifications
+# Business Use Case Documentation Standards
+# =============================================================================
+# This directory contains specifications for specific business use cases
+# that leverage the enterprise AI platform.
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# DIRECTORY OVERVIEW
+# -----------------------------------------------------------------------------
+
+## Purpose
+
+This directory groups specifications for business use cases:
+- **Arabic AP Invoice Processing** - Arabic language accounts payable automation
+- **Trial Balance Review** - Financial close process automation
+
+## Subdirectories
+
+| Directory | Description | Schema | Implementation |
+|-----------|-------------|--------|----------------|
+| `arabic/` | Arabic AP Invoice HITL specification | docs/schema/arabic/ | src/intelligence/ocr/ |
+| `tb/` | Trial Balance Review specification | docs/schema/tb/ | src/intelligence/analytics/ |
+
+# -----------------------------------------------------------------------------
+# USE CASE SPEC STRUCTURE
+# -----------------------------------------------------------------------------
+
+Each use case specification MUST follow this standard chapter structure:
+
+1. **Chapter 00: Front Matter**
+   - Title, version, document control
+   - Executive summary
+   - Intended audience
+
+2. **Chapter 01-02: Context & Scope**
+   - Business context and problem statement
+   - Scope boundaries (in/out)
+   - Integration points
+
+3. **Chapter 03-05: Business Requirements**
+   - Source document traceability
+   - MoSCoW-prioritized requirements
+   - Acceptance criteria
+
+4. **Chapter 06-08: Process Design**
+   - Workflow state machine
+   - HITL interaction patterns
+   - Decision points and escalation
+
+5. **Chapter 09-11: Data Model**
+   - Entity definitions
+   - Schema references
+   - Data flow diagrams
+
+6. **Chapter 12-14: AI/ML Integration**
+   - Model requirements
+   - Quality thresholds
+   - Fallback behaviors
+
+7. **Chapter 15-16: Operations**
+   - Monitoring and alerting
+   - Error handling
+   - Audit trail requirements
+
+8. **Appendices**
+   - Implementation gaps
+   - Future roadmap
+   - Reference materials
+
+# -----------------------------------------------------------------------------
+# SPEC-DRIFT SYNCHRONIZATION
+# -----------------------------------------------------------------------------
+
+## Related Artifacts
+
+When modifying use case specs, ensure synchronization with:
+
+| Artifact Type | Location | Sync Rule |
+|---------------|----------|-----------|
+| JSON Schemas | docs/schema/<usecase>/ | Data model changes |
+| Shared Enums | docs/schema/common/enums.yaml | Enum modifications |
+| Implementation | src/intelligence/ | Behavior changes |
+| Test Fixtures | tests/fixtures/<usecase>/ | Sample data changes |
+
+## Pre-Change Checklist
+
+Before modifying any use case specification:
+
+- [ ] Run `make audit-spec-drift-domain DOMAIN=<usecase>`
+- [ ] Identify all related schemas in spec-code-mapping.yaml
+- [ ] Check for shared enum dependencies
+- [ ] Verify workflow state machine impact
+
+## Post-Change Checklist
+
+After modifying any use case specification:
+
+- [ ] Update related schemas (if data model changed)
+- [ ] Update CHANGELOG in spec directory
+- [ ] Run `make audit-spec-drift` to verify no drift
+- [ ] Update spec-code-mapping.yaml if new artifacts added
+
+# -----------------------------------------------------------------------------
+# NAMING CONVENTIONS
+# -----------------------------------------------------------------------------
+
+## File Naming
+
+| Type | Pattern | Example |
+|------|---------|---------|
+| Main spec | `<usecase>-spec.tex` | `arabic-ap-spec.tex` |
+| Chapters | `chapters/XX-name.tex` | `chapters/05-business-req.tex` |
+| Fragments | `fragment-*.tex` | `fragment-glossary.tex` |
+| References | `references.bib` | `references.bib` |
+
+## Requirement ID Conventions
+
+| Use Case | Prefix | Example |
+|----------|--------|---------|
+| Arabic AP | ARA-REQ | ARA-REQ-001 |
+| Trial Balance | TB-REQ | TB-REQ-ES01 |
+| TB HITL | TB-HITL | TB-HITL-001 |
+
+# -----------------------------------------------------------------------------
+# VERSION HISTORY
+# -----------------------------------------------------------------------------
+
+| Version | Date | Changes |
+|---------|------|---------|
+| 1.0.0 | 2026-04-21 | Initial .clinerules for use case specs |
+
+# =============================================================================
+# END OF .clinerules
+# =============================================================================

@@ -1,0 +1,33 @@
+---
+title: Simula v1.2 Dependency Graph
+---
+flowchart LR
+    M01[M01 SIM-ENG-001<br/>extraction pipeline]
+    M02[M02 SIM-ENG-002<br/>taxonomy engine]
+    M03[M03 SIM-ENG-003<br/>generation engine]
+    M04[M04 SIM-ENV-001<br/>environment CLI]
+    M05[M05 SIM-HANA-001<br/>spatial policy]
+    M06[M06 SIM-RUN-TB<br/>TB reference run]
+    M07[M07 SIM-RELEASE-001<br/>v1.2 tag]
+
+    S01[S01 SIM-RUN-AP<br/>AP corpus]
+    S02[S02 SIM-RUN-REG<br/>Reg corpus]
+    C01[C01 SIM-V13-EXPLORE<br/>v1.3 scope]
+
+    M01 --> M02
+    M02 --> M03
+    M03 --> M04
+    M04 --> M05
+    M05 --> M06
+    M06 --> M07
+    M07 --> S01
+    S01 --> S02
+    S02 -.->|v1.3 trigger| C01
+
+    classDef must   fill:#FFF4D6,stroke:#FF9500,stroke-width:1.5px,color:#1D1D1F
+    classDef should fill:#E8F0FC,stroke:#0064D7,color:#1D1D1F
+    classDef could  fill:#D7F3E3,stroke:#34C759,color:#1D1D1F,stroke-dasharray: 4 2
+
+    class M01,M02,M03,M04,M05,M06,M07 must
+    class S01,S02 should
+    class C01 could

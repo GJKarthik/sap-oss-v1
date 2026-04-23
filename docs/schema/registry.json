@@ -1,0 +1,258 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://sap-oss.github.io/schema/registry.json",
+  "title": "SAP OSS Schema Registry",
+  "description": "Master index of all JSON Schemas across domains",
+  "version": "1.2.0",
+  "generated": "2026-04-18",
+  "updated": "2026-04-19T08:57:00+08:00",
+
+  "domains": {
+    "common": {
+      "description": "Shared definitions used by all domains",
+      "schemas": [
+        {
+          "id": "base-types",
+          "path": "common/base-types.schema.json",
+          "title": "Common Base Types",
+          "status": "stable"
+        }
+      ],
+      "enums": "common/enums.yaml",
+      "moscow": "common/moscow.yaml"
+    },
+
+    "arabic": {
+      "description": "Arabic AP Invoice Processing domain",
+      "specification": "docs/docx/specs/arabic-ap-spec.docx",
+      "schemas": [
+        {
+          "id": "invoice",
+          "path": "arabic/invoice.schema.json",
+          "title": "Invoice Record",
+          "status": "stable",
+          "source_spec_section": "Chapter 2"
+        },
+        {
+          "id": "vat-checklist",
+          "path": "arabic/vat-checklist.schema.json",
+          "title": "VAT Compliance Checklist",
+          "status": "stable",
+          "source_spec_section": "Chapter 4"
+        },
+        {
+          "id": "vendor",
+          "path": "arabic/vendor.schema.json",
+          "title": "Vendor Record",
+          "status": "stable"
+        },
+        {
+          "id": "ocr-result",
+          "path": "arabic/ocr-result.schema.json",
+          "title": "OCR Extraction Result",
+          "status": "stable",
+          "source_spec_section": "Chapter 3"
+        }
+      ],
+      "enums": [
+        "common/enums.yaml#/countries",
+        "common/enums.yaml#/vat_category",
+        "common/enums.yaml#/supplier_type"
+      ]
+    },
+
+    "tb": {
+      "description": "Trial Balance Review domain",
+      "specification": "docs/docx/specs/tb-review-spec.docx",
+      "legacy_location": "docs/tb/machine-readable/",
+      "schemas": [
+        {
+          "id": "tb-extract",
+          "path": "tb/tb-extract.schema.json",
+          "title": "Trial Balance Extract",
+          "status": "stable",
+          "legacy_path": "docs/tb/machine-readable/training-data/hkg-tb-schema.yaml"
+        },
+        {
+          "id": "pl-extract",
+          "path": "tb/pl-extract.schema.json",
+          "title": "P&L Extract",
+          "status": "stable",
+          "legacy_path": "docs/tb/machine-readable/training-data/hkg-pl-schema.yaml"
+        },
+        {
+          "id": "variance-record",
+          "path": "tb/variance-record.schema.json",
+          "title": "Variance Record",
+          "status": "stable",
+          "source_spec_section": "Chapter 3"
+        },
+        {
+          "id": "commentary-draft",
+          "path": "tb/commentary-draft.schema.json",
+          "title": "AI Commentary Draft",
+          "status": "stable",
+          "source_spec_section": "Chapter 3"
+        },
+        {
+          "id": "decision-point",
+          "path": "tb/decision-point.schema.json",
+          "title": "Decision Point Record",
+          "status": "stable",
+          "source_spec_section": "Chapter 5"
+        },
+        {
+          "id": "entity-params",
+          "path": "tb/entity-params.schema.json",
+          "title": "TB Entity Parameter File",
+          "status": "stable",
+          "source_spec_section": "Chapter 4 (Section 'Parameter loading and validation for 234 entities')"
+        }
+      ],
+      "enums": [
+        "common/enums.yaml#/account_category",
+        "common/enums.yaml#/variance_flag",
+        "common/enums.yaml#/decision_point"
+      ]
+    },
+
+    "simula": {
+      "description": "Simula Training Data Generation domain",
+      "specification": "docs/docx/specs/simula-training-spec.docx",
+      "schemas": [
+        {
+          "id": "taxonomy",
+          "path": "simula/taxonomy.schema.json",
+          "title": "Taxonomy Tree Structure",
+          "status": "stable",
+          "source_spec_section": "Chapter 4"
+        },
+        {
+          "id": "training-example",
+          "path": "simula/training-example.schema.json",
+          "title": "Training Example",
+          "status": "stable",
+          "source_spec_section": "Chapter 5"
+        },
+        {
+          "id": "hana-schema-entry",
+          "path": "simula/hana-schema-entry.schema.json",
+          "title": "HANA Schema Registry Entry",
+          "status": "stable",
+          "source_spec_section": "Chapter 3"
+        },
+        {
+          "id": "config",
+          "path": "simula/config.schema.json",
+          "title": "Pipeline Configuration",
+          "status": "stable",
+          "source_spec_section": "Chapter 6"
+        },
+        {
+          "id": "meta-prompt",
+          "path": "simula/meta-prompt.schema.json",
+          "title": "Meta-Prompt Record",
+          "status": "stable",
+          "source_spec_section": "Chapter 5"
+        },
+        {
+          "id": "dataset-spec",
+          "path": "simula/dataset-spec.schema.json",
+          "title": "Declarative Dataset Specification",
+          "status": "stable",
+          "source_spec_section": "Chapter 16 Enhancement 4"
+        }
+      ],
+      "enums": [
+        "common/enums.yaml#/taxonomy_node_type",
+        "common/enums.yaml#/complexity_level",
+        "common/enums.yaml#/critic_verdict"
+      ]
+    },
+
+    "regulations": {
+      "description": "AI Governance and Compliance domain",
+      "specification": "docs/docx/specs/regulations-spec.docx",
+      "schemas": [
+        {
+          "id": "regulation",
+          "path": "regulations/regulation.schema.json",
+          "title": "Regulation Record",
+          "status": "stable",
+          "source_spec_section": "Chapter 2"
+        },
+        {
+          "id": "requirement",
+          "path": "regulations/requirement.schema.json",
+          "title": "Requirement with Status",
+          "status": "stable",
+          "source_spec_section": "Chapter 7"
+        },
+        {
+          "id": "conformance-tool",
+          "path": "regulations/conformance-tool.schema.json",
+          "title": "Conformance Tool Record",
+          "status": "stable",
+          "source_spec_section": "Chapter 6"
+        },
+        {
+          "id": "corpus",
+          "path": "regulations/corpus.schema.json",
+          "title": "Corpus Index",
+          "status": "stable",
+          "source_spec_section": "Chapter 7"
+        }
+      ],
+      "enums": [
+        "common/enums.yaml#/requirement_status",
+        "common/enums.yaml#/obligation_level",
+        "common/enums.yaml#/jurisdiction"
+      ]
+    }
+  },
+
+  "migration": {
+    "status": "complete",
+    "completed_date": "2026-04-18",
+    "completed": [
+      "Registry structure created",
+      "Common base types defined",
+      "Consolidated enums created",
+      "Arabic schemas: Extracted from spec to standalone files",
+      "TB schemas: Converted to JSON Schema",
+      "Simula schemas: Extracted from spec",
+      "Regulations schemas: Consolidated",
+      "Unified validator implementation"
+    ],
+    "pending": []
+  },
+
+  "versioning": {
+    "strategy": "semantic",
+    "backward_compatibility": {
+      "policy": "Major versions may break compatibility. Minor/patch versions are backward compatible.",
+      "migration_guide_path": "docs/schema/MIGRATION.md"
+    },
+    "changelog_path": "docs/schema/CHANGELOG.md"
+  },
+
+  "validation": {
+    "command": "python3 docs/schema/validate.py",
+    "requirements": "docs/schema/requirements.txt",
+    "ci_workflow": ".github/workflows/schema-validation.yml",
+    "options": {
+      "--registry-check": "Verify all schemas exist and are valid",
+      "--registry-status": "Show migration status of all domains",
+      "--validate-all": "Validate all schemas against meta-schema",
+      "--domain <name>": "Validate specific domain",
+      "--schema <name>": "Schema file within domain",
+      "--file <path>": "Data file to validate",
+      "--validate-schema <path>": "Validate a schema file itself",
+      "--json": "Output results as JSON"
+    },
+    "examples": [
+      "python3 docs/schema/validate.py --registry-status",
+      "python3 docs/schema/validate.py --domain arabic --schema invoice.schema.json --file data.json"
+    ]
+  }
+}

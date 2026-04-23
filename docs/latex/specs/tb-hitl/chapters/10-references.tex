@@ -1,0 +1,193 @@
+\chapter{References and Appendices}
+\label{ch:references}
+
+This chapter provides reference materials, file path indices, and
+cross-references to related specifications and documentation.
+
+% =============================================================================
+\section{Source Document Index}
+\label{sec:source-doc-index}
+
+\begin{longtable}{@{}L{2.5cm}L{11cm}@{}}
+\caption{Source Document File Path Index}
+\label{tab:source-doc-index} \\
+\toprule
+\textbf{Source ID} & \textbf{File Path} \\
+\midrule
+\endfirsthead
+\toprule
+\textbf{Source ID} & \textbf{File Path} \\
+\midrule
+\endhead
+\srcref{TB-BC-001} & \texttt{docs/tb/Business case - Trial Balance (2).doc} \\
+\srcref{TB-BC-002} & \texttt{docs/tb/Business case - BSS Risk Assessment (2).doc} \\
+\srcref{TB-DOI-001} & \texttt{docs/tb/DOI for Trial Balance Process .docx} \\
+\srcref{TB-BPMN-001} & \texttt{docs/tb/Operation of Month End Close Controls - Trial Balance Review - GLO (1).pdf} \\
+\srcref{TB-WB-001} & \texttt{docs/tb/HKG\_TB review Nov'25.xlsm} \\
+\srcref{TB-WB-002} & \texttt{docs/tb/HKG\_PL review Nov'25.xlsm} \\
+\bottomrule
+\end{longtable}
+
+% =============================================================================
+\section{Extracted File Index}
+\label{sec:extracted-file-index}
+
+\begin{longtable}{@{}L{7cm}L{6.5cm}@{}}
+\caption{Extracted Machine-Readable File Index}
+\label{tab:extracted-file-index} \\
+\toprule
+\textbf{File Path} & \textbf{Source Reference} \\
+\midrule
+\endfirsthead
+\toprule
+\textbf{File Path} & \textbf{Source Reference} \\
+\midrule
+\endhead
+\texttt{docs/tb/machine-readable/extracted/business-case-trial-balance.md} & \srcref{TB-BC-001} \\
+\texttt{docs/tb/machine-readable/extracted/business-case-bss-risk-assessment.md} & \srcref{TB-BC-002} \\
+\texttt{docs/tb/machine-readable/extracted/doi-trial-balance-process.md} & \srcref{TB-DOI-001} \\
+\texttt{docs/tb/machine-readable/extracted/bpmn-tb-review-glo.md} & \srcref{TB-BPMN-001} \\
+\texttt{docs/tb/machine-readable/extracted/bpmn-elements.json} & \srcref{TB-BPMN-001} \\
+\texttt{docs/tb/machine-readable/training-data/hkg-tb-schema.yaml} & \srcref{TB-WB-001} \\
+\texttt{docs/tb/machine-readable/training-data/hkg-pl-schema.yaml} & \srcref{TB-WB-002} \\
+\bottomrule
+\end{longtable}
+
+% =============================================================================
+\section{Schema File Index}
+\label{sec:schema-file-index}
+
+\begin{longtable}{@{}L{6.5cm}L{7cm}@{}}
+\caption{Schema File Path Index}
+\label{tab:schema-file-index} \\
+\toprule
+\textbf{Schema ID} & \textbf{File Path} \\
+\midrule
+\endfirsthead
+\toprule
+\textbf{Schema ID} & \textbf{File Path} \\
+\midrule
+\endhead
+\schemaref{variance-record} & \texttt{docs/schema/tb/variance-record.schema.json} \\
+\schemaref{decision-point} & \texttt{docs/schema/tb/decision-point.schema.json} \\
+\schemaref{entity-params} & \texttt{docs/schema/tb/entity-params.schema.json} \\
+\schemaref{tb-extract} & \texttt{docs/schema/tb/tb-extract.schema.json} \\
+\schemaref{pl-extract} & \texttt{docs/schema/tb/pl-extract.schema.json} \\
+\schemaref{commentary-draft} & \texttt{docs/schema/tb/commentary-draft.schema.json} \\
+\bottomrule
+\end{longtable}
+
+% =============================================================================
+\section{Related Specifications}
+\label{sec:related-specs}
+
+\begin{table}[h]
+\centering
+\caption{Cross-Specification References}
+\label{tab:cross-spec-refs}
+\begin{tabularx}{\textwidth}{@{}L{4.5cm}L{4cm}L{5cm}@{}}
+\toprule
+\textbf{Specification} & \textbf{Relationship} & \textbf{Cross-Reference} \\
+\midrule
+TB Review Spec & Parent specification & \texttt{docs/latex/specs/tb/tb-review-spec.tex} \\
+Arabic AP Spec & Peer specification & \texttt{docs/latex/specs/arabic/arabic-ap-spec.tex} \\
+Regulations Spec & Peer specification & \texttt{docs/latex/specs/regulations/regulations-spec.tex} \\
+Simula Training Spec & Peer specification & \texttt{docs/latex/specs/simula/simula-training-spec.tex} \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\subsection{TB Review Spec Integration}
+
+This HITL traceability specification is a companion document to the
+main TB Review Specification (\texttt{tb-review-spec.tex}). Key
+integration points:
+
+\begin{itemize}[noitemsep]
+  \item Chapter references use the \texttt{tb:} prefix for cross-document links
+  \item Specification IDs (\specref{TB-STEP-*}, \specref{DP-*}, etc.) are
+        defined in the TB Review Spec
+  \item Schema definitions are shared via the common schema registry
+\end{itemize}
+
+% =============================================================================
+\section{Acronyms and Abbreviations}
+\label{sec:acronyms}
+
+\begin{longtable}{@{}L{3cm}L{10.5cm}@{}}
+\caption{Acronyms and Abbreviations}
+\label{tab:acronyms} \\
+\toprule
+\textbf{Acronym} & \textbf{Definition} \\
+\midrule
+\endfirsthead
+\toprule
+\textbf{Acronym} & \textbf{Definition} \\
+\midrule
+\endhead
+BPMN & Business Process Model and Notation \\
+BS & Balance Sheet \\
+BSS & Balance Sheet Substantiation \\
+DOI & Detailed Operating Instructions \\
+EMF & Enhanced Metafile (Windows image format) \\
+EUC & End User Computing \\
+FCA & Full Cutoff Adjustment \\
+FORTM & Finance Operations Reporting Template and Management \\
+FTE & Full-Time Equivalent \\
+GCOA & Global Chart of Accounts \\
+GFS & Global Financial Services \\
+GLO & Global (scope designation) \\
+HITL & Human-in-the-Loop \\
+IFRS & International Financial Reporting Standards \\
+LE & Legal Entity \\
+LLM & Large Language Model \\
+MAD & Median Absolute Deviation \\
+ML & Machine Learning \\
+OCR & Optical Character Recognition \\
+P\&L & Profit and Loss \\
+PSGL & PeopleSoft General Ledger \\
+RAG & Retrieval-Augmented Generation \\
+ROI & Return on Investment \\
+S/4 & SAP S/4HANA \\
+TB & Trial Balance \\
+TBD & To Be Determined \\
+\bottomrule
+\end{longtable}
+
+% =============================================================================
+\section{Version History}
+\label{sec:version-history}
+
+\begin{table}[h]
+\centering
+\caption{Document Version History}
+\label{tab:version-history}
+\begin{tabularx}{\textwidth}{@{}C{1.5cm}C{2.5cm}L{4cm}L{5.5cm}@{}}
+\toprule
+\textbf{Version} & \textbf{Date} & \textbf{Author} & \textbf{Changes} \\
+\midrule
+1.0 & 2026-04-20 & SAP-OSS Team & Initial release \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+% =============================================================================
+\section{External Standards}
+\label{sec:external-standards}
+
+\begin{table}[h]
+\centering
+\caption{Referenced External Standards}
+\label{tab:external-standards}
+\begin{tabularx}{\textwidth}{@{}L{4cm}L{9.5cm}@{}}
+\toprule
+\textbf{Standard} & \textbf{Application} \\
+\midrule
+JSON Schema Draft 2020-12 & Schema definition format \\
+ISO 8601 & Date/time formatting \\
+BPMN 2.0 & Process modeling notation \\
+YAML 1.2 & Machine-readable configuration format \\
+Markdown (CommonMark) & Extracted document format \\
+\bottomrule
+\end{tabularx}
+\end{table}

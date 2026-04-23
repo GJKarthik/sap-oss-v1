@@ -1,0 +1,483 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://sap-oss.example.com/schemas/simula/dataset-spec.schema.json",
+  "title": "Declarative Dataset Specification",
+  "description": "Schema for declarative synthetic dataset generation specification as described in Chapter 16, Enhancement 4",
+  "type": "object",
+  "required": ["version", "name", "data_source", "taxonomy", "output"],
+  "additionalProperties": false,
+  "properties": {
+    "$schema": {
+      "type": "string",
+      "description": "JSON Schema reference for validation"
+    },
+    "version": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+$",
+      "description": "Specification version (e.g., '1.0')",
+      "examples": ["1.0", "1.1"]
+    },
+    "name": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 100,
+      "description": "Human-readable name for this dataset specification",
+      "examples": ["trial_balance_text2sql", "arabic_invoice_extraction"]
+    },
+    "description": {
+      "type": "string",
+      "maxLength": 500,
+      "description": "Optional description of the dataset purpose"
+    },
+    "data_source": {
+      "$ref": "#/$defs/dataSource"
+    },
+    "taxonomy": {
+      "$ref": "#/$defs/taxonomyConfig"
+    },
+    "generation": {
+      "$ref": "#/$defs/generationConfig"
+    },
+    "quality_gates": {
+      "$ref": "#/$defs/qualityGates"
+    },
+    "output": {
+      "$ref": "#/$defs/outputConfig"
+    },
+    "metadata": {
+      "$ref": "#/$defs/metadata"
+    }
+  },
+  "$defs": {
+    "dataSource": {
+      "type": "object",
+      "required": ["type"],
+      "additionalProperties": false,
+      "description": "Configuration for the data source (schema extraction)",
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": ["hana_cloud", "json_schema", "sql_ddl", "sample_data"],
+          "description": "Type of data source for schema extraction"
+        },
+        "connection": {
+          "type": "object",
+          "description": "Connection parameters (type-specific)",
+          "properties": {
+            "host": { "type": "string" },
+            "port": { "type": "integer", "minimum": 1, "maximum": 65535 },
+            "database": { "type": "string" },
+            "schema": { "type": "string" },
+            "credential_ref": {
+              "type": "string",
+              "description": "Reference to credential store (e.g., SAP BTP Credential Store)"
+            }
+          }
+        },
+        "schema_path": {
+          "type": "string",
+          "description": "Path to JSON Schema or DDL file (for file-based sources)"
+        },
+        "filters": {
+          "type": "object",
+          "description": "Filters for schema extraction",
+          "properties": {
+            "include_tables": {
+              "type": "array",
+              "items": { "type": "string" },
+              "description": "Table name patterns to include (glob syntax)"
+            },
+            "exclude_tables": {
+              "type": "array",
+              "items": { "type": "string" },
+              "description": "Table name patterns to exclude (glob syntax)"
+            },
+            "include_views": {
+              "type": "boolean",
+              "default": false,
+              "description": "Whether to include database views"
+            }
+          }
+        }
+      }
+    },
+    "taxonomyConfig": {
+      "type": "object",
+      "required": ["depth"],
+      "additionalProperties": false,
+      "description": "Configuration for taxonomy generation (Algorithm 1)",
+      "properties": {
+        "depth": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 6,
+          "default": 3,
+          "description": "Maximum taxonomy depth"
+        },
+        "factors": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/taxonomyFactor"
+          },
+          "minItems": 1,
+          "maxItems": 10,
+          "description": "Pre-defined factors of variation (optional; auto-discovered if omitted)"
+        },
+        "expansion": {
+          "type": "object",
+          "properties": {
+            "best_of_n": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 10,
+              "default": 5,
+              "description": "Number of proposals to generate per node"
+            },
+            "temperature": {
+              "type": "number",
+              "minimum": 0.0,
+              "maximum": 2.0,
+              "default": 0.8,
+              "description": "LLM temperature for expansion"
+            },
+            "branching_factor": {
+              "type": "integer",
+              "minimum": 2,
+              "maximum": 10,
+              "default": 4,
+              "description": "Target children per node"
+            }
+          }
+        },
+        "validation": {
+          "type": "object",
+          "properties": {
+            "require_expert_review": {
+              "type": "boolean",
+              "default": false,
+              "description": "Require human expert validation before proceeding"
+            },
+            "completeness_threshold": {
+              "type": "number",
+              "minimum": 0.0,
+              "maximum": 1.0,
+              "default": 0.7,
+              "description": "Minimum completeness score"
+            },
+            "soundness_threshold": {
+              "type": "number",
+              "minimum": 0.0,
+              "maximum": 1.0,
+              "default": 0.9,
+              "description": "Minimum soundness score"
+            }
+          }
+        }
+      }
+    },
+    "taxonomyFactor": {
+      "type": "object",
+      "required": ["name"],
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 50,
+          "description": "Factor name (e.g., 'query_complexity', 'entity_type')"
+        },
+        "description": {
+          "type": "string",
+          "maxLength": 200,
+          "description": "Description of what this factor captures"
+        },
+        "seed_values": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Initial seed values to guide expansion"
+        }
+      }
+    },
+    "generationConfig": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Configuration for example generation (Algorithm 2)",
+      "properties": {
+        "target_count": {
+          "type": "integer",
+          "minimum": 10,
+          "maximum": 1000000,
+          "default": 10000,
+          "description": "Target number of training examples"
+        },
+        "sampling_strategy": {
+          "type": "string",
+          "enum": ["uniform", "weighted", "coverage"],
+          "default": "uniform",
+          "description": "Strategy for sampling taxonomy nodes"
+        },
+        "complexification": {
+          "type": "object",
+          "properties": {
+            "enabled": {
+              "type": "boolean",
+              "default": true,
+              "description": "Whether to apply complexification step"
+            },
+            "ratio": {
+              "type": "number",
+              "minimum": 0.0,
+              "maximum": 1.0,
+              "default": 0.5,
+              "description": "Fraction of examples to complexify"
+            }
+          }
+        },
+        "critic": {
+          "type": "object",
+          "properties": {
+            "double_critic": {
+              "type": "boolean",
+              "default": true,
+              "description": "Use double-critic validation"
+            },
+            "acceptance_threshold": {
+              "type": "number",
+              "minimum": 0.5,
+              "maximum": 1.0,
+              "default": 0.8,
+              "description": "Minimum critic acceptance probability"
+            },
+            "max_retries": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 10,
+              "default": 3,
+              "description": "Maximum retries for rejected examples"
+            }
+          }
+        },
+        "schema_context": {
+          "type": "object",
+          "description": "Schema context pruning configuration",
+          "properties": {
+            "max_tokens": {
+              "type": "integer",
+              "minimum": 512,
+              "maximum": 32768,
+              "default": 4096,
+              "description": "Maximum tokens for schema context"
+            },
+            "max_columns_per_table": {
+              "type": "integer",
+              "minimum": 5,
+              "maximum": 100,
+              "default": 30,
+              "description": "Maximum columns to include per table"
+            },
+            "include_fk_depth": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 5,
+              "default": 2,
+              "description": "Depth for foreign key traversal"
+            }
+          }
+        },
+        "llm": {
+          "type": "object",
+          "description": "LLM configuration for generation",
+          "properties": {
+            "model": {
+              "type": "string",
+              "description": "Model identifier (e.g., 'vllm-turboquant-70b')"
+            },
+            "temperature": {
+              "type": "number",
+              "minimum": 0.0,
+              "maximum": 2.0,
+              "default": 0.7,
+              "description": "Generation temperature"
+            },
+            "max_tokens": {
+              "type": "integer",
+              "minimum": 100,
+              "maximum": 8192,
+              "default": 2048,
+              "description": "Maximum tokens per generation"
+            }
+          }
+        }
+      }
+    },
+    "qualityGates": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Quality thresholds that must be met",
+      "properties": {
+        "coverage": {
+          "type": "object",
+          "properties": {
+            "min_level1": {
+              "type": "number",
+              "minimum": 0.0,
+              "maximum": 1.0,
+              "default": 1.0,
+              "description": "Minimum coverage at taxonomy level 1"
+            },
+            "min_level2": {
+              "type": "number",
+              "minimum": 0.0,
+              "maximum": 1.0,
+              "default": 0.95,
+              "description": "Minimum coverage at taxonomy level 2"
+            },
+            "min_level3": {
+              "type": "number",
+              "minimum": 0.0,
+              "maximum": 1.0,
+              "default": 0.80,
+              "description": "Minimum coverage at taxonomy level 3"
+            }
+          }
+        },
+        "diversity": {
+          "type": "object",
+          "properties": {
+            "global_min": {
+              "type": "number",
+              "minimum": 0.0,
+              "maximum": 1.0,
+              "default": 0.65,
+              "description": "Minimum global diversity score"
+            },
+            "local_min": {
+              "type": "number",
+              "minimum": 0.0,
+              "maximum": 1.0,
+              "default": 0.55,
+              "description": "Minimum local (within-node) diversity"
+            }
+          }
+        },
+        "complexity": {
+          "type": "object",
+          "properties": {
+            "distribution": {
+              "type": "object",
+              "description": "Target complexity distribution",
+              "properties": {
+                "easy": { "type": "number", "minimum": 0, "maximum": 1 },
+                "medium": { "type": "number", "minimum": 0, "maximum": 1 },
+                "hard": { "type": "number", "minimum": 0, "maximum": 1 }
+              }
+            },
+            "tolerance": {
+              "type": "number",
+              "minimum": 0.0,
+              "maximum": 0.5,
+              "default": 0.1,
+              "description": "Allowed deviation from target distribution"
+            }
+          }
+        },
+        "critic_calibration": {
+          "type": "object",
+          "properties": {
+            "p_accept_correct_min": {
+              "type": "number",
+              "minimum": 0.5,
+              "maximum": 1.0,
+              "default": 0.8,
+              "description": "Min P(accept|correct)"
+            },
+            "p_accept_corrupted_max": {
+              "type": "number",
+              "minimum": 0.0,
+              "maximum": 0.5,
+              "default": 0.3,
+              "description": "Max P(accept|corrupted)"
+            }
+          }
+        }
+      }
+    },
+    "outputConfig": {
+      "type": "object",
+      "required": ["path"],
+      "additionalProperties": false,
+      "description": "Configuration for output artifacts",
+      "properties": {
+        "path": {
+          "type": "string",
+          "description": "Output directory path"
+        },
+        "format": {
+          "type": "string",
+          "enum": ["jsonl", "parquet", "csv"],
+          "default": "jsonl",
+          "description": "Primary output format"
+        },
+        "artifacts": {
+          "type": "object",
+          "description": "Control which artifacts are generated",
+          "properties": {
+            "training_data": { "type": "boolean", "default": true },
+            "taxonomies": { "type": "boolean", "default": true },
+            "schemas": { "type": "boolean", "default": true },
+            "generation_stats": { "type": "boolean", "default": true },
+            "rejected_examples": { "type": "boolean", "default": true },
+            "complexity_scores": { "type": "boolean", "default": true },
+            "coverage_report": { "type": "boolean", "default": true },
+            "diversity_metrics": { "type": "boolean", "default": true },
+            "critic_calibration": { "type": "boolean", "default": true }
+          }
+        },
+        "compression": {
+          "type": "string",
+          "enum": ["none", "gzip", "zstd"],
+          "default": "none",
+          "description": "Compression for output files"
+        }
+      }
+    },
+    "metadata": {
+      "type": "object",
+      "additionalProperties": true,
+      "description": "Custom metadata for provenance tracking",
+      "properties": {
+        "owner": {
+          "type": "string",
+          "description": "Owner or team responsible"
+        },
+        "project": {
+          "type": "string",
+          "description": "Project identifier"
+        },
+        "tags": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Custom tags for categorization"
+        },
+        "compliance": {
+          "type": "object",
+          "description": "Compliance-related metadata",
+          "properties": {
+            "data_classification": {
+              "type": "string",
+              "enum": ["public", "internal", "confidential", "restricted"]
+            },
+            "retention_days": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "gdpr_relevant": {
+              "type": "boolean",
+              "default": false
+            }
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,170 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://sap-oss.github.io/schemas/simula/financial-prompt-mix.schema.json",
+  "title": "Financial Prompt Mix",
+  "description": "Schema for a mix - a combination of factors for financial domain prompt generation",
+  "type": "object",
+  "required": ["mix_id", "persona", "financial_concept", "query_intent", "scenario"],
+  "additionalProperties": false,
+  "properties": {
+    "mix_id": {
+      "type": "string",
+      "pattern": "^mix-\\d{5}$",
+      "description": "Unique identifier for this mix"
+    },
+    "persona": {
+      "$ref": "#/$defs/persona_reference"
+    },
+    "financial_concept": {
+      "type": "string",
+      "description": "The financial concept being queried",
+      "enum": [
+        "Revenue", "COGS", "GrossProfit", "OperatingExpenses", "OperatingIncome",
+        "InterestExpense", "TaxExpense", "NetIncome", "EBITDA",
+        "Assets", "CurrentAssets", "NonCurrentAssets", "Liabilities",
+        "CurrentLiabilities", "NonCurrentLiabilities", "Equity",
+        "CashFlow", "OperatingCashFlow", "InvestingCashFlow", "FinancingCashFlow"
+      ]
+    },
+    "query_intent": {
+      "type": "string",
+      "description": "The intent of the query",
+      "enum": ["Retrieval", "Comparison", "Validation", "Aggregation", "Exploration", "Forecasting"]
+    },
+    "scenario": {
+      "type": "string",
+      "description": "The business scenario context",
+      "enum": ["RoutineReview", "AdhocQuestion", "AuditRequest", "BoardMeeting", "RegulatoryFiling"]
+    },
+    "accounting_standard": {
+      "type": "string",
+      "description": "Accounting standard context",
+      "enum": ["US-GAAP", "IFRS"],
+      "default": "US-GAAP"
+    },
+    "time_context": {
+      "$ref": "#/$defs/time_context"
+    },
+    "generated_prompts": {
+      "type": "array",
+      "description": "Prompts generated for this mix",
+      "items": { "$ref": "#/$defs/generated_prompt" }
+    }
+  },
+  "$defs": {
+    "persona_reference": {
+      "type": "object",
+      "required": ["code", "schema_knowledge", "process_knowledge"],
+      "additionalProperties": false,
+      "properties": {
+        "code": {
+          "type": "string",
+          "pattern": "^(HU|AG)-[A-Z]+$",
+          "description": "Persona code reference"
+        },
+        "type": {
+          "type": "string",
+          "enum": ["human", "agent"]
+        },
+        "schema_knowledge": {
+          "type": "string",
+          "enum": ["none", "low", "medium", "high", "expert"]
+        },
+        "process_knowledge": {
+          "type": "string",
+          "enum": ["none", "low", "medium", "high", "expert"]
+        }
+      }
+    },
+    "time_context": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "period_type": {
+          "type": "string",
+          "enum": ["quarter", "year", "month", "ytd", "custom"]
+        },
+        "comparison_type": {
+          "type": "string",
+          "enum": ["yoy", "qoq", "mom", "vs_budget", "vs_forecast", "none"]
+        },
+        "periods": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 20,
+          "description": "Number of periods for trend analysis"
+        }
+      }
+    },
+    "generated_prompt": {
+      "type": "object",
+      "required": ["prompt_id", "text", "complexity_level"],
+      "additionalProperties": false,
+      "properties": {
+        "prompt_id": {
+          "type": "string",
+          "description": "Unique identifier for the generated prompt"
+        },
+        "text": {
+          "type": "string",
+          "description": "The generated prompt text"
+        },
+        "complexity_level": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 5
+        },
+        "template_used": {
+          "type": "string",
+          "description": "Template persona code used for generation"
+        },
+        "validation_result": {
+          "$ref": "#/$defs/validation_result"
+        },
+        "embedding_distance": {
+          "type": "number",
+          "description": "Distance from persona centroid embedding"
+        },
+        "generated_at": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    },
+    "validation_result": {
+      "type": "object",
+      "required": ["passed"],
+      "additionalProperties": false,
+      "properties": {
+        "passed": {
+          "type": "boolean"
+        },
+        "violations": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "warnings": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "complexity_match": {
+          "type": "boolean",
+          "description": "Whether complexity matches persona expectations"
+        },
+        "terminology_match": {
+          "type": "boolean",
+          "description": "Whether terminology precision matches persona"
+        },
+        "intent_clear": {
+          "type": "boolean",
+          "description": "Whether the query intent is clear"
+        },
+        "critic_confidence": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        }
+      }
+    }
+  }
+}

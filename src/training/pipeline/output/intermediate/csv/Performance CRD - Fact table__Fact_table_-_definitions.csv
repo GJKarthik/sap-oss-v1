@@ -1,0 +1,24 @@
+Attributes,Description
+PERIOD_DATE,"This column represents the specific date on which the reporting is based, serving as a key reference point for all data within the dataset. It is crucial for temporal analysis, allowing users to track changes and trends over specific periods."
+MEMO_FLAG," This column classifies account lines to indicate whether they are memo lines or not. Memo lines typically provide additional information or context that is not part of the core financial data, helping users distinguish between standard and supplementary data."
+REPORTING,"This column categorizes data according to different business views, such as Corporate and Institutional Banking (CIB), Wealth and Retail Banking (WRB), and Financial Planning and Analysis (FPNA). It enables users to analyse data from various perspectives, aligning with specific business needs and strategies."
+VERSION,"This column indicates whether the data represents Month-to-Date (MTD) or Year-to-Date (YTD) values. It is essential for understanding the temporal scope of the data, allowing users to assess performance over different timeframes."
+SOLOSUB,"This column classifies business units into Solo entities and Subsidiaries, facilitating analysis of organizational structure and performance. It helps users differentiate between standalone operations and those that are part of larger corporate groups."
+BOOKS,"This column represents the nature of the data, including Actual, Budget, Forecast, and Outlook, along with their adjustments such as NewF, New_Res, and New_Adj. It provides insights into financial planning and performance, allowing users to compare different financial scenarios."
+ACCOUNT,"This column serves as the primary key for accounts, enabling linkage with the Account dimension table. It is fundamental for identifying and analysing specific financial accounts within the dataset."
+PRODUCT,"This column acts as the primary key for products, facilitating connection with the Product dimension table. It is crucial for tracking and analysing product-specific data within the organization."
+SEGMENT,"This column serves as the primary key for segments, allowing linkage with the Segment dimension table. It is essential for analysing data related to specific market or business segments."
+COST_CLUSTER_PK,"This column acts as the primary key for cost centres, enabling connection with the Cost Centres dimension table. It is vital for tracking and managing cost-related data within the organization."
+LOCATION_PK,"This column serves as the primary key for locations, facilitating linkage with the Location dimension table. It is crucial for geographical analysis and understanding location-specific data."
+MONTH,"This column extracts the reporting month from the reporting date, providing a monthly view of the data. It is essential for time-based analysis and tracking monthly trends."
+YEAR,"This column extracts the reporting year from the reporting date, offering a yearly perspective on the data. It is crucial for annual performance analysis and long-term trend assessment."
+MONTH_ABR,"This column presents the reporting month in a specific abbreviated format, enhancing readability and consistency in reporting. It is useful for quick reference and comparison across datasets."
+MONTH_NUM,"This column represents the reporting month as an integer, facilitating numerical analysis and calculations. It is essential for sorting and filtering data based on month."
+CURRENT_DATE,"This column indicates the refresh date of the dataset, providing users with information on the currency and timeliness of the data. It is crucial for ensuring data accuracy and relevance in reporting."
+Respective Currency,Measures are in respective currency. Transactions are recorded at on spot FX rates
+Constant Currency,Measures are in constant currency. Historical data is revised with reported month closing FX rates
+Forward Currency,Measures are in forward currency. The projected data is at forward FX rates
+ACCOUNT_CLASS,Not currently being used
+mult_val,Not currently being used
+,
+,

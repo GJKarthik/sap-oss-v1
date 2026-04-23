@@ -155,11 +155,36 @@ async def _require_write_access(
 # Configuration
 # ---------------------------------------------------------------------------
 
-# Resolve the data_products directory — works both in dev and production
+# Resolve the data_products directory — works both in dev and production.
+# Docker images only copy /app/src, so parent-depth assumptions from the repo
+# layout are not safe there.
 _THIS_DIR = Path(__file__).resolve().parent
-_REPO_ROOT = _THIS_DIR.parents[5]
-_DEFAULT_DATA_PRODUCTS_DIR = _REPO_ROOT / "src" / "training" / "data_products"
-DATA_PRODUCTS_DIR = Path(os.getenv("DATA_PRODUCTS_DIR", str(_DEFAULT_DATA_PRODUCTS_DIR))).expanduser()
+
+
+def _resolve_default_data_products_dir(start_dir: Optional[Path] = None) -> Path:
+    configured = os.getenv("DATA_PRODUCTS_DIR", "").strip()
+    if configured:
+        return Path(configured).expanduser()
+
+    start = (start_dir or _THIS_DIR).resolve()
+    seen: set[Path] = set()
+
+    for base in (start, *start.parents):
+        for candidate in (
+            base / "src" / "training" / "data_products",
+            base / "training" / "data_products",
+            base / "data_products",
+        ):
+            if candidate in seen:
+                continue
+            seen.add(candidate)
+            if candidate.exists():
+                return candidate
+
+    return start / "data_products"
+
+
+DATA_PRODUCTS_DIR = _resolve_default_data_products_dir()
 
 
 def _try_load_yaml():

@@ -13,16 +13,18 @@ audit_sbom.py        →  findings per BOM               (NTIA + policy + copyle
 sbom_to_spdx.py      →  boms/spdx/*.spdx.json          (SPDX 2.3 JSON — OpenChain)
 sbom_diff.py         →  delta report                   (added/removed/upgraded deps)
 sign_sbom.py         →  boms/sbom-sha256-manifest.json  (SHA-256 / EC sig / sigstore)
-generate_latex.py    →  docs/sbom-lineage.tex          (all BOMs + lineage)
+generate_latex.py    →  docs/sbom/sbom-lineage.tex     (all BOMs + lineage)
 gen_per_service.py   →  docs/sbom/sbom-<stem>.tex      (one LaTeX file per manifest service)
+compile-sbom.sh      →  docs/sbom/*.pdf                (compile SBOM .tex to PDF)
+generate-latex-from-json.sh  →  docs/sbom/SAP-OSS-SBOM-Detailed.tex  (detailed SBOM from JSON)
+generate-full-sbom.sh →  sbom-cyclonedx-full.json      (full dependency extraction)
 ```
 
 ### Regenerate LaTeX only (after BOMs exist)
 
 ```bash
 python3 scripts/sbom-lineage/collect_lineage.py   # refresh scripts/sbom-lineage/lineage.json
-python3 scripts/sbom-lineage/generate_latex.py --output docs/sbom-lineage.tex
-cp docs/sbom-lineage.tex docs/sbom/sbom-lineage.tex
+python3 scripts/sbom-lineage/generate_latex.py --output docs/sbom/sbom-lineage.tex
 python3 scripts/sbom-lineage/gen_per_service.py
 ```
 

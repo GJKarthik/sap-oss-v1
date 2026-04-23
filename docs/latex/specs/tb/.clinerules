@@ -1,0 +1,178 @@
+# =============================================================================
+# .clinerules - Trial Balance Review Specification
+# Financial Close Process Automation
+# =============================================================================
+# This specification defines the Trial Balance review process with AI-assisted
+# variance analysis and commentary generation.
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# SPECIFICATION OVERVIEW
+# -----------------------------------------------------------------------------
+
+## Purpose
+
+The Trial Balance Review specification defines:
+- **Variance Detection**: Automated identification of significant variances
+- **Commentary Generation**: AI-assisted explanation drafting
+- **HITL Workflow**: Human review and approval process
+- **Audit Trail**: Complete traceability for financial controls
+
+## Key Documents
+
+| Document | Purpose |
+|----------|---------|
+| `tb-review-spec.tex` | Main specification document |
+| `chapters/04-variance-analysis.tex` | Variance detection logic |
+| `chapters/06-commentary-engine.tex` | AI commentary generation |
+| `chapters/08-workflow-states.tex` | State machine definition |
+
+# -----------------------------------------------------------------------------
+# RELATED ARTIFACTS
+# -----------------------------------------------------------------------------
+
+## Schemas
+
+| Schema | Purpose |
+|--------|---------|
+| `docs/schema/tb/variance-record.schema.json` | Variance data structure |
+| `docs/schema/tb/commentary.schema.json` | Commentary format |
+| `docs/schema/tb/audit-trail-entry.schema.json` | Audit trail record |
+| `docs/schema/tb/entity-params/` | Legal entity configurations |
+
+## Source Documents
+
+| Document | Location |
+|----------|----------|
+| TB Business Case | `docs/tb/Business case - Trial Balance (2).doc` |
+| DOI for TB Process | `docs/tb/DOI for Trial Balance Process.docx` |
+| Sample TB Data | `docs/tb/HKG_TB review Nov'25.xlsm` |
+| Sample PL Data | `docs/tb/HKG_PL review Nov'25.xlsm` |
+
+## Implementation
+
+| Code Path | Purpose |
+|-----------|---------|
+| `src/intelligence/analytics/` | Variance analysis service |
+| `src/intelligence/vllm-turboquant/` | Commentary generation |
+| `src/generativeUI/` | Review interface |
+
+# -----------------------------------------------------------------------------
+# SPEC-DRIFT SYNCHRONIZATION RULES
+# -----------------------------------------------------------------------------
+
+## Critical Sync Points
+
+1. **Variance Record Structure**
+   - Spec Chapter 4 ↔ `variance-record.schema.json` ↔ Analytics service
+   - Field changes require all three updates
+
+2. **State Machine (28 States)**
+   - Spec Chapter 8 ↔ Schema enum ↔ Workflow implementation
+   - **CRITICAL**: Authoritative state count is 28, NOT 27
+
+3. **Quality Thresholds**
+   - Spec Chapter 10 ↔ Code constants
+   - Z-score, MAD, and spike thresholds must match
+
+4. **vLLM Fallback Triggers**
+   - Spec Chapter 6 ↔ Implementation config
+   - Latency and error rate triggers must sync
+
+## Pre-Change Checklist
+
+Before modifying this specification:
+
+- [ ] Run `make audit-spec-drift-domain DOMAIN=tb`
+- [ ] Review `docs/schema/tb/` for affected schemas
+- [ ] Check analytics service implementation
+- [ ] Verify state machine consistency (28 states)
+
+## Post-Change Checklist
+
+After modifying this specification:
+
+- [ ] Update `docs/schema/tb/*.schema.json` if data model changed
+- [ ] Update `src/intelligence/analytics/` if logic changed
+- [ ] Run `make audit-spec-drift` to verify synchronization
+- [ ] Update `docs/summaries/tb-review-summary.md`
+
+# -----------------------------------------------------------------------------
+# STATE MACHINE (Authoritative)
+# -----------------------------------------------------------------------------
+
+**CRITICAL: The authoritative state count is 28, NOT 27.**
+
+| State Range | Description |
+|-------------|-------------|
+| States 1-24 | Primary workflow states |
+| States 25-27 | Error handling (AWAITING_CLARIFICATION, ESCALATED_TO_FINANCE, MANUAL_OVERRIDE) |
+| State 28 | COMPLETED (end state) |
+
+All state transitions MUST:
+- Be logged to audit trail with timestamp and persona_id
+- Include before_state and after_state snapshots
+- Use optimistic locking (version field)
+
+# -----------------------------------------------------------------------------
+# REQUIREMENT ID CONVENTIONS
+# -----------------------------------------------------------------------------
+
+| Category | Prefix | Example |
+|----------|--------|---------|
+| Executive Summary | TB-REQ-ES | TB-REQ-ES01 |
+| Scope | TB-REQ-SC | TB-REQ-SC01 |
+| Process Step | TB-REQ-PS | TB-REQ-PS01 |
+| AI Augmentation | TB-REQ-AI | TB-REQ-AI01 |
+| BSS Risk | BSS-REQ | BSS-REQ-01 |
+
+# -----------------------------------------------------------------------------
+# QUALITY THRESHOLDS (Authoritative)
+# -----------------------------------------------------------------------------
+
+These thresholds are authoritative - code MUST match:
+
+| Metric | Target | Kill-Switch | Source |
+|--------|--------|-------------|--------|
+| accept_without_edit_rate | ≥70% | <50% | Chapter 10 |
+| accept_with_any_edit_rate | ≥95% | <85% | Chapter 10 |
+| vLLM availability | ≥95% | <95% | Chapter 6 |
+| vLLM latency P95 | <5000ms | >5000ms | Chapter 6 |
+| vLLM error rate | <10% | >10% | Chapter 6 |
+
+## Anomaly Detection Thresholds
+
+| Test | Threshold | Condition |
+|------|-----------|-----------|
+| Shapiro-Wilk | p > 0.05 | Use Z-score |
+| Shapiro-Wilk | p ≤ 0.05 | Use MAD |
+| Z-score | 3.0 | Anomaly threshold |
+| MAD | 3.5 | Robust threshold |
+| Spike/drop | 25% | Period-over-period |
+
+# -----------------------------------------------------------------------------
+# DRIFT DETECTION COMMANDS
+# -----------------------------------------------------------------------------
+
+```bash
+# Full audit for tb domain
+make audit-spec-drift-domain DOMAIN=tb
+
+# Check schema validity
+python3 docs/schema/validate.py --domain tb
+
+# Verify state machine consistency
+grep -r "state" docs/schema/tb/*.schema.json | grep enum
+```
+
+# -----------------------------------------------------------------------------
+# VERSION HISTORY
+# -----------------------------------------------------------------------------
+
+| Version | Date | Changes |
+|---------|------|---------|
+| 1.0.0 | 2026-04-21 | Initial .clinerules for TB spec |
+
+# =============================================================================
+# END OF .clinerules
+# =============================================================================

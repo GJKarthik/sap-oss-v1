@@ -1,0 +1,172 @@
+# =============================================================================
+# .clinerules - Simula Training Data Framework Specification
+# ML Training Data Generation & Governance
+# =============================================================================
+# This specification defines the Simula framework for generating synthetic
+# training data for enterprise AI models with full lineage and governance.
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# SPECIFICATION OVERVIEW
+# -----------------------------------------------------------------------------
+
+## Purpose
+
+The Simula Training Data Framework specification defines:
+- **Data Generation**: Synthetic training data creation patterns
+- **Taxonomy Engine**: Hierarchical classification and tagging
+- **Quality Assurance**: Data validation and verification
+- **Lineage Tracking**: Full provenance from source to model
+
+## Key Documents
+
+| Document | Purpose |
+|----------|---------|
+| `simula-training-spec.tex` | Main specification document |
+| `chapters/05-taxonomy-engine.tex` | Taxonomy structure and rules |
+| `chapters/12-implementation-instructions.tex` | Implementation guidance |
+| `references.bib` | Bibliography and citations |
+
+# -----------------------------------------------------------------------------
+# RELATED ARTIFACTS
+# -----------------------------------------------------------------------------
+
+## Schemas
+
+| Schema | Purpose |
+|--------|---------|
+| `docs/schema/simula/taxonomy.schema.json` | Taxonomy node structure |
+| `docs/schema/simula/dataset-spec.schema.json` | Dataset specification |
+| `docs/schema/simula/risk-register.yaml` | Risk assessment data |
+| `docs/schema/simula/training-record.schema.json` | Training run metadata |
+
+## Implementation Code
+
+| Code Path | Purpose |
+|-----------|---------|
+| `src/training/pipeline/simula_taxonomy_builder.py` | Taxonomy generation |
+| `src/training/pipeline/simula_data_generator.py` | Data synthesis |
+| `src/training/pipeline/main.py` | Pipeline orchestration |
+
+## Configuration
+
+| Config Path | Purpose |
+|-------------|---------|
+| `src/training/.clinerules` | Training pipeline rules |
+| `src/training/.clinerules.runtime-monitor` | Runtime monitoring rules |
+
+# -----------------------------------------------------------------------------
+# SPEC-DRIFT SYNCHRONIZATION RULES
+# -----------------------------------------------------------------------------
+
+## Critical Sync Points
+
+1. **Taxonomy Node Structure**
+   - Spec Chapter 5 ↔ `taxonomy.schema.json` ↔ `simula_taxonomy_builder.py`
+   - Changes to node fields must sync all three
+
+2. **Dataset Specification Format**
+   - Spec Chapter 7 ↔ `dataset-spec.schema.json`
+   - Field additions require both spec and schema update
+
+3. **Quality Thresholds**
+   - Spec Chapter 10 ↔ Code constants in `simula_data_generator.py`
+   - Threshold changes must be documented in spec
+
+4. **Risk Categories**
+   - Spec Appendix A1 ↔ `risk-register.yaml`
+   - New risks must be documented in both places
+
+## Pre-Change Checklist
+
+Before modifying this specification:
+
+- [ ] Run `make audit-spec-drift-domain DOMAIN=simula`
+- [ ] Review `docs/schema/spec-code-mapping.yaml` for related artifacts
+- [ ] Check implementation code for affected functions
+- [ ] Verify test fixtures will remain valid
+
+## Post-Change Checklist
+
+After modifying this specification:
+
+- [ ] Update `docs/schema/simula/*.schema.json` if data model changed
+- [ ] Update `src/training/pipeline/` code if behavior changed
+- [ ] Run `make audit-spec-drift` to verify synchronization
+- [ ] Update `docs/summaries/simula-training-summary.md`
+
+# -----------------------------------------------------------------------------
+# CHAPTER STANDARDS
+# -----------------------------------------------------------------------------
+
+## Required Chapter Elements
+
+Each chapter MUST include:
+
+1. **Chapter number and title** - Consistent numbering (01, 02, etc.)
+2. **Section labels** - `\label{sec:simula-<topic>}` for cross-references
+3. **Schema references** - Inline references to JSON schemas
+4. **Code references** - References to implementation modules
+
+## Citation Format
+
+When referencing implementation details:
+
+```latex
+\textbf{Schema Reference:} \texttt{docs/schema/simula/taxonomy.schema.json}
+
+\textbf{Implementation:} \texttt{src/training/pipeline/simula\_taxonomy\_builder.py}
+```
+
+# -----------------------------------------------------------------------------
+# REQUIREMENT ID CONVENTIONS
+# -----------------------------------------------------------------------------
+
+| Category | Prefix | Example |
+|----------|--------|---------|
+| Data Generation | SIM-DG | SIM-DG-001 |
+| Taxonomy | SIM-TAX | SIM-TAX-001 |
+| Quality | SIM-QA | SIM-QA-001 |
+| Lineage | SIM-LIN | SIM-LIN-001 |
+| Infrastructure | SIM-INF | SIM-INF-001 |
+
+# -----------------------------------------------------------------------------
+# QUALITY THRESHOLDS (Authoritative Values)
+# -----------------------------------------------------------------------------
+
+These thresholds are authoritative - code MUST match:
+
+| Metric | Value | Source |
+|--------|-------|--------|
+| Min taxonomy depth | 3 levels | Chapter 5, Section 5.2 |
+| Max taxonomy depth | 7 levels | Chapter 5, Section 5.2 |
+| Sample diversity score | ≥ 0.75 | Chapter 10, Section 10.3 |
+| Coverage completeness | ≥ 0.90 | Chapter 10, Section 10.4 |
+| Validation pass rate | ≥ 0.95 | Chapter 10, Section 10.5 |
+
+# -----------------------------------------------------------------------------
+# DRIFT DETECTION COMMANDS
+# -----------------------------------------------------------------------------
+
+```bash
+# Full audit for simula domain
+make audit-spec-drift-domain DOMAIN=simula
+
+# Check schema validity
+python3 docs/schema/validate.py --domain simula
+
+# Verify implementation alignment
+grep -r "taxonomy" src/training/pipeline/*.py | head -20
+```
+
+# -----------------------------------------------------------------------------
+# VERSION HISTORY
+# -----------------------------------------------------------------------------
+
+| Version | Date | Changes |
+|---------|------|---------|
+| 1.0.0 | 2026-04-21 | Initial .clinerules for Simula spec |
+
+# =============================================================================
+# END OF .clinerules
+# =============================================================================

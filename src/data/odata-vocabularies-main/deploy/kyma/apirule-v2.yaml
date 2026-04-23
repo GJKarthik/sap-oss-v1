@@ -5,13 +5,13 @@ apiVersion: gateway.kyma-project.io/v2
 kind: APIRule
 metadata:
   name: odata-vocab-api
-  namespace: kube-scb
+  namespace: sap-ai-services
   labels:
     app: odata-vocab
 spec:
   gateway: kyma-system/kyma-gateway
   hosts:
-    - odata-vocab.c-9323c0b.kyma.ondemand.com
+    - odata-vocab.c-054c570.kyma.ondemand.com
   service:
     name: odata-vocab-service
     port: 9150

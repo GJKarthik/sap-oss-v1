@@ -12,7 +12,6 @@ const STORAGE_KEY = 'sap-ai-experience.quick-access.v1';
 const RECENT_LIMIT = 8;
 
 const SEARCH_TERMS: Record<string, string[]> = {
-  '/forms': ['design patterns', 'forms', 'approvals', 'validation', 'learn workspace'],
   '/joule': ['joule', 'assistant', 'agent workspace', 'guided work'],
   '/collab': ['collaboration', 'shared presence', 'team room', 'live cursors'],
   '/generative': ['ui composer', 'generative ui', 'schema generation', 'compose ui'],

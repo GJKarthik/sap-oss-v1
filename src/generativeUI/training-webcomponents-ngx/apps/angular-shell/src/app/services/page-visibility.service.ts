@@ -7,12 +7,12 @@ const CORE_ROUTES = new Set(['/dashboard', '/chat', '/rag-studio']);
 const PERSONA_ROUTES: Record<Persona, Set<string>> = {
   'analyst': new Set([
     ...CORE_ROUTES,
-    '/data-explorer', '/schema-browser', '/data-quality', '/semantic-search',
+    '/data-products', '/schema-browser', '/data-quality', '/semantic-search',
     '/analytical-dashboard', '/analytics',
   ]),
   'data-engineer': new Set([
     ...CORE_ROUTES,
-    '/data-explorer', '/schema-browser', '/data-cleaning', '/data-quality', '/lineage',
+    '/data-products', '/schema-browser', '/data-cleaning', '/data-quality', '/lineage',
     '/vocab-search', '/pipeline', '/streaming',
   ]),
   'ml-engineer': new Set([

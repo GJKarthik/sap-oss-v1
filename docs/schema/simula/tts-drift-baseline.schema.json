@@ -1,0 +1,427 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://sap-oss.github.io/schema/simula/tts-drift-baseline.schema.json",
+  "title": "TTS Drift Baseline",
+  "description": "Schema for Text-to-SQL drift baseline snapshots (Chapter 18)",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "baseline_id",
+    "created_at",
+    "schema_snapshot",
+    "metric_baselines",
+    "training_data_version"
+  ],
+  "properties": {
+    "baseline_id": {
+      "type": "string",
+      "description": "Unique baseline identifier",
+      "pattern": "^tts-baseline-[a-f0-9]{8}$"
+    },
+    "baseline_version": {
+      "type": "string",
+      "description": "Semantic version of the baseline",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$"
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Baseline creation timestamp"
+    },
+    "created_by": {
+      "type": "string",
+      "description": "User or system that created the baseline"
+    },
+    "description": {
+      "type": "string",
+      "description": "Human-readable description of the baseline"
+    },
+    "schema_snapshot": {
+      "$ref": "#/definitions/schema_snapshot",
+      "description": "Snapshot of HANA schema at baseline creation"
+    },
+    "metric_baselines": {
+      "$ref": "#/definitions/metric_baselines",
+      "description": "Baseline values for all TTS metrics"
+    },
+    "training_data_version": {
+      "type": "string",
+      "description": "Version of Simula training data used"
+    },
+    "training_data_stats": {
+      "$ref": "#/definitions/training_data_stats",
+      "description": "Statistics about training data at baseline"
+    },
+    "model_version": {
+      "type": "string",
+      "description": "Text-to-SQL model version"
+    },
+    "complexity_distribution": {
+      "$ref": "#/definitions/complexity_distribution",
+      "description": "Distribution of complexity levels in training data"
+    },
+    "taxonomy_coverage": {
+      "$ref": "#/definitions/taxonomy_coverage",
+      "description": "Taxonomy node coverage at baseline"
+    },
+    "vocabulary_snapshot": {
+      "$ref": "#/definitions/vocabulary_snapshot",
+      "description": "Vocabulary distribution for terminology drift detection"
+    },
+    "thresholds": {
+      "$ref": "#/definitions/metric_thresholds",
+      "description": "Metric thresholds in effect at baseline"
+    },
+    "is_active": {
+      "type": "boolean",
+      "default": true,
+      "description": "Whether this baseline is currently active"
+    },
+    "superseded_by": {
+      "type": "string",
+      "description": "ID of baseline that supersedes this one"
+    },
+    "superseded_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Timestamp when baseline was superseded"
+    },
+    "approval_status": {
+      "type": "string",
+      "enum": ["draft", "pending_review", "approved", "rejected", "deprecated"],
+      "description": "Approval status of the baseline"
+    },
+    "approved_by": {
+      "type": "string",
+      "description": "User who approved the baseline"
+    },
+    "approved_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Timestamp of approval"
+    },
+    "metadata": {
+      "$ref": "https://sap-oss.github.io/schema/common/base-types.schema.json#/definitions/Metadata",
+      "description": "Record metadata"
+    }
+  },
+  "definitions": {
+    "schema_snapshot": {
+      "type": "object",
+      "description": "Snapshot of HANA schema structure",
+      "properties": {
+        "snapshot_hash": {
+          "type": "string",
+          "description": "Hash of complete schema structure for quick comparison"
+        },
+        "schemas": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/schema_info"
+          },
+          "description": "List of schemas included"
+        },
+        "total_tables": {
+          "type": "integer",
+          "description": "Total number of tables"
+        },
+        "total_columns": {
+          "type": "integer",
+          "description": "Total number of columns"
+        },
+        "total_foreign_keys": {
+          "type": "integer",
+          "description": "Total number of foreign key relationships"
+        }
+      },
+      "required": ["snapshot_hash", "total_tables", "total_columns"]
+    },
+    "schema_info": {
+      "type": "object",
+      "properties": {
+        "schema_name": {
+          "type": "string",
+          "description": "Schema name"
+        },
+        "table_count": {
+          "type": "integer",
+          "description": "Number of tables in schema"
+        },
+        "column_count": {
+          "type": "integer",
+          "description": "Total columns across all tables"
+        },
+        "tables": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/table_info"
+          },
+          "description": "Table details"
+        }
+      },
+      "required": ["schema_name", "table_count"]
+    },
+    "table_info": {
+      "type": "object",
+      "properties": {
+        "table_name": {
+          "type": "string",
+          "description": "Table name"
+        },
+        "column_count": {
+          "type": "integer",
+          "description": "Number of columns"
+        },
+        "column_hash": {
+          "type": "string",
+          "description": "Hash of column definitions for change detection"
+        },
+        "primary_key": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Primary key columns"
+        },
+        "foreign_keys": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "column": { "type": "string" },
+              "references_table": { "type": "string" },
+              "references_column": { "type": "string" }
+            }
+          },
+          "description": "Foreign key relationships"
+        }
+      },
+      "required": ["table_name", "column_count"]
+    },
+    "metric_baselines": {
+      "type": "object",
+      "description": "Baseline values for all TTS metrics",
+      "properties": {
+        "scr": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "description": "Baseline Schema Coverage Rate"
+        },
+        "sss": {
+          "type": "number",
+          "minimum": 0,
+          "description": "Baseline Schema Staleness Score (should be 0 at baseline)"
+        },
+        "ctmr": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "description": "Baseline Column Type Mismatch Rate"
+        },
+        "fkcr": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "description": "Baseline Foreign Key Consistency Rate"
+        },
+        "sas": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "description": "Baseline Semantic Alignment Score"
+        },
+        "ipr": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "description": "Baseline Intent Preservation Rate"
+        },
+        "tds": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "description": "Baseline Terminology Drift Score"
+        },
+        "arr": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "description": "Baseline Ambiguity Resolution Rate"
+        },
+        "esr": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "description": "Baseline Execution Success Rate"
+        },
+        "rfs": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "description": "Baseline Result Fidelity Score"
+        },
+        "tts_eval": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 100,
+          "description": "Baseline TTS-EVAL composite score"
+        }
+      },
+      "required": ["scr", "sss", "ctmr", "fkcr", "sas", "ipr", "tds", "arr", "esr", "rfs", "tts_eval"]
+    },
+    "training_data_stats": {
+      "type": "object",
+      "description": "Statistics about training data",
+      "properties": {
+        "total_examples": {
+          "type": "integer",
+          "description": "Total number of training examples"
+        },
+        "unique_tables_referenced": {
+          "type": "integer",
+          "description": "Number of unique tables referenced"
+        },
+        "unique_columns_referenced": {
+          "type": "integer",
+          "description": "Number of unique columns referenced"
+        },
+        "avg_sql_length": {
+          "type": "number",
+          "description": "Average SQL query length"
+        },
+        "avg_question_length": {
+          "type": "number",
+          "description": "Average question length"
+        },
+        "critic_pass_rate": {
+          "type": "number",
+          "description": "Fraction passing double-critic evaluation"
+        }
+      }
+    },
+    "complexity_distribution": {
+      "type": "object",
+      "description": "Distribution of complexity levels",
+      "properties": {
+        "easy": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "description": "Fraction of easy examples"
+        },
+        "medium": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "description": "Fraction of medium examples"
+        },
+        "hard": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "description": "Fraction of hard examples"
+        },
+        "mean_elo": {
+          "type": "number",
+          "description": "Mean Elo-calibrated complexity score"
+        },
+        "std_elo": {
+          "type": "number",
+          "description": "Standard deviation of Elo scores"
+        }
+      },
+      "required": ["easy", "medium", "hard"]
+    },
+    "taxonomy_coverage": {
+      "type": "object",
+      "description": "Taxonomy node coverage statistics",
+      "properties": {
+        "level_1_coverage": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "description": "Level 1 taxonomy coverage"
+        },
+        "level_2_coverage": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "description": "Level 2 taxonomy coverage"
+        },
+        "level_3_coverage": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "description": "Level 3 taxonomy coverage"
+        },
+        "total_nodes": {
+          "type": "integer",
+          "description": "Total taxonomy nodes"
+        },
+        "covered_nodes": {
+          "type": "integer",
+          "description": "Number of covered nodes"
+        },
+        "coverage_by_factor": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1
+          },
+          "description": "Coverage by taxonomy factor (e.g., query_type, complexity)"
+        }
+      }
+    },
+    "vocabulary_snapshot": {
+      "type": "object",
+      "description": "Vocabulary distribution for TDS calculation",
+      "properties": {
+        "schema_vocabulary_hash": {
+          "type": "string",
+          "description": "Hash of schema vocabulary distribution"
+        },
+        "prompt_vocabulary_hash": {
+          "type": "string",
+          "description": "Hash of prompt vocabulary distribution"
+        },
+        "schema_term_count": {
+          "type": "integer",
+          "description": "Number of unique terms in schema"
+        },
+        "prompt_term_count": {
+          "type": "integer",
+          "description": "Number of unique terms in prompts"
+        },
+        "overlap_count": {
+          "type": "integer",
+          "description": "Number of terms appearing in both"
+        },
+        "jsd_baseline": {
+          "type": "number",
+          "description": "Jensen-Shannon divergence at baseline"
+        }
+      }
+    },
+    "metric_thresholds": {
+      "type": "object",
+      "description": "Metric thresholds at baseline",
+      "properties": {
+        "scr_threshold": { "type": "number", "default": 0.85 },
+        "sss_threshold": { "type": "number", "default": 7.0 },
+        "ctmr_threshold": { "type": "number", "default": 0.02 },
+        "fkcr_threshold": { "type": "number", "default": 0.95 },
+        "sas_threshold": { "type": "number", "default": 0.80 },
+        "ipr_threshold": { "type": "number", "default": 0.90 },
+        "tds_threshold": { "type": "number", "default": 0.15 },
+        "arr_threshold": { "type": "number", "default": 0.75 },
+        "esr_threshold": { "type": "number", "default": 0.95 },
+        "rfs_threshold": { "type": "number", "default": 0.85 },
+        "cdd_threshold": { "type": "number", "default": 0.10 },
+        "tcd_threshold": { "type": "number", "default": 0.05 },
+        "tts_eval_green": { "type": "number", "default": 85 },
+        "tts_eval_amber": { "type": "number", "default": 70 },
+        "tts_eval_red": { "type": "number", "default": 55 }
+      }
+    }
+  }
+}

@@ -1,0 +1,170 @@
+\chapter{Future Work: ML-Based Anomaly Detection}\label{ch:future-ml}
+
+This chapter documents the roadmap for transitioning from the current
+\textbf{statistical anomaly detection} methods (3$\sigma$ thresholds, MAD,
+percentile-based rules) to \textbf{machine learning-based} approaches.
+
+\textit{Note: The current implementation uses statistical process control
+techniques. The term ``ML-based'' has been removed from the main specification
+to accurately reflect the current state. This chapter describes v2.0 plans.}
+
+\section{Current state: Statistical detection}
+
+The v1.0 implementation uses four statistical checks (see Chapter~3):
+\begin{enumerate}
+  \item Period spike detection ($>3\sigma$ from 12-month rolling mean)
+  \item Sign flip detection (balance sign reversal)
+  \item New account detection (no prior history)
+  \item Stale balance detection (unchanged $>$6 months)
+\end{enumerate}
+
+These methods are effective for \textbf{known anomaly patterns} but have
+limitations:
+\begin{itemize}
+  \item Cannot learn new anomaly patterns from historical data
+  \item Require manual threshold tuning per entity
+  \item Assume statistical stationarity (violated during restructuring)
+  \item Cannot capture multi-variate correlations
+\end{itemize}
+
+\section{v2.0 roadmap: Machine learning approaches}
+
+\subsection{Isolation Forest}
+
+\begin{table}[htbp]
+\centering
+\caption{Isolation Forest specification.}
+\footnotesize
+\begin{tabularx}{\linewidth}{@{}l X@{}}
+\toprule
+\textbf{Attribute} & \textbf{Value} \\ \midrule
+Algorithm & Isolation Forest (scikit-learn) \\
+Input features & 12-month balance history, variance ratios, sign changes \\
+Training data & 2 years historical TB data per entity \\
+Contamination parameter & 0.05 (5\% expected anomaly rate) \\
+Number of estimators & 100 trees \\
+Retraining frequency & Quarterly \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\subsection{Autoencoder}
+
+\begin{table}[htbp]
+\centering
+\caption{Autoencoder specification.}
+\footnotesize
+\begin{tabularx}{\linewidth}{@{}l X@{}}
+\toprule
+\textbf{Attribute} & \textbf{Value} \\ \midrule
+Architecture & Dense autoencoder (128-64-32-64-128) \\
+Input features & Normalized balance vectors (12 months) \\
+Training data & 2 years historical TB data, anomalies removed \\
+Loss function & Mean squared error \\
+Anomaly threshold & Reconstruction error $>$ 95th percentile \\
+Retraining frequency & Monthly \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\subsection{Time-series forecasting}
+
+For accounts with seasonal patterns:
+\begin{itemize}
+  \item Prophet model for trend + seasonality decomposition
+  \item Anomaly = actual deviates from forecast $>$2$\sigma$
+  \item Requires $\geq$24 months history
+\end{itemize}
+
+\section{Transition plan}
+
+\subsection{Phase 1: Shadow mode (Months 1--3)}
+
+\begin{enumerate}
+  \item Deploy ML models alongside statistical checks
+  \item Log ML predictions without surfacing to users
+  \item Compare ML vs. statistical detection rates
+  \item Measure precision/recall on human-labelled anomalies
+\end{enumerate}
+
+\subsection{Phase 2: Hybrid mode (Months 4--6)}
+
+\begin{enumerate}
+  \item Use statistical checks as primary
+  \item Add ML-detected anomalies as ``additional flags''
+  \item Collect user feedback on ML-only detections
+  \item Tune thresholds based on feedback
+\end{enumerate}
+
+\subsection{Phase 3: ML primary (Month 7+)}
+
+\begin{enumerate}
+  \item Switch to ML as primary detection
+  \item Keep statistical checks as fallback
+  \item Establish continuous monitoring of model drift
+  \item Quarterly model retraining and validation
+\end{enumerate}
+
+\section{Success criteria}
+
+The transition is complete when:
+\begin{itemize}
+  \item ML precision $\geq$ 85\% (verified anomalies / flagged anomalies)
+  \item ML recall $\geq$ 90\% (detected anomalies / actual anomalies)
+  \item False positive rate $\leq$ 10\%
+  \item Human review load reduced by $\geq$ 20\%
+  \item Model retraining automated and validated
+\end{itemize}
+
+\section{Data requirements}
+
+\begin{table}[htbp]
+\centering
+\caption{Training data requirements for ML models.}
+\footnotesize
+\begin{tabularx}{\linewidth}{@{}l r X@{}}
+\toprule
+\textbf{Data Type} & \textbf{Volume} & \textbf{Source} \\ \midrule
+Historical TB extracts & 24 months & SAP archives \\
+Labelled anomalies & 500+ per entity type & Human review logs \\
+Seasonal patterns & 36 months & For Prophet model \\
+Entity metadata & All 234 entities & Master data \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\section{Timeline}
+
+\begin{table}[htbp]
+\centering
+\caption{ML transition timeline (conditional, not committed).}
+\label{tab:ml-timeline}
+\footnotesize
+\begin{tabularx}{\linewidth}{@{}l l X@{}}
+\toprule
+\textbf{Milestone} & \textbf{Target window} & \textbf{Gating dependencies} \\ \midrule
+Data collection complete & Q3--Q4 2026 & Historical data extraction; labelled anomaly backlog $\ge$500/entity type \\
+Isolation Forest prototype & Q1 2027 & Data collection \emph{and} 2+ quarters of dashboard audit trail (for labels) \\
+Shadow mode deployment & Q2 2027 & Prototype passes offline validation on held-out set \\
+Hybrid mode pilot (HKG only) & Q3 2027 & Shadow mode shows $\ge$90\% agreement with statistical checks on true positives \\
+ML primary (limited rollout) & Q4 2027--Q1 2028 & Hybrid success on HKG + 2 additional LEs \\
+Full production & Q2--Q4 2028 & All onboarded entities validated (paced by LE onboarding in~\cref{sec:params-234}) \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\paragraph{Schedule realism.}
+The dates in Table~\ref{tab:ml-timeline} are \emph{target windows},
+not committed dates. The v1.0 implementation has no ML model today
+and no labelled anomaly corpus; the earliest honest shadow-mode
+deployment is therefore gated on accumulating $\ge$2~quarters of
+production dashboard decisions (start of the corpus coincides with
+v1.0 go-live). Each milestone's entry is a \textbf{target}; missing
+a target by one quarter does not block the v1.0 programme and does
+not downgrade the v1.0 statistical methods. The programme
+management office reviews this table quarterly and revises windows
+based on: (a) labelled corpus volume, (b) LE onboarding pace
+(\cref{sec:params-234}), and (c) controller feedback on
+statistical detection false-positive rate. A formal decision to
+commit to shadow-mode deployment is taken by the TB programme
+board one quarter before the target.

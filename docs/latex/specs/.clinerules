@@ -1,0 +1,232 @@
+# =============================================================================
+# .clinerules - LaTeX Specifications Root Directory
+# Enterprise AI Platform Documentation Standards
+# =============================================================================
+# This file defines rules for the LaTeX specifications directory structure
+# and ensures consistency across all specification documents.
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# DIRECTORY OVERVIEW
+# -----------------------------------------------------------------------------
+
+## Purpose
+
+This directory contains all LaTeX specification documents for the enterprise
+AI platform. Specifications are organized by domain and purpose.
+
+## Directory Structure
+
+| Directory | Type | Description |
+|-----------|------|-------------|
+| `arabic/` | Use Case | Arabic AP Invoice Processing (Technical) |
+| `arabic-hitl/` | Use Case | Arabic AP Invoice (Business Requirements) |
+| `tb/` | Use Case | Trial Balance Review (Technical) |
+| `tb-hitl/` | Use Case | Trial Balance (Business Requirements) |
+| `simula/` | Framework | Training Data Framework |
+| `regulations/` | Governance | AI Regulatory Compliance |
+| `clinerules-agents/` | Architecture | Agent Swarm Architecture |
+| `usecase/` | Grouping | Use case spec grouping directory |
+
+## Shared Files
+
+| File | Purpose |
+|------|---------|
+| `00-executive-summary.tex` | Cross-spec executive summary |
+| `00-master-glossary.tex` | Unified glossary |
+| `00-cross-spec-dependencies.tex` | Inter-spec dependencies |
+| `shared-intent-core.tex` | Shared intent definitions |
+| `README.md` | Directory documentation |
+
+# -----------------------------------------------------------------------------
+# SPEC CATEGORIES
+# -----------------------------------------------------------------------------
+
+## Use Case Specifications
+
+Use case specs document specific business process automation:
+
+| Spec | Domain | Schema | Implementation |
+|------|--------|--------|----------------|
+| arabic/ | AP Invoice | docs/schema/arabic/ | src/intelligence/ocr/ |
+| tb/ | Trial Balance | docs/schema/tb/ | src/intelligence/analytics/ |
+
+Each use case has two complementary specifications:
+- **Technical Spec** (e.g., `arabic/`) - Implementation guidance
+- **Business Requirements** (e.g., `arabic-hitl/`) - Requirements traceability
+
+## Framework Specifications
+
+Framework specs document cross-cutting capabilities:
+
+| Spec | Purpose | Schema |
+|------|---------|--------|
+| simula/ | Training data generation | docs/schema/simula/ |
+| regulations/ | AI compliance | docs/schema/regulations/ |
+| clinerules-agents/ | Agent architecture | docs/schema/common/ |
+
+# -----------------------------------------------------------------------------
+# SPEC-DRIFT PREVENTION
+# -----------------------------------------------------------------------------
+
+## Automatic Drift Detection
+
+The spec-drift audit agent monitors all specifications for:
+- Schema-spec drift (data model inconsistencies)
+- Code-spec drift (implementation divergence)
+- Cross-spec drift (inconsistent shared definitions)
+
+## Running Audits
+
+```bash
+# Full audit across all specs
+make audit-spec-drift
+
+# Audit specific domain
+make audit-spec-drift-domain DOMAIN=simula
+
+# Quick check on changed files
+make audit-spec-drift-quick
+```
+
+## Traceability Registry
+
+All spec-schema-code relationships are documented in:
+`docs/schema/spec-code-mapping.yaml`
+
+# -----------------------------------------------------------------------------
+# DOCUMENT STANDARDS
+# -----------------------------------------------------------------------------
+
+## Main Document Structure
+
+Each specification MUST have:
+1. **Main .tex file** - Named `<domain>-spec.tex` or `<domain>-<type>-spec.tex`
+2. **chapters/ directory** - Numbered chapter files (00-frontmatter.tex, etc.)
+3. **.clinerules file** - Domain-specific rules
+4. **references.bib** - Bibliography (if needed)
+
+## Chapter Numbering
+
+| Range | Content Type |
+|-------|--------------|
+| 00 | Front matter, visual aids |
+| 01-02 | Introduction, scope |
+| 03-05 | Business requirements |
+| 06-08 | Design/architecture |
+| 09-11 | Data model |
+| 12-14 | Implementation |
+| 15-16 | Operations |
+| 17+ | Future work |
+| A1+ | Appendices |
+
+## Citation Standards
+
+All specifications MUST include source traceability:
+- Quote source documents verbatim
+- Include precise location references
+- Document derivation rationale
+
+# -----------------------------------------------------------------------------
+# COMPILATION
+# -----------------------------------------------------------------------------
+
+## Build Commands
+
+```bash
+# Compile all specs to PDF
+make specs-all
+
+# Compile specific spec
+make spec-simula
+make spec-arabic
+make spec-tb
+make spec-regulations
+make spec-clinerules-agents
+
+# Export all to DOCX
+make specs-docx
+
+# Full export (PDF + DOCX)
+make specs-export
+```
+
+## Required Tools
+
+- **XeLaTeX** or **LuaLaTeX** - For Unicode (Arabic) support
+- **Tectonic** - Alternative LaTeX compiler
+- **Pandoc** - For DOCX export
+
+# -----------------------------------------------------------------------------
+# ADDING NEW SPECIFICATIONS
+# -----------------------------------------------------------------------------
+
+When adding a new specification:
+
+1. **Create directory structure**
+   ```
+   docs/latex/specs/<domain>/
+   ├── <domain>-spec.tex
+   ├── .clinerules
+   ├── references.bib
+   └── chapters/
+       ├── 00-frontmatter.tex
+       ├── 01-introduction.tex
+       └── ...
+   ```
+
+2. **Create schema directory**
+   ```
+   docs/schema/<domain>/
+   └── ...schema.json files...
+   ```
+
+3. **Update traceability registry**
+   - Add domain to `docs/schema/spec-code-mapping.yaml`
+   - Add to `docs/schema/registry.json`
+
+4. **Add Makefile target**
+   - Add `spec-<domain>` target to Makefile
+   - Add to `specs-all` dependency list
+
+5. **Validate**
+   ```bash
+   make audit-check-mapping
+   make audit-spec-drift-domain DOMAIN=<domain>
+   ```
+
+# -----------------------------------------------------------------------------
+# CROSS-SPEC REFERENCES
+# -----------------------------------------------------------------------------
+
+## Referencing Other Specs
+
+Use consistent labeling for cross-references:
+
+```latex
+% In source spec
+\label{sec:<domain>-<topic>}
+
+% In referencing spec
+See Section~\ref{sec:<domain>-<topic>} in the <Domain> Specification.
+```
+
+## Shared Definitions
+
+Shared definitions (enums, types) are in:
+- `docs/schema/common/enums.yaml` - Shared enumerations
+- `00-master-glossary.tex` - Shared terminology
+
+Changes to shared definitions require RFC approval.
+
+# -----------------------------------------------------------------------------
+# VERSION HISTORY
+# -----------------------------------------------------------------------------
+
+| Version | Date | Changes |
+|---------|------|---------|
+| 1.0.0 | 2026-04-21 | Initial .clinerules for specs root |
+
+# =============================================================================
+# END OF .clinerules
+# =============================================================================

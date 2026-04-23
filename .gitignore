@@ -51,9 +51,16 @@ yarn-error.log*
 *.h5
 *.hdf5
 
-# Large data files
-*.jsonl
-*.csv
+# Large data files - small ones tracked, large ones excluded
+# *.jsonl  # commented out - tracking small jsonl files
+# *.csv    # commented out - tracking csv files
+
+# Large training data files (>100MB - exceeds GitHub limit)
+src/training/data/massive_semantic/train.jsonl
+src/training/data/massive_semantic/training_data.jsonl
+src/training/data/massive_semantic_sft/train.jsonl
+src/training/schema_pipeline/output/prepared/train.jsonl
+src/training/schema_pipeline/output/prepared/all_data.jsonl
 
 # Embedded git repos
 .claude/

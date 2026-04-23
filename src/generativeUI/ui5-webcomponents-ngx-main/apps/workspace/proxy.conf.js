@@ -56,4 +56,11 @@ module.exports = {
     pathRewrite: { '^/api/v1/ui5/mcp': '' },
     logLevel: 'info',
   },
+  '/api/__debug': {
+    target: TRAINING_API_URL,
+    secure: false,
+    changeOrigin: true,
+    pathRewrite: { '^/api': '' },
+    logLevel: 'warn',
+  },
 };

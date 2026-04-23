@@ -1,0 +1,194 @@
+# =============================================================================
+# .clinerules - Clinerules Agents Specification
+# AI Agent Swarm Architecture & Rule Packs
+# =============================================================================
+# This specification defines the architecture for AI agent swarms using
+# .clinerules for domain-specific behavior governance and coordination.
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# SPECIFICATION OVERVIEW
+# -----------------------------------------------------------------------------
+
+## Purpose
+
+The Clinerules Agents specification defines:
+- **Agent Rule Packs**: Domain-specific .clinerules configurations
+- **Swarm Architecture**: Multi-agent coordination patterns
+- **Regulatory Alignment**: Agent behavior compliance with AI regulations
+- **Validation Framework**: Agent behavior verification methods
+
+## Key Documents
+
+| Document | Purpose |
+|----------|---------|
+| `clinerules-agents-spec.tex` | Main specification document |
+| `chapters/01-overview.tex` | Executive overview |
+| `chapters/03-agent-rule-pack-architecture.tex` | Rule pack structure |
+| `chapters/04-regulatory-agents.tex` | Regulatory compliance agents |
+| `chapters/05-swarm-delivery.tex` | Swarm coordination patterns |
+| `chapters/06-validation.tex` | Validation and testing |
+
+# -----------------------------------------------------------------------------
+# RELATED ARTIFACTS
+# -----------------------------------------------------------------------------
+
+## Rule Pack Files (This Spec is Source of Truth)
+
+| .clinerules File | Domain | Purpose |
+|------------------|--------|---------|
+| `.clinerules` (root) | Global | Repository-wide standards |
+| `.clinerules.spec-drift-auditor` | Audit | Spec-drift detection rules |
+| `src/training/.clinerules` | Training | ML training pipeline rules |
+| `src/generativeUI/.clinerules` | UI | Frontend development rules |
+| `src/intelligence/.clinerules` | Intelligence | AI service rules |
+
+## Schemas
+
+| Schema | Purpose |
+|--------|---------|
+| `docs/schema/common/clinerules.schema.json` | Rule pack structure |
+| `docs/schema/common/agent-config.schema.json` | Agent configuration |
+
+## Implementation
+
+| Code Path | Purpose |
+|-----------|---------|
+| `scripts/spec-drift/audit.py` | Spec-drift audit agent |
+| `scripts/spec-drift/check_mapping.py` | Mapping validation |
+
+# -----------------------------------------------------------------------------
+# SPEC-DRIFT SYNCHRONIZATION RULES
+# -----------------------------------------------------------------------------
+
+## Critical Sync Points
+
+1. **Agent Rule Pack Structure**
+   - Spec Chapter 3 ↔ All .clinerules files in repository
+   - New rule sections must follow documented structure
+
+2. **Swarm Coordination Patterns**
+   - Spec Chapter 5 ↔ Agent implementation code
+   - New coordination patterns need spec documentation
+
+3. **Validation Requirements**
+   - Spec Chapter 6 ↔ Test implementation
+   - Validation criteria changes need both updates
+
+## Self-Referential Nature
+
+This specification is unique - it documents the .clinerules system while also
+being governed by .clinerules. Changes to this spec may require updates to:
+
+1. The root `.clinerules` file
+2. Other domain-specific `.clinerules` files
+3. The `.clinerules.spec-drift-auditor` itself
+
+## Pre-Change Checklist
+
+Before modifying this specification:
+
+- [ ] Run `make audit-spec-drift-domain DOMAIN=clinerules-agents`
+- [ ] Review existing .clinerules files for inconsistencies
+- [ ] Check if changes affect spec-drift audit logic
+- [ ] Verify regulatory alignment requirements
+
+## Post-Change Checklist
+
+After modifying this specification:
+
+- [ ] Update affected .clinerules files across repository
+- [ ] Update spec-drift audit rules if needed
+- [ ] Run `make audit-spec-drift` to verify synchronization
+- [ ] Update example rule packs in documentation
+
+# -----------------------------------------------------------------------------
+# CHAPTER STANDARDS
+# -----------------------------------------------------------------------------
+
+## Agent Rule Pack Documentation
+
+Each agent rule pack documented in this spec MUST include:
+
+1. **Purpose Statement** - What the agent does
+2. **Trigger Conditions** - When the agent activates
+3. **Input/Output Spec** - Data the agent processes
+4. **Regulatory Mapping** - Compliance requirements addressed
+5. **Example Rules** - Concrete rule examples
+
+## Code Example Format
+
+When documenting rule pack structures:
+
+```latex
+\begin{lstlisting}[language=yaml,caption=Example Rule Pack Structure]
+# Rule Pack Header
+agent_type: regulatory-compliance
+version: 1.0.0
+domain: financial-controls
+
+# Trigger Conditions
+triggers:
+  - file_pattern: "*.py"
+    action: code_review
+    
+# Behavioral Rules  
+rules:
+  - id: FIN-001
+    description: "Validate audit trail completeness"
+    severity: high
+\end{lstlisting}
+```
+
+# -----------------------------------------------------------------------------
+# REQUIREMENT ID CONVENTIONS
+# -----------------------------------------------------------------------------
+
+| Category | Prefix | Example |
+|----------|--------|---------|
+| Architecture | CA-ARCH | CA-ARCH-001 |
+| Rule Pack | CA-RP | CA-RP-001 |
+| Swarm | CA-SWARM | CA-SWARM-001 |
+| Validation | CA-VAL | CA-VAL-001 |
+| Regulatory | CA-REG | CA-REG-001 |
+
+# -----------------------------------------------------------------------------
+# RULE PACK CATEGORIES (Authoritative)
+# -----------------------------------------------------------------------------
+
+These rule pack categories are authoritative:
+
+| Category | Purpose | Example Agents |
+|----------|---------|----------------|
+| Domain | Business logic rules | TB-Review, Arabic-AP |
+| Technical | Implementation standards | Code-Style, Schema-Valid |
+| Compliance | Regulatory requirements | GDPR-Check, AI-Act |
+| Operations | Runtime behavior | Monitoring, Alerting |
+| Governance | Process controls | Approval-Flow, Audit-Trail |
+
+# -----------------------------------------------------------------------------
+# DRIFT DETECTION COMMANDS
+# -----------------------------------------------------------------------------
+
+```bash
+# Full audit for clinerules-agents domain
+make audit-spec-drift-domain DOMAIN=clinerules-agents
+
+# List all .clinerules files
+find . -name ".clinerules*" -type f
+
+# Verify rule pack consistency
+grep -r "## Purpose" docs/latex/specs/*/. 2>/dev/null | grep clinerules
+```
+
+# -----------------------------------------------------------------------------
+# VERSION HISTORY
+# -----------------------------------------------------------------------------
+
+| Version | Date | Changes |
+|---------|------|---------|
+| 1.0.0 | 2026-04-21 | Initial .clinerules for Clinerules Agents spec |
+
+# =============================================================================
+# END OF .clinerules
+# =============================================================================

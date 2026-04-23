@@ -50,11 +50,11 @@ test.describe('SAP AI Workspace RTL Visual Regression', () => {
     });
   });
 
-  test.describe('Forms Page', () => {
-    test('forms page RTL layout', async ({ page }) => {
-      await page.goto('/forms', { waitUntil: 'networkidle' });
+  test.describe('Readiness Page', () => {
+    test('readiness page RTL layout', async ({ page }) => {
+      await page.goto('/readiness', { waitUntil: 'networkidle' });
       await page.waitForTimeout(500);
-      await expect(page).toHaveScreenshot('rtl-forms-full.png', {
+      await expect(page).toHaveScreenshot('rtl-readiness-full.png', {
         ...SCREENSHOT_OPTS,
         fullPage: true,
       });
@@ -104,10 +104,10 @@ test.describe('SAP AI Workspace RTL Visual Regression', () => {
       });
     });
 
-    test('form labels and inputs RTL alignment', async ({ page }) => {
-      await page.goto('/forms', { waitUntil: 'networkidle' });
+    test('readiness layout remains stable in RTL', async ({ page }) => {
+      await page.goto('/readiness', { waitUntil: 'networkidle' });
       await page.waitForTimeout(500);
-      await expect(page).toHaveScreenshot('rtl-forms-bidi.png', {
+      await expect(page).toHaveScreenshot('rtl-readiness-bidi.png', {
         ...SCREENSHOT_OPTS,
         fullPage: true,
       });

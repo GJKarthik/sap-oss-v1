@@ -1,0 +1,297 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://sap-oss.github.io/schema/tb/decision-point.schema.json",
+  "title": "Decision Point Record",
+  "description": "Schema for decision point records in TB workflow (DP-001 through DP-005)",
+  "type": "object",
+  "required": ["decision_id", "decision_point", "variance_id", "outcome", "evaluated_at"],
+  "additionalProperties": false,
+  "properties": {
+    "decision_id": {
+      "type": "string",
+      "description": "Unique identifier for this decision"
+    },
+    "decision_point": {
+      "type": "string",
+      "enum": ["DP-001", "DP-002", "DP-003", "DP-004", "DP-005"],
+      "description": "Decision point identifier per docs/schema/common/enums.yaml"
+    },
+    "variance_id": {
+      "type": "string",
+      "description": "Reference to variance record being evaluated"
+    },
+    "account_code": {
+      "type": "string",
+      "description": "GL account code"
+    },
+    "period": {
+      "type": "string",
+      "pattern": "^[0-9]{4}-[0-9]{2}$",
+      "description": "Accounting period (YYYY-MM format)"
+    },
+    "legal_entity": {
+      "type": "string",
+      "description": "Legal entity code"
+    },
+    "outcome": {
+      "type": "string",
+      "description": "Decision outcome (values depend on decision point)"
+    },
+    "outcome_reason": {
+      "type": "string",
+      "description": "Reason for outcome"
+    },
+    "next_state": {
+      "type": "string",
+      "description": "Workflow state to transition to"
+    },
+    "evaluated_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Evaluation timestamp"
+    },
+    "evaluated_by": {
+      "type": "string",
+      "enum": ["system", "human"],
+      "description": "Whether evaluated by system rule or human"
+    },
+    "evaluator_id": {
+      "type": "string",
+      "description": "Human evaluator ID (if applicable)"
+    },
+    "rule_version": {
+      "type": "string",
+      "description": "Version of rule set used for evaluation"
+    },
+    "input_data": {
+      "type": "object",
+      "additionalProperties": true,
+      "description": "Input data used for decision"
+    },
+    "dp_specific": {
+      "oneOf": [
+        {"$ref": "#/definitions/dp001_material_variance"},
+        {"$ref": "#/definitions/dp002_journal_posted"},
+        {"$ref": "#/definitions/dp003_further_investigation"},
+        {"$ref": "#/definitions/dp004_confirmation"},
+        {"$ref": "#/definitions/dp005_unexplained"}
+      ],
+      "description": "Decision-point-specific details"
+    },
+    "audit_trail": {
+      "$ref": "#/definitions/audit_trail",
+      "description": "Audit trail for this decision"
+    },
+    "metadata": {
+      "$ref": "https://sap-oss.github.io/schema/common/base-types.schema.json#/definitions/Metadata",
+      "description": "Record metadata"
+    }
+  },
+  "definitions": {
+    "dp001_material_variance": {
+      "type": "object",
+      "description": "DP-001: CHECK_MATERIAL_VARIANCES",
+      "additionalProperties": false,
+      "properties": {
+        "decision_point": {
+          "const": "DP-001"
+        },
+        "variance_amount": {
+          "type": "number",
+          "description": "Absolute variance amount"
+        },
+        "materiality_limit": {
+          "type": "number",
+          "description": "Materiality threshold applied"
+        },
+        "account_category": {
+          "type": "string",
+          "description": "Account category used for threshold lookup"
+        },
+        "is_material": {
+          "type": "boolean",
+          "description": "Whether variance exceeds threshold"
+        },
+        "threshold_source": {
+          "type": "string",
+          "enum": ["manual", "fitted", "hybrid"],
+          "description": "Source of threshold"
+        }
+      }
+    },
+    "dp002_journal_posted": {
+      "type": "object",
+      "description": "DP-002: IS_JOURNAL_POSTED",
+      "additionalProperties": false,
+      "properties": {
+        "decision_point": {
+          "const": "DP-002"
+        },
+        "journal_status": {
+          "type": "string",
+          "enum": ["posted", "posting_required", "not_posted"],
+          "description": "Journal posting status"
+        },
+        "posting_date": {
+          "type": "string",
+          "format": "date",
+          "description": "Journal posting date (if posted)"
+        },
+        "journal_ids": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Related journal entry IDs"
+        },
+        "posting_request_sent": {
+          "type": "boolean",
+          "description": "Whether posting request was sent"
+        }
+      }
+    },
+    "dp003_further_investigation": {
+      "type": "object",
+      "description": "DP-003: CHECK_FURTHER_INVESTIGATION",
+      "additionalProperties": false,
+      "properties": {
+        "decision_point": {
+          "const": "DP-003"
+        },
+        "investigation_required": {
+          "type": "boolean",
+          "description": "Whether further investigation is needed"
+        },
+        "investigation_reason": {
+          "type": "string",
+          "description": "Reason for investigation"
+        },
+        "assigned_to": {
+          "type": "string",
+          "description": "Person/role assigned to investigate"
+        },
+        "entry_age_days": {
+          "type": "integer",
+          "description": "Age of entry in days"
+        }
+      }
+    },
+    "dp004_confirmation": {
+      "type": "object",
+      "description": "DP-004: CHECK_CONFIRMATION (M+4 deadline)",
+      "additionalProperties": false,
+      "properties": {
+        "decision_point": {
+          "const": "DP-004"
+        },
+        "confirmation_received": {
+          "type": "boolean",
+          "description": "Whether confirmation was received"
+        },
+        "confirmation_date": {
+          "type": "string",
+          "format": "date",
+          "description": "Date confirmation received"
+        },
+        "days_to_deadline": {
+          "type": "integer",
+          "description": "Days remaining to M+4 deadline"
+        },
+        "deadline_date": {
+          "type": "string",
+          "format": "date",
+          "description": "M+4 deadline date"
+        },
+        "is_past_deadline": {
+          "type": "boolean",
+          "description": "Whether deadline has passed"
+        },
+        "escalation_triggered": {
+          "type": "boolean",
+          "description": "Whether escalation was triggered"
+        }
+      }
+    },
+    "dp005_unexplained": {
+      "type": "object",
+      "description": "DP-005: CHECK_UNEXPLAINED",
+      "additionalProperties": false,
+      "properties": {
+        "decision_point": {
+          "const": "DP-005"
+        },
+        "unexplained_variance_count": {
+          "type": "integer",
+          "description": "Number of unexplained variances"
+        },
+        "has_unexplained": {
+          "type": "boolean",
+          "description": "Whether any unexplained variances exist"
+        },
+        "unexplained_items": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/unexplained_item"
+          },
+          "description": "Details of unexplained items"
+        },
+        "total_unexplained_amount": {
+          "type": "number",
+          "description": "Sum of unexplained variance amounts"
+        }
+      }
+    },
+    "unexplained_item": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "variance_id": {
+          "type": "string",
+          "description": "Variance record ID"
+        },
+        "account_code": {
+          "type": "string",
+          "description": "Account code"
+        },
+        "amount": {
+          "type": "number",
+          "description": "Unexplained amount"
+        },
+        "category": {
+          "type": "string",
+          "enum": ["substantiated_at_risk", "unsubstantiated_unowned", "unsubstantiated_owned"],
+          "description": "BSS risk category"
+        }
+      }
+    },
+    "audit_trail": {
+      "type": "object",
+      "description": "Audit trail for decision",
+      "additionalProperties": false,
+      "properties": {
+        "rule_id": {
+          "type": "string",
+          "description": "Rule that triggered this decision"
+        },
+        "input_snapshot": {
+          "type": "object",
+          "additionalProperties": true,
+          "description": "Snapshot of input values at decision time"
+        },
+        "branch_taken": {
+          "type": "string",
+          "description": "Branch taken in decision tree"
+        },
+        "timestamp": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Decision timestamp"
+        },
+        "correlation_id": {
+          "type": "string",
+          "description": "Request correlation ID for tracing"
+        }
+      }
+    }
+  }
+}

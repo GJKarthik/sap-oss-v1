@@ -1,0 +1,136 @@
+% =============================================================================
+% SIMULA TRAINING DATA FRAMEWORK SPECIFICATION
+% Reasoning-Driven Synthetic Data Generation for SAP AI Agents
+% Version: 1.2.0 - Apple WWDC Style Edition
+% =============================================================================
+% !TEX program = xelatex
+\documentclass[fontsize=10pt,paper=a4paper,twoside=true]{../../shared/sap-oss-apple}
+
+% -----------------------------------------------------------------------------
+% DOCUMENT METADATA
+% -----------------------------------------------------------------------------
+\title{Simula Training Data Framework}
+\author{SCB GCFO, AI Research \& Development}
+\date{April 2026}
+
+% Title page configuration
+\setdocsubtitle{Reasoning-Driven Synthetic Data Generation for SAP AI Agents}
+\setdocref{SIM-TRAIN-2026-v1.2}
+\setdocversion{1.2.0}
+\setdocteam{SCB GCFO, AI Research \& Development}
+\setsaplogo{../../shared/sap-logo.png}
+\setbrandimage{../../shared/brand-image.jpg}
+
+% -----------------------------------------------------------------------------
+% ADDITIONAL PACKAGES (if needed beyond the class)
+% -----------------------------------------------------------------------------
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+
+% -----------------------------------------------------------------------------
+% CROSS-SPEC REFERENCE STUBS
+% -----------------------------------------------------------------------------
+% This spec cites chapters from sibling specs (Regulations, Arabic AP, Trial
+% Balance) that live in separate PDFs. Without these stub labels, every
+% \ref{reg:ch:...} etc. prints as `??'. We register a \newlabel for each known
+% external anchor so the reference resolves to a human-readable short tag
+% rather than the LaTeX undefined-reference glyph. Keep this list in sync with
+% the anchors used under chapters/ and the fragment-* files.
+% `\newlabel' is normally installed in the .aux file after a successful
+% compile; we pre-register stubs for external anchors here so undefined
+% references to sibling specs do not print as `??'. Using \AfterEndPreamble
+% guarantees this runs AFTER hyperref has patched \newlabel with its 5-arg
+% form but BEFORE the first chapter is typeset.
+% `\cref' stores labels via \newlabel{<label>@cref} in a structure cleveref
+% parses internally. To stub external labels cleanly, we override \cref at
+% the top level: if the label exists, fall through to the real cleveref
+% implementation; otherwise emit a human-readable short tag. Known external
+% anchors are registered with \SIMextref{<label>}{<short tag>} below.
+\makeatletter
+\newcommand{\SIMextref}[2]{%
+  \expandafter\def\csname SIM@ext@#1\endcsname{#2}%
+}
+% Redirect \cref to our fallback-aware version. Original cleveref \cref
+% is preserved as \origcref.
+\let\origcref\cref
+\renewcommand{\cref}[1]{%
+  \@ifundefined{SIM@ext@#1}{\origcref{#1}}{\csname SIM@ext@#1\endcsname}%
+}
+\let\origCref\Cref
+\renewcommand{\Cref}[1]{%
+  \@ifundefined{SIM@ext@#1}{\origCref{#1}}{\csname SIM@ext@#1\endcsname}%
+}
+% External-spec chapter anchors. Short tags render as italic prose so the
+% reader sees "(see Regulations spec, MGF chapter)" rather than "??".
+\SIMextref{reg:ch:mgf}{the Regulations spec (MGF chapter)}
+\SIMextref{reg:ch:identity}{the Regulations spec (Identity chapter)}
+\SIMextref{reg:ch:monitoring}{the Regulations spec (Monitoring chapter)}
+\SIMextref{ar:ch:ap}{the Arabic AP spec (Intake chapter)}
+\SIMextref{ar:ch:ai}{the Arabic AP spec (AI chapter)}
+\SIMextref{ar:ch:vat}{the Arabic AP spec (VAT chapter)}
+\SIMextref{ar:ch:vat-impl}{the Arabic AP spec (VAT implementation)}
+\SIMextref{tb:ch:controls}{the Trial Balance spec (Controls chapter)}
+\SIMextref{tb:ch:controls-engine}{the Trial Balance spec (Controls Engine)}
+\SIMextref{tb:ch:ai}{the Trial Balance spec (AI chapter)}
+\SIMextref{tb:ch:workflow}{the Trial Balance spec (Workflow chapter)}
+\SIMextref{tb:ch:review-dashboard}{the Trial Balance spec (Review Dashboard)}
+\makeatother
+
+% -----------------------------------------------------------------------------
+% DOCUMENT BEGINS
+% -----------------------------------------------------------------------------
+\begin{document}
+
+% Custom SAP title page
+\makesaptitle
+
+% Table of contents
+\tableofcontents
+\clearpage
+
+% -----------------------------------------------------------------------------
+% CHAPTERS
+% -----------------------------------------------------------------------------
+
+% --- Incorporated Executive Summary ---
+\chapter{Executive Summary}
+\input{../fragment-executive-summary}
+
+\input{chapters/00-frontmatter}
+\input{chapters/01-overview}
+\input{chapters/02-business-requirements}
+\input{chapters/03-data-schema}
+\input{chapters/04-extraction-pipeline}
+\input{chapters/05-taxonomy-engine}
+\input{chapters/06-generation-engine}
+\input{chapters/07-environment-cli}
+\input{chapters/08-evaluation-framework}
+\input{chapters/09-worked-example}
+\input{chapters/10-testing-spec}
+\input{chapters/11-test-fixtures-spec}
+\input{chapters/12-implementation-instructions}
+\input{chapters/13-cross-spec-dependencies}
+\input{chapters/14-schema-versioning}
+\input{chapters/15-project-roadmap}
+\input{chapters/16-implementation-roadmap}
+\input{chapters/17-future-directions}
+
+% -----------------------------------------------------------------------------
+% APPENDICES
+% -----------------------------------------------------------------------------
+\appendix
+\input{chapters/A1-implementation-gap-review}
+\input{chapters/A2-sap-integration}
+\input{chapters/A3-references}
+
+% --- Incorporated Universal Chapters ---
+\input{../fragment-cross-spec-dependencies}
+\input{../fragment-master-glossary}
+
+% Colophon
+\makecolophon{%
+  This specification is part of the SAP-OSS AI Platform documentation suite.\\
+  For questions or feedback, contact the Controls Architecture Team.
+}
+
+\end{document}

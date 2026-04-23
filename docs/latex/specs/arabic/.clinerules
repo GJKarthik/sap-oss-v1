@@ -1,0 +1,169 @@
+# =============================================================================
+# .clinerules - Arabic AP Invoice Processing Specification
+# Arabic Language Accounts Payable Automation
+# =============================================================================
+# This specification defines the HITL (Human-in-the-Loop) system for processing
+# Arabic language accounts payable invoices with AI-assisted extraction.
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# SPECIFICATION OVERVIEW
+# -----------------------------------------------------------------------------
+
+## Purpose
+
+The Arabic AP Invoice Processing specification defines:
+- **OCR Processing**: Arabic script recognition and extraction
+- **Field Extraction**: Invoice data field identification
+- **HITL Workflow**: Human review and correction process
+- **Quality Assurance**: Extraction accuracy validation
+
+## Key Documents
+
+| Document | Purpose |
+|----------|---------|
+| `arabic-ap-spec.tex` | Main specification document |
+| `chapters/03-extraction-pipeline.tex` | OCR and extraction flow |
+| `chapters/05-hitl-workflow.tex` | Human review workflow |
+| `chapters/07-quality-metrics.tex` | Quality measurement |
+
+# -----------------------------------------------------------------------------
+# RELATED ARTIFACTS
+# -----------------------------------------------------------------------------
+
+## Schemas
+
+| Schema | Purpose |
+|--------|---------|
+| `docs/schema/arabic/invoice.schema.json` | Invoice data structure |
+| `docs/schema/arabic/extraction-result.schema.json` | OCR extraction output |
+| `docs/schema/arabic/review-task.schema.json` | HITL task definition |
+| `docs/schema/arabic/audit-trail.schema.json` | Review audit history |
+
+## Source Documents
+
+| Document | Location |
+|----------|----------|
+| AP Business Case | `docs/arabic/Business Instruction Template*.xlsm` |
+| DOI for AP | `docs/arabic/Accounts Payable DOI.docx` |
+| Sample Invoices | `docs/arabic/*.pdf` |
+
+## Implementation
+
+| Code Path | Purpose |
+|-----------|---------|
+| `src/intelligence/ocr/` | OCR service implementation |
+| `src/intelligence/ocr/arabic/` | Arabic-specific processing |
+| `src/generativeUI/` | Review interface |
+
+# -----------------------------------------------------------------------------
+# SPEC-DRIFT SYNCHRONIZATION RULES
+# -----------------------------------------------------------------------------
+
+## Critical Sync Points
+
+1. **Invoice Field Definitions**
+   - Spec Chapter 4 ↔ `invoice.schema.json` ↔ OCR extraction code
+   - Field additions require all three updates
+
+2. **Extraction Confidence Thresholds**
+   - Spec Chapter 7 ↔ Code constants in OCR service
+   - Threshold changes must be documented
+
+3. **HITL Workflow States**
+   - Spec Chapter 5 ↔ `review-task.schema.json`
+   - State machine changes need both updates
+
+4. **Quality Metrics**
+   - Spec Chapter 7 ↔ Monitoring implementation
+   - New metrics need spec documentation
+
+## Pre-Change Checklist
+
+Before modifying this specification:
+
+- [ ] Run `make audit-spec-drift-domain DOMAIN=arabic`
+- [ ] Review `docs/schema/arabic/` for affected schemas
+- [ ] Check OCR service implementation impact
+- [ ] Verify HITL interface compatibility
+
+## Post-Change Checklist
+
+After modifying this specification:
+
+- [ ] Update `docs/schema/arabic/*.schema.json` if data model changed
+- [ ] Update `src/intelligence/ocr/` if extraction changed
+- [ ] Run `make audit-spec-drift` to verify synchronization
+- [ ] Update `docs/summaries/arabic-ap-summary.md`
+
+# -----------------------------------------------------------------------------
+# ARABIC-SPECIFIC STANDARDS
+# -----------------------------------------------------------------------------
+
+## Right-to-Left (RTL) Considerations
+
+When documenting Arabic text handling:
+- Document text direction requirements explicitly
+- Specify field alignment for mixed content
+- Note Unicode normalization requirements
+
+## Field Naming for Arabic Content
+
+| Field Type | English Name | Arabic Label |
+|------------|--------------|--------------|
+| Invoice Number | invoice_number | رقم الفاتورة |
+| Amount | amount | المبلغ |
+| Date | date | التاريخ |
+| Vendor | vendor_name | اسم المورد |
+
+# -----------------------------------------------------------------------------
+# REQUIREMENT ID CONVENTIONS
+# -----------------------------------------------------------------------------
+
+| Category | Prefix | Example |
+|----------|--------|---------|
+| Extraction | ARA-EXT | ARA-EXT-001 |
+| HITL | ARA-HITL | ARA-HITL-001 |
+| Quality | ARA-QA | ARA-QA-001 |
+| Integration | ARA-INT | ARA-INT-001 |
+| OCR | ARA-OCR | ARA-OCR-001 |
+
+# -----------------------------------------------------------------------------
+# QUALITY THRESHOLDS (Authoritative)
+# -----------------------------------------------------------------------------
+
+These thresholds are authoritative - code MUST match:
+
+| Metric | Value | Source |
+|--------|-------|--------|
+| OCR confidence threshold | ≥ 0.85 | Chapter 7, Section 7.2 |
+| Auto-accept threshold | ≥ 0.95 | Chapter 5, Section 5.3 |
+| Field extraction rate | ≥ 0.90 | Chapter 7, Section 7.4 |
+| Human review rate target | ≤ 0.30 | Chapter 7, Section 7.5 |
+
+# -----------------------------------------------------------------------------
+# DRIFT DETECTION COMMANDS
+# -----------------------------------------------------------------------------
+
+```bash
+# Full audit for arabic domain
+make audit-spec-drift-domain DOMAIN=arabic
+
+# Check schema validity
+python3 docs/schema/validate.py --domain arabic
+
+# Review source document status
+ls -la docs/arabic/machine-readable/
+```
+
+# -----------------------------------------------------------------------------
+# VERSION HISTORY
+# -----------------------------------------------------------------------------
+
+| Version | Date | Changes |
+|---------|------|---------|
+| 1.0.0 | 2026-04-21 | Initial .clinerules for Arabic AP spec |
+
+# =============================================================================
+# END OF .clinerules
+# =============================================================================

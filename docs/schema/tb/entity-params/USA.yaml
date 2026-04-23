@@ -1,0 +1,13 @@
+legal_entity_code: USA
+legal_entity_name: United States Entity
+currency: USD
+materiality_thresholds:
+  balance_sheet_absolute: 150000000
+  profit_loss_absolute: 5000000
+  variance_percentage: 0.1
+review_config:
+  review_frequency: monthly
+  reviewer_role: senior_accountant
+  escalation_threshold_days: 3
+  auto_assign_enabled: true
+account_exclusions: []

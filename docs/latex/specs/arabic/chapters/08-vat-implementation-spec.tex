@@ -1,0 +1,284 @@
+\chapter{VAT Module Implementation Specification}\label{ch:vat-impl}
+
+This chapter provides the technical implementation specification for the VAT
+processing module, addressing the review finding that ``VAT engine rule format
+is underspecified.'' The specification enables developers to build conformant
+implementations.
+
+\section{Module architecture}
+
+The VAT module comprises four components:
+
+\begin{enumerate}
+  \item \textbf{RulesEngine} --- evaluates JSON-Logic expressions against invoice
+        data and produces checklist items;
+  \item \textbf{RegistrationValidator} --- validates VAT registration numbers
+        against country-specific formats and (optionally) authority APIs;
+  \item \textbf{Calculator} --- computes expected VAT amounts given rates and
+        subtotals;
+  \item \textbf{ActivityLookup} --- maps business activity codes to VAT
+        treatment categories.
+\end{enumerate}
+
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}[
+  node distance=8mm and 15mm,
+  box/.style={draw,rounded corners,minimum width=28mm,minimum height=10mm,align=center,font=\small,fill=blue!5},
+  db/.style={draw,cylinder,shape border rotate=90,aspect=0.25,minimum width=18mm,minimum height=12mm,fill=gray!10,font=\small},
+  t/.style={-{Latex[length=2mm]}}
+]
+\node[box] (eng) {RulesEngine};
+\node[box,below left=of eng,align=center] (reg) {Registration\\Validator};
+\node[box,below=of eng] (calc) {Calculator};
+\node[box,below right=of eng,align=center] (act) {Activity\\Lookup};
+\node[db,above=of eng] (rules) {rules.json};
+\node[db,above left=of eng,xshift=-5mm,align=center] (inv) {invoice\\record};
+\node[db,above right=of eng,xshift=5mm,align=center] (out) {checklist\\record};
+
+\draw[t] (inv.south) -- (eng.north west);
+\draw[t] (rules.south) -- (eng.north);
+\draw[t] (eng.north east) -- (out.south);
+\draw[t,dashed] (eng.south west) -- (reg.north east);
+\draw[t,dashed] (eng.south) -- (calc.north);
+\draw[t,dashed] (eng.south east) -- (act.north west);
+\end{tikzpicture}
+\caption{VAT module component diagram. Dashed arrows indicate helper
+         invocations from the rules engine.}
+\label{fig:vat-arch}
+\end{figure}
+
+\section{API contracts}
+
+Each helper function has a defined API contract. Implementations \textbf{must}
+conform to these signatures to be invoked by the rules engine.
+
+\subsection{Registration validation}
+
+\begin{lstlisting}[language=Python,basicstyle=\ttfamily\small,caption={Registration validator API contract.}]
+def check_vat_registration_validity(
+    tax_id: str,
+    country: str  # ISO 3166-1 alpha-2
+) -> ValidationResult:
+    """
+    Validate a VAT registration number.
+    
+    Returns:
+        ValidationResult with fields:
+        - valid: bool
+        - format_valid: bool
+        - authority_confirmed: Optional[bool]
+        - error_code: Optional[str]
+    """
+\end{lstlisting}
+
+\begin{table}[htbp]
+\centering
+\caption{VAT registration number formats by country.}
+\label{tab:vat-formats}
+\footnotesize
+\begin{tabularx}{\linewidth}{@{}l l X@{}}
+\toprule
+\textbf{Country} & \textbf{Regex} & \textbf{Notes} \\ \midrule
+SA & \verb|^[0-9]{15}$| & 15-digit ZATCA TIN \\
+EG & \verb|^[0-9]{9}$| & 9-digit ETA TRN \\
+BH & \verb|^[0-9]{9,15}$| & NBR VAT number (variable length) \\
+QA & \verb|^[A-Z0-9]{10}$| & QCSD registration (non-VAT) \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\subsection{VAT calculation}
+
+\begin{lstlisting}[language=Python,basicstyle=\ttfamily\small,caption={VAT calculator API contract.}]
+def calculate_vat_amount(
+    subtotal: Decimal,
+    vat_rate_percent: Decimal
+) -> CalculationResult:
+    """
+    Calculate expected VAT amount.
+    
+    Returns:
+        CalculationResult with fields:
+        - vat_amount: Decimal (rounded to 2 decimal places)
+        - gross_amount: Decimal
+        - calculation_method: str  # "standard" | "reverse"
+    """
+\end{lstlisting}
+
+The calculator \textbf{must} use banker's rounding (ROUND\_HALF\_EVEN) and
+\textbf{must} handle the following edge cases:
+
+\begin{enumerate}
+  \item Negative subtotals (credit notes): return negative VAT amount
+  \item Zero rate: return VAT amount of exactly 0.00
+  \item Rate $>$ 100\%: reject with error code \texttt{INVALID\_RATE}
+\end{enumerate}
+
+\subsection{Activity lookup}
+
+\begin{lstlisting}[language=Python,basicstyle=\ttfamily\small,caption={Activity lookup API contract.}]
+def lookup_activity_code_treatment(
+    activity_code: str,
+    country: str  # ISO 3166-1 alpha-2
+) -> TreatmentResult:
+    """
+    Determine VAT treatment from business activity code.
+    
+    Returns:
+        TreatmentResult with fields:
+        - vat_category: str  # ZR, EX, FI, etc.
+        - rate_percent: Optional[Decimal]
+        - source: str  # regulation reference
+    """
+\end{lstlisting}
+
+\begin{table}[htbp]
+\centering
+\caption{Activity code to VAT treatment mapping (Egypt, partial).}
+\label{tab:activity-lookup}
+\footnotesize
+\begin{tabularx}{\linewidth}{@{}l l l X@{}}
+\toprule
+\textbf{Code} & \textbf{Description} & \textbf{Treatment} & \textbf{Source} \\ \midrule
+1811 & Printing services & FI (14\%) & ETA Circular 2019/1 \\
+8890 & Professional services & EX (exempt) & ETA Circular 2020/3 \\
+4911 & Passenger rail transport & ZR (0\%) & VAT Law Art. 23 \\
+6411 & Banking services & EX (exempt) & VAT Law Art. 29 \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\section{JSON-Logic expression specification}
+
+The rules engine evaluates predicates expressed in JSON-Logic format
+(\url{https://jsonlogic.com}). This section specifies the supported
+operators and variable paths.
+
+\subsection{Supported operators}
+
+\begin{table}[htbp]
+\centering
+\caption{JSON-Logic operators supported by the rules engine.}
+\label{tab:jsonlogic-ops}
+\footnotesize
+\begin{tabularx}{\linewidth}{@{}l l X@{}}
+\toprule
+\textbf{Category} & \textbf{Operators} & \textbf{Notes} \\ \midrule
+Comparison & \texttt{==}, \texttt{===}, \texttt{!=}, \texttt{!==} & Strict equality recommended \\
+           & \texttt{<}, \texttt{<=}, \texttt{>}, \texttt{>=} & Numeric comparison \\
+Logic      & \texttt{and}, \texttt{or}, \texttt{!}, \texttt{!!} & Boolean operations \\
+           & \texttt{if} & Ternary conditional \\
+String     & \texttt{in}, \texttt{cat}, \texttt{substr} & String operations \\
+Array      & \texttt{in}, \texttt{merge}, \texttt{map}, \texttt{filter} & Array operations \\
+Arithmetic & \texttt{+}, \texttt{-}, \texttt{*}, \texttt{/}, \texttt{\%} & Basic arithmetic \\
+Data       & \texttt{var}, \texttt{missing}, \texttt{missing\_some} & Variable access \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\subsection{Variable paths}
+
+Variable paths use dot notation to access nested fields in the invoice record.
+The root object is the validated invoice conforming to
+\texttt{invoice.schema.json}.
+
+\begin{lstlisting}[basicstyle=\ttfamily\small,caption={Example variable paths for invoice data.}]
+totals.gross           # Invoice gross amount
+totals.vat_rate_percent  # VAT rate as percentage
+seller.tax_id          # Seller VAT registration number
+seller.country         # Seller country code
+buyer.country          # Buyer country code
+metadata.issue_date    # Invoice issue date
+line_items.0.description  # First line item description
+\end{lstlisting}
+
+\subsection{Named helper invocation}
+
+When a predicate requires complex logic beyond JSON-Logic capabilities,
+the engine invokes a named helper. The syntax is:
+
+\begin{lstlisting}[basicstyle=\ttfamily\small,caption={Named helper invocation in rule predicate.}]
+{
+  "predicate": {
+    "type": "named_helper",
+    "name": "check_vat_registration_validity",
+    "args": {
+      "tax_id": {"var": "seller.tax_id"},
+      "country": {"var": "seller.country"}
+    }
+  }
+}
+\end{lstlisting}
+
+\section{Error handling specification}
+
+The module \textbf{must} handle errors gracefully without crashing the
+parent invoice processing pipeline.
+
+\subsection{Error codes}
+
+\begin{table}[htbp]
+\centering
+\caption{VAT module error codes.}
+\label{tab:vat-errors}
+\footnotesize
+\begin{tabularx}{\linewidth}{@{}l l X@{}}
+\toprule
+\textbf{Code} & \textbf{Severity} & \textbf{Description} \\ \midrule
+\texttt{VAT\_E001} & ERROR & Invalid VAT registration format \\
+\texttt{VAT\_E002} & ERROR & Unknown country code \\
+\texttt{VAT\_E003} & ERROR & Invalid VAT rate (negative or $>$100\%) \\
+\texttt{VAT\_E004} & ERROR & JSON-Logic parse failure \\
+\texttt{VAT\_W001} & WARNING & Authority API unavailable (fallback to format check) \\
+\texttt{VAT\_W002} & WARNING & Activity code not in lookup table \\
+\texttt{VAT\_I001} & INFO & Rate changed since last validation \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\subsection{Fallback behaviour}
+
+When an error occurs:
+
+\begin{enumerate}
+  \item Log the error with full context (invoice ID, field values, stack trace)
+  \item Set the rule result to \textsc{hold} (never silently pass)
+  \item Populate \texttt{checklist[].error\_code} with the appropriate code
+  \item Continue processing remaining rules (fail-open for diagnostics)
+  \item Return the partial checklist to the caller
+\end{enumerate}
+
+\section{Performance requirements}
+
+\begin{table}[htbp]
+\centering
+\caption{VAT module performance requirements.}
+\label{tab:vat-perf}
+\footnotesize
+\begin{tabularx}{\linewidth}{@{}l r X@{}}
+\toprule
+\textbf{Metric} & \textbf{Target} & \textbf{Measurement} \\ \midrule
+p95 latency per invoice & $<$ 100 ms & Excluding authority API calls \\
+p95 latency with API    & $<$ 2000 ms & Including authority validation \\
+Memory per invoice      & $<$ 10 MB & Peak allocation during processing \\
+Throughput              & $>$ 100/sec & Single-threaded, no API calls \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\section{Implementation checklist}
+
+Developers \textbf{must} verify the following before marking the module
+complete:
+
+\begin{itemize}
+  \item[\texttt{[ ]}] All four helper functions implemented with correct signatures
+  \item[\texttt{[ ]}] Unit tests achieve $\geq$90\% line coverage
+  \item[\texttt{[ ]}] All country-specific regex patterns validated against test data
+  \item[\texttt{[ ]}] JSON-Logic parser handles all operators in Table~\ref{tab:jsonlogic-ops}
+  \item[\texttt{[ ]}] Error codes match Table~\ref{tab:vat-errors}
+  \item[\texttt{[ ]}] Performance meets targets in Table~\ref{tab:vat-perf}
+  \item[\texttt{[ ]}] Integration test with real invoice records from each country
+  \item[\texttt{[ ]}] Security review completed (input validation, injection prevention)
+\end{itemize}

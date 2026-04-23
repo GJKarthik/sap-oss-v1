@@ -1,0 +1,248 @@
+\chapter{Specification Mapping}
+\label{ch:specification-mapping}
+
+This chapter maps each specification element to its source requirement(s),
+establishing the requirement-to-specification traceability layer of the
+HITL framework.
+
+% =============================================================================
+\section{Process Step Specifications}
+\label{sec:process-step-specs}
+
+\begin{longtable}{@{}C{2cm}L{3.5cm}C{3cm}L{5cm}@{}}
+\caption{Process Steps to Requirements Mapping}
+\label{tab:process-steps-mapping} \\
+\toprule
+\textbf{Spec ID} & \textbf{Specification} & \textbf{Req ID(s)} & \textbf{Implementation Notes} \\
+\midrule
+\endfirsthead
+\toprule
+\textbf{Spec ID} & \textbf{Specification} & \textbf{Req ID(s)} & \textbf{Implementation Notes} \\
+\midrule
+\endhead
+\specref{TB-STEP-001} & Roll Forward Prior Month File & \reqref{TB-REQ-PS01} & Auto-generate template; pre-populate parameters \\
+\specref{TB-STEP-002} & Download PSGL \& Update Master & \reqref{TB-REQ-PS02} & PSGL/S4 API integration; auto-detect changes \\
+\specref{TB-STEP-003} & Extract Trial Balance & \reqref{TB-REQ-PS03}, \reqref{TB-REQ-SC01} & Parallel extraction for 234 LEs \\
+\specref{TB-STEP-004} & Calculate \& Filter Variances & \reqref{TB-REQ-PS04}, \reqref{TB-REQ-PS05} & ML-adaptive materiality thresholds \\
+\specref{TB-STEP-005} & Seek \& Update Commentaries & \reqref{TB-REQ-PS06}, \reqref{TB-REQ-AI06} & LLM-generated draft commentaries \\
+\specref{TB-STEP-006} & Journal Posting Investigation & \reqref{TB-REQ-PS07} & Auto-detect unposted journals \\
+\specref{TB-STEP-007} & Track Entries \& Risk & \reqref{TB-REQ-PS07} & Predictive risk scoring \\
+\specref{TB-STEP-008} & Prepare Summary \& Review & \reqref{TB-REQ-PS08} & Auto-generate FORTM pack section \\
+\bottomrule
+\end{longtable}
+
+% =============================================================================
+\section{Decision Point Specifications}
+\label{sec:decision-point-specs}
+
+\begin{longtable}{@{}C{1.5cm}L{3cm}C{3cm}L{6cm}@{}}
+\caption{Decision Points to Requirements Mapping}
+\label{tab:decision-points-mapping} \\
+\toprule
+\textbf{DP ID} & \textbf{Decision Point} & \textbf{Req ID(s)} & \textbf{Specification Detail} \\
+\midrule
+\endfirsthead
+\toprule
+\textbf{DP ID} & \textbf{Decision Point} & \textbf{Req ID(s)} & \textbf{Specification Detail} \\
+\midrule
+\endhead
+\specref{DP-001} & Materiality Check & \reqref{TB-REQ-PS05}, \reqref{TB-REQ-AI05} & Threshold: BS \$100M, PL \$3M; ML-adaptive per category \\
+\specref{DP-002} & Journal Status & \reqref{TB-REQ-PS07} & States: posted / posting\_required / not\_posted \\
+\specref{DP-003} & Investigation Required & \reqref{TB-REQ-PS07} & Predictive model based on entry history \\
+\specref{DP-004} & Entry Confirmation & \reqref{TB-REQ-PS07} & M+4 deadline tracking; auto-escalation \\
+\specref{DP-005} & Unexplained Variance & \reqref{TB-REQ-AI06}, \reqref{BSS-REQ-01} & Categorize: substantiated\_at\_risk, unsubstantiated\_unowned, unsubstantiated\_owned \\
+\bottomrule
+\end{longtable}
+
+\subsection{Decision Point Detail: \specref{DP-001}}
+
+\begin{table}[h]
+\centering
+\caption{\specref{DP-001} Materiality Check Specification}
+\begin{tabularx}{\textwidth}{@{}L{4cm}L{10cm}@{}}
+\toprule
+\textbf{Attribute} & \textbf{Value} \\
+\midrule
+Specification ID & DP-001 \\
+Name & Materiality Check \\
+Gateway Type & Exclusive \\
+BPMN State & \stateid{CHECK\_MATERIAL\_VARIANCES} \\
+Input Metric & \fieldref{variance\_amount} \\
+\midrule
+\multicolumn{2}{l}{\textbf{Threshold Configuration}} \\
+\midrule
+Balance Sheet (BS) & \$100,000,000 \\
+Profit \& Loss (PL) & \$3,000,000 \\
+Threshold Source & Static (v1.0), ML-adaptive (v2.0) \\
+\midrule
+\multicolumn{2}{l}{\textbf{Transitions}} \\
+\midrule
+Material = Yes & $\rightarrow$ \stateid{SEEK\_COMMENTARIES} \\
+Material = No & $\rightarrow$ \stateid{CHECK\_UNEXPLAINED} \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+% =============================================================================
+\section{AI Capability Specifications}
+\label{sec:ai-capability-specs}
+
+\begin{longtable}{@{}C{2cm}L{3.5cm}C{2.5cm}L{5.5cm}@{}}
+\caption{AI Capabilities to Requirements Mapping}
+\label{tab:ai-capabilities-mapping} \\
+\toprule
+\textbf{Spec ID} & \textbf{AI Capability} & \textbf{Req ID(s)} & \textbf{Implementation Detail} \\
+\midrule
+\endfirsthead
+\toprule
+\textbf{Spec ID} & \textbf{AI Capability} & \textbf{Req ID(s)} & \textbf{Implementation Detail} \\
+\midrule
+\endhead
+\specref{AI-ANOM} & Anomaly Detection & \reqref{TB-REQ-AI01} & 3$\sigma$ z-score with MAD fallback for non-normal distributions \\
+\specref{AI-TREND} & Trend Analysis & \reqref{TB-REQ-AI02} & 12-month rolling window; percentile ranking \\
+\specref{AI-NEW} & New Account Detection & \reqref{TB-REQ-AI03} & Flag accounts not in prior period master \\
+\specref{AI-SPIKE} & Spike/Drop Detection & \reqref{TB-REQ-AI04} & Period spike check; sign flip detection \\
+\specref{AI-MAT} & Material Balance ID & \reqref{TB-REQ-AI05} & Category-specific thresholds with multipliers \\
+\specref{AI-LLM} & LLM Commentary & \reqref{TB-REQ-AI06} & RAG-augmented generation; $>$85\% acceptance rate target \\
+\bottomrule
+\end{longtable}
+
+\subsection{AI Capability Detail: \specref{AI-ANOM}}
+
+\begin{table}[h]
+\centering
+\caption{\specref{AI-ANOM} Anomaly Detection Specification}
+\begin{tabularx}{\textwidth}{@{}L{4cm}L{10cm}@{}}
+\toprule
+\textbf{Attribute} & \textbf{Value} \\
+\midrule
+Specification ID & AI-ANOM \\
+Name & Anomaly Detection \\
+Requirement & \reqref{TB-REQ-AI01} \\
+\midrule
+\multicolumn{2}{l}{\textbf{Algorithm Configuration}} \\
+\midrule
+Primary Method & Z-score (3$\sigma$ threshold) \\
+Fallback Method & Median Absolute Deviation (MAD) \\
+Fallback Trigger & Non-normal distribution detected (Shapiro-Wilk $p < 0.05$) \\
+\midrule
+\multicolumn{2}{l}{\textbf{Output Flags}} \\
+\midrule
+Period Spike & \enumval{PERIOD\_SPIKE} \\
+Sign Flip & \enumval{SIGN\_FLIP} \\
+New Account & \enumval{NEW\_ACCOUNT} \\
+Material Balance & \enumval{MATERIAL\_BALANCE} \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\subsection{AI Capability Detail: \specref{AI-LLM}}
+
+\begin{table}[h]
+\centering
+\caption{\specref{AI-LLM} LLM Commentary Specification}
+\begin{tabularx}{\textwidth}{@{}L{4cm}L{10cm}@{}}
+\toprule
+\textbf{Attribute} & \textbf{Value} \\
+\midrule
+Specification ID & AI-LLM \\
+Name & LLM Commentary Generation \\
+Requirement & \reqref{TB-REQ-AI06} \\
+\midrule
+\multicolumn{2}{l}{\textbf{Pipeline Configuration}} \\
+\midrule
+Method & RAG-augmented generation \\
+Vector Store & HANA Cloud Vector Engine \\
+Chunk Size & 220 words \\
+Overlap & 40 words \\
+\midrule
+\multicolumn{2}{l}{\textbf{Acceptance Criteria}} \\
+\midrule
+Acceptance Rate Target & $>$85\% require only minor edits \\
+Factual Accuracy & 100\% of referenced figures match GL \\
+Latency & $<$30 seconds P95 \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+% =============================================================================
+\section{Control Specifications}
+\label{sec:control-specs}
+
+\begin{longtable}{@{}C{2.5cm}L{4cm}C{2.5cm}L{4.5cm}@{}}
+\caption{Controls to Requirements Mapping}
+\label{tab:controls-mapping} \\
+\toprule
+\textbf{Control ID} & \textbf{EUC Reference} & \textbf{Req ID(s)} & \textbf{Control Objective} \\
+\midrule
+\endfirsthead
+\toprule
+\textbf{Control ID} & \textbf{EUC Reference} & \textbf{Req ID(s)} & \textbf{Control Objective} \\
+\midrule
+\endhead
+\specref{TB-CTRL-001} & EX/200/1353107/0001/000 & \reqref{TB-REQ-PS02} & PSGL master data extraction integrity \\
+\specref{TB-CTRL-002} & EX/200/1579702/0001/000 & \reqref{TB-REQ-PS04} & Variance analysis calculation accuracy \\
+\specref{TB-CTRL-003} & EX/200/1579702/0002/000 & \reqref{TB-REQ-PS08} & Senior review before FORTM submission \\
+\bottomrule
+\end{longtable}
+
+\subsection{Control Detail: \specref{TB-CTRL-002}}
+
+\begin{table}[h]
+\centering
+\caption{\specref{TB-CTRL-002} Variance Analysis Control}
+\begin{tabularx}{\textwidth}{@{}L{4cm}L{10cm}@{}}
+\toprule
+\textbf{Attribute} & \textbf{Value} \\
+\midrule
+Control ID & TB-CTRL-002 \\
+EUC Reference & EX/200/1579702/0001/000 \\
+Requirement & \reqref{TB-REQ-PS04} \\
+Objective & Variance analysis calculation accuracy \\
+Frequency & Monthly \\
+\midrule
+\multicolumn{2}{l}{\textbf{Control Activities}} \\
+\midrule
+Activity 1 & Validate row counts match PSGL source \\
+Activity 2 & Verify variance formula: current\_balance $-$ prior\_balance \\
+Activity 3 & Confirm materiality thresholds applied correctly \\
+Activity 4 & Reconcile total variances to GL movement report \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+% =============================================================================
+\section{Specification Coverage Summary}
+\label{sec:spec-coverage-summary}
+
+\begin{table}[h]
+\centering
+\caption{Specification Coverage Statistics}
+\label{tab:spec-coverage-stats}
+\begin{tabular}{@{}lccc@{}}
+\toprule
+\textbf{Specification Type} & \textbf{Count} & \textbf{Requirements Covered} & \textbf{Coverage} \\
+\midrule
+Process Steps & 8 & 10 & 100\% \\
+Decision Points & 5 & 6 & 100\% \\
+AI Capabilities & 6 & 6 & 100\% \\
+Controls & 3 & 3 & 100\% \\
+\midrule
+\textbf{Total} & \textbf{22} & \textbf{25 unique} & \textbf{100\%} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\paragraph{Note:} Some requirements are covered by multiple specifications
+(e.g., \reqref{TB-REQ-PS07} is covered by \specref{TB-STEP-006},
+\specref{TB-STEP-007}, \specref{DP-002}, \specref{DP-003}, and \specref{DP-004}).
+
+\begin{hitlbox}{H4 -- Traceability Links Verification (Part 1)}
+The human reviewer must verify the following for checkpoint H4:
+\begin{enumerate}[noitemsep]
+  \item Each specification correctly references its source requirements
+  \item Implementation details are consistent with requirement text
+  \item No specifications exist without a requirement reference
+  \item Specification IDs follow naming conventions
+\end{enumerate}
+\end{hitlbox}

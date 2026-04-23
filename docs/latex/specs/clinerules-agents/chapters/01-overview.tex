@@ -1,0 +1,93 @@
+\chapter{Overview}
+\label{ch:overview}
+
+\section{What a .clinerules agent is}
+
+A \artifact{.clinerules} file is a local contract for an agent. It is
+not application code and not a product requirement document. It is the
+bridge between the two:
+\begin{itemize}
+  \item the specification states what must be true;
+  \item the \artifact{.clinerules} file states how an agent must work
+    in this repository to keep that true.
+\end{itemize}
+
+\section{Two mandatory agent types}
+
+Every governed domain should have two mandatory agent contracts.
+
+\subsection*{1. Development agent}
+
+The development agent owns implementation, integration, migration, test
+obligations, and completion criteria. Its contract lives in
+\filepath{src/<domain>/.clinerules}.
+
+\subsection*{2. Runtime-monitor agent}
+
+The runtime-monitor agent owns health criteria, alert conditions,
+evidence correlation, and escalation behaviour. Its contract lives in
+\filepath{src/<domain>/.clinerules.runtime-monitor}.
+
+\section{Why the split is required}
+
+\begin{adrbox}{Separation of construction from supervision}
+A single rule file is not enough for a governed agentic platform. The
+development agent must optimize for implementation correctness and
+contract coherence. The runtime-monitor agent must optimize for
+observability, alerting precision, and fail-closed behaviour. Keeping
+them separate avoids blending build-time convenience with runtime risk
+control.
+\end{adrbox}
+
+\section{Why a swarm is needed}
+
+The artefacts in \filepath{docs/pdf/specs/} are cross-domain. They span
+Arabic, TB, regulations, Simula, shared fragments, and the
+implementation rule packs that keep those books honest. A single agent
+can draft changes, but a reliable delivery model needs multiple roles:
+\begin{itemize}
+  \item domain specialists who know their code and contracts;
+  \item regulatory specialists who impose the governance envelope;
+  \item runtime monitors that validate live control assumptions;
+  \item documentation and PDF build specialists who assemble and
+    validate the published specifications.
+\end{itemize}
+
+\section{Rule-pack lifecycle states}
+\label{sec:lifecycle-states}
+
+A rule-pack transitions through defined lifecycle states to ensure
+governance integrity before enforcement begins.
+
+\begin{table}[htbp]
+\centering
+\footnotesize
+\caption{Rule-pack lifecycle states.}
+\label{tab:lifecycle-states}
+\begin{tabularx}{\textwidth}{@{}l l X@{}}
+\toprule
+\textbf{State} & \textbf{Trigger} & \textbf{Behaviour} \\
+\midrule
+\texttt{DRAFT} & Feature branch with \texttt{status: draft} frontmatter & Structural validity MAY be checked; CI/CD gates SHALL NOT block on draft packs. \\
+\texttt{REVIEW} & Pull request opened against default branch & Full validation harness runs; reviewers must approve before merge. \\
+\texttt{ACTIVE} & Merged to default branch & Pack is enforced; all agents must comply with its obligations. \\
+\texttt{DEPRECATED} & \texttt{status: deprecated} frontmatter added & Pack remains enforced for one release cycle; agents receive deprecation warnings. \\
+\texttt{RETIRED} & Removed from repository & Pack is no longer enforced; historical references remain in audit logs. \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\subsection{Lifecycle invariants}
+
+\begin{itemize}
+  \item A rule-pack SHALL be considered \textbf{active} only when merged
+    to the default branch without a \texttt{status: draft} or
+    \texttt{status: deprecated} frontmatter field.
+  \item During development, a rule-pack MAY reside in a feature branch
+    and be marked as \texttt{DRAFT} via frontmatter. Draft packs SHALL
+    NOT block CI/CD gates, but their structural validity MAY be checked.
+  \item Deprecation requires a minimum one-release window before
+    retirement to allow dependent agents to adapt.
+  \item Retirement does not erase audit history; all actions taken under
+    the pack remain attributable.
+\end{itemize}

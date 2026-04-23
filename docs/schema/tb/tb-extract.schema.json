@@ -1,0 +1,203 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://sap-oss.github.io/schema/tb/tb-extract.schema.json",
+  "title": "Trial Balance Extract",
+  "description": "Schema for Trial Balance extract records from PSGL/SC Bridge (Stage 1 output)",
+  "type": "object",
+  "required": ["extract_id", "legal_entity", "period", "accounts", "totals"],
+  "additionalProperties": false,
+  "properties": {
+    "extract_id": {
+      "type": "string",
+      "description": "Unique identifier for this TB extract"
+    },
+    "legal_entity": {
+      "type": "string",
+      "description": "Legal entity code (e.g., HKG for Hong Kong)"
+    },
+    "legal_entity_name": {
+      "type": "string",
+      "description": "Legal entity full name"
+    },
+    "period": {
+      "type": "string",
+      "pattern": "^[0-9]{4}-[0-9]{2}$",
+      "description": "Accounting period (YYYY-MM format)"
+    },
+    "period_end_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Period end date (ISO 8601)"
+    },
+    "currency": {
+      "type": "string",
+      "description": "Reporting currency"
+    },
+    "source_system": {
+      "type": "string",
+      "enum": ["PSGL", "SC_BRIDGE", "S4HANA"],
+      "description": "Source ERP system"
+    },
+    "accounts": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/account_balance"
+      },
+      "description": "Account balances in the trial balance"
+    },
+    "totals": {
+      "$ref": "#/definitions/tb_totals",
+      "description": "Trial balance totals (must balance)"
+    },
+    "extraction_metadata": {
+      "$ref": "#/definitions/extraction_metadata",
+      "description": "Extraction process metadata"
+    },
+    "master_data_version": {
+      "type": "string",
+      "description": "Version of account master data used"
+    },
+    "metadata": {
+      "$ref": "https://sap-oss.github.io/schema/common/base-types.schema.json#/definitions/Metadata",
+      "description": "Record metadata"
+    }
+  },
+  "definitions": {
+    "account_balance": {
+      "type": "object",
+      "required": ["account_code", "account_name", "debit", "credit"],
+      "additionalProperties": false,
+      "properties": {
+        "account_code": {
+          "type": "string",
+          "description": "GL account code"
+        },
+        "account_name": {
+          "type": "string",
+          "description": "GL account name"
+        },
+        "account_category": {
+          "type": "string",
+          "enum": ["ASSET", "LIABILITY", "EQUITY", "REVENUE", "EXPENSE", "INTERCOMPANY"],
+          "description": "Account category per docs/schema/common/enums.yaml"
+        },
+        "finance_caption": {
+          "type": "string",
+          "description": "Financial statement caption"
+        },
+        "segment": {
+          "type": "string",
+          "description": "Business segment"
+        },
+        "department": {
+          "type": "string",
+          "description": "Department code"
+        },
+        "debit": {
+          "type": "number",
+          "description": "Debit balance"
+        },
+        "credit": {
+          "type": "number",
+          "description": "Credit balance"
+        },
+        "net_balance": {
+          "type": "number",
+          "description": "Net balance (debit - credit)"
+        },
+        "prior_period_balance": {
+          "type": "number",
+          "description": "Balance from prior period"
+        },
+        "variance": {
+          "type": "number",
+          "description": "Variance from prior period"
+        },
+        "variance_percent": {
+          "type": "number",
+          "description": "Variance as percentage"
+        },
+        "is_new_account": {
+          "type": "boolean",
+          "default": false,
+          "description": "Whether account is new this period"
+        },
+        "is_intercompany": {
+          "type": "boolean",
+          "default": false,
+          "description": "Whether account is intercompany"
+        },
+        "counterparty_entity": {
+          "type": "string",
+          "description": "Intercompany counterparty (if applicable)"
+        }
+      }
+    },
+    "tb_totals": {
+      "type": "object",
+      "required": ["total_debits", "total_credits"],
+      "additionalProperties": false,
+      "properties": {
+        "total_debits": {
+          "type": "number",
+          "description": "Sum of all debit balances"
+        },
+        "total_credits": {
+          "type": "number",
+          "description": "Sum of all credit balances"
+        },
+        "is_balanced": {
+          "type": "boolean",
+          "description": "Whether debits equal credits"
+        },
+        "out_of_balance_amount": {
+          "type": "number",
+          "description": "Difference if not balanced"
+        },
+        "account_count": {
+          "type": "integer",
+          "description": "Number of accounts in extract"
+        },
+        "non_zero_account_count": {
+          "type": "integer",
+          "description": "Number of accounts with non-zero balances"
+        }
+      }
+    },
+    "extraction_metadata": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "extracted_at": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Extraction timestamp"
+        },
+        "source_file": {
+          "type": "string",
+          "description": "Source file path (e.g., HKG_TB review Nov'25.xlsm)"
+        },
+        "source_sheet": {
+          "type": "string",
+          "description": "Source worksheet name"
+        },
+        "row_count": {
+          "type": "integer",
+          "description": "Number of rows extracted"
+        },
+        "validation_status": {
+          "type": "string",
+          "enum": ["valid", "warnings", "errors"],
+          "description": "Extraction validation status"
+        },
+        "validation_messages": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Validation messages"
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,273 @@
+\chapter{Project Roadmap}\label{ch:ap-roadmap}
+
+\section*{Scope of this chapter}
+\addcontentsline{toc}{section}{Scope of this chapter}
+
+This chapter is the roadmap for the \textbf{Arabic invoice processing}
+project. It is a project-level artefact, not a programme plan. Other
+SAP OSS Finance projects (Trial Balance, Simula, Regulations) run on
+the same platform, workspaces, and backends, but each owns its own
+roadmap, business case, and go/no-go decision. This chapter adopts the
+MoSCoW prioritisation and sequence-based critical path that the four
+projects share so that artefacts can be compared at a glance; it does
+not assert coupling between their go-live moments.
+
+\paragraph{Sequence, not dates.}
+The milestones and dependency graph below express \emph{order} and
+\emph{prerequisite} relationships, not calendar dates. This is
+deliberate. Implementation teams must know what depends on what, and
+where the schedule can absorb slippage (the Should/Could items); a
+date column would harden targets into commitments they were never
+meant to be. Dates, when set, live in the project steering packet and
+the ticketing system, not in this specification.
+
+\section{MoSCoW classification}\label{sec:ap-moscow}
+
+Every milestone below carries one of four priorities. The mapping is
+contractual: a milestone's priority determines what happens when it is
+dropped, de-scoped, or slips.
+
+\begin{table}[htbp]
+\centering
+\caption{MoSCoW prioritisation (shared across the four SAP OSS Finance
+projects).}
+\label{tab:ap-moscow}
+\footnotesize
+\begin{tabularx}{\linewidth}{@{}l l X@{}}
+\toprule
+\textbf{Priority} & \textbf{Meaning} & \textbf{Allowance} \\ \midrule
+\textbf{Must} (\textbf{M}) & Non-negotiable for v1.0. Without this milestone, the release does not ship. & None. Missing a Must halts the release; see the kill-switch in \cref{sec:ap-kill-switch}. \\
+\textbf{Should} (\textbf{S}) & Important but not vital. Ship without it only with sponsor sign-off; document the deviation in the business-case refresh. & May slip by one rollout wave; two consecutive slips escalate to GFAIC. \\
+\textbf{Could} (\textbf{C}) & Desirable enhancement. Included if Must and Should items are on track. & May be dropped to v1.1 at project steering's discretion. \\
+\textbf{Won't} (\textbf{W}) & Explicitly out of v1.0 scope. Listed so the boundary is legible. & Not eligible for v1.0 planning at all. \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\noindent
+The critical path of this project is the chain of Must items in
+\cref{tab:ap-milestones}; the Should and Could items are where the
+schedule and scope can absorb delivery risk without a release slip.
+
+\section{Dependency graph}\label{sec:ap-dependency-graph}
+
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}[
+  node distance=5mm and 10mm,
+  must/.style={draw,rounded corners=2pt,align=center,font=\scriptsize,
+               fill=apred!20,draw=apred!70,
+               minimum height=7mm,minimum width=32mm},
+  should/.style={draw,rounded corners=2pt,align=center,font=\scriptsize,
+               fill=apblue!12,draw=apblue!50,
+               minimum height=7mm,minimum width=32mm},
+  could/.style={draw,rounded corners=2pt,align=center,font=\scriptsize,
+               fill=apgreen!12,draw=apgreen!50,dotted,
+               minimum height=7mm,minimum width=32mm},
+  dep/.style={-{Latex[length=2mm]},thick},
+  soft/.style={-{Latex[length=2mm]},thick,dashed}
+]
+  \node[must] (m01) {M01 AP-ENG-001 \\ \scriptsize OCR pipeline};
+  \node[must,below=of m01] (m02) {M02 AP-ENG-002 \\ \scriptsize VAT engine};
+  \node[must,below=of m02] (m03) {M03 AP-PILOT-PREP \\ \scriptsize 200 pilot docs};
+  \node[must,right=14mm of m02] (m04) {M04 REG-INTG-AP-001 \\ \scriptsize identity wiring};
+  \node[must,right=14mm of m04] (m05) {M05 AP-PILOT-001 \\ \scriptsize thresholds set};
+  \node[must,below=of m05] (m06) {M06 AP-BETA-001 \\ \scriptsize Saudi beta};
+  \node[must,below=of m06] (m07) {M07 AP-PARALLEL-001 \\ \scriptsize parallel-run gate};
+  \node[must,below=of m07] (m08) {M08 AP-GA-001 \\ \scriptsize Saudi GA};
+  \node[should,right=14mm of m08] (s01) {S01 AP-WAVE-002 \\ \scriptsize Egypt};
+  \node[should,above=of s01] (s02) {S02 AP-WAVE-003 \\ \scriptsize Bahrain};
+  \node[should,above=of s02] (s03) {S03 AP-WAVE-004 \\ \scriptsize Qatar};
+  \node[could,above=of s03] (c01) {C01 AP-V2-EXPLORE \\ \scriptsize multilingual};
+
+  \draw[dep] (m01) -- (m02);
+  \draw[dep] (m01) -- (m03);
+  \draw[dep] (m02) -- (m04);
+  \draw[dep] (m03) -- (m05);
+  \draw[dep] (m04) -- (m05);
+  \draw[dep] (m05) -- (m06);
+  \draw[dep] (m06) -- (m07);
+  \draw[dep] (m07) -- (m08);
+  \draw[dep] (m08) -- (s01);
+  \draw[dep] (s01) -- (s02);
+  \draw[dep] (s02) -- (s03);
+  \draw[soft] (s03) -- (c01);
+\end{tikzpicture}
+\caption{Arabic AP dependency graph. Red nodes are Must (critical
+path); blue are Should (country-wave allowance); dotted green are
+Could (discretionary). Solid arrows are hard prerequisites; dashed
+arrows indicate conditional starts (the target is unlocked when the
+upstream completes \emph{and} the multilingual volume trigger in
+\cref{sec:ap-v2-trigger} fires).}
+\label{fig:ap-dependency-graph}
+\end{figure}
+
+\section{Project milestones}\label{sec:ap-milestones}
+
+\begin{table}[htbp]
+\centering
+\caption{Arabic AP v1.0 project milestones in dependency order.
+Priority: M=Must (critical path), S=Should, C=Could, W=Won't.}
+\label{tab:ap-milestones}
+\footnotesize
+\begin{tabularx}{\linewidth}{@{}l l l l X@{}}
+\toprule
+\textbf{ID} & \textbf{Prereq} & \textbf{Pri.} & \textbf{Ticket} & \textbf{Milestone} \\ \midrule
+M01 & ---       & M & AP-ENG-001         & OCR pipeline (Tesseract + Arabic model) passes the fixtures in \cref{ch:testing}. \\
+M02 & M01       & M & AP-ENG-002         & VAT engine unit tests pass (\cref{ch:vat}); country-configurable rates.\\
+M03 & M01       & M & AP-PILOT-PREP      & 200 pilot documents sampled and ground-truth annotation complete (\cref{ch:ocr-pilot}). \\
+M04 & M02       & M & REG-INTG-AP-001    & Identity-attribution wiring (reserve/complete) live in UAT. \\
+M05 & M03, M04  & M & AP-PILOT-001       & Pilot complete; OCR and translation thresholds calibrated per country. \\
+M06 & M05       & M & AP-BETA-001        & Beta cycle: Saudi Arabia only, two-person manual review on top of AI. \\
+M07 & M06       & M & AP-PARALLEL-001    & Beta parallel-run gate passes. \\
+M08 & M07       & M & AP-GA-001          & GA sign-off; Saudi Arabia goes live. \\
+M09 & M08       & M & AP-BC-REFRESH      & Business-case refresh and compliance attestation (first cycle after GA; then annual). \\
+S01 & M08       & S & AP-WAVE-002        & Rollout wave 2: Egypt onboarded via country-params. \\
+S02 & S01       & S & AP-WAVE-003        & Rollout wave 3: Bahrain onboarded. \\
+S03 & S02       & S & AP-WAVE-004        & Rollout wave 4: Qatar onboarded (full v1.0 scope). \\
+C01 & S03 + \cref{sec:ap-v2-trigger} trigger & C & AP-V2-EXPLORE & v2.0 multilingual expansion scoped (Hebrew, Farsi) if volume justifies. \\
+C02 & M08       & C & AP-PROMPT-TUNE     & Quarterly translation-prompt retraining from accept/edit telemetry. \\
+W01 & ---       & W & AP-V1-MULTILINGUAL & Non-Arabic-script languages are \emph{not} in v1.0 scope. \\
+W02 & ---       & W & AP-V1-ONE-PERSON   & One-person review is \emph{not} in v1.0 scope; relaxed only after full-rollout gate sustained. \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\noindent
+The Must chain (M01 $\to$ M02/M03 $\to$ M04 $\to$ M05 $\to$ M06 $\to$
+M07 $\to$ M08 $\to$ M09) is the critical path. The Should items
+(S01--S03) are the primary \emph{schedule allowance}: if Must items
+run hot, country waves can slip without affecting v1.0 sign-off. The
+Could items are the \emph{scope allowance}: they may be cut to v1.1
+without renegotiation.
+
+\section{Launch tiers and exit gates}\label{sec:ap-launch-tiers}
+
+The project walks the four-tier ladder shared across SAP OSS Finance
+projects. A tier is exited only when the named exit gate is satisfied;
+slippage requires sponsor sign-off.
+
+\begin{table}[htbp]
+\centering
+\caption{Arabic AP launch tiers. The exit gate defines the MoSCoW
+items that must be closed to exit the tier.}
+\label{tab:ap-launch-tiers}
+\footnotesize
+\begin{tabularx}{\linewidth}{@{}l l X@{}}
+\toprule
+\textbf{Tier} & \textbf{Scope} & \textbf{Exit gate (references MoSCoW IDs)} \\ \midrule
+Alpha & Engineering only, DEV + UAT, fixture documents only. & M01, M02, M03 closed; all acceptance criteria in \cref{ch:testing} pass on the pilot fixture; reproducibility of OCR and VAT outputs confirmed on two consecutive runs. \\
+Beta  & One country (Saudi Arabia), two-person manual review on top of AI. & M04, M05, M06, M07 closed; pilot success criteria (\cref{sec:pilot-success}) met; parallel-run gate passes for one full cycle; no open SEV1/SEV2; audit coverage $=$ 100\,\% of in-scope actions. \\
+GA (limited) & Three countries (Saudi Arabia plus the next two waves). & M08 closed; Beta gate sustained for two consecutive cycles; S01 closed; country-onboarding runbook exercised end-to-end; kill-switch green; per-country thresholds calibrated. \\
+Full rollout & All four countries in v1.0 scope (SA, EG, BH, QA). & S02 and S03 closed; two quarterly reviews sustained; M09 complete; business-case refresh complete; two-person review may be relaxed to one-person for documents above the high threshold. \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\section{Kill-switch conditions}\label{sec:ap-kill-switch}
+
+The kill-switch is a pre-committed rulebook: a tripped condition enters
+the action column without further debate. GFAIC and sponsor are
+notified within 24 hours. The conditions are evaluated continuously
+(on every cycle) and do not carry dates.
+
+\begin{table}[htbp]
+\centering
+\caption{Arabic AP kill-switch.}
+\label{tab:ap-kill-switch}
+\footnotesize
+\begin{tabularx}{\linewidth}{@{}l l X@{}}
+\toprule
+\textbf{Condition} & \textbf{Evaluation} & \textbf{Action} \\ \midrule
+Pilot F1 on the translation gate $<$\,0.70 on three of four countries & on M05 close and any recalibration & \textbf{Redesign}: narrow v1.0 to best-performing countries only; full rollout paused. \\
+Posted-VAT error rate $>$\,0.5\,\% over any cycle in Beta or GA & per cycle & \textbf{Halt onboarding}; incident-review before next wave; re-calibrate thresholds. \\
+Two-person review sustains $>$\,20\,\% edit rate for three consecutive cycles in GA & per cycle & \textbf{Redesign prompt layer}; commentary drafts gated behind flag until edit rate $\le$\,15\,\%. \\
+Audit-coverage gap (missed \texttt{reserve/complete} pair) detected in production & continuous & \textbf{Pause GA onboarding}; remediate before next wave. \\
+Any MAS MGF or country-VAT regulator finding attributable to AP specifically & continuous & \textbf{Halt rollout}; remediate before next wave. \\
+Shared-platform dependency in \cref{tab:ap-shared-deps} declared red by its owner project & continuous & \textbf{Pause downstream Must}; re-plan at next steering. \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\section{Shared-platform dependencies}\label{sec:ap-shared-deps}
+
+This project depends on four shared-platform components. Each is owned
+by a sibling project (Regulations) or by shared infra, and is tracked
+here only as a dependency, not a commitment this project can
+unilaterally adjust. Sequence is expressed in terms of the Must item
+that first consumes the dependency, not in calendar time.
+
+\begin{table}[htbp]
+\centering
+\caption{Shared-platform dependencies.}
+\label{tab:ap-shared-deps}
+\footnotesize
+\begin{tabularx}{\linewidth}{@{}l l l X@{}}
+\toprule
+\textbf{Component} & \textbf{Owner} & \textbf{First consumed by} & \textbf{Impact if late} \\ \midrule
+Audit service (reserve/complete, immutable storage) & Regulations project & M04 (REG-INTG-AP-001) & No Beta gate possible without this; AP GA slips in lockstep with the audit service. \\
+Unified schema registry (\path{docs/schema/}) & Shared infra & M01 & Already \texttt{migration.status=complete}; no remaining risk. \\
+vLLM hosting (\texttt{vllm-only} policy) & Shared platform & M02 & Graceful-degradation ladder defined in the Regulations spec provides fallback; slip tolerable. \\
+Tesseract + Arabic OCR model & Shared platform & M01 & No substitute available; slip blocks all subsequent Must items. \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\noindent
+Shared-platform dependencies are surfaced at monthly steering. If any
+upstream owner declares \textbf{amber} or \textbf{red} on a component
+in \cref{tab:ap-shared-deps}, the affected downstream Must milestone
+is re-planned at the following steering.
+
+\section{v2.0 expansion trigger}\label{sec:ap-v2-trigger}
+
+The Could item C01 (AP-V2-EXPLORE) is unlocked only when all of the
+following are observed on production data from S03 (Qatar onboarded):
+
+\begin{itemize}
+  \item aggregate non-Arabic-script document volume $\ge\,15$\,\% of
+        total Arabic AP volume for two consecutive quarters;
+  \item translation-gate F1 on Arabic above the Beta threshold
+        sustained for the same window;
+  \item business-case refresh (M09) explicitly budgets the v2.0
+        programme.
+\end{itemize}
+
+\noindent
+If any of the three conditions fails, C01 remains in the Could column
+and is re-evaluated at the next business-case refresh.
+
+\section{Governance and business-case cadence}\label{sec:ap-governance}
+
+\paragraph{Project governance.}
+The Arabic AP project reports monthly to a project steering (AP
+Product Owner, Tax Controller, AI Engineer) and quarterly to the
+cross-project GFAIC. Monthly steering accepts or rejects amber/red
+signals on Must items; GFAIC reviews compliance posture and any
+cross-project dependencies.
+
+\paragraph{Business-case refresh (M09).}
+The business case that authorises this project is refreshed on the
+following rhythm:
+
+\begin{itemize}
+  \item \textbf{Mandatory refresh}: at the first cycle after GA, and
+        annually thereafter (ticket AP-BC-REFRESH, priority M in
+        \cref{tab:ap-milestones}). Refresh packet includes country
+        volume assumptions, unit economics,
+        FTE leverage realised vs.\ forecast, and a deviation statement
+        against the baseline.
+  \item \textbf{Trigger-based refresh}: any of
+        \begin{itemize}
+          \item country monthly volume changes by $\ge\,20$\,\% from
+                forecast (either direction);
+          \item per-invoice run cost changes by $\ge\,30$\,\% (OCR
+                throughput, vLLM licensing, GPU price);
+          \item new country-specific VAT regulation or MAS MGF pillar
+                materially affecting scope;
+          \item any kill-switch in \cref{tab:ap-kill-switch} is tripped.
+        \end{itemize}
+  \item \textbf{Owner}: AP Product Owner. Approval routed through the
+        project steering and filed at
+        \path{docs/arabic/business-case/refresh-history.yaml}.
+\end{itemize}

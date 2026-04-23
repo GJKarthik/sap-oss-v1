@@ -1,0 +1,442 @@
+,,,,,,,,,,PRODUCT (L0),PRODUCT (L1),PRODUCT (L2),PRODUCT (L3),,PRODUCT (L3),PRODUCT (L4)
+,,,,,,,,,,Banking,Banking Others,Banking Input,Banking Input,,Banking Input,Banking Input
+,,,,,,,,,,Banking,Banking Others,Banking Transfer Pricing,Banking Transfer Pricing,,Banking Transfer Pricing,Banking Transfer Pricing
+,,,,,,,,,,Banking,Capital Market & Advisory,Advisory,Advisory Inp,,Advisory Inp,Advisory Inp
+,,,,,,,,,,Banking,Capital Market & Advisory,Advisory,ESG Advisory,,ESG Advisory,ESG Advisory
+,,,,,,,,,,Banking,Capital Market & Advisory,Advisory,M&A Advisory,,M&A Advisory,Clean Tech & Environment
+,,,,,,,,,,Banking,Capital Market & Advisory,Capital Markets,CM CMS,,M&A Advisory,Diversified Industries
+,,,,,,,,,,Banking,Capital Market & Advisory,Capital Markets,CM DCM,,M&A Advisory,Metals & Mining
+,,,,,,,,,,Banking,Capital Market & Advisory,Capital Markets,Capital Markets - Inp,,M&A Advisory,Oil & Gas
+,,,,,,,,,,Banking,Lending & Financial Solutions,CRE,CRE Distribution,,CM CMS,CM CMS ABS Structured
+,,,,,,,,,,Banking,Lending & Financial Solutions,CRE,CRE Origination,,CM DCM,Bond Syndicate
+,,,,,,,,,,Banking,Lending & Financial Solutions,CRE,CRE Private & Traded Credit,,CM DCM,CM DCM - Inp
+,,,,,,,,,,Banking,Lending & Financial Solutions,Data Centre,Data Centre,,CM DCM,CM DCM Bonds
+,,,,,,,,,,Banking,Lending & Financial Solutions,Financing Solutions,FS Banking,,CM DCM,CM DCM Financial Inst
+,,,,,,,,,,Banking,Lending & Financial Solutions,Financing Solutions,FS Distribution,,CM DCM,CM DCM MTN
+,,,,,,,,,,Banking,Lending & Financial Solutions,Financing Solutions,FS Origination,,CM DCM,CM DCM Other Securities
+,,,,,,,,,,Banking,Lending & Financial Solutions,Financing Solutions,FS Private & Traded Credit,,Capital Markets - Inp,Capital Markets - Inp
+,,,,,,,,,,Banking,Lending & Financial Solutions,Financing Solutions,FS Structured Rate Bonds,,CRE Distribution,CRE Distribution
+,,,,,,,,,,Banking,Lending & Financial Solutions,Financing Solutions,FS Structured Rate Loans,,CRE Origination,CRE Input
+,,,,,,,,,,Banking,Lending & Financial Solutions,Financing Solutions,Financing Solutions Input,,CRE Origination,Commercial Real Estate Origination
+,,,,,,,,,,Banking,Lending & Financial Solutions,Fund Finance,Fund Finance Distribution,,CRE Origination,Commercial Real Estate Origination- SPPI
+,,,,,,,,,,Banking,Lending & Financial Solutions,Fund Finance,Fund Finance Origination,,CRE Private & Traded Credit,CRE PTC Distribution
+,,,,,,,,,,Banking,Lending & Financial Solutions,Infra Develop Fin Grp,Develop Agency Fin Dist,,Data Centre,Data Centre Distribution
+,,,,,,,,,,Banking,Lending & Financial Solutions,Infra Develop Fin Grp,Development & Agency Finance Origination,,FS Banking,FS Cross Sell
+,,,,,,,,,,Banking,Lending & Financial Solutions,Infra Develop Fin Grp,IDFG - Warehouse,,FS Banking,FS-Banking
+,,,,,,,,,,Banking,Lending & Financial Solutions,Infra Develop Fin Grp,IDFG Private & Traded Credit,,FS Distribution,FS Distribution
+,,,,,,,,,,Banking,Lending & Financial Solutions,Infra Develop Fin Grp,Infra Develop Fin Grp Input,,FS Origination,Financing Solutions Origination
+,,,,,,,,,,Banking,Lending & Financial Solutions,Infra Develop Fin Grp,Project Finance Distribution,,FS Private & Traded Credit,FS PTC Distribution
+,,,,,,,,,,Banking,Lending & Financial Solutions,Infra Develop Fin Grp,Project Finance Origination,,FS Structured Rate Bonds,FS Structured Rate Bonds
+,,,,,,,,,,Banking,Lending & Financial Solutions,LAF and Private Credit,Finco Desk,,FS Structured Rate Loans,FS Structured Rate Loans
+,,,,,,,,,,Banking,Lending & Financial Solutions,LAF and Private Credit,LAF Bonds,,Financing Solutions Input,Financing Solutions Input
+,,,,,,,,,,Banking,Lending & Financial Solutions,LAF and Private Credit,LAF Distribution,,Fund Finance Distribution,Subscription Finance Distribution
+,,,,,,,,,,Banking,Lending & Financial Solutions,LAF and Private Credit,LAF Origination,,Fund Finance Origination,FF Others Origination
+,,,,,,,,,,Banking,Lending & Financial Solutions,LAF and Private Credit,LAF Private & Traded Credit,,Fund Finance Origination,GP/Management Co Financing Origination
+,,,,,,,,,,Banking,Lending & Financial Solutions,LAF and Private Credit,Leverage & Acquisition Financing Input,,Fund Finance Origination,Hybrid/NAV Origination
+,,,,,,,,,,Banking,Lending & Financial Solutions,Lending & Financing Solutions Others,Lending & Financing Solutions Others,,Fund Finance Origination,Subscription Finance Origination
+,,,,,,,,,,Banking,Lending & Financial Solutions,Transportation,Transportation - Inp,,Develop Agency Fin Dist,DAF - Comm & Clean Syndication
+,,,,,,,,,,Banking,Lending & Financial Solutions,Transportation,Transportation Banking,,Develop Agency Fin Dist,DAF- Covered Syndications
+,,,,,,,,,,Banking,Lending & Financial Solutions,Transportation,Transportation Distribution,,Development & Agency Finance Origination,DAF - Commercial & Clean - Origination
+,,,,,,,,,,Banking,Lending & Financial Solutions,Transportation,Transportation Operations Lease,,Development & Agency Finance Origination,DAF - Covered - Origination
+,,,,,,,,,,Banking,Lending & Financial Solutions,Transportation,Transportation Origination,,IDFG - Warehouse,IDFG - Warehouse
+,,,,,,,,,,CCPL & Other Unsecured,Credit Cards,Credit Cards,Credit Cards,,IDFG Private & Traded Credit,IDFG PTC Distribution
+,,,,,,,,,,CCPL & Other Unsecured,Personal Loans,Installment Loans,Installment Loans,,Infra Develop Fin Grp Input,Infra Develop Fin Grp Input
+,,,,,,,,,,CCPL & Other Unsecured,Personal Loans,Other Unsecured Lending,Other Unsecured Lending,,Project Finance Distribution,PF - Commercial & Clean Syndications
+,,,,,,,,,,CCPL & Other Unsecured,Personal Loans,Personal Loans - Inp,Personal Loans - Inp,,Project Finance Distribution,PF - Covered Syndications
+,,,,,,,,,,CCPL & Other Unsecured,Personal Loans,Revolving Credit,Revolving Credit,,Project Finance Origination,PF - Commercial & Clean - Origination
+,,,,,,,,,,Deposits,CASA,Current/Savings CASA,CASA Structural Hedge,,Project Finance Origination,PF - Covered - Origination
+,,,,,,,,,,Deposits,CASA,Current/Savings CASA,Current A/c I/B,,Finco Desk,Finco Desk
+,,,,,,,,,,Deposits,CASA,Current/Savings CASA,Current A/c Non I/B,,LAF Bonds,LAF Bonds
+,,,,,,,,,,Deposits,CASA,Current/Savings CASA,Current/Savings CASA - Inp,,LAF Distribution,LAF Distribution
+,,,,,,,,,,Deposits,CASA,Current/Savings CASA,Savings Account,,LAF Origination,Leverage & Acquisition Finance Origination
+,,,,,,,,,,Deposits,Other Deposits,Deposits - Inp,Deposits - Inp,,LAF Origination,Leverage & Acquisition Finance SPPI
+,,,,,,,,,,Deposits,Other Deposits,Other AMS,Other AMS,,LAF Private & Traded Credit,LAF PTC Distribution
+,,,,,,,,,,Deposits,SME Cash Management and Payments,SME Cash,SME CMP CASA,,LAF Private & Traded Credit,LAF PTC Hold
+,,,,,,,,,,Deposits,SME Cash Management and Payments,SME Cash,SME CMP Enhanced CASA,,Leverage & Acquisition Financing Input,Leverage & Acquisition Financing Input
+,,,,,,,,,,Deposits,SME Cash Management and Payments,SME Cash,SME CMP Saadiq CASA,,Lending & Financing Solutions Others,AG IGG
+,,,,,,,,,,Deposits,SME Cash Management and Payments,SME Cash,SME Clearing,,Lending & Financing Solutions Others,CLO
+,,,,,,,,,,Deposits,SME Cash Management and Payments,SME Cash,SME Collections,,Lending & Financing Solutions Others,Chakras
+,,,,,,,,,,Deposits,SME Cash Management and Payments,SME Cash,SME Controlled Deposits,,Lending & Financing Solutions Others,Funding Relief
+,,,,,,,,,,Deposits,SME Cash Management and Payments,SME Cash,SME Payments,,Lending & Financing Solutions Others,GCIG
+,,,,,,,,,,Deposits,SME Cash Management and Payments,SME Cash Mgmt & Payments - Input_,SME Cash Mgmt & Payments - Input_,,Lending & Financing Solutions Others,L&FS Others
+,,,,,,,,,,Deposits,SME Cash Management and Payments,SME Corporate Time Deposits,SME Corporate Time Deposits,,Lending & Financing Solutions Others,Lending & Financing Solutions Others Input
+,,,,,,,,,,Deposits,SME Cash Management and Payments,SME Escrow & Account Bank,SME Escrow & Account Bank,,Lending & Financing Solutions Others,Prior Year OR
+,,,,,,,,,,Deposits,SME Cash Management and Payments,SME Liquidity Mgt,SME Cash Concentration,,Transportation - Inp,Transportation - Inp
+,,,,,,,,,,Deposits,SME Cash Management and Payments,SME Other AMS (TB),SME Other AMS (TB),,Transportation Banking,Principal Struct Finance
+,,,,,,,,,,Deposits,Time Deposits,Time Deposits,FCNR Deposits,,Transportation Banking,Shipping Banking
+,,,,,,,,,,Deposits,Time Deposits,Time Deposits,Time Deposits Other,,Transportation Distribution,Aviation Distribution
+,,,,,,,,,,Deposits,Time Deposits,Time Deposits,Time Deposits Retail,,Transportation Distribution,Shipping Distribution
+,,,,,,,,,,Deposits,Time Deposits,Time Deposits,Time Deposits Retail Business & Comm,,Transportation Operations Lease,Aviation Operating Origination
+,,,,,,,,,,Markets,Credit Trading,Bespoke Credit Solutions,BCS- Equity Derivatives,,Transportation Operations Lease,Shipping Operating Origination
+,,,,,,,,,,Markets,Credit Trading,Bespoke Credit Solutions,BCS- Equity Financing,,Transportation Origination,Aviation Debt - Finance
+,,,,,,,,,,Markets,Credit Trading,Bespoke Credit Solutions,Bespoke Credit Solutions-Input,,Transportation Origination,Shipping Debt - Origination
+,,,,,,,,,,Markets,Credit Trading,Bespoke Credit Solutions,Credit Flow DM Trading,,Credit Cards,Credit Cards
+,,,,,,,,,,Markets,Credit Trading,Bespoke Credit Solutions,Credit Flow - DM,,Installment Loans,Installment Loans
+,,,,,,,,,,Markets,Credit Trading,Central Credit Unit,CCU Funding,,Other Unsecured Lending,Other Unsecured Lending
+,,,,,,,,,,Markets,Credit Trading,Central Credit Unit,CCU Others,,Personal Loans - Inp,Personal Loans - Inp
+,,,,,,,,,,Markets,Credit Trading,Credit Flow,Credit Flow Americas,,Revolving Credit,Revolving Credit
+,,,,,,,,,,Markets,Credit Trading,Credit Flow,Credit Flow China Onshore,,CASA Structural Hedge,CASA Structural Hedge
+,,,,,,,,,,Markets,Credit Trading,Credit Flow,Credit Flow EMEA,,Current A/c I/B,Current A/c I/B
+,,,,,,,,,,Markets,Credit Trading,Credit Flow,Credit Flow Input,,Current A/c Non I/B,Current A/c Non I/B
+,,,,,,,,,,Markets,Credit Trading,Credit Flow,Credit Flow PanAsia,,Current/Savings CASA - Inp,Current/Savings CASA - Inp
+,,,,,,,,,,Markets,Credit Trading,Credit Repo,Credit Repo Input,,Savings Account,Savings Account
+,,,,,,,,,,Markets,Credit Trading,Credit Repo,Credit Repos,,Deposits - Inp,Deposits - Inp
+,,,,,,,,,,Markets,Credit Trading,Credit Trading Charges,Credit Trading - CLO Charges & BSM,,Other AMS,Other AMS
+,,,,,,,,,,Markets,Credit Trading,Credit Trading Charges,Credit Trading - Cash collateral,,SME CMP CASA,SME CMP CASA I/B
+,,,,,,,,,,Markets,Credit Trading,Credit Trading Charges,Credit Trading - FM P&L Funding,,SME CMP CASA,SME CMP CASA Non I/B
+,,,,,,,,,,Markets,Credit Trading,Credit Trading Charges,Credit Trading - MTM vs Accrual,,SME CMP CASA,SME CMP CASA Other
+,,,,,,,,,,Markets,Credit Trading,Credit Trading Charges,Credit Trading - Nostro and Others,,SME CMP Enhanced CASA,SME CMP Enhanced CASA I/B
+,,,,,,,,,,Markets,Credit Trading,Credit Trading Charges,FMB PYOE Credit,,SME CMP Saadiq CASA,SME CMP Saadiq CASA P/S
+,,,,,,,,,,Markets,Credit Trading,Credit Trading Charges,Prior Year Operational Events - Credit Trading,,SME Clearing,SME Clearing_
+,,,,,,,,,,Markets,Credit Trading,Credit Trading Others,Credit Flow - Legacy,,SME Collections,SME Collections_
+,,,,,,,,,,Markets,Credit Trading,Credit Trading Others,Credit Trading Others Input,,SME Controlled Deposits,SME Controlled Deposits I/B
+,,,,,,,,,,Markets,Credit Trading,Credit Trading Others,Risk Overlay,,SME Payments,SME Payments_
+,,,,,,,,,,Markets,Credit Trading,Flow Financing,Credit Trading Inp,,SME Cash Mgmt & Payments - Input_,SME Cash Mgmt & Payments - Input_
+,,,,,,,,,,Markets,Credit Trading,Loan Trading,Loan trading - East,,SME Corporate Time Deposits,SME Corporate Time Deposits
+,,,,,,,,,,Markets,Credit Trading,Loan Trading,Loan trading - West,,SME Escrow & Account Bank,SME Escrow & Account Bank
+,,,,,,,,,,Markets,Credit Trading,Loan Trading,Loan trading Input,,SME Cash Concentration,SME Cash Concentration
+,,,,,,,,,,Markets,Credit Trading,Repos JV,Repos JV (Macro),,SME Other AMS (TB),SME Other AMS (TB)
+,,,,,,,,,,Markets,Credit Trading,Repos JV,Repos JV Input,,FCNR Deposits,FCNR Deposits
+,,,,,,,,,,Markets,Credit Trading,Securitised Products Trading,Banking book (SPT legacy),,Time Deposits Other,Time Deposits Other
+,,,,,,,,,,Markets,Credit Trading,Securitised Products Trading,SPT Banking Book,,Time Deposits Retail,Time Deposits Retail
+,,,,,,,,,,Markets,Credit Trading,Securitised Products Trading,SPT Trading Book,,Time Deposits Retail Business & Comm,Time Deposits Retail Business & Comm
+,,,,,,,,,,Markets,Credit Trading,Securitised Products Trading,SPT Warehouse (JV w GCM),,BCS- Equity Derivatives,BCS Trading- Equity Derivatives
+,,,,,,,,,,Markets,Credit Trading,Securitised Products Trading,Securitised Products Trading Input,,BCS- Equity Financing,BCS Banking- Equity Financing
+,,,,,,,,,,Markets,Credit Trading,Structured Credit Trading,LCY JV (SPT - Macro),,BCS- Equity Financing,BCS Trading- Equity Financing
+,,,,,,,,,,Markets,Credit Trading,Structured Credit Trading,NAV-Hybrid,,Bespoke Credit Solutions-Input,Bespoke Credit Solutions-Input
+,,,,,,,,,,Markets,Credit Trading,Structured Credit Trading,SCT,,Credit Flow DM Trading,Credit Flow - DM (TRAD)
+,,,,,,,,,,Markets,Credit Trading,Structured Credit Trading,SCT - ABL,,Credit Flow - DM,Credit Flow - DM Input
+,,,,,,,,,,Markets,Credit Trading,Structured Credit Trading,SCT JV (Macro),,CCU Funding,CCU Funding Cost
+,,,,,,,,,,Markets,Credit Trading,Structured Credit Trading,SCT JV (SPT),,CCU Others,CCU - CDS Hedge
+,,,,,,,,,,Markets,Credit Trading,Structured Credit Trading,Structured Credit Trading Input,,CCU Others,CCU - Fair Value Hedge
+,,,,,,,,,,Markets,Macro Trading,Commodities,Agriculture,,CCU Others,CCU - TM SLA
+,,,,,,,,,,Markets,Macro Trading,Commodities,Base Metals,,CCU Others,CCU Deployment - CLR
+,,,,,,,,,,Markets,Macro Trading,Commodities,Commodities Management,,CCU Others,CCU_Deployment
+,,,,,,,,,,Markets,Macro Trading,Commodities,Commodity Derivatives - Input,,Credit Flow Americas,Credit Flow Americas Trading
+,,,,,,,,,,Markets,Macro Trading,Commodities,Energy,,Credit Flow China Onshore,Credit Flow China Onshore Trading
+,,,,,,,,,,Markets,Macro Trading,Commodities,FMB PYOE Commodities,,Credit Flow EMEA,Credit Flow EMEA Trading
+,,,,,,,,,,Markets,Macro Trading,Commodities,Physical Commodity Solutions,,Credit Flow Input,Credit Flow Input
+,,,,,,,,,,Markets,Macro Trading,Commodities,Precious Metals,,Credit Flow PanAsia,Credit Flow PanAsia Trading
+,,,,,,,,,,Markets,Macro Trading,Macro Trading FX,FX,,Credit Repo Input,Credit Repo Input
+,,,,,,,,,,Markets,Macro Trading,Macro Trading FX,FXO,,Credit Repos,Credit Repos Banking
+,,,,,,,,,,Markets,Macro Trading,Macro Trading Rates,Credit JV Macro,,Credit Repos,Credit Repos Trading
+,,,,,,,,,,Markets,Macro Trading,Macro Trading Rates,FI Rates Input,,Credit Trading - CLO Charges & BSM,Credit Trading - CLO Charges & BSM
+,,,,,,,,,,Markets,Macro Trading,Macro Trading Rates,FMB PYOE Rates,,Credit Trading - Cash collateral,Credit Trading - Cash collateral
+,,,,,,,,,,Markets,Macro Trading,Macro Trading Rates,FXO Mgmt,,Credit Trading - FM P&L Funding,Credit Trading - FM P&L Funding
+,,,,,,,,,,Markets,Macro Trading,Macro Trading Rates,G10 Swaps,,Credit Trading - MTM vs Accrual,Credit Trading - MTM vs Accrual
+,,,,,,,,,,Markets,Macro Trading,Macro Trading Rates,Global Rates Management,,Credit Trading - Nostro and Others,Credit Trading - Nostro and Others
+,,,,,,,,,,Markets,Macro Trading,Macro Trading Rates,IRT Desk,,FMB PYOE Credit,FMB PYOE Credit
+,,,,,,,,,,Markets,Macro Trading,Macro Trading Rates,Macro - Global FXO,,Prior Year Operational Events - Credit Trading,Prior Year Operational Events - Credit Trading
+,,,,,,,,,,Markets,Macro Trading,Macro Trading Rates,Macro - Global Rates,,Credit Flow - Legacy,Credit Flow - Legacy Trading
+,,,,,,,,,,Markets,Macro Trading,Macro Trading Rates,Macro AME,,Credit Trading Others Input,Credit Trading Others Input
+,,,,,,,,,,Markets,Macro Trading,Macro Trading Rates,Macro ASA,,Risk Overlay,Risk Overlay Trading
+,,,,,,,,,,Markets,Macro Trading,Macro Trading Rates,Macro E&A Local Markets,,Credit Trading Inp,Credit Trading Inp
+,,,,,,,,,,Markets,Macro Trading,Macro Trading Rates,Macro GCNA,,Loan trading - East,Loan trading East SLT
+,,,,,,,,,,Markets,Macro Trading,Macro Trading Rates,Macro Global FX Cash,,Loan trading - West,Loan trading West SLT
+,,,,,,,,,,Markets,Macro Trading,Macro Trading Rates,Macro JV Rates,,Loan trading Input,Loan trading Input
+,,,,,,,,,,Markets,Macro Trading,Macro Trading Rates,Macro Management,,Repos JV (Macro),Repos JV Banking
+,,,,,,,,,,Markets,Macro Trading,Macro Trading Rates,Macro Operational Events,,Repos JV (Macro),Repos JV Trading
+,,,,,,,,,,Markets,Macro Trading,Macro Trading Rates,Rates Financing,,Repos JV Input,Repos JV Input
+,,,,,,,,,,Markets,Macro Trading,Macro Trading Rates,Rates Structured,,Banking book (SPT legacy),SPT legacy Banking
+,,,,,,,,,,Markets,Macro Trading,Macro Trading Rates,Repos JV Total,,SPT Banking Book,SPT Book Banking
+,,,,,,,,,,Markets,Macro Trading,Macro Trading Rates,Total EM Rates,,SPT Trading Book,SPT Trading
+,,,,,,,,,,Markets,Macro Trading,Macro others,FX Sweep,,SPT Warehouse (JV w GCM),SPT Warehouse Banking
+,,,,,,,,,,Markets,Macro Trading,Macro others,Macro - Balance Sheet Management,,Securitised Products Trading Input,Securitised Products Trading Input
+,,,,,,,,,,Markets,Macro Trading,Macro others,Macro - CLO Charges_,,LCY JV (SPT - Macro),LCY JV (SPT - Macro) Trading
+,,,,,,,,,,Markets,Macro Trading,Macro others,Macro - Cash Collateral,,NAV-Hybrid,NAV-Hybrid Banking
+,,,,,,,,,,Markets,Macro Trading,Macro others,Macro - Exceptional items,,NAV-Hybrid,NAV-Hybrid Trading
+,,,,,,,,,,Markets,Macro Trading,Macro others,Macro - MTM vs Accrual,,SCT,SCT Banking Agency
+,,,,,,,,,,Markets,Macro Trading,Macro others,Macro - Nostro and Others,,SCT,SCT Banking Financing
+,,,,,,,,,,Markets,Macro Trading,Macro others,Macro FM P&L Funding,,SCT,SCT Trading
+,,,,,,,,,,Markets,Valuation and Other Adj,CFD Other Charges,MTM V Accrual - CFD,,SCT - ABL,SCT JV Banking - ABL
+,,,,,,,,,,Markets,Valuation and Other Adj,Central Funding Desk (CFD),Bespoke Discounting,,SCT - ABL,SCT JV Trading - ABL
+,,,,,,,,,,Markets,Valuation and Other Adj,Central Funding Desk (CFD),Central Funding Desk (CFD) Input,,SCT JV (Macro),SCT JV Banking Agency
+,,,,,,,,,,Markets,Valuation and Other Adj,Central Funding Desk (CFD),Vannila Discounting,,SCT JV (Macro),SCT JV Banking Financing
+,,,,,,,,,,Markets,Valuation and Other Adj,Collateral Management Unit,CMU Hedges,,SCT JV (Macro),SCT JV Trading
+,,,,,,,,,,Markets,Valuation and Other Adj,Collateral Management Unit,CMU Vanilla,,SCT JV (SPT),SCT JV Banking (SPT)
+,,,,,,,,,,Markets,Valuation and Other Adj,FM DVA,FM DVA,,Structured Credit Trading Input,Structured Credit Trading Input
+,,,,,,,,,,Markets,Valuation and Other Adj,FM Legacy Equity,Legacy Cash Equities,,Agriculture,Commodities - Agriculture
+,,,,,,,,,,Markets,Valuation and Other Adj,FM Legacy Equity,Legacy Convertible Bonds,,Base Metals,Commodities - Base Metals
+,,,,,,,,,,Markets,Valuation and Other Adj,FM Legacy Equity,Legacy Equities,,Commodities Management,Commodities Mgmt
+,,,,,,,,,,Markets,Valuation and Other Adj,FM SCSCL,FM SCSCL,,Commodities Management,Commodities XVA Waiver
+,,,,,,,,,,Markets,Valuation and Other Adj,FM XVA,BSM,,Commodity Derivatives - Input,Commodity Derivatives Input
+,,,,,,,,,,Markets,Valuation and Other Adj,FM XVA,CVA,,Energy,Commodities - Energy
+,,,,,,,,,,Markets,Valuation and Other Adj,FM XVA,Defaulted Derivatives,,FMB PYOE Commodities,FMB PYOE Commodities
+,,,,,,,,,,Markets,Valuation and Other Adj,FM XVA,FM XVA Input,,Physical Commodity Solutions,Commodities - Physical Commodity Solutions
+,,,,,,,,,,Markets,Valuation and Other Adj,FM XVA,FMB PYOE XVA,,Precious Metals,Commodities - Precious Metals
+,,,,,,,,,,Markets,Valuation and Other Adj,FM XVA,FVA,,FX,FMB PYOE FX
+,,,,,,,,,,Markets,Valuation and Other Adj,Markets Input,Markets Input,,FX,FX - Data Commercialisation
+,,,,,,,,,,Markets,Valuation and Other Adj,XVA others,MTM V Accrual - XVA,,FX,FX AME
+,,,,,,,,,,Markets,Valuation and Other Adj,XVA others,Prior Year XVA,,FX,FX ASA
+,,,,,,,,,,Markets,Valuation and Other Adj,XVA others,RMA - CLO Charges,,FX,FX Americas
+,,,,,,,,,,Markets,Valuation and Other Adj,XVA others,RMA - Cash Collateral,,FX,FX GCNA
+,,,,,,,,,,Markets,Valuation and Other Adj,XVA others,RMA - FM P&L Funding,,FX,FX Input
+,,,,,,,,,,Markets,Valuation and Other Adj,XVA others,Totem Basis,,FX,FX Management
+,,,,,,,,,,Markets,Valuation and Other Adj,XVA others,prior Year Operational Events - XVA,,FX,FX TB-FX
+,,,,,,,,,,Mortgages & Other Secured,Auto,Auto,Auto,,FX,FX UK Europe
+,,,,,,,,,,Mortgages & Other Secured,Mortgages,Comm Mortgages BB ME,Comm Mortgages BB ME,,FXO,FMB PYOE FXO
+,,,,,,,,,,Mortgages & Other Secured,Mortgages,Mortgage Loans Excluding MOA,Mortgage Loans Excluding MOA,,FXO,FX Macro Trading Input
+,,,,,,,,,,Mortgages & Other Secured,Mortgages,Mortgage One Loans,Mortgage One Loans,,FXO,FXO - Admin BTB
+,,,,,,,,,,Mortgages & Other Secured,Mortgages,Mortgages - Inp,Mortgages - Inp,,FXO,FXO - Admin Hedge Overlay
+,,,,,,,,,,Mortgages & Other Secured,Mortgages,Other Mortgage,Other Mortgage,,FXO,FXO - Admin Others
+,,,,,,,,,,Mortgages & Other Secured,Mortgages,SMI One Loans,SMI One Loans,,FXO,FXO - Management
+,,,,,,,,,,Mortgages & Other Secured,Other Secured,BFS Overdrafts,BFS Overdrafts,,FXO,FXO Admin
+,,,,,,,,,,Mortgages & Other Secured,Other Secured,Business Equipment Financing,Business Equipment Financing,,FXO,FXO CEE MEA
+,,,,,,,,,,Mortgages & Other Secured,Other Secured,Guaranteed Instalment Loans,Guaranteed Instalment Loans,,FXO,FXO EM East Input
+,,,,,,,,,,Mortgages & Other Secured,Other Secured,Loans Against Property,Loans Against Property,,FXO,FXO EM West Input
+,,,,,,,,,,Mortgages & Other Secured,Other Secured,Other Business Lending WRB,Medium Enterprise Lending WRB,,FXO,FXO G10 East
+,,,,,,,,,,Mortgages & Other Secured,Other Secured,Other Business Lending WRB,Other Corporate Lending WRB,,FXO,FXO G10 Input
+,,,,,,,,,,Mortgages & Other Secured,Other Secured,Other Sec Lending,Other Sec Lending,,FXO,FXO G10 West
+,,,,,,,,,,Mortgages & Other Secured,Other Secured,Other Secured Lending - Inp,Other Secured Lending - Inp,,FXO,FXO Index Input
+,,,,,,,,,,Mortgages & Other Secured,Other Secured,Security Backed Revolving O/Draft,Security Backed Revolving O/Draft,,FXO,FXO Input
+,,,,,,,,,,NA,NA,NA,NA,,FXO,FXO Korea
+,,,,,,,,,,Other Products,Other Products,Other Prior Yr Op Events,Other Prior Yr Op Events,,FXO,FXO LATAM
+,,,,,,,,,,Other Products,Other Products,Other Products,Other Products,,FXO,FXO NEA
+,,,,,,,,,,Other Products,Other Products,Retail Products - Inp,Retail Products - Inp,,FXO,FXO Other Input
+,,,,,,,,,,Others,Others,Others,Others,,FXO,FXO SA
+,,,,,,,,,,Principal Finance,Principal Finance,Alternative Investments,Alternative Investments,,FXO,FXO SEA
+,,,,,,,,,,Principal Finance,Principal Finance,Infrastructure,Infrastructure,,FXO,Structured FX
+,,,,,,,,,,Principal Finance,Principal Finance,Mezzanine Solutions,Mezzanine Solutions,,Credit JV Macro,Credit JV Macro Input
+,,,,,,,,,,Principal Finance,Principal Finance,PF MTM v Accrual,PF MTM v Accrual,,Credit JV Macro,Licensing Vehicle - Credit JV
+,,,,,,,,,,Principal Finance,Principal Finance,Principal Finance - Inp,Principal Finance - Inp,,FI Rates Input,FI Rates Input
+,,,,,,,,,,Principal Finance,Principal Finance,Private Equity,Private Equity,,FMB PYOE Rates,FMB PYOE Rates
+,,,,,,,,,,Principal Finance,Principal Finance,Real Estate,Real Estate,,FXO Mgmt,FXO management
+,,,,,,,,,,Transaction Services,Payments & Liquidity,Cash,CMP CASA,,G10 Swaps,G10 Rates
+,,,,,,,,,,Transaction Services,Payments & Liquidity,Cash,CMP Enhanced CASA,,G10 Swaps,G10 Stirt
+,,,,,,,,,,Transaction Services,Payments & Liquidity,Cash,CMP Saadiq CASA,,G10 Swaps,G10 Swaps - Inp
+,,,,,,,,,,Transaction Services,Payments & Liquidity,Cash,Cash Mgmt & Payments - Input_,,Global Rates Management,Global Rates Mgmt
+,,,,,,,,,,Transaction Services,Payments & Liquidity,Cash,Clearing,,Global Rates Management,Global Rates Mgmt_input
+,,,,,,,,,,Transaction Services,Payments & Liquidity,Cash,Collections,,IRT Desk,IRT Desk
+,,,,,,,,,,Transaction Services,Payments & Liquidity,Cash,Controlled Deposits,,Macro - Global FXO,Macro Global FXO Input
+,,,,,,,,,,Transaction Services,Payments & Liquidity,Cash,Corporate Time Deposits,,Macro - Global Rates,Macro Global Rates Input
+,,,,,,,,,,Transaction Services,Payments & Liquidity,Cash,Escrow & Account Bank,,Macro AME,Macro AME Input
+,,,,,,,,,,Transaction Services,Payments & Liquidity,Cash,Liquidity Mgt,,Macro ASA,Macro ASA Input
+,,,,,,,,,,Transaction Services,Payments & Liquidity,Cash,Other AMS (TB),,Macro E&A Local Markets,Macro E&A Local Markets Input
+,,,,,,,,,,Transaction Services,Payments & Liquidity,Cash,Payments,,Macro GCNA,Macro GCNA Input
+,,,,,,,,,,Transaction Services,Payments & Liquidity,Cash,TB Cash - Sustainable Finance,,Macro Global FX Cash,Macro Global FX Cash Input
+,,,,,,,,,,Transaction Services,Payments & Liquidity,Cash,TBFX - Cash,,Macro JV Rates,Client Access JV
+,,,,,,,,,,Transaction Services,Payments & Liquidity,Money Markets,Money Market Input,,Macro JV Rates,EM Rates LCY JV
+,,,,,,,,,,Transaction Services,Payments & Liquidity,Money Markets,Money Market Repos & Collateral,,Macro JV Rates,Licensing Vehicle - JV
+,,,,,,,,,,Transaction Services,Payments & Liquidity,Money Markets,Money Market Sales,,Macro JV Rates,Macro JV Rates Input
+,,,,,,,,,,Transaction Services,Securities & Prime Services,FSS Others,FSS - Exceptional Items,,Macro JV Rates,Structured Financing JV
+,,,,,,,,,,Transaction Services,Securities & Prime Services,FSS Others,FSS - FM P&L Funding,,Macro Management,G10 Rates Mgmt
+,,,,,,,,,,Transaction Services,Securities & Prime Services,FSS Others,Research,,Macro Management,Macro Management Input
+,,,,,,,,,,Transaction Services,Securities & Prime Services,Prime Services,Prime Services - Inp,,Macro Operational Events,Macro Operational Events Input
+,,,,,,,,,,Transaction Services,Securities & Prime Services,Prime Services,Prime Services Cash Products,,Rates Financing,Rates Financing
+,,,,,,,,,,Transaction Services,Securities & Prime Services,Prime Services,Prime Services Clearing,,Rates Structured,Rates Structured Input
+,,,,,,,,,,Transaction Services,Securities & Prime Services,Prime Services,Prime Services FIPB,,Rates Structured,Structured Rates
+,,,,,,,,,,Transaction Services,Securities & Prime Services,Prime Services,Prime Services Intermediation,,Rates Structured,Structured Rates Primary
+,,,,,,,,,,Transaction Services,Securities & Prime Services,Securities Services,SS Corporate Agency & Trust,,Repos JV Total,Repos JV
+,,,,,,,,,,Transaction Services,Securities & Prime Services,Securities Services,SS Custody & Clearing,,Repos JV Total,Repos JV Input
+,,,,,,,,,,Transaction Services,Securities & Prime Services,Securities Services,SS Fiduciary & Fund Services,,Total EM Rates,EM Rates
+,,,,,,,,,,Transaction Services,Trade & Working Capital,Acceptance,Documentary Trade,,Total EM Rates,EM Rates Input
+,,,,,,,,,,Transaction Services,Trade & Working Capital,Trade Exc Acceptance,Documentary Trade,,Total EM Rates,EM Rates LCY
+,,,,,,,,,,Transaction Services,Trade & Working Capital,Trade Exc Acceptance,Supply Chain Management,,FX Sweep,FX Sweep
+,,,,,,,,,,Transaction Services,Trade & Working Capital,Trade Exc Acceptance,Trade Lending,,Macro - Balance Sheet Management,Macro - Balance Sheet Management
+,,,,,,,,,,Transaction Services,Trade & Working Capital,Trade Exc Acceptance,Trade Other,,Macro - CLO Charges_,Macro - CLO Charges_
+,,,,,,,,,,Treasury,Treasury Capital,Treasury Capital,Treasury Capital,,Macro - Cash Collateral,Macro - AGIG
+,,,,,,,,,,Treasury,Treasury IRRBB,Treasury IRRBB,Treasury IRRBB,,Macro - Cash Collateral,Macro - Clearing Fees & Charges
+,,,,,,,,,,Treasury,Treasury Markets,Treasury Markets,CD/CP,,Macro - Cash Collateral,Macro - Collateral Funding
+,,,,,,,,,,Treasury,Treasury Markets,Treasury Markets,Covered Bonds,,Macro - Cash Collateral,Macro - LCR - CoL charges
+,,,,,,,,,,Treasury,Treasury Markets,Treasury Markets,Medium Term Notes,,Macro - Exceptional items,Prior Year Operational Events - Commodities
+,,,,,,,,,,Treasury,Treasury Markets,Treasury Markets,Securities,,Macro - Exceptional items,Prior Year Operational Events - FX
+,,,,,,,,,,Treasury,Treasury Markets,Treasury Markets,Time Deposit,,Macro - Exceptional items,Prior Year Operational Events - Rates
+,,,,,,,,,,Treasury,Treasury Markets,Treasury Markets,Treasury Mkts - Inp,,Macro - MTM vs Accrual,MTM vs Accrual - CSA
+,,,,,,,,,,Un-Mapped,Un-Mapped,Un-Mapped,Un-Mapped,,Macro - MTM vs Accrual,MTM vs Accrual - Commodities
+,,,,,,,,,,Wealth Solutions,Bancassurance,Bancassurance,Bancassurance,,Macro - MTM vs Accrual,MTM vs Accrual - FX
+,,,,,,,,,,Wealth Solutions,Capital Market Products,Capital Market Other,Capital Market Other,,Macro - MTM vs Accrual,MTM vs Accrual - FXO
+,,,,,,,,,,Wealth Solutions,Capital Market Products,Capital Market Products - Inp,Capital Market Products - Inp,,Macro - MTM vs Accrual,MTM vs Accrual - Rates
+,,,,,,,,,,Wealth Solutions,Capital Market Products,Cash Equities WM,Cash Equities WM,,Macro - Nostro and Others,Nostro and Others - FX
+,,,,,,,,,,Wealth Solutions,Capital Market Products,Fixed Income inc Islamic,Fixed Income inc Islamic,,Macro - Nostro and Others,Nostro and Others - Rates
+,,,,,,,,,,Wealth Solutions,Capital Market Products,Premium Currency Investments,Premium Currency Investments,,Macro FM P&L Funding,Macro FM P&L Funding
+,,,,,,,,,,Wealth Solutions,Capital Market Products,Structured Deposits inc Islamic,Structured Deposits inc Islamic,,MTM V Accrual - CFD,MTM V Accrual - CFD
+,,,,,,,,,,Wealth Solutions,Capital Market Products,Structured Note inc Islamic,Structured Note inc Islamic,,Bespoke Discounting,Bespoke Discounting
+,,,,,,,,,,Wealth Solutions,Capital Market Products,Total FX inc Islamic,Total FX inc Islamic,,Central Funding Desk (CFD) Input,Central Funding Desk (CFD) Input
+,,,,,,,,,,Wealth Solutions,Managed Investments,In-House Funds & Discret & Islamic,In-House Funds & Discret & Islamic,,Vannila Discounting,Vannila Discounting
+,,,,,,,,,,Wealth Solutions,Managed Investments,Managed Investments - Inp,Managed Investments - Inp,,CMU Hedges,CMU Hedges
+,,,,,,,,,,Wealth Solutions,Managed Investments,Other Managed Investments,Other Managed Investments,,CMU Vanilla,CMU Vanilla
+,,,,,,,,,,Wealth Solutions,Managed Investments,Third Party Funds,Third Party Funds,,FM DVA,FM DVA
+,,,,,,,,,,Wealth Solutions,Managed Investments,Trust & Fiduciary Services,Trust & Fiduciary Services,,Legacy Cash Equities,Legacy Cash Equities
+,,,,,,,,,,Wealth Solutions,Other Wealth Mgt,Other Wealth Mgt,Other Wealth Mgt,,Legacy Convertible Bonds,Legacy Convertible Bonds
+,,,,,,,,,,Wealth Solutions,Other Wealth Mgt,Wealth Products - Inp,Wealth Products - Inp,,Legacy Equities,Legacy Equities - Inp
+,,,,,,,,,,Wealth Solutions,Secured Lending WM,Secured Lending WM,Secured Lending WM,,Legacy Equities,Legacy Equity Flow
+,,,,,,,,,,,,,,,Legacy Equities,Legacy Equity Structured Products
+,,,,,,,,,,,,,,,FM SCSCL,FM SCSCL
+,,,,,,,,,,,,,,,BSM,BSM
+,,,,,,,,,,,,,,,CVA,CVA
+,,,,,,,,,,,,,,,Defaulted Derivatives,DD Global Credit
+,,,,,,,,,,,,,,,Defaulted Derivatives,DD Macro Commodities
+,,,,,,,,,,,,,,,Defaulted Derivatives,DD Macro Rates
+,,,,,,,,,,,,,,,FM XVA Input,FM XVA Input
+,,,,,,,,,,,,,,,FMB PYOE XVA,FMB PYOE XVA
+,,,,,,,,,,,,,,,FVA,FVA
+,,,,,,,,,,,,,,,Markets Input,Markets Input
+,,,,,,,,,,,,,,,MTM V Accrual - XVA,MTM V Accrual - XVA
+,,,,,,,,,,,,,,,Prior Year XVA,Prior Year XVA
+,,,,,,,,,,,,,,,RMA - CLO Charges,RMA - CLO Charges
+,,,,,,,,,,,,,,,RMA - Cash Collateral,RMA - Cash Collateral
+,,,,,,,,,,,,,,,RMA - FM P&L Funding,RMA - FM P&L Funding
+,,,,,,,,,,,,,,,Totem Basis,Totem Basis
+,,,,,,,,,,,,,,,prior Year Operational Events - XVA,prior Year Operational Events - XVA
+,,,,,,,,,,,,,,,Auto,Auto
+,,,,,,,,,,,,,,,Comm Mortgages BB ME,Comm Mortgages BB ME
+,,,,,,,,,,,,,,,Mortgage Loans Excluding MOA,Mortgage Loans Excluding MOA
+,,,,,,,,,,,,,,,Mortgage One Loans,Mortgage One Loans
+,,,,,,,,,,,,,,,Mortgages - Inp,Mortgages - Inp
+,,,,,,,,,,,,,,,Other Mortgage,Other Mortgage
+,,,,,,,,,,,,,,,SMI One Loans,SMI One Loans
+,,,,,,,,,,,,,,,BFS Overdrafts,BFS Overdrafts
+,,,,,,,,,,,,,,,Business Equipment Financing,Business Equipment Financing
+,,,,,,,,,,,,,,,Guaranteed Instalment Loans,Guaranteed Instalment Loans
+,,,,,,,,,,,,,,,Loans Against Property,Loans Against Property
+,,,,,,,,,,,,,,,Medium Enterprise Lending WRB,CRE Term Loan SME
+,,,,,,,,,,,,,,,Medium Enterprise Lending WRB,Corporate Revolving Term Loan SME
+,,,,,,,,,,,,,,,Medium Enterprise Lending WRB,Corporate Short Term Loan SME
+,,,,,,,,,,,,,,,Medium Enterprise Lending WRB,Corporate Term Loan SME
+,,,,,,,,,,,,,,,Medium Enterprise Lending WRB,Medium Enterprise Lending WRB - Input
+,,,,,,,,,,,,,,,Medium Enterprise Lending WRB,Other ME Lending SME
+,,,,,,,,,,,,,,,Medium Enterprise Lending WRB,Overdrafts SME
+,,,,,,,,,,,,,,,Other Corporate Lending WRB,Other Corporate Lending WRB
+,,,,,,,,,,,,,,,Other Sec Lending,Other Sec Lending
+,,,,,,,,,,,,,,,Other Secured Lending - Inp,Other Secured Lending - Inp
+,,,,,,,,,,,,,,,Security Backed Revolving O/Draft,Security Backed Revolving O/Draft
+,,,,,,,,,,,,,,,NA,NA
+,,,,,,,,,,,,,,,Other Prior Yr Op Events,Other Prior Yr Op Events
+,,,,,,,,,,,,,,,Other Products,Other Products
+,,,,,,,,,,,,,,,Retail Products - Inp,Retail Products - Inp
+,,,,,,,,,,,,,,,Others,Others
+,,,,,,,,,,,,,,,Alternative Investments,Alternative Investments
+,,,,,,,,,,,,,,,Infrastructure,Infrastructure
+,,,,,,,,,,,,,,,Mezzanine Solutions,Mezzanine Solutions
+,,,,,,,,,,,,,,,PF MTM v Accrual,PF MTM v Accrual
+,,,,,,,,,,,,,,,Principal Finance - Inp,Principal Finance - Inp
+,,,,,,,,,,,,,,,Private Equity,Private Equity
+,,,,,,,,,,,,,,,Real Estate,Real Estate
+,,,,,,,,,,,,,,,CMP CASA,CMP CASA I/B
+,,,,,,,,,,,,,,,CMP CASA,CMP CASA Non I/B
+,,,,,,,,,,,,,,,CMP CASA,CMP CASA Other
+,,,,,,,,,,,,,,,CMP Enhanced CASA,CMP Enhanced CASA I/B
+,,,,,,,,,,,,,,,CMP Saadiq CASA,CMP Saadiq CASA Non P/S
+,,,,,,,,,,,,,,,CMP Saadiq CASA,CMP Saadiq CASA P/S
+,,,,,,,,,,,,,,,Cash Mgmt & Payments - Input_,Cash Mgmt & Payments - Input_
+,,,,,,,,,,,,,,,Clearing,Clearing_
+,,,,,,,,,,,,,,,Collections,Collections_
+,,,,,,,,,,,,,,,Collections,Straight2bank Pay
+,,,,,,,,,,,,,,,Controlled Deposits,Controlled Deposits I/B
+,,,,,,,,,,,,,,,Corporate Time Deposits,Corporate Time Deposits
+,,,,,,,,,,,,,,,Escrow & Account Bank,Escrow & Account Bank
+,,,,,,,,,,,,,,,Liquidity Mgt,Cash Concentration
+,,,,,,,,,,,,,,,Liquidity Mgt,Investment Sweeps
+,,,,,,,,,,,,,,,Liquidity Mgt,Liquidity Mgt Other
+,,,,,,,,,,,,,,,Liquidity Mgt,Notional Pooling
+,,,,,,,,,,,,,,,Other AMS (TB),Other AMS (TB)
+,,,,,,,,,,,,,,,Payments,Payments_
+,,,,,,,,,,,,,,,TB Cash - Sustainable Finance,Sustainable CASA
+,,,,,,,,,,,,,,,TBFX - Cash,TBFX - Cash
+,,,,,,,,,,,,,,,Money Market Input,Money Market Input
+,,,,,,,,,,,,,,,Money Market Repos & Collateral,Money Market Repos & Collateral
+,,,,,,,,,,,,,,,Money Market Sales,Money Market Sales
+,,,,,,,,,,,,,,,FSS - Exceptional Items,PYOE Prime Services
+,,,,,,,,,,,,,,,FSS - FM P&L Funding,Prime Services - FM P&L Funding
+,,,,,,,,,,,,,,,Research,Research
+,,,,,,,,,,,,,,,Prime Services - Inp,Prime Services - Inp
+,,,,,,,,,,,,,,,Prime Services Cash Products,Collateral Optimisation Clearing
+,,,,,,,,,,,,,,,Prime Services Cash Products,India Interest
+,,,,,,,,,,,,,,,Prime Services Cash Products,TB Cash Account Interest
+,,,,,,,,,,,,,,,Prime Services Clearing,Prime Services Clearing OTC FX
+,,,,,,,,,,,,,,,Prime Services Clearing,Prime Services Clearing OTC Rates
+,,,,,,,,,,,,,,,Prime Services FIPB,Prime Services FIPB
+,,,,,,,,,,,,,,,Prime Services Intermediation,Prime Services Intermediation FX
+,,,,,,,,,,,,,,,Prime Services Intermediation,Prime Services Intermediation Rates
+,,,,,,,,,,,,,,,SS Corporate Agency & Trust,SS Corp Agency & Trust
+,,,,,,,,,,,,,,,SS Corporate Agency & Trust,SS Corp Agency & Trust Input
+,,,,,,,,,,,,,,,SS Corporate Agency & Trust,SS Input
+,,,,,,,,,,,,,,,SS Custody & Clearing,Agency Securities Lending
+,,,,,,,,,,,,,,,SS Custody & Clearing,Broker Clearing
+,,,,,,,,,,,,,,,SS Custody & Clearing,Derivative Clearing
+,,,,,,,,,,,,,,,SS Custody & Clearing,Direct & Multi-direct Custody
+,,,,,,,,,,,,,,,SS Custody & Clearing,Domestic Custody
+,,,,,,,,,,,,,,,SS Custody & Clearing,Regional & Intl Custody
+,,,,,,,,,,,,,,,SS Custody & Clearing,SS Cash
+,,,,,,,,,,,,,,,SS Custody & Clearing,SS Escrow
+,,,,,,,,,,,,,,,SS Fiduciary & Fund Services,Fiduciary Services
+,,,,,,,,,,,,,,,SS Fiduciary & Fund Services,Fund Accounting & Admin
+,,,,,,,,,,,,,,,Documentary Trade,Acceptance
+,,,,,,,,,,,,,,,Documentary Trade,Acceptance Under Export LC
+,,,,,,,,,,,,,,,Documentary Trade,Bill Discounting against Buyer Risk
+,,,,,,,,,,,,,,,Documentary Trade,Bonds & Guarantees
+,,,,,,,,,,,,,,,Documentary Trade,Commercial SBLC
+,,,,,,,,,,,,,,,Documentary Trade,Confirmation
+,,,,,,,,,,,,,,,Documentary Trade,Discounting of Accepted Drafts
+,,,,,,,,,,,,,,,Documentary Trade,Export Bill Discounting
+,,,,,,,,,,,,,,,Documentary Trade,Export Bills Collection
+,,,,,,,,,,,,,,,Documentary Trade,Export CBN
+,,,,,,,,,,,,,,,Documentary Trade,Financial Guarantees
+,,,,,,,,,,,,,,,Documentary Trade,Flow Trade - Inp
+,,,,,,,,,,,,,,,Documentary Trade,Import Bills Collection
+,,,,,,,,,,,,,,,Documentary Trade,Import Loans
+,,,,,,,,,,,,,,,Documentary Trade,LC Advising
+,,,,,,,,,,,,,,,Documentary Trade,LC Issuance
+,,,,,,,,,,,,,,,Documentary Trade,LC Reimbursements
+,,,,,,,,,,,,,,,Documentary Trade,Other Guarantees
+,,,,,,,,,,,,,,,Documentary Trade,Prepayment of Own LC (POLC)
+,,,,,,,,,,,,,,,Documentary Trade,Preshipment Financing
+,,,,,,,,,,,,,,,Documentary Trade,Receivables Finance for FIs
+,,,,,,,,,,,,,,,Documentary Trade,Refinancing under Reimburse
+,,,,,,,,,,,,,,,Documentary Trade,Reimbursement Undertkgs
+,,,,,,,,,,,,,,,Documentary Trade,Reissuance Service
+,,,,,,,,,,,,,,,Documentary Trade,Trade Services
+,,,,,,,,,,,,,,,Supply Chain Management,Import Factoring
+,,,,,,,,,,,,,,,Supply Chain Management,Oil Import Financing
+,,,,,,,,,,,,,,,Supply Chain Management,Portfolio Receivable Services
+,,,,,,,,,,,,,,,Supply Chain Management,Receivables Services
+,,,,,,,,,,,,,,,Supply Chain Management,Silent Payment Guarantee
+,,,,,,,,,,,,,,,Supply Chain Management,Supplier Financing
+,,,,,,,,,,,,,,,Supply Chain Management,Trade Receivable Discounting / RS - Inp
+,,,,,,,,,,,,,,,Trade Lending,Borrowing Base Trade Loan
+,,,,,,,,,,,,,,,Trade Lending,Corporate Overdraft
+,,,,,,,,,,,,,,,Trade Lending,Corporate Short Term Loan
+,,,,,,,,,,,,,,,Trade Lending,Export Invoice Financing
+,,,,,,,,,,,,,,,Trade Lending,FI Post Ship Exp Fin-Inv Fin
+,,,,,,,,,,,,,,,Trade Lending,FI Post Ship Exp Fin-LCs&Coll
+,,,,,,,,,,,,,,,Trade Lending,Import Invoice Financing
+,,,,,,,,,,,,,,,Trade Lending,Import LC Re-Financing
+,,,,,,,,,,,,,,,Trade Lending,OCC - Trade
+,,,,,,,,,,,,,,,Trade Lending,Other Export Loans
+,,,,,,,,,,,,,,,Trade Lending,Pre-Export Finance for FI
+,,,,,,,,,,,,,,,Trade Lending,Structured Funding
+,,,,,,,,,,,,,,,Trade Lending,TBFX Trade
+,,,,,,,,,,,,,,,Trade Lending,Trade Advances
+,,,,,,,,,,,,,,,Trade Lending,Trade Lending Input
+,,,,,,,,,,,,,,,Trade Lending,Trade Linked Loans
+,,,,,,,,,,,,,,,Trade Other,Inter Bank Indemnity/Intra Grp Guarantee
+,,,,,,,,,,,,,,,Trade Other,Trade Loans Non Performing
+,,,,,,,,,,,,,,,Trade Other,Trade Other - Inp
+,,,,,,,,,,,,,,,Trade Other,Trade Other Products
+,,,,,,,,,,,,,,,Trade Other,Transactional Commodities Finance
+,,,,,,,,,,,,,,,Treasury Capital,Treasury Capital
+,,,,,,,,,,,,,,,Treasury IRRBB,Treasury IRRBB
+,,,,,,,,,,,,,,,CD/CP,CD/CP
+,,,,,,,,,,,,,,,Covered Bonds,Covered Bonds
+,,,,,,,,,,,,,,,Medium Term Notes,Medium Term Notes
+,,,,,,,,,,,,,,,Securities,Securities
+,,,,,,,,,,,,,,,Time Deposit,Time Deposit
+,,,,,,,,,,,,,,,Treasury Mkts - Inp,Treasury Mkts - Inp
+,,,,,,,,,,,,,,,Un-Mapped,Un-Mapped
+,,,,,,,,,,,,,,,Bancassurance,Bancassurance
+,,,,,,,,,,,,,,,Capital Market Other,Capital Market Other
+,,,,,,,,,,,,,,,Capital Market Products - Inp,Capital Market Products - Inp
+,,,,,,,,,,,,,,,Cash Equities WM,Cash Equities WM
+,,,,,,,,,,,,,,,Fixed Income inc Islamic,Fixed Income inc Islamic
+,,,,,,,,,,,,,,,Premium Currency Investments,Premium Currency Investments
+,,,,,,,,,,,,,,,Structured Deposits inc Islamic,Structured Deposits inc Islamic
+,,,,,,,,,,,,,,,Structured Note inc Islamic,Structured Note inc Islamic
+,,,,,,,,,,,,,,,Total FX inc Islamic,Total FX inc Islamic
+,,,,,,,,,,,,,,,In-House Funds & Discret & Islamic,In-House Funds & Discret & Islamic
+,,,,,,,,,,,,,,,Managed Investments - Inp,Managed Investments - Inp
+,,,,,,,,,,,,,,,Other Managed Investments,Other Managed Investments
+,,,,,,,,,,,,,,,Third Party Funds,Third Party Funds
+,,,,,,,,,,,,,,,Trust & Fiduciary Services,Trust & Fiduciary Services
+,,,,,,,,,,,,,,,Other Wealth Mgt,Other Wealth Mgt
+,,,,,,,,,,,,,,,Wealth Products - Inp,Wealth Products - Inp
+,,,,,,,,,,,,,,,Secured Lending WM,Secured Lending WM

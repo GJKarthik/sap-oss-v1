@@ -1,0 +1,251 @@
+% =============================================================================
+% Chapter 3 --- IMDA MGF for Agentic AI: four pillars
+% =============================================================================
+\chapter{IMDA Model AI Governance Framework for Agentic AI}
+\label{ch:mgf}
+
+\section{Source document}
+
+\begin{description}
+  \item[Title.] Model AI Governance Framework for Agentic AI.
+  \item[Publisher.] Infocomm Media Development Authority (IMDA) and the AI
+    Verify Foundation, Singapore.
+  \item[Version.] 1.0, published 22 January 2026.
+  \item[Pages.] 29.
+  \item[Source.] \corpus{source/mgf-for-agentic-ai.pdf}
+    (sha256 \texttt{b84c8c94\ldots aeef7b}).
+\end{description}
+
+\section{Framework structure}
+
+The MGF is organised around four pillars:
+
+\begin{figure}[h]
+\centering
+\begin{tikzpicture}[
+  every node/.style={font=\small},
+  pillar/.style={draw=reggrey,thick,rounded corners=1pt,minimum width=32mm,
+                 minimum height=14mm,align=center,fill=regblue!10,inner sep=4pt},
+  arr/.style={-Latex,thick,draw=reggrey!60}
+]
+\node[pillar] (p1) at (0,0)    {\textbf{1. Assess \& bound}\\ \tiny risks upfront};
+\node[pillar] (p2) at (3.7,0)  {\textbf{2. Human}\\ \textbf{accountability}};
+\node[pillar] (p3) at (7.4,0)  {\textbf{3. Technical}\\ \textbf{controls}};
+\node[pillar] (p4) at (11.1,0) {\textbf{4. End-user}\\ \textbf{responsibility}};
+\draw[arr] (p1) -- (p2); \draw[arr] (p2) -- (p3); \draw[arr] (p3) -- (p4);
+\end{tikzpicture}
+\caption{The four pillars of the IMDA MGF for Agentic AI.}
+\label{fig:mgf-pillars}
+\end{figure}
+
+Each pillar expands into two or three sub-sections (\S2.1.1--\S2.4.3); the
+full section tree is captured in
+\path{docs/regulations/machine-readable/specification-addendum.yaml} (\texttt{regulations.imda-mgf-agentic-ai-v1}) under the
+\texttt{sections[]} array, with page references.
+
+\section{Pillar 1 --- Assess and bound the risks upfront}
+\label{sec:mgf-p1}
+
+\subsection*{Summary}
+
+Understand the risks posed by agent actions (scope, reversibility,
+autonomy), determine whether the use case is suitable at all, and --- if
+it is --- bound the agent's capabilities by design.
+
+\subsection*{Requirements extracted}
+
+\begin{table}[h]
+\centering
+\small
+\begin{tabularx}{\textwidth}{p{3.2cm}p{1.4cm}p{1.6cm}X}
+\toprule
+\textbf{Req.\ id} & \textbf{Section} & \textbf{Obligation} & \textbf{Normative text (paraphrased)} \\
+\midrule
+REG-MGF-2.1.1-001 & 2.1.1 & should & Assess action scope, reversibility, autonomy per use case. \\
+REG-MGF-2.1.2-001 & 2.1.2 & must   & Operate against an explicit tool allow-list; deny-by-default. \\
+REG-MGF-2.1.2-002 & 2.1.2 & must   & Every agent action must be attributable to an identity. \\
+REG-MGF-2.1.2-003 & 2.1.2 & should & Set impact-limiting boundaries (read-only default, environment segregation). \\
+\bottomrule
+\end{tabularx}
+\caption{Pillar 1 requirements.}
+\label{tab:p1}
+\end{table}
+
+\subsection*{How the repository implements them}
+
+The tool-allow-list requirement (REG-MGF-2.1.2-001) is implemented by
+\corpus{../../src/intelligence/ai-core-pal/mcp\_server/btp\_pal\_mcp\_server.py}
+which enumerates the tools the agent may invoke, and the registered data
+products in
+\corpus{../../src/intelligence/ai-core-pal/data\_products/registry.yaml}.
+Verification leans on the existing unit test at
+\corpus{../../src/intelligence/ai-core-pal/tests/test\_mcp\_server.py}
+plus a Moonshot adversarial-prompt benchmark.
+
+Identity attribution (REG-MGF-2.1.2-002) currently relies on BTP service
+keys; this is partial rather than implemented because there is no
+per-request audit trail that ties every tool invocation back to a named
+human operator across the full deployment chain.
+
+\section{Pillar 2 --- Make humans meaningfully accountable}
+\label{sec:mgf-p2}
+
+\subsection*{Summary}
+
+Assign responsibilities by role, adapt human-in-the-loop to address
+automation bias, name the checkpoints where a human must approve an
+irreversible action, and audit oversight effectiveness over time.
+
+\begin{table}[h]
+\centering
+\small
+\begin{tabularx}{\textwidth}{p{3.2cm}p{1.4cm}p{1.6cm}X}
+\toprule
+\textbf{Req.\ id} & \textbf{Section} & \textbf{Obligation} & \textbf{Normative text (paraphrased)} \\
+\midrule
+REG-MGF-2.2.1-001 & 2.2.1 & must   & Assign lifecycle responsibilities to named roles in a control register. \\
+REG-MGF-2.2.1-002 & 2.2.1 & should & Stand up a governance forum with authority to adjust permissions. \\
+REG-MGF-2.2.2-001 & 2.2.2 & must   & Name each human-approval checkpoint and cite its risk category. \\
+REG-MGF-2.2.2-002 & 2.2.2 & should & Measure oversight effectiveness (override rates, review duration). \\
+\bottomrule
+\end{tabularx}
+\caption{Pillar 2 requirements.}
+\label{tab:p2}
+\end{table}
+
+The TB review corpus is the canonical worked example: the five decision
+points DP-001..DP-005 (see \corpus{../tb/structured/decision-points/})
+are exactly the human-approval checkpoints required by
+REG-MGF-2.2.2-001.  Their owners and timing are declared in the workflow
+record \corpus{../tb/structured/workflows/tb-review-glo.json}.
+
+The governance-forum requirement (REG-MGF-2.2.1-002) is closed for the
+Finance scope by the GCFO Finance AI Council charter (v1.0, ratified
+2026-03-15). \textbf{Note:} The charter document is maintained in the
+internal governance repository and is not included in this corpus for
+confidentiality; reference is by citation only. The GCFO Finance AI
+Council (GFAIC) is a \emph{federated} body: it operates under
+Delegation No. 2026-04 from the enterprise-wide Group AI Safety
+Council (GAISC) and holds binding authority \emph{only} over Finance-
+scope agentic AI --- today the trial-balance review workflow and the
+Arabic invoice / AP pipeline. Its six voting members are Finance-
+function delegates (Group CFO chair, Head of Finance Risk, Finance
+liaisons to CISO and General Counsel, Head of Finance Internal Audit,
+Finance AI technical lead); the parent body's officers (CRO, CISO,
+GC, Head of Internal Audit) sit on GAISC, not here, avoiding double
+staffing. Any incident with cross-function implications escalates to
+GAISC within two business days. Peer federated councils (People,
+Customer) exist for other functions and receive GFAIC findings via
+GAISC rather than directly.
+
+\section{Pillar 3 --- Implement technical controls and processes}
+\label{sec:mgf-p3}
+
+\subsection*{Summary}
+
+Technical controls across the lifecycle: during development, use
+controls for planning, tools, and agent protocols; before deployment,
+test for execution accuracy, policy adherence, and tool use; during and
+after deployment, continuously monitor.
+
+\begin{table}[h]
+\centering
+\small
+\begin{tabularx}{\textwidth}{p{3.2cm}p{1.4cm}p{1.6cm}X}
+\toprule
+\textbf{Req.\ id} & \textbf{Section} & \textbf{Obligation} & \textbf{Normative text (paraphrased)} \\
+\midrule
+REG-MGF-2.3.1-001 & 2.3.1 & must   & Technical controls on planning, tools, and protocols. \\
+REG-MGF-2.3.2-001 & 2.3.2 & must   & Pre-deployment: execution accuracy, policy adherence, tool use, refusals. \\
+REG-MGF-2.3.2-002 & 2.3.2 & should & Adopt trajectory-level agent evaluations. \\
+REG-MGF-2.3.3-001 & 2.3.3 & should & Staged rollout with canary metrics and rollback path. \\
+REG-MGF-2.3.3-002 & 2.3.3 & must   & Continuous monitoring with policy-violation / drift alerting. \\
+\bottomrule
+\end{tabularx}
+\caption{Pillar 3 requirements.}
+\label{tab:p3}
+\end{table}
+
+The trajectory-level evaluator (REG-MGF-2.3.2-002) is implemented at
+\corpus{../../src/intelligence/ai-core-pal/evaluation/trajectory\_evaluator.py}.
+It scores each captured agent trace on three independent axes ---
+tool-call correctness, policy adherence, and goal progression ---
+returning a composite \texttt{TrajectoryScore} that the Governance
+Council's incident pack consumes directly. Unit coverage lives at
+\corpus{../../src/intelligence/ai-core-pal/tests/test\_trajectory\_evaluator.py}
+(13 test cases).
+
+Continuous drift monitoring (REG-MGF-2.3.3-002) is implemented at
+\corpus{../../src/intelligence/ai-core-pal/monitoring/drift\_monitor.py}.
+It watches three signals against a frozen pilot-exit baseline ---
+override rate, median review duration, and hallucination rate --- and
+emits \texttt{ok}/\texttt{warn}/\texttt{critical} levels. The
+override-rate signal is deliberately two-sided: a \emph{fall} below
+baseline is the automation-bias signal surfaced by Ju \& Aral (2026),
+a \emph{rise} is model regression. Unit coverage at
+\corpus{../../src/intelligence/ai-core-pal/tests/test\_drift\_monitor.py}
+(13 test cases).
+
+\section{Pillar 4 --- Enable end-user responsibility}
+\label{sec:mgf-p4}
+
+\subsection*{Summary}
+
+End users must be informed of the agent's scope and their own
+obligations, and they need training to preserve tradecraft and mitigate
+automation bias.
+
+\begin{table}[h]
+\centering
+\small
+\begin{tabularx}{\textwidth}{p{3.2cm}p{1.4cm}p{1.6cm}X}
+\toprule
+\textbf{Req.\ id} & \textbf{Section} & \textbf{Obligation} & \textbf{Normative text (paraphrased)} \\
+\midrule
+REG-MGF-2.4.2-001 & 2.4.2 & should & Disclose permitted actions, data access, user obligations. \\
+REG-MGF-2.4.3-001 & 2.4.3 & should & Training covering automation-bias and tradecraft preservation. \\
+\bottomrule
+\end{tabularx}
+\caption{Pillar 4 requirements.}
+\label{tab:p4}
+\end{table}
+
+The training curriculum (REG-MGF-2.4.3-001) is authored at
+\corpus{../training/agent-oversight-curriculum.md}: a three-level
+curriculum (Awareness, Reviewer skills, Oversight depth) keyed to
+five learner personas, with an explicit reviewer self-check card
+targeted at the automation-bias failure mode surfaced by Ju \& Aral
+(2026).
+
+\section{Coverage heat map}
+
+\begin{table}[h]
+\centering
+\small
+\begin{tabularx}{\textwidth}{lrrrrr}
+\toprule
+\textbf{Pillar} & \textbf{Reqs} & \textbf{Implemented} & \textbf{Partial} & \textbf{Gap} & \textbf{N/A} \\
+\midrule
+1 --- Bound risks          & 4 & 0 & 4 & 0 & 0 \\
+2 --- Human accountability & 4 & 3 & 1 & 0 & 0 \\
+3 --- Technical controls   & 5 & 2 & 3 & 0 & 0 \\
+4 --- End-user             & 2 & 1 & 1 & 0 & 0 \\
+\midrule
+\textbf{Total}             & 15 & 6 & 9 & 0 & 0 \\
+\bottomrule
+\end{tabularx}
+\caption{Status of the 15 MGF-derived requirements after the
+April 2026 gap-closure pass.}
+\label{tab:mgf-coverage}
+\end{table}
+
+All four previously-open gaps --- the enterprise governance forum
+(REG-MGF-2.2.1-002), trajectory-level evaluation (REG-MGF-2.3.2-002),
+drift monitoring (REG-MGF-2.3.3-002), and the training curriculum
+(REG-MGF-2.4.3-001) --- now have concrete artifacts linked from their
+requirement records and are verifiable by the offline validator. The
+remaining \emph{partial} rows retain ambition beyond the current
+implementation scope (for example, a per-request identity audit trail
+spanning the full deployment chain for REG-MGF-2.1.2-002) and remain
+on the Council's standing agenda.
+\clearpage

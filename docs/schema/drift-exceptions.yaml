@@ -1,0 +1,121 @@
+# =============================================================================
+# Spec-Drift Exceptions Registry
+# Path: docs/schema/drift-exceptions.yaml
+# =============================================================================
+# This file documents approved exceptions to spec-drift rules.
+# Each exception must have:
+# - A unique ID
+# - Clear rationale
+# - An owner responsible for resolution
+# - An expiration date
+# 
+# Exceptions are reviewed monthly and must be renewed or resolved.
+# =============================================================================
+
+version: "1.0.0"
+last_reviewed: "2026-04-21"
+next_review: "2026-05-21"
+
+# -----------------------------------------------------------------------------
+# ACTIVE EXCEPTIONS
+# -----------------------------------------------------------------------------
+
+exceptions:
+  # Example exception format - uncomment and modify as needed
+  # - id: "EXC-001"
+  #   created: "2026-04-21"
+  #   expires: "2026-06-21"
+  #   owner: "team-lead@example.com"
+  #   drift_type: "DRIFT-003"
+  #   file_pattern: "src/training/experiments/.*"
+  #   rationale: |
+  #     Experimental code is not yet production-ready and does not need
+  #     to match specifications. Will be removed or formalized before GA.
+  #   resolution_plan: |
+  #     1. Formalize experimental features by 2026-06-01
+  #     2. Either add to spec or remove experimental code
+  #   tracking_issue: "https://github.com/org/repo/issues/123"
+
+  # Prototype and experimental code exception
+  - id: "EXC-PROTO-001"
+    created: "2026-04-21"
+    expires: "2026-07-21"
+    owner: "architecture-team"
+    drift_type: "DRIFT-003"
+    file_pattern: "src/.*/prototype/.*"
+    rationale: |
+      Prototype directories contain experimental code that is intentionally
+      not spec-compliant. This code is for rapid experimentation and
+      proof-of-concept work only.
+    resolution_plan: |
+      Prototype code must either:
+      1. Be promoted to production with corresponding spec updates
+      2. Be removed after experimentation concludes
+    tracking_issue: null
+
+  # Documentation migration in progress
+  - id: "EXC-DOC-001"
+    created: "2026-04-21"
+    expires: "2026-05-15"
+    owner: "documentation-team"
+    drift_type: "DRIFT-001"
+    file_pattern: "docs/latex/specs/arabic-hitl/.*"
+    rationale: |
+      Arabic HITL spec is being migrated to new format. Temporary drift
+      between old and new schema references is expected during migration.
+    resolution_plan: |
+      Complete migration by 2026-05-15 and remove this exception.
+    tracking_issue: null
+
+# -----------------------------------------------------------------------------
+# EXPIRED EXCEPTIONS (for audit trail)
+# -----------------------------------------------------------------------------
+
+expired_exceptions:
+  # Moved from active when resolved or expired
+  # - id: "EXC-000"
+  #   original_expires: "2026-03-01"
+  #   resolution_date: "2026-02-28"
+  #   resolution_type: "resolved"  # or "expired", "renewed"
+  #   notes: "Schema migration completed successfully"
+
+# -----------------------------------------------------------------------------
+# EXCEPTION POLICIES
+# -----------------------------------------------------------------------------
+
+policies:
+  # Maximum duration for a new exception
+  max_exception_duration_days: 90
+  
+  # Maximum number of renewals before escalation
+  max_renewals: 2
+  
+  # Who can approve exceptions
+  approvers:
+    - role: "spec-owner"
+    - role: "architecture-team"
+    - role: "domain-lead"
+  
+  # Escalation path when exception expires
+  escalation:
+    - level: 1
+      action: "Notify owner via email"
+      after_days: -7  # 7 days before expiration
+    - level: 2
+      action: "Notify team lead and create reminder issue"
+      after_days: 0  # On expiration day
+    - level: 3
+      action: "Block PR merges for affected files"
+      after_days: 7  # 7 days after expiration
+
+# -----------------------------------------------------------------------------
+# REVIEW LOG
+# -----------------------------------------------------------------------------
+
+reviews:
+  - date: "2026-04-21"
+    reviewer: "system"
+    notes: "Initial exception registry created"
+    actions_taken:
+      - "Created exception registry structure"
+      - "Added prototype and documentation migration exceptions"

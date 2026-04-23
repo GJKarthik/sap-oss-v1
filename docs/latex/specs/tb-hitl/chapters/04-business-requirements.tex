@@ -1,0 +1,557 @@
+% =============================================================================
+% Chapter 4: Business Requirements (Enhanced with Source Quotations)
+% =============================================================================
+\chapter{Business Requirements Catalogue}
+\label{ch:business-requirements}
+
+This chapter presents all business requirements derived from the source documents,
+with \textbf{exact quotations} and \textbf{page/paragraph references} enabling 
+human auditors to verify each requirement against its source.
+
+% -----------------------------------------------------------------------------
+\section{How to Read This Chapter}
+% -----------------------------------------------------------------------------
+
+Each requirement entry contains:
+
+\begin{tcolorbox}[colback=blue!5,colframe=blue!75!black,title=Requirement Entry Format]
+\begin{enumerate}[leftmargin=*]
+    \item \textbf{Requirement ID:} Unique identifier (e.g., TB-REQ-ES01)
+    \item \textbf{MoSCoW Priority:} MUST / SHOULD / COULD / WON'T
+    \item \textbf{Source Quotation:} Exact text from source document (in italics)
+    \item \textbf{Source Location:} Document ID, section, paragraph, page number
+    \item \textbf{Derived Requirement:} Formal requirement statement
+    \item \textbf{Acceptance Criteria:} Measurable conditions for verification
+    \item \textbf{Rationale:} Why this requirement was derived from the quoted text
+\end{enumerate}
+\end{tcolorbox}
+
+% =============================================================================
+\section{Executive Summary Requirements}
+\label{sec:req-executive}
+% =============================================================================
+
+% -----------------------------------------------------------------------------
+\subsection{TB-REQ-ES01: AI-Driven Variance Analysis}
+\label{req:tb-req-es01}
+% -----------------------------------------------------------------------------
+
+\begin{tcolorbox}[colback=sourcegreen!5,colframe=sourcegreen!70,title=Source Quotation]
+\textit{``An AI model produces business insights and written commentaries 
+(Finance reporting caption Level \& Segment Level with Legal entity view) 
+based on the analysis performed on general ledger transaction data that 
+\textbf{detects anomalies, trends, unusual movements, new accounts, 
+spikes/drops vs prior periods, and material balances}.''} 
+\end{tcolorbox}
+
+\begin{tabularx}{\textwidth}{@{}lX@{}}
+\toprule
+\textbf{Attribute} & \textbf{Value} \\
+\midrule
+\textbf{Requirement ID} & TB-REQ-ES01 \\
+\textbf{MoSCoW Priority} & \textcolor{red}{\textbf{MUST}} \\
+\textbf{Source Document} & Business case - Trial Balance (2).doc \\
+\textbf{Source ID} & TB-BC-001 \\
+\textbf{Source Location} & Section 1: Executive Summary, Paragraph 3, Page 1 (Lines 62--68 in extracted MD) \\
+\textbf{Created By} & Employee ID 1498002 (S1 Badrinath) \\
+\textbf{Document Date} & 14-Dec-2025 \\
+\bottomrule
+\end{tabularx}
+
+\vspace{0.5em}
+\textbf{Derived Requirement Statement:}
+
+The system SHALL implement an AI model capable of performing the following 
+analyses on general ledger (GL) transaction data:
+
+\begin{enumerate}[label=(\alph*)]
+    \item \textbf{Anomaly Detection:} Identify transactions or balances that 
+          deviate significantly from expected patterns
+    \item \textbf{Trend Analysis:} Detect multi-period trends in account balances
+    \item \textbf{Unusual Movement Detection:} Flag balance changes that exceed 
+          normal operational variance
+    \item \textbf{New Account Detection:} Identify accounts appearing for the 
+          first time in the current period
+    \item \textbf{Spike/Drop Detection:} Identify sudden increases or decreases 
+          compared to prior periods
+    \item \textbf{Material Balance Identification:} Flag balances exceeding 
+          defined materiality thresholds
+\end{enumerate}
+
+\vspace{0.5em}
+\textbf{Acceptance Criteria:}
+
+\begin{tcolorbox}[colback=sapamber!5,colframe=sapamber!70,title=Measurable Acceptance Criteria]
+\begin{enumerate}[label=AC-ES01-\arabic*:,leftmargin=*]
+    \item The AI model SHALL process GL data for all 234 Legal Entities 
+          (per TB-BC-001, Section 2)
+    \item Anomaly detection SHALL flag items with Z-score $> 3.0$ or configurable threshold
+    \item Spike/drop detection SHALL identify variances $> 25\%$ period-over-period 
+          (or entity-configurable)
+    \item New account detection SHALL compare current period CoA against prior 
+          12-month baseline
+    \item Material balance threshold SHALL default to entity-specific materiality 
+          (configurable per LE)
+    \item Processing SHALL complete within M+1 to M+5 window (per BPMN: TB-BPMN-001)
+\end{enumerate}
+\end{tcolorbox}
+
+\textbf{Derivation Rationale:} The source text explicitly lists six AI capabilities 
+(anomalies, trends, unusual movements, new accounts, spikes/drops, material balances). 
+Each is converted to a testable sub-requirement with quantifiable criteria.
+
+% -----------------------------------------------------------------------------
+\subsection{TB-REQ-ES02: Commentary Generation}
+\label{req:tb-req-es02}
+% -----------------------------------------------------------------------------
+
+\begin{tcolorbox}[colback=sourcegreen!5,colframe=sourcegreen!70,title=Source Quotation]
+\textit{``GCFO teams get a \textbf{narrative summary} instead of just numbers, 
+accelerating review and improving decision-making.''}
+\end{tcolorbox}
+
+\begin{tabularx}{\textwidth}{@{}lX@{}}
+\toprule
+\textbf{Attribute} & \textbf{Value} \\
+\midrule
+\textbf{Requirement ID} & TB-REQ-ES02 \\
+\textbf{MoSCoW Priority} & \textcolor{red}{\textbf{MUST}} \\
+\textbf{Source Document} & Business case - Trial Balance (2).doc \\
+\textbf{Source ID} & TB-BC-001 \\
+\textbf{Source Location} & Section 1: Executive Summary, Paragraph 3, Page 1 (Lines 66--68) \\
+\bottomrule
+\end{tabularx}
+
+\vspace{0.5em}
+\textbf{Derived Requirement Statement:}
+
+The system SHALL generate natural language commentary summaries for:
+\begin{itemize}
+    \item Finance reporting caption level
+    \item Segment level
+    \item Legal entity level
+\end{itemize}
+
+\textbf{Acceptance Criteria:}
+
+\begin{tcolorbox}[colback=sapamber!5,colframe=sapamber!70,title=Measurable Acceptance Criteria]
+\begin{enumerate}[label=AC-ES02-\arabic*:,leftmargin=*]
+    \item Commentary SHALL be generated in grammatically correct English prose
+    \item Commentary SHALL reference specific variance amounts (e.g., ``Revenue increased 
+          by \$2.3M (15\%) due to...'')
+    \item Commentary SHALL cite contributing factors identified by AI analysis
+    \item Commentary confidence score SHALL be displayed (0--100\%)
+    \item Human reviewer SHALL be able to edit/approve/reject each commentary
+    \item Commentary generation SHALL complete within 60 seconds per Legal Entity
+\end{enumerate}
+\end{tcolorbox}
+
+% -----------------------------------------------------------------------------
+\subsection{TB-REQ-ES03: FTE Savings Target}
+\label{req:tb-req-es03}
+% -----------------------------------------------------------------------------
+
+\begin{tcolorbox}[colback=sourcegreen!5,colframe=sourcegreen!70,title=Source Quotation]
+\textit{``At least \textbf{20 to 25 FTEs} spent on an average \textbf{4 hrs a day} 
+during M-2 to M+5, which is equivalent to \textbf{$\sim$5 FTE saves}, with 
+strengthening controls by eliminating manual process and reducing the overall 
+book close timelines enabling Fast close.''}
+\end{tcolorbox}
+
+\begin{tabularx}{\textwidth}{@{}lX@{}}
+\toprule
+\textbf{Attribute} & \textbf{Value} \\
+\midrule
+\textbf{Requirement ID} & TB-REQ-ES03 \\
+\textbf{MoSCoW Priority} & \textcolor{red}{\textbf{MUST}} \\
+\textbf{Source Document} & Business case - Trial Balance (2).doc \\
+\textbf{Source ID} & TB-BC-001 \\
+\textbf{Source Location} & Section 1: Executive Summary, Paragraph 4, Pages 1--2 (Lines 72--76) \\
+\bottomrule
+\end{tabularx}
+
+\vspace{0.5em}
+\textbf{Derived Requirement Statement:}
+
+The system SHALL reduce manual effort in Trial Balance review from current 
+baseline of 20--25 FTEs $\times$ 4 hours/day to achieve a minimum 5 FTE 
+equivalent savings.
+
+\textbf{Acceptance Criteria:}
+
+\begin{tcolorbox}[colback=sapamber!5,colframe=sapamber!70,title=Measurable Acceptance Criteria]
+\begin{enumerate}[label=AC-ES03-\arabic*:,leftmargin=*]
+    \item Baseline measurement: Current effort = 20--25 FTEs $\times$ 4 hrs/day 
+          $\times$ 8 days (M-2 to M+5) = 640--800 person-hours per close cycle
+    \item Target measurement: Post-implementation effort $\leq$ 480 person-hours 
+          (15--20 FTEs $\times$ 4 hrs $\times$ 8 days)
+    \item Savings calculation: $\geq$ 160 person-hours saved per cycle (5 FTE equivalent)
+    \item Measurement method: Time tracking via ServiceNow tickets or equivalent
+    \item Verification: Quarterly review of actual vs. target savings
+\end{enumerate}
+\end{tcolorbox}
+
+\textbf{Financial Context:}
+
+\begin{tabular}{lrrr}
+\toprule
+\textbf{Metric} & \textbf{Current State} & \textbf{Target State} & \textbf{Savings} \\
+\midrule
+FTEs involved & 20--25 & 15--20 & 5 \\
+Hours per day & 4 & 4 & -- \\
+Days per cycle (M-2 to M+5) & 8 & 8 & -- \\
+Person-hours per cycle & 640--800 & 480--640 & 160 (min) \\
+\bottomrule
+\end{tabular}
+
+% =============================================================================
+\section{Scope Requirements}
+\label{sec:req-scope}
+% =============================================================================
+
+% -----------------------------------------------------------------------------
+\subsection{TB-REQ-SC01: Legal Entity Coverage}
+\label{req:tb-req-sc01}
+% -----------------------------------------------------------------------------
+
+\begin{tcolorbox}[colback=sourcegreen!5,colframe=sourcegreen!70,title=Source Quotation]
+\textit{``Downloading Trail balance from PSGL/S4 \& preparing the detailed 
+analysis across all \textbf{234 LEs} are highly time consuming...''}
+\end{tcolorbox}
+
+\begin{tabularx}{\textwidth}{@{}lX@{}}
+\toprule
+\textbf{Requirement ID} & TB-REQ-SC01 \\
+\textbf{MoSCoW Priority} & \textcolor{red}{\textbf{MUST}} \\
+\textbf{Source Location} & TB-BC-001, Section 1, Paragraph 2, Page 1 (Lines 55--59) \\
+\bottomrule
+\end{tabularx}
+
+\vspace{0.5em}
+\textbf{Derived Requirement Statement:}
+
+The system SHALL support Trial Balance review for exactly 234 Legal Entities.
+
+\textbf{Acceptance Criteria:}
+\begin{enumerate}[label=AC-SC01-\arabic*:,leftmargin=*]
+    \item System configuration SHALL include all 234 Legal Entity codes
+    \item System SHALL process TB data for each LE independently
+    \item Dashboard SHALL display completion status for all 234 LEs
+    \item No Legal Entity SHALL be excluded from automated processing
+\end{enumerate}
+
+% -----------------------------------------------------------------------------
+\subsection{TB-REQ-SC02: Reporting Dimensions}
+\label{req:tb-req-sc02}
+% -----------------------------------------------------------------------------
+
+\begin{tcolorbox}[colback=sourcegreen!5,colframe=sourcegreen!70,title=Source Quotation]
+\textit{``...current view is at \textbf{Legal entity level} and need to be in 
+\textbf{Finance caption level \& segment level}.''}
+\end{tcolorbox}
+
+\begin{tabularx}{\textwidth}{@{}lX@{}}
+\toprule
+\textbf{Requirement ID} & TB-REQ-SC02 \\
+\textbf{MoSCoW Priority} & \textcolor{red}{\textbf{MUST}} \\
+\textbf{Source Location} & TB-BC-001, Section 1, Paragraph 2, Pages 1 (Lines 55--59) \\
+\bottomrule
+\end{tabularx}
+
+\vspace{0.5em}
+\textbf{Derived Requirement Statement:}
+
+The system SHALL provide variance analysis and commentary at three reporting dimensions:
+
+\begin{enumerate}[label=(\alph*)]
+    \item \textbf{Legal Entity Level:} Individual LE view (current capability, to be retained)
+    \item \textbf{Finance Caption Level:} Aggregation by standardized finance captions 
+          (e.g., Revenue, COGS, Operating Expenses)
+    \item \textbf{Segment Level:} Aggregation by business segment as defined in CoA
+\end{enumerate}
+
+\textbf{Acceptance Criteria:}
+\begin{enumerate}[label=AC-SC02-\arabic*:,leftmargin=*]
+    \item User SHALL be able to toggle between all three reporting dimensions
+    \item Drill-down SHALL be available from Segment $\rightarrow$ Finance Caption $\rightarrow$ LE
+    \item Commentary SHALL be generated at each dimension level
+    \item Export to Excel SHALL preserve dimension hierarchy
+\end{enumerate}
+
+% -----------------------------------------------------------------------------
+\subsection{TB-REQ-SC03: Out of Scope Items}
+\label{req:tb-req-sc03}
+% -----------------------------------------------------------------------------
+
+\begin{tcolorbox}[colback=sourcegreen!5,colframe=sourcegreen!70,title=Source Quotation]
+\textit{``Out of scope – \textbf{Country IFRS reporting, BSS Risk assessment}''}
+\end{tcolorbox}
+
+\begin{tabularx}{\textwidth}{@{}lX@{}}
+\toprule
+\textbf{Requirement ID} & TB-REQ-SC03 \\
+\textbf{MoSCoW Priority} & \textcolor{gray}{\textbf{WON'T}} (this phase) \\
+\textbf{Source Location} & TB-BC-001, Section 3: Project Description, Scope, Page 2 (Lines 152--154) \\
+\bottomrule
+\end{tabularx}
+
+\vspace{0.5em}
+\textbf{Explicit Exclusions:}
+
+The following items are \textbf{explicitly out of scope} per source documentation:
+
+\begin{enumerate}
+    \item \textbf{Country IFRS Reporting:} Local GAAP/IFRS adjustments not included
+    \item \textbf{BSS Risk Assessment:} Balance Sheet Substantiation is a separate process
+\end{enumerate}
+
+\textbf{Note:} These items are documented as future phases (see Gap G-003 in Chapter~\ref{ch:gap-analysis}).
+
+% =============================================================================
+\section{Process Step Requirements (from BPMN)}
+\label{sec:req-process}
+% =============================================================================
+
+The following requirements are derived from the BPMN process diagram 
+\textbf{TB-BPMN-001}: ``Operation of Month End Close Controls - Trial Balance 
+Review - GLO''.
+
+\textbf{Source:} \texttt{Operation of Month End Close Controls - Trial Balance Review - GLO (1).pdf}\\
+\textbf{Process Owner:} Modi, Piyush\\
+\textbf{Last Changed:} May 23, 2025, 7:50:30 PM\\
+\textbf{Author ID:} 8203488
+
+% -----------------------------------------------------------------------------
+\subsection{TB-REQ-PS01: Roll Forward Prior Month File}
+\label{req:tb-req-ps01}
+% -----------------------------------------------------------------------------
+
+\begin{tcolorbox}[colback=sourcegreen!5,colframe=sourcegreen!70,title=BPMN Task Extract]
+\textit{``Roll Forward Prior Month File to Reflect Current...''}\\
+\textbf{Timing:} M-3\\
+\textbf{System:} MS-E-xcel-1, Shared Drive
+\end{tcolorbox}
+
+\begin{tabularx}{\textwidth}{@{}lX@{}}
+\toprule
+\textbf{Requirement ID} & TB-REQ-PS01 \\
+\textbf{MoSCoW Priority} & \textcolor{red}{\textbf{MUST}} \\
+\textbf{Source Location} & TB-BPMN-001, Task Row 1, Timing M-3 \\
+\textbf{EUC Reference} & N/A (no EUC control on this step) \\
+\bottomrule
+\end{tabularx}
+
+\textbf{Derived Requirement:} The system SHALL roll forward the prior month's 
+Trial Balance workbook structure to the current period while preserving:
+\begin{itemize}
+    \item Prior period comparative balances
+    \item Account structure and mappings
+    \item Historical commentary for reference
+\end{itemize}
+
+\textbf{Acceptance Criteria:}
+\begin{enumerate}[label=AC-PS01-\arabic*:]
+    \item Roll-forward SHALL complete by M-3 (3 days before month end)
+    \item Prior month comparatives SHALL be locked from editing
+    \item Current period columns SHALL be initialized to zero
+\end{enumerate}
+
+% -----------------------------------------------------------------------------
+\subsection{TB-REQ-PS02: Download PSGL Master Data}
+\label{req:tb-req-ps02}
+% -----------------------------------------------------------------------------
+
+\begin{tcolorbox}[colback=sourcegreen!5,colframe=sourcegreen!70,title=BPMN Task Extract]
+\textit{``Download PSGL [...] Update 'Accounts Master' Sheet''}\\
+\textbf{Timing:} M-3\\
+\textbf{System:} PSGL, MS-E-xcel-1\\
+\textbf{EUC Control:} EX/200/1353107/0001/000
+\end{tcolorbox}
+
+\begin{tabularx}{\textwidth}{@{}lX@{}}
+\toprule
+\textbf{Requirement ID} & TB-REQ-PS02 \\
+\textbf{MoSCoW Priority} & \textcolor{red}{\textbf{MUST}} \\
+\textbf{Source Location} & TB-BPMN-001, Task Row 2, Timing M-3 \\
+\textbf{EUC Reference} & EX/200/1353107/0001/000 \\
+\bottomrule
+\end{tabularx}
+
+\textbf{Derived Requirement:} The system SHALL extract Chart of Accounts (CoA) 
+master data from PSGL and update the Accounts Master reference.
+
+\textbf{Acceptance Criteria:}
+\begin{enumerate}[label=AC-PS02-\arabic*:]
+    \item CoA extract SHALL include all active GL accounts
+    \item Extract SHALL match EUC control EX/200/1353107/0001/000 specifications
+    \item New accounts SHALL be flagged for review (feeds TB-REQ-AI03)
+\end{enumerate}
+
+% -----------------------------------------------------------------------------
+\subsection{TB-REQ-PS03: Extract Trial Balance}
+\label{req:tb-req-ps03}
+% -----------------------------------------------------------------------------
+
+\begin{tcolorbox}[colback=sourcegreen!5,colframe=sourcegreen!70,title=BPMN Task Extract]
+\textit{``Extract Trial Balance [...] File in Current Month''}\\
+\textbf{Timing:} M-3 to M+5\\
+\textbf{System:} PSGL, MS-E-xcel-1, Shared Drive
+\end{tcolorbox}
+
+\begin{tabularx}{\textwidth}{@{}lX@{}}
+\toprule
+\textbf{Requirement ID} & TB-REQ-PS03 \\
+\textbf{MoSCoW Priority} & \textcolor{red}{\textbf{MUST}} \\
+\textbf{Source Location} & TB-BPMN-001, Task Row 3 \\
+\bottomrule
+\end{tabularx}
+
+\textbf{Derived Requirement:} The system SHALL extract Trial Balance data from 
+PSGL/S4 for all 234 Legal Entities.
+
+\textbf{Acceptance Criteria:}
+\begin{enumerate}[label=AC-PS03-\arabic*:]
+    \item Extract SHALL include: Account Number, Account Name, Opening Balance, 
+          Movements, Closing Balance
+    \item Extract SHALL be available in both local currency (LC) and reporting 
+          currency (RC)
+    \item Data SHALL be timestamped with extraction date/time
+    \item Hash/checksum SHALL be generated for data integrity verification
+\end{enumerate}
+
+% -----------------------------------------------------------------------------
+\subsection{TB-REQ-PS04: Calculate Variance}
+\label{req:tb-req-ps04}
+% -----------------------------------------------------------------------------
+
+\begin{tcolorbox}[colback=sourcegreen!5,colframe=sourcegreen!70,title=BPMN Task Extract]
+\textit{``Calculate Variance Between Prior [...] and Current Month''}\\
+\textbf{Timing:} M-2 to M+5\\
+\textbf{System:} MS-E-xcel-1, Shared Drive\\
+\textbf{EUC Control:} EX/200/1579702/0001/000
+\end{tcolorbox}
+
+\begin{tabularx}{\textwidth}{@{}lX@{}}
+\toprule
+\textbf{Requirement ID} & TB-REQ-PS04 \\
+\textbf{MoSCoW Priority} & \textcolor{red}{\textbf{MUST}} \\
+\textbf{Source Location} & TB-BPMN-001, Task Row 4 \\
+\textbf{EUC Reference} & EX/200/1579702/0001/000 \\
+\bottomrule
+\end{tabularx}
+
+\textbf{Derived Requirement:} The system SHALL calculate variance between:
+\begin{itemize}
+    \item Current month balance vs. prior month balance
+    \item Current month balance vs. same month prior year (YoY)
+    \item Both absolute and percentage variance
+\end{itemize}
+
+\textbf{Acceptance Criteria:}
+\begin{enumerate}[label=AC-PS04-\arabic*:]
+    \item Variance calculation: $V = B_{current} - B_{prior}$
+    \item Percentage variance: $V\% = \frac{B_{current} - B_{prior}}{|B_{prior}|} \times 100$
+    \item Division by zero handling: If $B_{prior} = 0$, display ``N/A (New)''
+    \item Calculation SHALL match EUC control specifications
+\end{enumerate}
+
+% -----------------------------------------------------------------------------
+\subsection{TB-REQ-PS05: Filter by Materiality}
+\label{req:tb-req-ps05}
+% -----------------------------------------------------------------------------
+
+\begin{tcolorbox}[colback=sourcegreen!5,colframe=sourcegreen!70,title=BPMN Task Extract]
+\textit{``Filter Variances [...] Set Criteria''}\\
+\textbf{Timing:} M-2 to M+5
+\end{tcolorbox}
+
+\begin{tabularx}{\textwidth}{@{}lX@{}}
+\toprule
+\textbf{Requirement ID} & TB-REQ-PS05 \\
+\textbf{MoSCoW Priority} & \textcolor{red}{\textbf{MUST}} \\
+\textbf{Source Location} & TB-BPMN-001, Task Row 5 \\
+\bottomrule
+\end{tabularx}
+
+\textbf{Derived Requirement:} The system SHALL filter variances based on 
+configurable materiality thresholds.
+
+\textbf{Acceptance Criteria:}
+\begin{enumerate}[label=AC-PS05-\arabic*:]
+    \item Materiality threshold SHALL be configurable per Legal Entity
+    \item Default threshold: Absolute $> \$50,000$ OR Percentage $> 10\%$
+    \item Filter SHALL support AND/OR logic combinations
+    \item Filter SHALL support account-type-specific thresholds
+\end{enumerate}
+
+% =============================================================================
+\section{Requirements Summary Matrix}
+\label{sec:req-summary}
+% =============================================================================
+
+\begin{longtable}{p{2cm} p{1.2cm} p{4cm} p{3cm} p{2.5cm}}
+\caption{Complete Requirements Traceability Summary} \\
+\toprule
+\textbf{Req ID} & \textbf{MoSCoW} & \textbf{Title} & \textbf{Source Ref} & \textbf{Acceptance Criteria} \\
+\midrule
+\endfirsthead
+\toprule
+\textbf{Req ID} & \textbf{MoSCoW} & \textbf{Title} & \textbf{Source Ref} & \textbf{Acceptance Criteria} \\
+\midrule
+\endhead
+\rowcolor{sapblue!5}
+TB-REQ-ES01 & MUST & AI Variance Analysis & TB-BC-001, S1P3 & AC-ES01-1..6 \\
+TB-REQ-ES02 & MUST & Commentary Generation & TB-BC-001, S1P3 & AC-ES02-1..6 \\
+\rowcolor{sapblue!5}
+TB-REQ-ES03 & MUST & 5 FTE Savings & TB-BC-001, S1P4 & AC-ES03-1..5 \\
+TB-REQ-SC01 & MUST & 234 LE Coverage & TB-BC-001, S1P2 & AC-SC01-1..4 \\
+\rowcolor{sapblue!5}
+TB-REQ-SC02 & MUST & 3-Level Reporting & TB-BC-001, S1P2 & AC-SC02-1..4 \\
+TB-REQ-SC03 & WON'T & Exclusions Documented & TB-BC-001, S3 & N/A \\
+\rowcolor{sapblue!5}
+TB-REQ-PS01 & MUST & Roll Forward & TB-BPMN-001 & AC-PS01-1..3 \\
+TB-REQ-PS02 & MUST & PSGL Master Download & TB-BPMN-001 & AC-PS02-1..3 \\
+\rowcolor{sapblue!5}
+TB-REQ-PS03 & MUST & TB Extract & TB-BPMN-001 & AC-PS03-1..4 \\
+TB-REQ-PS04 & MUST & Variance Calculation & TB-BPMN-001 & AC-PS04-1..4 \\
+\rowcolor{sapblue!5}
+TB-REQ-PS05 & MUST & Materiality Filter & TB-BPMN-001 & AC-PS05-1..4 \\
+\bottomrule
+\end{longtable}
+
+\vspace{1em}
+\textbf{MoSCoW Distribution:}
+\begin{itemize}
+    \item \textcolor{red}{\textbf{MUST:}} 10 requirements (91\%)
+    \item \textcolor{gray}{\textbf{WON'T:}} 1 requirement (9\%) -- explicitly excluded from scope
+\end{itemize}
+
+% =============================================================================
+\section{Human Auditor Verification Checklist}
+\label{sec:req-audit-checklist}
+% =============================================================================
+
+\begin{tcolorbox}[colback=yellow!10,colframe=yellow!50!black,title=\faIcon{clipboard-check} Auditor Verification Checklist]
+For each requirement above, the human auditor should verify:
+
+\begin{enumerate}[label=\faIcon{square}]
+    \item \textbf{Source Quotation Accuracy:} Does the quoted text match the 
+          original document exactly?
+    \item \textbf{Location Correctness:} Is the section/paragraph/page reference correct?
+    \item \textbf{Derivation Logic:} Is the requirement a reasonable derivation 
+          from the quoted text?
+    \item \textbf{Acceptance Criteria Measurability:} Can each criterion be 
+          objectively verified?
+    \item \textbf{MoSCoW Appropriateness:} Does the priority reflect business importance?
+    \item \textbf{Completeness:} Are there any requirements in the source document 
+          not captured here?
+\end{enumerate}
+
+\vspace{0.5em}
+\textbf{Signoff:}
+\begin{itemize}
+    \item[] Name: \rule{6cm}{0.4pt}
+    \item[] Date: \rule{3cm}{0.4pt}
+    \item[] Signature: \rule{5cm}{0.4pt}
+\end{itemize}
+\end{tcolorbox}

@@ -1,0 +1,636 @@
+\chapter{Implementation Gap Review and Agent Rule Pack}
+\label{chap:simula-gap-review}
+
+\begin{warningbox}
+\textbf{Point-in-Time Assessment}\\
+This appendix is a snapshot of implementation status, not a normative specification.\\
+\textbf{Last Updated}: 2026-04-21\\
+\textbf{Next Review Due}: 2026-05-21 (or after completion of any v1.2 milestone)\\
+\\
+If this document is more than 4 weeks old without updates, re-verify findings before relying on them.
+\end{warningbox}
+
+\section{Review scope and constraints}
+This chapter records a repository review performed against the
+\emph{Simula Training Data Framework} specification PDF and the
+current code under \texttt{/Users/user/Documents/sap-oss/src} as of
+2026-04-21. The review covered four targets:
+\begin{enumerate}[label=\arabic*.]
+  \item the normative Simula implementation path in
+    \texttt{src/training/};
+  \item the implementation-agent and maintenance rule location under
+    \texttt{src/training/};
+  \item the operational frontend and API wrapper in
+    \texttt{src/generativeUI/training-webcomponents-ngx/};
+  \item runtime monitoring and alerting support for Simula runs.
+\end{enumerate}
+
+Two delivery constraints shaped the outcome:
+\begin{itemize}
+  \item This workstream was instructed to change only files under
+    \texttt{docs/}. No source changes were made under
+    \texttt{src/}.
+  \item The intended agent location is \texttt{src/training/}. Because
+    source-tree edits were out of scope for this task, the
+    implementation-agent and runtime-monitor definitions are captured
+    here as canonical proposed artefacts to be materialised later
+    under \texttt{src/training/.clinerules} and a companion runtime
+    monitor rule file in the same subtree.
+\end{itemize}
+
+\section{Executive assessment}
+\begin{table}[htbp]
+\centering
+\footnotesize
+\caption{Current implementation status against the Simula specification.}
+\label{tab:simula-gap-summary}
+\begin{tabularx}{\textwidth}{@{}l l X@{}}
+\toprule
+\textbf{Area} & \textbf{Status} & \textbf{Assessment} \\
+\midrule
+Default CLI and pipeline entrypoints & \textbf{Red} & The repository default still executes the legacy CSV/template/Spider pipeline, not the HANA-direct Simula flow described in chapters~\ref{chap:extraction}--\ref{chap:generator}. \\
+Simula core modules & \textbf{Amber} & HANA extraction, taxonomy building, generation, and evaluator modules exist, but they are only partially integrated and several evaluation components fail at runtime because their data contracts drifted. \\
+Evaluation framework & \textbf{Red} & Complexity calibration, coverage, diversity, taxonomy quality, and critic calibration are present as isolated modules, but they are not orchestrated by the runtime path that produces datasets. \\
+Frontend training console & \textbf{Amber/Red} & The shell, governance surfaces, and HANA explorer exist, but the pipeline UX still models the older workflow and does not expose Simula-specific artefacts or evaluator outputs. \\
+Runtime monitoring and alerting & \textbf{Amber/Red} & Generic health and notification primitives exist, but there is no Simula-specific runtime monitor that watches spec-critical outputs, thresholds, and evaluator failures. \\
+\texttt{src/training} agent rule materialisation & \textbf{Amber} & The canonical agent location is \texttt{src/training}, but the rule files are documented here rather than created in source because this task was constrained to \texttt{docs/}. \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\section{Validation performed}
+The review did not rely only on static reading. The following checks
+were run against the current repository state:
+\begin{itemize}
+  \item \texttt{pytest -q src/training/pipeline/tests/test\_pipeline.py}
+    passed (\textbf{20/20}); this confirms that the \emph{legacy}
+    pipeline remains internally healthy.
+  \item \texttt{pytest -q packages/api-server/tests/test\_main.py -k
+    'hana\_stats\_falls\_back\_to\_preview\_when\_unconfigured or
+    hana\_query\_returns\_preview\_rows\_when\_unconfigured'} passed
+    (\textbf{2/2}); this confirms that preview fallback behaviour is
+    functioning as designed in the current API wrapper.
+  \item Runtime reproductions demonstrated that
+    \texttt{SimulaCriticValidator} and
+    \texttt{SimulaCoverageEvaluator} are not execution-safe against
+    the current \texttt{TrainingExample} and \texttt{Taxonomy}
+    classes: the observed failures were
+    \texttt{TypeError: TrainingExample.\_\_init\_\_() got an
+    unexpected keyword argument 'schema\_context'} and
+    \texttt{AttributeError: 'Taxonomy' object has no attribute 'id'}.
+\end{itemize}
+
+\section{Gap-to-Milestone Mapping Summary}
+
+The following table provides a direct mapping from each P0 gap identified in this appendix to the specific project milestone(s) it blocks. This enables prioritized remediation planning aligned with the project roadmap in Chapter~\ref{sec:sim-roadmap}.
+
+\begin{table}[htbp]
+\centering
+\caption{P0 Gap to Milestone Blocking Relationship}
+\label{tab:gap-milestone-mapping}
+\footnotesize
+\begin{tabularx}{\textwidth}{@{}l l l X@{}}
+\toprule
+\textbf{Gap ID} & \textbf{Severity} & \textbf{Blocks Milestone} & \textbf{Impact Summary} \\
+\midrule
+SIM-GAP-001 & P0 & M01, M04 & Default CLI runs legacy pipeline; blocks extraction pipeline certification and environment CLI \\
+SIM-GAP-002 & P0 & M04, M06 & API/job wiring to legacy generators; blocks environment CLI and TB reference run \\
+SIM-GAP-003 & P0 & M02, M03 & Evaluator contract drift; blocks taxonomy engine and generation engine certification \\
+UI-GAP-001 & P0 & M06, M07 & Pipeline UI models old workflow; blocks TB reference run sign-off and v1.2 release \\
+\midrule
+\multicolumn{4}{@{}l@{}}{\textit{P1 gaps (for reference):}} \\
+SIM-GAP-004 & P1 & M03 & Evaluation framework not in runtime path \\
+SIM-GAP-005 & P1 & M03 & Adaptive controls not applied in generator \\
+SIM-GAP-006 & P1 & M04, M06 & Output contract mismatch across runner/API/UI \\
+SIM-GAP-007 & P2 & M07 & Tests only prove legacy path \\
+UI-GAP-002 & P1 & M06 & Simulated telemetry (not real metrics) \\
+UI-GAP-003 & P1 & M06 & Preview/production distinction unclear \\
+UI-GAP-004 & P1 & M07 & No Simula-specific UI for evaluation artefacts \\
+UI-GAP-005 & P2 & M07 & Notifications generic, not Simula-specific \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\noindent
+\textbf{Critical Path Impact:} The four P0 gaps collectively block milestones M01 through M07, meaning no v1.2 release is possible until all P0 gaps are resolved. The recommended remediation order in \S\ref{sec:remediation-order} sequences these fixes to unblock the critical path as early as possible.
+
+\section{Findings in \texttt{src/training}}
+
+\subsection*{SIM-GAP-001 (P0): the default execution path is still the legacy pipeline}
+\label{gap:sim-001}
+\textbf{Blocks Milestone:} M01 (Extraction pipeline), M04 (Environment CLI)
+
+\textbf{Observed state.}
+\texttt{src/training/pipeline/main.py} still exposes the
+legacy command set
+(\texttt{extract-schema}, \texttt{parse-templates},
+\texttt{expand}, \texttt{format-spider}, \texttt{upload}),
+and the default Makefile target still executes the same
+CSV/template/Spider flow.
+
+\textbf{Evidence.}
+\begin{itemize}
+  \item \texttt{src/training/pipeline/main.py:3--13, 30--39,
+    136--141}
+  \item \texttt{src/training/pipeline/Makefile:4--11, 29--30,
+    35--82}
+  \item By contrast, the Simula orchestration path lives in
+    \texttt{src/training/scripts/run\_hana\_pipeline.py:3--10,
+    51--196} and is not the repository default.
+\end{itemize}
+
+\textbf{Impact.}
+An operator following the current default entrypoint runs the old
+pipeline, not the spec-defined HANA extraction, taxonomy generation,
+and reasoning-driven synthesis flow. This is the single largest
+end-to-end compliance gap.
+
+\textbf{Required remediation.}
+Promote the Simula path to the authoritative CLI/runtime entrypoint,
+and demote or quarantine the legacy template pipeline behind an
+explicit compatibility switch.
+
+\subsection*{SIM-GAP-002 (P0): API and job orchestration are wired to the legacy generators}
+\label{gap:sim-002}
+\textbf{Blocks Milestone:} M04 (Environment CLI), M06 (TB reference run)
+
+\textbf{Observed state.}
+The training console backend does not call
+\texttt{run\_hana\_pipeline.py}. Instead:
+\begin{itemize}
+  \item the pipeline websocket worker runs \texttt{make all} in
+    \texttt{src/training/pipeline/};
+  \item the training-generation job runner executes
+    \texttt{schema\_pipeline/data\_generator.py} followed by
+    \texttt{prepare\_training\_data.py}.
+\end{itemize}
+
+\textbf{Evidence.}
+\begin{itemize}
+  \item \texttt{packages/api-server/src/main.py:2904--3019}
+  \item \texttt{packages/api-server/src/main.py:2222--2357}
+\end{itemize}
+
+\textbf{Impact.}
+Even if the Simula modules were complete, the deployed frontend/API
+stack would still launch the older data path and publish the older
+artefact contract. The Simula implementation therefore remains
+present in code but absent from the operational surface.
+
+\textbf{Required remediation.}
+Replace the API worker commands with the Simula runner and its report
+artefacts; keep the current legacy commands only for rollback or
+migration support.
+
+\subsection*{SIM-GAP-003 (P0): evaluation modules have drifted away from the current data contracts}
+\label{gap:sim-003}
+\textbf{Blocks Milestone:} M02 (Taxonomy engine), M03 (Generation engine)
+
+\textbf{Observed state.}
+The current \texttt{TrainingExample} dataclass contains only
+\texttt{id}, \texttt{question}, \texttt{sql}, \texttt{domain},
+\texttt{table}, \texttt{difficulty}, \texttt{taxonomy\_mix},
+\texttt{meta\_prompt}, \texttt{is\_complexified}, and
+\texttt{critic\_verdict}. However:
+\begin{itemize}
+  \item \texttt{SimulaCriticValidator} constructs
+    \texttt{TrainingExample} objects using nonexistent fields such as
+    \texttt{schema\_context}, \texttt{taxonomy\_path},
+    \texttt{complexity\_score}, \texttt{critic\_passed}, and
+    \texttt{generation\_metadata};
+  \item \texttt{SimulaCoverageEvaluator} expects each
+    \texttt{Taxonomy} to expose \texttt{id} and \texttt{factor}, and
+    each \texttt{TaxonomyNode} to expose \texttt{id}; the current
+    taxonomy classes expose \texttt{factor\_name} and
+    \texttt{name}/\texttt{description}/\texttt{children} instead.
+\end{itemize}
+
+\textbf{Evidence.}
+\begin{itemize}
+  \item \texttt{src/training/pipeline/simula\_data\_generator.py:32--44}
+  \item \texttt{src/training/pipeline/simula\_critic\_validator.py:212--238, 268--272}
+  \item \texttt{src/training/pipeline/simula\_coverage\_evaluator.py:157--170, 203--215}
+  \item Runtime reproductions raised the concrete exceptions recorded
+    in the validation section above.
+\end{itemize}
+
+\textbf{Impact.}
+The spec's evaluation chapter is not merely unintegrated; two of its
+core evaluators are currently unusable against the live Simula data
+model. This blocks critic calibration, coverage measurement, and any
+automatic gap-filling workflow built on top of them.
+
+\textbf{Required remediation.}
+Unify the \texttt{TrainingExample}, \texttt{Taxonomy}, and evaluator
+contracts before further orchestration work. Until those contracts
+are repaired, downstream evaluation integration should be treated as
+blocked.
+
+\subsection*{SIM-GAP-004 (P1): the Simula orchestration script stops before the full evaluation framework}
+\textbf{Observed state.}
+\texttt{run\_hana\_pipeline.py} performs three phases:
+\begin{enumerate}[label=\arabic*.]
+  \item HANA schema extraction;
+  \item taxonomy construction;
+  \item example generation and file write-out.
+\end{enumerate}
+It writes \texttt{extracted\_schema.json},
+\texttt{taxonomies.json}, a timestamped training JSONL, and
+\texttt{pipeline\_stats.json}. It does \emph{not} call the evaluator
+modules for complexity calibration, coverage, diversity, taxonomy
+quality, critic calibration, or adaptive gap filling.
+
+\textbf{Evidence.}
+\begin{itemize}
+  \item \texttt{src/training/scripts/run\_hana\_pipeline.py:51--196}
+  \item Search results show that
+    \texttt{SimulaComplexityCalibrator},
+    \texttt{SimulaCoverageEvaluator},
+    \texttt{SimulaCriticValidator},
+    \texttt{SimulaDiversityAnalyzer},
+    \texttt{SimulaDiversityOptimizer}, and
+    \texttt{SimulaTaxonomyEvaluator} are defined and re-exported, but
+    not invoked from any orchestration path.
+\end{itemize}
+
+\textbf{Impact.}
+The implementation currently reaches chapter~5
+(\emph{Generation Engine}) but not chapter~7
+(\emph{Evaluation Framework}) in an operational sense. The spec's
+quality gates therefore exist largely as library code and prose, not
+as emitted run artefacts.
+
+\textbf{Required remediation.}
+Extend the Simula runner so that every completed generation run emits
+all evaluation reports required by the spec and records their
+threshold outcomes into governance and monitoring surfaces.
+
+\subsection*{SIM-GAP-005 (P1): adaptive controls are specified in configuration but not applied in the generator}
+\textbf{Observed state.}
+\texttt{GenerationConfig} defines
+\texttt{get\_adaptive\_complexity\_ratio()} and
+\texttt{get\_adaptive\_critic\_threshold()}, but the main generation
+loop continues to use the raw \texttt{complexity\_ratio} and a plain
+double-critic pass/fail call without consulting those helpers.
+
+\textbf{Evidence.}
+\begin{itemize}
+  \item \texttt{src/training/pipeline/simula\_config.py:269--326}
+  \item \texttt{src/training/pipeline/simula\_data\_generator.py:494--500, 599--614}
+  \item Repository-wide search found no call sites for
+    \texttt{get\_adaptive\_complexity\_ratio()} or
+    \texttt{get\_adaptive\_critic\_threshold()} outside their
+    definitions.
+\end{itemize}
+
+\textbf{Impact.}
+Adaptive features introduced in the v1.2 spec are represented as
+configuration helpers only. The runtime path does not yet change its
+behaviour in response to teacher strength or measured complexity.
+
+\textbf{Required remediation.}
+Thread the adaptive controls through generation, critic acceptance,
+and report emission so the pipeline can prove that the v1.2 adaptive
+logic is active.
+
+\subsection*{SIM-GAP-006 (P1): output contracts do not line up across the Simula runner, API, and UI}
+\textbf{Observed state.}
+The Simula runner writes timestamped files such as
+\texttt{simula\_training\_\{timestamp\}.jsonl} under
+\texttt{data/hana\_generated/}. The API and frontend continue to
+expect the older path \texttt{training/pipeline/output/train.jsonl}.
+
+\textbf{Evidence.}
+\begin{itemize}
+  \item \texttt{src/training/pipeline/simula\_data\_generator.py:672--716}
+  \item \texttt{packages/api-server/src/main.py:2960--2963,
+    3007--3012, 3354--3360}
+  \item \texttt{apps/angular-shell/src/app/pages/pipeline/pipeline.component.ts:549--554}
+\end{itemize}
+
+\textbf{Impact.}
+Even after the Simula runner is wired in, the frontend and API will
+not discover the artefacts they are looking for unless the output
+contract is normalised.
+
+\textbf{Required remediation.}
+Choose one authoritative artefact layout for Simula runs and apply it
+consistently across runner, backend, governance records, preview
+endpoints, and UI components.
+
+\subsection*{SIM-GAP-007 (P2): automated tests still prove only the legacy pipeline path}
+\textbf{Observed state.}
+The repository contains passing unit tests for the legacy pipeline
+modules, but there are no corresponding tests for
+\texttt{run\_hana\_pipeline.py} or the end-to-end Simula evaluator
+stack.
+
+\textbf{Evidence.}
+\begin{itemize}
+  \item \texttt{src/training/pipeline/tests/test\_pipeline.py}
+  \item The passing test run recorded in the validation section above
+    exercised only those legacy tests.
+\end{itemize}
+
+\textbf{Impact.}
+The project currently has high confidence in the deprecated path and
+low confidence in the normative one.
+
+\textbf{Required remediation.}
+Add unit and integration coverage for extraction, taxonomy, critic
+filtering, evaluator compatibility, output contracts, and the API
+worker that launches the Simula flow.
+
+\section{Findings in \texttt{src/generativeUI/training-webcomponents-ngx}}
+
+\subsection*{UI-GAP-001 (P0): the pipeline UI still models the old six-stage workflow}
+\label{gap:ui-001}
+\textbf{Blocks Milestone:} M06 (TB reference run), M07 (v1.2 release tag)
+
+\textbf{Observed state.}
+The pipeline page shows the following stages:
+\texttt{Preconvert}, \texttt{Extract Schema}, \texttt{Parse
+Templates}, \texttt{Expand}, \texttt{Build SQL}, and
+\texttt{Format}. Stage transitions are inferred from keywords such as
+\texttt{converting}, \texttt{parsing}, and \texttt{formatting}.
+
+\textbf{Evidence.}
+\begin{itemize}
+  \item \texttt{apps/angular-shell/src/app/pages/pipeline/pipeline.component.ts:333--339}
+  \item \texttt{apps/angular-shell/src/app/pages/pipeline/pipeline.component.ts:488--497}
+\end{itemize}
+
+\textbf{Impact.}
+The operational UI tells users that the product pipeline is still the
+preconvert/template/Spider flow. It does not surface the Simula phase
+model from this spec: HANA extraction, taxonomy building, data
+generation, and evaluation.
+
+\textbf{Required remediation.}
+Replace the stage model with the Simula phase graph and emit
+stage-specific artefacts and metrics from the backend.
+
+\subsection*{UI-GAP-002 (P1): runtime telemetry in the pipeline page is simulated rather than sourced from the backend}
+\textbf{Observed state.}
+The pipeline page's worker grid and throughput readout are generated
+from random numbers whenever the pipeline state is \texttt{running}.
+
+\textbf{Evidence.}
+\begin{itemize}
+  \item \texttt{apps/angular-shell/src/app/pages/pipeline/pipeline.component.ts:369--379}
+\end{itemize}
+
+\textbf{Impact.}
+The page provides motion, but not observability. It cannot support a
+runtime-monitoring role because the visual telemetry is not derived
+from actual execution state.
+
+\textbf{Required remediation.}
+Bind the concurrency, throughput, and stage timing displays to real
+worker metrics, log events, and evaluator outcomes.
+
+\subsection*{UI-GAP-003 (P1): the frontend/API operational surface is still wired to preview or compatibility paths}
+\textbf{Observed state.}
+The HANA explorer and related backend endpoints deliberately fall back
+to preview data when credentials or connectivity are missing. The API
+wrapper exposes this cleanly, but the Simula pipeline has no explicit
+distinction between a live production run and a preview-backed
+demonstration surface.
+
+\textbf{Evidence.}
+\begin{itemize}
+  \item \texttt{packages/api-server/src/main.py:3030--3038,
+    3149--3197, 3349--3395}
+  \item \texttt{apps/angular-shell/src/app/pages/hana-explorer/hana-explorer.component.ts:17--25, 73--82, 112--118}
+  \item API preview tests passed, confirming that preview mode is an
+    intended and working behaviour in the current stack.
+\end{itemize}
+
+\textbf{Impact.}
+Preview fallback is appropriate for resilience, but the current
+product surface does not yet enforce the sharper contract the Simula
+spec needs: production corpus generation must be visibly live, never
+silently satisfied by preview artefacts.
+
+\textbf{Required remediation.}
+Add explicit live-vs-preview run state, block governed production
+launches when required dependencies are only in preview mode, and
+surface that policy directly in the UI.
+
+\subsection*{UI-GAP-004 (P1): there is no Simula-specific UI for taxonomy and evaluation artefacts}
+\textbf{Observed state.}
+The frontend contains generic dashboard, analytics, registry,
+governance, HANA explorer, and data-product screens, but there is no
+route or component dedicated to:
+\begin{itemize}
+  \item extracted schema inspection as a Simula run artefact;
+  \item taxonomy visualisation and taxonomy quality review;
+  \item coverage, diversity, critic calibration, or Elo complexity
+    reports;
+  \item student-teacher gap tracking or adaptive-complexity
+    decisions.
+\end{itemize}
+
+\textbf{Evidence.}
+\begin{itemize}
+  \item \texttt{apps/angular-shell/src/app/app.routes.ts:1--92}
+  \item Repository-wide searches for
+    \texttt{SimulaCoverageEvaluator},
+    \texttt{SimulaCriticValidator},
+    \texttt{SimulaComplexityCalibrator},
+    \texttt{SimulaDiversityAnalyzer}, and
+    \texttt{SimulaTaxonomyEvaluator} found no corresponding Angular
+    surfaces.
+\end{itemize}
+
+\textbf{Impact.}
+The spec's evaluator outputs cannot yet be reviewed in the operational
+console, which means human sign-off, explainability, and runtime
+triage still depend on raw files or logs rather than first-class
+product screens.
+
+\textbf{Required remediation.}
+Add explicit Simula result views or extend existing governance and
+registry pages so that each spec-defined artefact becomes inspectable.
+
+\subsection*{UI-GAP-005 (P2): notification and alerting are generic, not Simula-specific}
+\textbf{Observed state.}
+Notification CRUD exists in the API, but the shell notification tray
+is currently composed from generic health, pipeline state, and GPU
+pressure held in the store. No Simula-specific alert rules are
+registered for evaluator failures, missing artefacts, contract drift,
+or unexpected preview mode.
+
+\textbf{Evidence.}
+\begin{itemize}
+  \item \texttt{packages/api-server/src/notification\_api.py}
+  \item \texttt{packages/api-server/src/main.py:590}
+  \item \texttt{apps/angular-shell/src/app/components/shell/shell.component.ts:645--691}
+\end{itemize}
+
+\textbf{Impact.}
+The plumbing for notifications exists, but the actual runtime monitor
+requested for Simula has not yet been encoded as alerting logic.
+
+\textbf{Required remediation.}
+Back the notification surface with rules derived from Simula run
+artefacts and thresholds, not only generic platform health.
+
+\section{Proposed implementation-agent rule file}
+\label{sec:simula-proposed-clinerules}
+Because this review was
+restricted to \texttt{docs/}, the following content is the canonical
+proposed implementation-agent rule file. It should be materialised at
+\texttt{src/training/.clinerules} once source-tree edits are allowed.
+
+\begin{lstlisting}[basicstyle=\ttfamily\scriptsize,breaklines=true]
+# =============================================================================
+# .clinerules - Simula implementation and maintenance agent
+# =============================================================================
+
+Mission:
+- Implement and maintain the Simula training data framework in src/training.
+- Treat the Simula PDF spec as normative over legacy pipeline behaviour.
+
+Repository reality check:
+- The canonical agent location is src/training.
+- The default runtime path is still the legacy CSV/template pipeline.
+- Simula modules already exist in src/training/pipeline and must become the
+  authoritative execution path.
+
+Read these files first on every Simula task:
+- docs/pdf/specs/simula-training-spec.pdf
+- docs/latex/specs/simula/chapters/12-implementation-instructions.tex
+- src/training/scripts/run_hana_pipeline.py
+- src/training/pipeline/main.py
+- src/training/pipeline/Makefile
+- src/training/pipeline/simula_data_generator.py
+- src/training/pipeline/simula_taxonomy_builder.py
+- src/training/pipeline/hana_schema_extractor.py
+- src/training/pipeline/simula_critic_validator.py
+- src/training/pipeline/simula_coverage_evaluator.py
+
+Non-negotiable implementation rules:
+1. Promote the Simula HANA-direct path over the legacy template path.
+2. Keep a single canonical data contract across TrainingExample, Taxonomy,
+   evaluation reports, API payloads, and UI artefacts.
+3. Do not add new evaluator fields in one module without updating every
+   producer and consumer.
+4. Wire evaluation into the runtime path:
+   - complexity calibration
+   - critic calibration
+   - taxonomy quality
+   - coverage
+   - diversity
+   - student-teacher gap reporting
+5. Emit stable artefacts for every run:
+   - extracted_schema.json
+   - taxonomies.json
+   - training_examples.jsonl (or one agreed canonical JSONL name)
+   - pipeline_stats.json
+   - evaluation reports
+6. Make API and frontend consume the same artefact contract as the runner.
+7. Preserve legacy pipeline code only as an explicit compatibility path.
+
+Required tests before considering a change complete:
+- unit tests for any changed Simula module
+- contract test for TrainingExample and Taxonomy serialization
+- integration test for the runner entrypoint used by the API
+- regression test proving frontend/API artefact paths still resolve
+
+Definition of done:
+- the default pipeline command launches the Simula flow
+- evaluator modules execute without contract errors
+- governance captures run status and evaluation outputs
+- frontend surfaces the real Simula artefacts instead of legacy placeholders
+\end{lstlisting}
+
+\section{Proposed runtime-monitor agent rule file}
+\label{sec:simula-proposed-monitor-rules}
+The runtime-monitor agent below is the canonical proposed companion to
+the implementation agent. It should be materialised later at a path
+such as \texttt{src/training/.clinerules.runtime-monitor} or another
+agreed operational-agent location.
+
+\begin{lstlisting}[basicstyle=\ttfamily\scriptsize,breaklines=true]
+# =============================================================================
+# .clinerules - Simula runtime monitor and alerting agent
+# =============================================================================
+
+Mission:
+- Monitor live Simula runs and raise actionable alerts.
+- Distinguish live production runs from preview/demo fallbacks.
+
+Primary evidence sources:
+- governance training runs and gate checks
+- /pipeline/status and websocket pipeline logs
+- /jobs and job websocket updates
+- HANA health and mode (live vs preview)
+- vLLM / TurboQuant health
+- emitted run artefacts in the agreed output directory
+
+Treat these as critical alert conditions:
+1. Pipeline state = error or job status = failed.
+2. HANA extraction completed with zero tables.
+3. Taxonomy build completed with zero taxonomies.
+4. Example generation completed with zero examples.
+5. Expected artefact missing:
+   - extracted_schema.json
+   - taxonomies.json
+   - training JSONL
+   - pipeline_stats.json
+6. Any evaluator raises a contract error or runtime exception.
+7. Production-governed run is operating in preview mode.
+8. Coverage or taxonomy quality falls below agreed thresholds.
+9. Critic calibration degrades:
+   - p(accept | correct) <= 0.80
+   - p(accept | corrupted) >= 0.30
+10. Diversity falls outside target band:
+   - global diversity materially below target
+   - local diversity materially below target
+
+Recommended severities:
+- Critical:
+  failed run, preview mode on a production run, missing core artefact,
+  contract drift in evaluator modules
+- High:
+  zero extracted tables, zero taxonomies, zero examples,
+  critic calibration failure
+- Medium:
+  low coverage, low diversity, repeated governance blocks
+
+Required alert payload:
+- run_id
+- job_id
+- team or tenant
+- stage
+- severity
+- exact failing condition
+- last relevant log lines
+- affected artefact path
+- recommended next action
+
+Response rules:
+1. Open a notification and attach it to the owning user/team.
+2. Append a governance note for Critical and High alerts.
+3. Never report "healthy" if the run is only in preview mode.
+4. Prefer precise evidence over generic summaries.
+5. Collapse duplicate alerts for the same run and condition.
+\end{lstlisting}
+
+\section{Sequenced remediation order}
+\label{sec:remediation-order}
+The findings above should be addressed in the following order:
+\begin{enumerate}[label=\arabic*.]
+  \item Replace the default execution path and API worker wiring so
+    the Simula runner becomes authoritative.
+  \item Repair the \texttt{TrainingExample}/\texttt{Taxonomy}/evaluator
+    contract drift.
+  \item Normalise run artefact naming and paths across runner, API,
+    governance, and frontend.
+  \item Integrate the evaluation framework into the operational run.
+  \item Replace simulated UI telemetry with real runtime metrics and
+    evaluator outputs.
+  \item Materialise the two proposed agent rule files once source-tree
+    edits outside \texttt{docs/} are permitted.
+\end{enumerate}

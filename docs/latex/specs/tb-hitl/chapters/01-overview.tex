@@ -1,0 +1,208 @@
+\chapter{Overview and HITL Framework}
+\label{ch:overview}
+
+This chapter introduces the Human-in-the-Loop (HITL) Requirements
+Traceability framework, its purpose, and the five-layer traceability
+model that underpins the Trial Balance review process documentation.
+
+% =============================================================================
+\section{Purpose Statement}
+\label{sec:purpose}
+
+The HITL Requirements Traceability specification serves as the
+\textbf{human validation checkpoint} for the automated requirements
+extraction and traceability process. It is designed to:
+
+\begin{enumerate}
+  \item Provide full transparency into how business requirements were
+        derived from source documents
+  \item Enable human reviewers to verify the accuracy of automated
+        extractions
+  \item Establish a clear audit trail from source to implementation
+  \item Support regulatory compliance by demonstrating requirement
+        provenance
+  \item Facilitate change impact analysis when source documents are
+        updated
+\end{enumerate}
+
+% =============================================================================
+\section{Five-Layer Traceability Model}
+\label{sec:five-layer-model}
+
+The traceability framework is organised into five distinct layers,
+each representing a transformation stage from raw source material
+to validated implementation artefacts.
+
+\begin{figure}[h]
+\centering
+\begin{tikzpicture}[
+    node distance=0.5cm,
+    layer/.style={rectangle, draw=sapgrey, thick, minimum width=12cm,
+                  minimum height=1cm, font=\small\bfseries},
+    arrow/.style={->, thick, >=stealth, sapgrey}
+]
+    \node[layer, fill=sourcegreen!15] (L1) {Layer 1: Source Documents (6 files, 137 MB)};
+    \node[layer, fill=sourcegreen!10, below=0.3cm of L1] (L2) {Layer 2: Extracted Machine-Readable (7 files, 522 KB)};
+    \node[layer, fill=reqpurple!15, below=0.3cm of L2] (L3) {Layer 3: Business Requirements (27 requirements)};
+    \node[layer, fill=specblue!15, below=0.3cm of L3] (L4) {Layer 4: Specifications (21 elements)};
+    \node[layer, fill=schemaorg!15, below=0.3cm of L4] (L5) {Layer 5: Schemas \& Validation (6 schemas)};
+    
+    \draw[arrow] (L1.south) -- (L2.north);
+    \draw[arrow] (L2.south) -- (L3.north);
+    \draw[arrow] (L3.south) -- (L4.north);
+    \draw[arrow] (L4.south) -- (L5.north);
+\end{tikzpicture}
+\caption{Five-Layer Traceability Model with artefact counts}
+\label{fig:five-layer-model}
+\end{figure}
+
+\subsection{Layer 1: Source Documents}
+
+Original business documents in their native formats:
+\begin{itemize}[noitemsep]
+  \item Business case documents (\texttt{.doc})
+  \item Detailed Operating Instructions (\texttt{.docx})
+  \item BPMN process maps (\texttt{.pdf})
+  \item Working spreadsheets (\texttt{.xlsm})
+\end{itemize}
+
+\subsection{Layer 2: Extracted Machine-Readable}
+
+Automated extraction outputs in machine-processable formats:
+\begin{itemize}[noitemsep]
+  \item Markdown with YAML frontmatter (text content)
+  \item JSON (structured BPMN elements)
+  \item YAML (schemas and specifications)
+  \item CSV (sample data)
+\end{itemize}
+
+\subsection{Layer 3: Business Requirements}
+
+Structured requirements derived from source documents:
+\begin{itemize}[noitemsep]
+  \item Executive Summary requirements (4)
+  \item Scope requirements (6)
+  \item Process Step requirements (8)
+  \item AI Augmentation requirements (6)
+  \item BSS Risk Assessment requirements (3)
+\end{itemize}
+
+\subsection{Layer 4: Specifications}
+
+Formal specification elements implementing requirements:
+\begin{itemize}[noitemsep]
+  \item Process Steps (8)
+  \item Decision Points (5)
+  \item AI Capabilities (6)
+  \item Controls (3)
+\end{itemize}
+
+\subsection{Layer 5: Schemas \& Validation}
+
+JSON Schemas validating specification implementation:
+\begin{itemize}[noitemsep]
+  \item \schemaref{variance-record} --- variance analysis records
+  \item \schemaref{decision-point} --- decision point states
+  \item \schemaref{entity-params} --- per-entity parameters
+  \item \schemaref{tb-extract} --- trial balance extraction
+  \item \schemaref{pl-extract} --- P\&L extraction
+  \item \schemaref{commentary-draft} --- LLM commentary drafts
+\end{itemize}
+
+% =============================================================================
+\section{Traceability Marker Reference}
+\label{sec:marker-reference}
+
+Throughout this specification, colour-coded markers indicate
+traceability links across layers:
+
+\begin{table}[h]
+\centering
+\caption{Traceability Marker Reference}
+\label{tab:marker-reference}
+\begin{tabularx}{\textwidth}{@{}C{3cm}L{5cm}L{6cm}@{}}
+\toprule
+\textbf{Marker} & \textbf{Meaning} & \textbf{Example} \\
+\midrule
+\srcref{XXX} & Source document reference & \srcref{TB-BC-001} = Trial Balance Business Case \\
+\reqref{XXX} & Business requirement ID & \reqref{TB-REQ-ES01} = Executive Summary req \\
+\specref{XXX} & Specification element & \specref{TB-STEP-003} = Process step \\
+\schemaref{XXX} & Schema definition & \schemaref{variance-record} = JSON Schema \\
+\gapref{XXX} & Identified gap & \gapref{G-001} = Traceability gap \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+% =============================================================================
+\section{HITL Review Checkpoints}
+\label{sec:review-checkpoints}
+
+Six human review checkpoints must be validated before the traceability
+chain is considered complete:
+
+\begin{table}[h]
+\centering
+\caption{HITL Review Checkpoints}
+\label{tab:review-checkpoints}
+\begin{tabularx}{\textwidth}{@{}C{1cm}L{4cm}L{7cm}C{2cm}@{}}
+\toprule
+\textbf{ID} & \textbf{Checkpoint} & \textbf{Review Criteria} & \textbf{Status} \\
+\midrule
+H1 & Source Completeness & All source documents listed and extracted & Pending \\
+H2 & Extraction Accuracy & Extracted text matches source content & Pending \\
+H3 & Requirement Derivation & Requirements accurately reflect source intent & Pending \\
+H4 & Traceability Links & All links are valid and bidirectional & Pending \\
+H5 & Schema Alignment & Schemas support all requirement fields & Pending \\
+H6 & Gap Analysis & No orphan requirements or missing mappings & Pending \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\begin{hitlbox}{H1 -- Source Completeness}
+Human reviewer must verify that all 6 source documents are correctly
+catalogued with accurate file sizes, types, and metadata. Any missing
+documents must be identified and the extraction process re-run.
+\end{hitlbox}
+
+% =============================================================================
+\section{Scope and Coverage}
+\label{sec:scope-coverage}
+
+\subsection{In Scope}
+
+\begin{itemize}[noitemsep]
+  \item Trial Balance review process across 234 Legal Entities
+  \item AI-augmented variance analysis and commentary generation
+  \item Month-end close controls (M-3 to M+5 timeline)
+  \item FORTM pack generation and submission
+  \item BSS Risk Assessment integration points
+\end{itemize}
+
+\subsection{Out of Scope}
+
+\begin{itemize}[noitemsep]
+  \item Country IFRS reporting (separate process)
+  \item SAP/PeopleSoft integration detail
+  \item Real-time intraday controls
+  \item Audit committee reporting (downstream consumer)
+\end{itemize}
+
+\subsection{Coverage Statistics}
+
+\begin{table}[h]
+\centering
+\caption{Traceability Coverage Statistics}
+\label{tab:coverage-statistics}
+\begin{tabular}{@{}lrr@{}}
+\toprule
+\textbf{Metric} & \textbf{Count} & \textbf{Coverage} \\
+\midrule
+Source Documents & 6 & 100\% catalogued \\
+Extracted Files & 7 & 100\% traced to source \\
+Business Requirements & 27 & 100\% traced to source \\
+Specifications & 21 & 100\% traced to requirements \\
+Schemas & 6 & 100\% traced to specifications \\
+Identified Gaps & 2 & Documented with owners \\
+\bottomrule
+\end{tabular}
+\end{table}

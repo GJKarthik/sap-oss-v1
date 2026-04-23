@@ -1,0 +1,570 @@
+# =============================================================================
+# .clinerules - Generative UI Deployment & Monitoring Standards
+# Angular + UI5 Webcomponents + Nginx Gateway Configuration
+# =============================================================================
+
+# This file defines rules and standards for the generativeUI stack to prevent
+# and detect deployment issues like blank pages, asset loading failures, and
+# compression problems. These rules are derived from the April 2026 blank page
+# incident investigation at https://suite-gateway.c-054c570.kyma.ondemand.com/ui5/
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# KNOWN ISSUE REGISTRY
+# -----------------------------------------------------------------------------
+
+## KI-001: i18n Path Resolution Under Subpath
+
+| Attribute | Value |
+|-----------|-------|
+| Issue ID | KI-001 |
+| Status | RESOLVED (April 2026) |
+| Severity | P0 - Critical (blank page) |
+| Root Cause | fetchI18n() using absolute paths (/assets/i18n/...) that 404 under /ui5/ subpath |
+
+**Symptoms:**
+- 404 errors for `/assets/i18n/messages_en` when app served under `/ui5/`
+- App bootstraps but fails to render due to missing translations
+- Network tab shows successful HTML/JS loads but failed i18n requests
+
+**Resolution:**
+```typescript
+// CORRECT: Read base href from DOM and construct paths dynamically
+const baseHref = document.querySelector('base')?.getAttribute('href') || '/';
+const i18nPath = `${baseHref}assets/i18n/messages_${locale}`;
+
+// INCORRECT: Absolute paths that fail under subpath routing
+const i18nPath = `/assets/i18n/messages_${locale}`;
+```
+
+**Prevention Rules:**
+1. ALL asset paths MUST be relative or read from `<base href>`
+2. NEVER hardcode absolute paths starting with `/` for frontend assets
+3. Angular apps MUST use `APP_BASE_HREF` token when constructing URLs
+
+---
+
+## KI-002: Gzip Compression Disabled by sub_filter
+
+| Attribute | Value |
+|-----------|-------|
+| Issue ID | KI-002 |
+| Status | RESOLVED (April 2026) |
+| Severity | P1 - High (performance degradation, perceived blank page) |
+| Root Cause | proxy_set_header Accept-Encoding "" required for sub_filter disables upstream gzip |
+
+**Symptoms:**
+- vendor.js delivered as 1.7 MB uncompressed (vs ~400KB gzipped)
+- First paint takes 10-30 seconds on slow connections
+- Browser appears to show blank page during extended download
+- sub_filter rewrites work correctly but at cost of compression
+
+**Technical Explanation:**
+```nginx
+# The problem: sub_filter requires uncompressed content to perform string replacement
+location /ui5/ {
+    proxy_set_header Accept-Encoding "";  # <-- This disables upstream gzip
+    sub_filter '<base href="/">' '<base href="/ui5/">';  # <-- sub_filter needs raw text
+    # Result: All responses from ui5-web arrive uncompressed
+}
+```
+
+**Mitigation (Current):**
+1. Serve pre-compressed .gz files from nginx with gzip_static module
+2. Gateway must NOT strip Accept-Encoding for static assets after sub_filter processing
+
+**Full Fix (TODO):**
+```dockerfile
+# In Dockerfile.suite-web, after build step:
+RUN find /workspace/dist/apps/workspace -type f \( -name "*.js" -o -name "*.css" -o -name "*.html" -o -name "*.json" \) -exec gzip -9 -k {} \;
+```
+
+```nginx
+# In nginx-suite-web.conf:
+gzip_static on;
+gzip_vary on;
+```
+
+---
+
+## KI-003: Webpack publicPath Misconfiguration
+
+| Attribute | Value |
+|-----------|-------|
+| Issue ID | KI-003 |
+| Status | RESOLVED |
+| Severity | P0 - Critical (blank page) |
+| Root Cause | Webpack publicPath must be "" (empty) when Angular uses `<base href>` |
+
+**Symptoms:**
+- Lazy-loaded chunks fail to load
+- CSS/fonts load from wrong path
+- Console shows 404 for chunk files
+
+**Verification:**
+```bash
+# Check publicPath in bundled main.js
+grep -o 'publicPath:"[^"]*"' dist/apps/workspace/main.js
+# Expected: publicPath:""
+# Bad: publicPath:"/ui5/" or publicPath:"/"
+```
+
+**Build Command (Correct):**
+```bash
+# Angular CLI handles publicPath automatically when --base-href is set
+yarn nx build workspace --configuration=production --base-href /ui5/
+```
+
+---
+
+## KI-004: JS Runtime Errors During Bootstrap
+
+| Attribute | Value |
+|-----------|-------|
+| Issue ID | KI-004 |
+| Status | MONITORING |
+| Severity | P0 - Critical (blank page) |
+| Root Cause | Various - requires browser DevTools to diagnose |
+
+**Symptoms:**
+- HTML loads, JS bundles load (200 OK), but page remains blank
+- API calls may still fire (Angular bootstraps partially)
+- No visual rendering occurs
+
+**Diagnostic Checklist:**
+1. Open DevTools Console - check for red errors
+2. Check Network tab - all JS/CSS should be 200
+3. Check for `requireRealBackends` config - may block rendering if APIs unreachable
+4. Check for UI5 theme initialization errors
+5. Check for Angular zone.js errors
+
+**Common Fixes:**
+```typescript
+// If requireRealBackends causes blocking:
+environment.requireRealBackends = false; // For development/testing
+
+// If APP_INITIALIZER fails:
+// Wrap in try-catch with fallback behavior
+```
+
+---
+
+# -----------------------------------------------------------------------------
+# DEPLOYMENT VERIFICATION CHECKLIST
+# -----------------------------------------------------------------------------
+
+## Pre-Deployment Checks
+
+Before deploying ui5-web or gateway changes, verify:
+
+- [ ] **Base href set correctly** in build: `--base-href /ui5/`
+- [ ] **Pre-gzip assets exist**: `find dist -name "*.js.gz" | wc -l` should be > 0
+- [ ] **No absolute asset paths**: `grep -r '"/assets/' src/` should return 0 matches
+- [ ] **publicPath is empty**: Check bundled main.js
+- [ ] **i18n files present**: `ls dist/apps/workspace/assets/i18n/`
+- [ ] **Environment config valid**: Check requireRealBackends, API URLs
+
+## Post-Deployment Smoke Tests
+
+After deployment, run these checks (adapt GATEWAY_URL):
+
+```bash
+export GATEWAY_URL=https://suite-gateway.c-054c570.kyma.ondemand.com
+
+# 1. HTML with correct base href
+curl -s "$GATEWAY_URL/ui5/" | grep -o '<base href="[^"]*"'
+# Expected: <base href="/ui5/">
+
+# 2. All JS bundles return 200
+for f in main.js vendor.js runtime.js polyfills.js; do
+  curl -sI "$GATEWAY_URL/ui5/$f" | head -1
+done
+# Expected: HTTP/2 200 for each
+
+# 3. i18n files accessible
+curl -sI "$GATEWAY_URL/ui5/assets/i18n/messages_en" | head -1
+# Expected: HTTP/2 200
+
+# 4. Check compression (Content-Encoding should be gzip)
+curl -sI -H "Accept-Encoding: gzip" "$GATEWAY_URL/ui5/vendor.js" | grep -i content-encoding
+# Expected: content-encoding: gzip (if fix deployed)
+
+# 5. API health endpoints
+curl -s "$GATEWAY_URL/api/v1/ui5/openai/health"
+# Expected: {"status":"ok"} or similar
+
+# 6. Check response time (should be < 3s for first byte)
+curl -w "TTFB: %{time_starttransfer}s\n" -o /dev/null -s "$GATEWAY_URL/ui5/"
+# Expected: TTFB < 3.0s
+```
+
+## Browser Verification (Manual)
+
+For production deployments, ALWAYS verify in browser:
+
+1. Open the URL in Chrome/Firefox
+2. Open DevTools (F12) BEFORE loading page
+3. Check Console tab - should have NO red errors
+4. Check Network tab - all resources should be 200
+5. Verify visual rendering occurs within 5 seconds
+6. Click navigation elements to verify lazy loading works
+
+---
+
+# -----------------------------------------------------------------------------
+# NGINX CONFIGURATION STANDARDS
+# -----------------------------------------------------------------------------
+
+## Gateway nginx.conf.template Rules
+
+1. **sub_filter Blocks Must Include Compression Handling:**
+```nginx
+location /ui5/ {
+    proxy_pass http://ui5_web/;
+    proxy_set_header Host $host;
+    proxy_set_header X-Real-IP $remote_addr;
+    
+    # Required for sub_filter to work on response body
+    proxy_set_header Accept-Encoding "";
+    
+    sub_filter_types text/html;
+    sub_filter_once off;
+    sub_filter '<base href="/">' '<base href="/ui5/">';
+    sub_filter 'href="/' 'href="/ui5/';
+    sub_filter 'src="/' 'src="/ui5/';
+    
+    # NOTE: Accept-Encoding "" means upstream cannot send gzip
+    # Mitigation: ui5-web MUST serve pre-gzipped assets via gzip_static
+}
+```
+
+2. **Static Asset Locations Should NOT Use sub_filter:**
+```nginx
+# For pre-compressed static assets (if serving directly from gateway)
+location ~* \.(js|css|woff2?|ttf|ico|svg|png|jpg|jpeg|gif)$ {
+    gzip_static on;
+    expires 1y;
+    add_header Cache-Control "public, immutable";
+}
+```
+
+## UI5-Web nginx-suite-web.conf Rules
+
+1. **Enable gzip_static for pre-compressed files:**
+```nginx
+server {
+    listen 80;
+    server_name _;
+    root /usr/share/nginx/html;
+    index index.html;
+    
+    # Enable serving pre-compressed .gz files
+    gzip_static on;
+    gzip_vary on;
+    
+    # Fallback gzip for non-pre-compressed content
+    gzip on;
+    gzip_types text/plain text/css application/json application/javascript text/xml application/xml;
+    gzip_min_length 1000;
+    
+    location = /health {
+        default_type application/json;
+        return 200 '{"status":"ok","service":"ui5-web"}';
+    }
+    
+    location /ui5/ {
+        alias /usr/share/nginx/html/;
+        try_files $uri $uri/ /index.html;
+    }
+    
+    location / {
+        try_files $uri $uri/ /index.html;
+    }
+}
+```
+
+---
+
+# -----------------------------------------------------------------------------
+# DOCKERFILE BUILD STANDARDS
+# -----------------------------------------------------------------------------
+
+## Dockerfile.suite-web Requirements
+
+```dockerfile
+FROM node:20-slim AS build
+
+WORKDIR /workspace
+
+RUN corepack enable
+RUN apt-get update && apt-get install -y --no-install-recommends python3 make g++ && rm -rf /var/lib/apt/lists/*
+
+COPY package.json yarn.lock .yarnrc.yml ./
+COPY .yarn ./.yarn
+COPY . .
+
+RUN yarn install --immutable --mode=skip-build
+RUN yarn nx build workspace --configuration=production --base-href /ui5/
+
+# CRITICAL: Pre-compress static assets for gzip_static
+RUN find /workspace/dist/apps/workspace -type f \( -name "*.js" -o -name "*.css" -o -name "*.html" -o -name "*.json" -o -name "*.svg" \) -exec gzip -9 -k {} \;
+
+FROM nginx:1.27-alpine
+
+COPY docker/nginx-suite-web.conf /etc/nginx/conf.d/default.conf
+COPY --from=build /workspace/dist/apps/workspace /usr/share/nginx/html
+
+# Verify gzip files exist
+RUN ls -la /usr/share/nginx/html/*.js.gz || echo "WARNING: No pre-gzipped JS files"
+
+EXPOSE 80
+```
+
+---
+
+# -----------------------------------------------------------------------------
+# ANGULAR APP CONFIGURATION STANDARDS
+# -----------------------------------------------------------------------------
+
+## app.config.ts / environment.ts Rules
+
+1. **Base Href Aware Path Construction:**
+```typescript
+// services/i18n.service.ts
+@Injectable({ providedIn: 'root' })
+export class I18nService {
+  private getBaseHref(): string {
+    return document.querySelector('base')?.getAttribute('href') || '/';
+  }
+  
+  loadTranslations(locale: string): Observable<any> {
+    const baseHref = this.getBaseHref();
+    // Remove trailing slash, add it back consistently
+    const base = baseHref.endsWith('/') ? baseHref.slice(0, -1) : baseHref;
+    return this.http.get(`${base}/assets/i18n/messages_${locale}.json`);
+  }
+}
+```
+
+2. **APP_INITIALIZER Must Handle Failures Gracefully:**
+```typescript
+// app.config.ts
+export function initializeApp(config: ConfigService): () => Promise<void> {
+  return async () => {
+    try {
+      await config.load();
+    } catch (error) {
+      console.error('App initialization failed, using defaults:', error);
+      config.useDefaults(); // Prevent blank page on init failure
+    }
+  };
+}
+```
+
+3. **Environment Flags:**
+```typescript
+// environment.prod.ts
+export const environment = {
+  production: true,
+  requireRealBackends: true, // Set false for testing without APIs
+  apiBaseUrl: '', // Empty = relative to current origin
+  ui5ThemeRoot: 'assets/theming/', // Relative path
+};
+```
+
+---
+
+# -----------------------------------------------------------------------------
+# MONITORING & ALERTING RULES
+# -----------------------------------------------------------------------------
+
+## Synthetic Monitoring (Recommended)
+
+Set up automated checks that run every 5 minutes:
+
+```yaml
+# monitoring/synthetic-checks.yaml
+checks:
+  - name: ui5-page-loads
+    url: ${GATEWAY_URL}/ui5/
+    assertions:
+      - type: responseTime
+        operator: lessThan
+        value: 5000
+      - type: statusCode
+        operator: equals
+        value: 200
+      - type: body
+        operator: contains
+        value: '<base href="/ui5/">'
+    
+  - name: ui5-vendor-js
+    url: ${GATEWAY_URL}/ui5/vendor.js
+    headers:
+      Accept-Encoding: gzip
+    assertions:
+      - type: statusCode
+        operator: equals
+        value: 200
+      - type: header
+        name: content-encoding
+        operator: equals
+        value: gzip
+      - type: responseTime
+        operator: lessThan
+        value: 3000
+
+  - name: ui5-api-health
+    url: ${GATEWAY_URL}/api/v1/ui5/openai/health
+    assertions:
+      - type: statusCode
+        operator: equals
+        value: 200
+      - type: responseTime
+        operator: lessThan
+        value: 1000
+```
+
+## Alert Thresholds
+
+| Metric | Warning | Critical | Action |
+|--------|---------|----------|--------|
+| Page load time | > 5s | > 15s | Check compression, CDN |
+| vendor.js size (uncompressed) | > 2MB | > 3MB | Bundle audit, tree shaking |
+| i18n 404 rate | > 1% | > 5% | Check path configuration |
+| JS error rate | > 1% | > 5% | Check console logs |
+| API health check failure | 1 | 3 consecutive | Check backend pods |
+
+---
+
+# -----------------------------------------------------------------------------
+# TROUBLESHOOTING DECISION TREE
+# -----------------------------------------------------------------------------
+
+## Blank Page Diagnosis
+
+```
+Page is blank
+    │
+    ├─► Check Network tab: Are JS bundles loading?
+    │       │
+    │       ├─► 404 errors ──► Check nginx config, base href, deployment
+    │       │
+    │       └─► All 200 ──► Continue below
+    │
+    ├─► Check Console tab: Any red errors?
+    │       │
+    │       ├─► Yes ──► Fix the specific error (see error patterns below)
+    │       │
+    │       └─► No errors ──► Check below
+    │
+    ├─► Check i18n loading: Network tab, filter "i18n"
+    │       │
+    │       ├─► 404 ──► KI-001: Fix path resolution
+    │       │
+    │       └─► 200 ──► Continue below
+    │
+    ├─► Check page source: Does it have Angular app-root?
+    │       │
+    │       ├─► No ──► HTML not served correctly, check nginx
+    │       │
+    │       └─► Yes, but empty ──► Angular bootstrap failed
+    │
+    └─► Check timing: How long before you gave up?
+            │
+            ├─► < 30s ──► KI-002: Compression issue, large bundles
+            │
+            └─► > 60s ──► Check network, may be connectivity issue
+```
+
+## Common Console Errors
+
+| Error Pattern | Likely Cause | Fix |
+|---------------|--------------|-----|
+| `Failed to load module script` | CORS or path issue | Check base href, nginx CORS headers |
+| `Cannot read property of undefined` | Initialization order | Check APP_INITIALIZER, async loading |
+| `UI5 ... is not a constructor` | UI5 not loaded | Check UI5 asset paths |
+| `Zone.js has detected that ZoneAwarePromise` | Zone.js conflict | Check for multiple zone.js imports |
+| `NullInjectorError` | Missing provider | Check module imports |
+
+---
+
+# -----------------------------------------------------------------------------
+# FILE NAMING & STRUCTURE
+# -----------------------------------------------------------------------------
+
+## Directory Layout
+
+```
+src/generativeUI/
+├── .clinerules                    # This file
+├── gateway/
+│   ├── nginx.conf.template        # Gateway reverse proxy config
+│   ├── scripts/
+│   │   └── smoke-public-paths.sh  # Post-deployment verification
+│   └── health/
+│       └── main.py                # Health aggregator service
+├── ui5-webcomponents-ngx-main/
+│   ├── docker/
+│   │   └── nginx-suite-web.conf   # UI5-web container nginx config
+│   ├── Dockerfile.suite-web       # Production build with gzip
+│   └── apps/workspace/
+│       └── src/
+│           └── app/
+│               └── app.config.ts  # APP_INITIALIZER, i18n config
+└── training-webcomponents-ngx/
+    └── apps/angular-shell/
+        └── Dockerfile             # Training app container
+```
+
+## Config File Ownership
+
+| File | Owner | Review Required For |
+|------|-------|---------------------|
+| gateway/nginx.conf.template | Platform Team | Any proxy_pass, sub_filter changes |
+| docker/nginx-suite-web.conf | UI5 Team | gzip, caching, routing changes |
+| Dockerfile.suite-web | UI5 Team | Build steps, base image changes |
+| app.config.ts | UI5 Team | Initialization, provider changes |
+
+---
+
+# -----------------------------------------------------------------------------
+# CHANGE REVIEW CHECKLIST
+# -----------------------------------------------------------------------------
+
+## For nginx Config Changes
+
+- [ ] Tested locally with `docker compose up`
+- [ ] Verified sub_filter rewrites work (check page source)
+- [ ] Verified compression still works (check Content-Encoding header)
+- [ ] Ran smoke-public-paths.sh against local gateway
+- [ ] No new absolute paths introduced
+
+## For Angular Build Changes
+
+- [ ] Build completes without errors
+- [ ] dist/ folder contains expected files
+- [ ] No absolute paths in bundled JS (grep check)
+- [ ] i18n files present in dist/assets/i18n/
+- [ ] Pre-gzip files created (if Dockerfile updated)
+
+## For Docker Image Changes
+
+- [ ] Image builds successfully
+- [ ] Health endpoint returns 200
+- [ ] Static assets served with correct Content-Type
+- [ ] gzip_static working (if configured)
+
+---
+
+# -----------------------------------------------------------------------------
+# VERSION HISTORY
+# -----------------------------------------------------------------------------
+
+| Version | Date | Changes |
+|---------|------|---------|
+| 1.0.0 | 2026-04-21 | Initial .clinerules for generativeUI after blank page incident investigation |
+
+# =============================================================================
+# END OF .clinerules
+# =============================================================================

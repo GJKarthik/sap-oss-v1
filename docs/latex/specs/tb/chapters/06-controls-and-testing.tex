@@ -1,0 +1,171 @@
+\chapter{Controls, Testing, and Acceptance}\label{ch:controls}
+
+\section{Control enforcement map}
+
+\Cref{fig:controls-map} binds each EUC control to the workflow states
+it governs. The binding is authoritative: the
+\texttt{relatedStates} array of each control record is the source of
+truth.
+
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}[
+  node distance=5mm and 10mm,
+  ctrl/.style={draw,rounded corners=2pt,align=center,font=\scriptsize,
+               fill=tbamber!15,draw=tbamber!60,
+               minimum height=9mm,minimum width=32mm},
+  state/.style={draw,rounded corners=2pt,align=center,font=\scriptsize,
+                fill=tbblue!12,draw=tbblue!60,
+                minimum height=7mm,minimum width=38mm},
+  arr/.style={-{Latex[length=2mm]},thin,dashed}
+]
+  \node[ctrl] (c1) {EUC-001 \\ \scriptsize EX/200/1353107/0001/000};
+  \node[ctrl,below=of c1] (c2) {EUC-002 \\ \scriptsize EX/200/1579702/0001/000};
+  \node[ctrl,below=of c2] (c3) {EUC-003 \\ \scriptsize EX/200/1579702/0002/000};
+
+  \node[state,right=of c1] (s1) {DOWNLOAD\_PSGL};
+  \node[state,below=2mm of s1] (s2) {EXTRACT\_TB};
+  \node[state,right=of c2] (s3) {UPDATE\_TB\_DETAILS};
+  \node[state,below=2mm of s3] (s4) {CALCULATE\_VARIANCE};
+  \node[state,below=2mm of s4] (s5) {FILTER\_VARIANCES};
+  \node[state,right=of c3] (s6) {REVIEW\_INCORPORATE};
+
+  \draw[arr] (c1) -- (s1);   \draw[arr] (c1) -- (s2);
+  \draw[arr] (c2) -- (s3);   \draw[arr] (c2) -- (s4);   \draw[arr] (c2) -- (s5);
+  \draw[arr] (c3) -- (s6);
+\end{tikzpicture}
+\caption{Control-to-state binding. Dashed lines denote the
+\texttt{relatedStates} relation.}\label{fig:controls-map}
+\end{figure}
+
+\section{Risk register}
+
+\Cref{tab:risks} lists the four control risks enumerated in
+\path{docs/tb/machine-readable/process/tb-review-controls.yaml} and
+the two business-case risks in
+\path{docs/tb/structured/requirements/tb-business-requirements.json}.
+
+\begin{table}[htbp]
+\caption{Risks and mitigations.}\label{tab:risks}
+\centering
+\footnotesize
+\begin{tabularx}{\linewidth}{@{}llXlX@{}}
+\toprule
+\textbf{ID} & \textbf{Severity} & \textbf{Description} & \textbf{Today} & \textbf{AI mitigation} \\ \midrule
+CR-001       & high     & Manual extraction, EUC risk       & EUCs 001/002 & Fully automated ingest \\
+CR-002       & medium   & Late commentary responses         & M+4 chasing  & Auto-drafts remove dependency \\
+CR-003       & high     & Incomplete analysis under time pressure & 20--25 FTEs  & Parallel anomaly detection \\
+CR-004       & medium   & Not scalable to daily ops         & none         & Foundation for daily cadence \\
+TB-RISK-001  & H        & PSGL-only coverage today          & PSGL adapters only & Build S/4 adapter \\
+TB-RISK-002  & H        & SAP integration dependency        & PPE review   & Compatibility assessment \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\section{Test strategy}
+
+Testing is layered; each layer has a named artefact.
+
+\begin{description}
+  \item[Schema tests.] \corpus\texttt{structured/validate.py} runs
+        over every record on CI. Exit code non-zero on validation
+        failure; the script also verifies that every \texttt{source\_path}
+        and \texttt{text\_path} in \path{corpus.json} resolves.
+  \item[Rule tests.] A fixture set lives at
+        \corpus\texttt{machine-readable/training-data/} (two CSVs are
+        checked in as the HK golden sample). Every rule in
+        \cref{ch:controls-engine} is exercised against at least one
+        positive and one negative fixture row; the expected branch is
+        asserted.
+  \item[Workflow tests.] The state machine is walked dry in CI: every
+        transition in \path{tb-review-glo.json} must reach
+        \stateid{END} in at least one simulated path.
+  \item[Commentary quality tests.] The accept-without-edit rate
+        (\cref{ch:ai}) is tracked as a monthly KPI. Drops $> 5$~pp
+        month-on-month raise a governance ticket.
+  \item[EUC evidencing.]\label{sec:controls-eucs}
+        \emph{Superseded by the EUC retirement plan}
+        (\cref{sec:euc-retirement-plan} in
+        Chapter~\ref{ch:overview}). From v1.0 go-live onwards, the
+        dashboard audit trail
+        (\cref{ch:review-dashboard}, \cref{sec:dashboard-audit-trail}) is the
+        authoritative evidence for ACG sampling. During the 12-month
+        deprecation window, the Shared Drive mirror of the dashboard
+        export is retained read-only; ACG samplers may consume either
+        source during that window, but the dashboard audit trail is
+        normative if the two diverge. The historical text of this
+        paragraph (``For each of \texttt{EUC-001}, \texttt{EUC-002},
+        \texttt{EUC-003}, the evidence folder on Shared Drive must
+        contain the rule-firing log and the reviewer signature'')
+        applied to pre-v1.0 cycles only.
+\end{description}
+
+\section{Acceptance criteria}
+
+\begin{enumerate}
+  \item All 13 structured records validate against their schemas
+        (\cref{ch:schema}, \cref{lst:validate}).
+  \item The HK golden workbook produces a draft FORTM section that
+        the Head of Africa GFS accepts with $\le$ 20\% of the
+        material-variance commentaries edited.
+  \item The cycle time from \stateid{EXTRACT\_TB} to
+        \stateid{SEND\_FORTM} on the HK workbook is $\le$ 5 working
+        days (parity with today, a precondition for extending to daily
+        cadence).
+  \item \texttt{TB-KPI-005} (unexplained variance rate) is zero at
+        \stateid{SEND\_FORTM} for the HK golden run.
+  \item ACG evidence for all three EUCs is reproducible by the rule
+        log alone, without access to the underlying Excel workbook.
+\end{enumerate}
+
+\section{Deployment and rollback}
+
+\Cref{tab:deployment} specifies the sign-off matrix and rollback
+behaviour for each environment.
+
+\begin{table}[htbp]
+\caption{Deployment sign-off and rollback.}\label{tab:deployment}
+\centering
+\footnotesize
+\begin{tabularx}{\linewidth}{@{}lllX@{}}
+\toprule
+\textbf{Env} & \textbf{Sign-off} & \textbf{Rollback} & \textbf{Notes} \\ \midrule
+DEV  & AI Engineer        & force-push   & Latest green only. \\
+UAT  & Process Owner      & blue/green   & HK workbook reproduces on each deploy. \\
+PROD & Head of Africa GFS & blue/green   & New ruleset runs parallel to manual for one close cycle before switchover. \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\section{Training and change management}
+
+The 20--25 FTEs currently executing the process are trained as
+exception handlers and rule reviewers. The operating model shifts
+from \emph{analyst produces commentary} to \emph{analyst accepts,
+edits, or rejects a draft}. Accept/edit telemetry is used to retrain
+the draft-generation prompts once per quarter.
+
+\section{Traceability matrix}
+
+\Cref{tab:traceability} links every numbered process step from
+\texttt{TB-REQ-001} to the workflow states and controls that realise
+it.
+
+\begin{table}[htbp]
+\caption{Process step traceability.}\label{tab:traceability}
+\centering
+\footnotesize
+\begin{tabularx}{\linewidth}{@{}p{2.1cm}p{3.9cm}lX@{}}
+\toprule
+\textbf{Step} & \textbf{Name} & \textbf{Priority} & \textbf{Realised by} \\ \midrule
+TB-STEP-001 & Roll Forward Prior Month File        & medium   & ROLL\_FORWARD \\
+TB-STEP-002 & Download PSGL, update master data    & high     & DOWNLOAD\_PSGL, UPDATE\_ACCOUNTS\_MASTER, UPDATE\_PARAMETERS (EUC-001) \\
+TB-STEP-003 & Extract Trial Balance                & critical & EXTRACT\_TB (EUC-001) \\
+TB-STEP-004 & Calculate and filter variances       & critical & UPDATE\_TB\_DETAILS, CALCULATE\_VARIANCE, FILTER\_VARIANCES, DP-001 (EUC-002) \\
+TB-STEP-005 & Seek and update commentaries         & critical & SEEK\_COMMENTARIES through UPDATE\_VARIANCE\_COMMENTARIES \\
+TB-STEP-006 & Journal posting and investigation    & high     & DP-002, SEND\_JOURNAL\_REQUEST, DP-003, CHECK\_ENTRIES\_STATUS \\
+TB-STEP-007 & Track entries and risk assessment    & high     & DP-004, TRACK\_ENTRIES, UPDATE\_RISK, DP-005, CATEGORIZE\_UNEXPLAINED \\
+TB-STEP-008 & Prepare summary and internal review  & critical & PREPARE\_SUMMARY through SEND\_FORTM (EUC-003) \\
+\bottomrule
+\end{tabularx}
+\end{table}

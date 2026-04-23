@@ -1,0 +1,14 @@
+---
+title: HANA Schema Extraction Pipeline
+---
+flowchart LR
+    S1[1. MCP Discovery]
+    S2[2. Table Enumeration]
+    S3[3. Column Extraction]
+    S4[4. Registry Population]
+    S5[5. JSON Export]
+
+    S1 --> S2 --> S3 --> S4 --> S5
+
+    classDef stage fill:#E8F0FC,stroke:#0064D7,stroke-width:1.5px,color:#1D1D1F
+    class S1,S2,S3,S4,S5 stage

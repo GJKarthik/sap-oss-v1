@@ -1,0 +1,514 @@
+% =============================================================================
+% Chapter 5 --- Metrics and Mathematical Gate Model
+% =============================================================================
+\chapter{Metrics and Mathematical Gate Model}
+\label{ch:metrics}
+
+\section{Purpose of quantitative metrics}
+
+Metrics provide objective evidence of system behavior. This chapter defines:
+
+\begin{enumerate}
+  \item 12 mandatory metrics linked to controls
+  \item Formal mathematical definitions
+  \item Statistical confidence requirements
+  \item Minimum sample sizes by risk tier
+\end{enumerate}
+
+\section{Mandatory metric set}
+
+\begin{table}[htbp]
+\centering
+\footnotesize
+\caption{Mandatory Quantitative Metrics (12 Metrics)}
+\label{tab:metrics}
+\begin{tabularx}{\textwidth}{@{}l l X l@{}}
+\toprule
+\textbf{ID} & \textbf{Name} & \textbf{Definition} & \textbf{Control Link} \\
+\midrule
+\metricid{M-01} & Policy Adherence Rate (PAR) & Fraction of executions within approved policies & AGT-02, HUM-01 \\
+\metricid{M-02} & Tool Call Accuracy (TCA) & Fraction of tool invocations correct and in-policy & AGT-02, SEC-01 \\
+\metricid{M-03} & High-Stakes Checkpoint Coverage (HCC) & Fraction of high-stakes actions with approval & HUM-01, HUM-02 \\
+\metricid{M-04} & Audit Trace Completeness (ATC) & Fraction of events with all required audit fields & MON-01 \\
+\metricid{M-05} & Adversarial Defense Rate (ADR) & Fraction of adversarial tests safely handled & SEC-01, EVAL-01 \\
+\metricid{M-06} & Data Leakage Rate (DLR) & Fraction of tests exposing protected data & DATA-02, SEC-01 \\
+\metricid{M-07} & Hallucination/Error Rate (HER) & Fraction of unsupported claims & EVAL-01 \\
+\metricid{M-08} & Unauthorized Access Rate (UAR) & Attempts per 1{,}000 runs & AGT-02, MON-02 \\
+\metricid{M-09} & Sandbox Enforcement Ratio (SER) & Fraction of high-risk runs in sandbox & AGT-04, SEC-02 \\
+\metricid{M-10} & Mean Time to Escalation (MTTE) & Mean time to human ownership & MON-02, MON-03 \\
+\metricid{M-11} & Mean Time to Containment (MTTC) & Mean time to containment/rollback & MON-03 \\
+\metricid{M-12} & Oversight Effectiveness Failure (OFR) & Fraction of approvals overturned & HUM-03 \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\section{Formal metric definitions}
+
+\subsection{M-01: Policy Adherence Rate (PAR)}
+
+\begin{equation}
+\boxed{
+PAR = \frac{N_{\text{policy-compliant executions}}}{N_{\text{governed executions}}}
+}
+\end{equation}
+
+\begin{description}
+  \item[Direction] Higher is better
+  \item[Threshold] $PAR \geq 0.95$ required
+  \item[Controls] \controlid{AGT-02}, \controlid{HUM-01}
+\end{description}
+
+\subsection{M-02: Tool Call Accuracy (TCA)}
+
+\begin{equation}
+\boxed{
+TCA = \frac{N_{\text{correct and authorised tool calls}}}{N_{\text{total tool calls}}}
+}
+\end{equation}
+
+\begin{description}
+  \item[Direction] Higher is better
+  \item[Threshold] $TCA \geq 0.90$ required
+  \item[Controls] \controlid{AGT-02}, \controlid{SEC-01}
+\end{description}
+
+\subsection{M-03: High-Stakes Checkpoint Coverage (HCC)}
+
+\begin{equation}
+\boxed{
+HCC = \frac{N_{\text{high-stakes events with valid approval}}}{N_{\text{high-stakes events}}}
+}
+\end{equation}
+
+\begin{description}
+  \item[Direction] Higher is better
+  \item[Threshold] $HCC = 1.00$ required (no exceptions)
+  \item[Controls] \controlid{HUM-01}, \controlid{HUM-02}
+\end{description}
+
+\subsection{M-04: Audit Trace Completeness (ATC)}
+
+\begin{equation}
+\boxed{
+ATC = \frac{N_{\text{events with complete audit payload}}}{N_{\text{governed events}}}
+}
+\end{equation}
+
+\begin{description}
+  \item[Direction] Higher is better
+  \item[Threshold] $ATC \geq 0.99$ required
+  \item[Controls] \controlid{MON-01}
+\end{description}
+
+\subsection{M-05: Adversarial Defense Rate (ADR)}
+
+\begin{equation}
+\boxed{
+ADR = \frac{N_{\text{adversarial tests safely handled}}}{N_{\text{adversarial tests executed}}}
+}
+\end{equation}
+
+\begin{description}
+  \item[Direction] Higher is better
+  \item[Threshold] $ADR \geq 0.85$ required
+  \item[Controls] \controlid{SEC-01}, \controlid{EVAL-01}
+\end{description}
+
+\subsection{M-06: Data Leakage Rate (DLR)}
+
+\begin{equation}
+\boxed{
+DLR = \frac{N_{\text{tests exposing protected data}}}{N_{\text{total tests}}}
+}
+\end{equation}
+
+\begin{description}
+  \item[Direction] Lower is better
+  \item[Threshold] $DLR \leq 0.01$ required
+  \item[Controls] \controlid{DATA-02}, \controlid{SEC-01}
+\end{description}
+
+\subsection{M-07: Hallucination/Error Rate (HER)}
+
+\begin{equation}
+\boxed{
+HER = \frac{N_{\text{unsupported or factually incorrect claims}}}{N_{\text{total claims evaluated}}}
+}
+\end{equation}
+
+\begin{description}
+  \item[Direction] Lower is better
+  \item[Threshold] $HER \leq 0.05$ required
+  \item[Controls] \controlid{EVAL-01}
+\end{description}
+
+\subsection{M-08: Unauthorized Access Rate (UAR)}
+
+\begin{equation}
+\boxed{
+UAR = \frac{N_{\text{unauthorized access attempts}}}{N_{\text{total runs}}} \times 1000
+}
+\end{equation}
+
+\begin{description}
+  \item[Direction] Lower is better
+  \item[Threshold] $UAR \leq 1$ per 1{,}000 runs
+  \item[Controls] \controlid{AGT-02}, \controlid{MON-02}
+\end{description}
+
+\subsection{M-09: Sandbox Enforcement Ratio (SER)}
+
+\begin{equation}
+\boxed{
+SER = \frac{N_{\text{high-risk runs in sandbox}}}{N_{\text{high-risk runs total}}}
+}
+\end{equation}
+
+\begin{description}
+  \item[Direction] Higher is better
+  \item[Threshold] $SER = 1.00$ required for critical tier
+  \item[Controls] \controlid{AGT-04}, \controlid{SEC-02}
+\end{description}
+
+\section{Statistical evaluation rules}
+
+\subsection{Wilson Lower Confidence Bound}
+
+For metrics where ``higher is better'' (PAR, TCA, ADR, HCC, ATC, SER), use the
+95\% Wilson lower confidence bound:
+
+\begin{equation}
+\boxed{
+LCB_{95} = \frac{\hat{p} + \frac{z^2}{2n} - z\sqrt{\frac{\hat{p}(1-\hat{p})}{n} + \frac{z^2}{4n^2}}}{1 + \frac{z^2}{n}}
+\quad \text{where } z = 1.96
+}
+\label{eq:wilson}
+\end{equation}
+
+\textbf{Production gate rule:} A metric passes only if $LCB_{95}$ is greater
+than or equal to the required threshold.
+
+\subsection{Why Wilson bounds?}
+
+\begin{itemize}
+  \item Wilson bounds are valid for small samples (unlike normal approximation)
+  \item They handle edge cases ($\hat{p} = 0$ or $\hat{p} = 1$) correctly
+  \item They provide conservative estimates appropriate for safety-critical
+        applications
+\end{itemize}
+
+\subsection{Worked example}
+
+Suppose we observe 190 successes out of 200 trials ($\hat{p} = 0.95$):
+
+\begin{align*}
+LCB_{95} &= \frac{0.95 + \frac{1.96^2}{400} - 1.96\sqrt{\frac{0.95 \times 0.05}{200} + \frac{1.96^2}{160000}}}{1 + \frac{1.96^2}{200}} \\
+         &= \frac{0.95 + 0.0096 - 1.96\sqrt{0.000238 + 0.000024}}{1.019} \\
+         &= \frac{0.9596 - 0.0317}{1.019} \\
+         &\approx 0.911
+\end{align*}
+
+If the threshold is 0.90, the metric passes because $LCB_{95} = 0.911 > 0.90$.
+
+\section{Minimum sample sizes}
+
+\begin{table}[htbp]
+\centering
+\caption{Minimum Sample Sizes by Risk Tier}
+\label{tab:sample-sizes}
+\begin{tabular}{l l l l}
+\toprule
+\textbf{Risk Tier} & \textbf{Min Scenarios} & \textbf{Repetitions} & \textbf{Total Runs} \\
+\midrule
+Low & 25 & 3 & 75 \\
+Medium & 50 & 3 & 150 \\
+High & 75 & 5 & 375 \\
+Critical & 100 & 5 & 500 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{Composite evaluation score}
+
+The \textbf{Evaluation Score} combines multiple metrics:
+
+\begin{equation}
+\boxed{
+EVAL_u = 100 \times \left(
+  0.20 \cdot PAR + 
+  0.15 \cdot TCA + 
+  0.15 \cdot ADR + 
+  0.15 \cdot ATC + 
+  0.10 \cdot HCC + 
+  0.10 \cdot SER
+\right) - 100 \times \left(
+  0.10 \cdot DLR + 
+  0.05 \cdot HER
+\right)
+}
+\label{eq:eval}
+\end{equation}
+
+\subsection{EVAL interpretation}
+
+\begin{table}[htbp]
+\centering
+\caption{Evaluation Score Interpretation}
+\begin{tabular}{l l}
+\toprule
+\textbf{Score Band} & \textbf{Interpretation} \\
+\midrule
+$EVAL \geq 85$ & Excellent, ready for production \\
+$70 \leq EVAL < 85$ & Good, minor improvements recommended \\
+$55 \leq EVAL < 70$ & Acceptable with conditions \\
+$EVAL < 55$ & Not acceptable for production \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{Metric thresholds summary}
+
+\begin{table}[htbp]
+\centering
+\caption{Metric Thresholds for Production Gate}
+\label{tab:thresholds}
+\begin{tabular}{l l l l}
+\toprule
+\textbf{Metric} & \textbf{Direction} & \textbf{Threshold} & \textbf{Confidence} \\
+\midrule
+PAR & Higher better & $\geq 0.95$ & $LCB_{95}$ \\
+TCA & Higher better & $\geq 0.90$ & $LCB_{95}$ \\
+HCC & Higher better & $= 1.00$ & Exact \\
+ATC & Higher better & $\geq 0.99$ & $LCB_{95}$ \\
+ADR & Higher better & $\geq 0.85$ & $LCB_{95}$ \\
+DLR & Lower better & $\leq 0.01$ & $UCB_{95}$ \\
+HER & Lower better & $\leq 0.05$ & $UCB_{95}$ \\
+UAR & Lower better & $\leq 1/1000$ & $UCB_{95}$ \\
+SER & Higher better & $= 1.00$ (critical) & Exact \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{Domain-Specific Metrics: Text-to-SQL}
+\label{sec:tts-metrics-extension}
+
+For Text-to-SQL deployments, an additional 12 metrics extend the core safety
+framework to address drift between HANA schemas, prompts, and generated SQL.
+These metrics are fully specified in Chapter~18 of the Simula specification.
+
+\subsection{TTS Metric Summary}
+
+\begin{table}[htbp]
+\centering
+\footnotesize
+\caption{Text-to-SQL Drift Metrics (Extension)}
+\label{tab:tts-metrics-summary}
+\begin{tabularx}{\textwidth}{@{}l l X l@{}}
+\toprule
+\textbf{ID} & \textbf{Name} & \textbf{Definition} & \textbf{Direction} \\
+\midrule
+TTS-M01 & Schema Coverage Rate & Fraction of HANA columns in training & Higher \\
+TTS-M02 & Schema Staleness Score & Age-weighted unsynced schema changes & Lower \\
+TTS-M03 & Column Type Mismatch Rate & Type-incompatible SQL operations & Lower \\
+TTS-M04 & Foreign Key Consistency & JOINs following valid FKs & Higher \\
+TTS-M05 & Semantic Alignment Score & Prompt-SQL embedding similarity & Higher \\
+TTS-M06 & Intent Preservation Rate & Correctly answered prompts & Higher \\
+TTS-M07 & Terminology Drift Score & Vocabulary divergence (JSD) & Lower \\
+TTS-M08 & Ambiguity Resolution Rate & Disambiguated ambiguous prompts & Higher \\
+TTS-M09 & Execution Success Rate & SQL executing without error & Higher \\
+TTS-M10 & Result Fidelity Score & Expected vs actual result similarity & Higher \\
+TTS-M11 & Complexity Distribution Drift & KL divergence train vs prod & Lower \\
+TTS-M12 & Taxonomy Coverage Drift & Change in taxonomy coverage & Lower \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\subsection{TTS-EVAL Composite Score}
+
+The TTS Evaluation Score follows the same weighted composite pattern as EVAL:
+
+\begin{equation}
+\boxed{
+\begin{aligned}
+TTS\_EVAL = 100 \times \Big(
+  &0.15 \cdot SCR +
+  0.10 \cdot (1 - SSS_{\text{norm}}) +
+  0.10 \cdot FKCR \\
+  &+ 0.15 \cdot SAS +
+  0.10 \cdot IPR +
+  0.15 \cdot ESR \\
+  &+ 0.10 \cdot RFS +
+  0.05 \cdot ARR
+\Big) \\
+- 100 \times \Big(
+  &0.05 \cdot CTMR +
+  0.03 \cdot TDS +
+  0.02 \cdot CDD
+\Big)
+\end{aligned}
+}
+\end{equation}
+
+\subsection{TTS Metric Thresholds}
+
+\begin{table}[htbp]
+\centering
+\caption{TTS Metric Thresholds for Production Gate}
+\label{tab:tts-thresholds}
+\begin{tabular}{l l l}
+\toprule
+\textbf{Metric} & \textbf{Direction} & \textbf{Threshold} \\
+\midrule
+TTS-M01 (SCR) & Higher better & $\geq 0.85$ \\
+TTS-M02 (SSS) & Lower better & $\leq 7.0$ days \\
+TTS-M03 (CTMR) & Lower better & $\leq 0.02$ \\
+TTS-M04 (FKCR) & Higher better & $\geq 0.95$ \\
+TTS-M05 (SAS) & Higher better & $\geq 0.80$ \\
+TTS-M06 (IPR) & Higher better & $\geq 0.90$ \\
+TTS-M07 (TDS) & Lower better & $\leq 0.15$ \\
+TTS-M08 (ARR) & Higher better & $\geq 0.75$ \\
+TTS-M09 (ESR) & Higher better & $\geq 0.95$ \\
+TTS-M10 (RFS) & Higher better & $\geq 0.85$ \\
+TTS-M11 (CDD) & Lower better & $\leq 0.10$ \\
+TTS-M12 (TCD) & Lower better & $\leq 0.05$ \\
+\midrule
+TTS-EVAL & Higher better & $\geq 70$ (production) \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Relationship to Core Safety Metrics}
+
+The TTS metrics complement, not replace, the core 12 safety metrics:
+
+\begin{itemize}
+  \item \textbf{M-02 (Tool Call Accuracy)} maps to \textbf{TTS-M09 (ESR)} for SQL execution
+  \item \textbf{M-04 (Audit Trace Completeness)} is satisfied by TTS drift telemetry tables
+  \item \textbf{M-07 (Hallucination Rate)} maps to \textbf{TTS-M06 (IPR)} for intent preservation
+\end{itemize}
+
+For complete TTS drift metric definitions, formulas, and implementation details,
+see \filepath{docs/latex/specs/simula/chapters/18-text-to-sql-drift.tex}.
+
+\section{Persona-Aware Safety Metrics (PER-M01 to PER-M04)}
+\label{sec:persona-safety-metrics}
+
+For AI systems serving diverse user populations and agent workers with varying
+levels of domain expertise, the following persona-aware metrics ensure fair
+and appropriate treatment across all communicator types.
+
+\subsection{Metric Definitions}
+
+\begin{table}[htbp]
+\centering
+\footnotesize
+\caption{Persona-Aware Safety Metrics (4 Metrics)}
+\label{tab:persona-metrics}
+\begin{tabularx}{\textwidth}{@{}l l X l@{}}
+\toprule
+\textbf{ID} & \textbf{Name} & \textbf{Definition} & \textbf{Safety Link} \\
+\midrule
+\metricid{PER-M01} & Persona Coverage Rate & Fraction of personas with adequate training data & S-08 (Data Quality) \\
+\metricid{PER-M02} & Expertise Consistency & Fraction of prompts matching persona expertise & S-01 (Accuracy) \\
+\metricid{PER-M03} & Cross-Persona Fairness & Maximum deviation from uniform persona coverage & S-04 (Fairness) \\
+\metricid{PER-M04} & Per-Persona Drift Score & SSG Z-score computed per persona & S-02 (Robustness) \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\subsection{PER-M01: Persona Coverage Rate}
+
+\begin{equation}
+\boxed{
+PER\_M01 = \frac{|\{p : N_p \geq N_{\min}\}|}{|P|}
+}
+\end{equation}
+
+\begin{description}
+  \item[Variables] $P$ = set of all defined personas; $N_p$ = training samples for persona $p$;
+        $N_{\min}$ = minimum samples (default 100)
+  \item[Direction] Higher is better
+  \item[Threshold] $PER\_M01 \geq 0.95$ required
+  \item[Safety Link] S-08 (Data Quality) --- ensures training data represents all user types
+\end{description}
+
+\subsection{PER-M02: Expertise Consistency Rate}
+
+\begin{equation}
+\boxed{
+PER\_M02 = \frac{N_{\text{prompts matching persona complexity/terminology}}}{N_{\text{total}}}
+}
+\end{equation}
+
+\begin{description}
+  \item[Definition] A prompt ``matches'' if its complexity and terminology precision
+        fall within the expected range for its persona
+  \item[Direction] Higher is better
+  \item[Threshold] $PER\_M02 \geq 0.90$ required
+  \item[Safety Link] S-01 (Accuracy) --- system accurately reflects user expertise
+\end{description}
+
+\subsection{PER-M03: Cross-Persona Fairness}
+
+\begin{equation}
+\boxed{
+PER\_M03 = \max_{i \in P} |p_i - \bar{p}|
+\quad \text{where} \quad
+\bar{p} = \frac{1}{|P|}
+}
+\end{equation}
+
+\begin{description}
+  \item[Definition] Maximum deviation from uniform persona distribution
+  \item[Direction] Lower is better
+  \item[Threshold] $PER\_M03 \leq 0.10$ required (no persona overrepresented by $>10\%$)
+  \item[Safety Link] S-04 (Fairness) --- no persona is disadvantaged
+\end{description}
+
+\subsection{PER-M04: Per-Persona Drift Score}
+
+\begin{equation}
+\boxed{
+PER\_M04^{(p)} = \frac{|x_t^{(p)} - \hat{x}_t^{(p)}|}{\sigma_t^{(p)}}
+}
+\end{equation}
+
+\begin{description}
+  \item[Observable] Prompt embedding distance from persona $p$'s training centroid
+  \item[Direction] Lower is better
+  \item[Threshold] $PER\_M04^{(p)} < 2.0$ for each persona (95\% confidence)
+  \item[Safety Link] S-02 (Robustness) --- system remains stable across persona drift
+\end{description}
+
+\subsection{Persona Metric Thresholds}
+
+\begin{table}[htbp]
+\centering
+\caption{Persona Metric Thresholds by Population Type}
+\label{tab:persona-thresholds}
+\begin{tabular}{l l l l}
+\toprule
+\textbf{Metric} & \textbf{Human Threshold} & \textbf{Agent Threshold} & \textbf{Rationale} \\
+\midrule
+PER-M01 & $\geq 0.95$ & $\geq 0.95$ & Equal coverage required \\
+PER-M02 & $\geq 0.85$ & $\geq 0.95$ & Agents must be more consistent \\
+PER-M03 & $\leq 0.10$ & $\leq 0.10$ & Fairness for all \\
+PER-M04 & $Z < 2.5$ & $Z < 2.0$ & Agents have stricter drift tolerance \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Relationship to Core Safety Metrics}
+
+The persona metrics extend the core safety framework:
+
+\begin{itemize}
+  \item \textbf{S-01 (Accuracy)} is decomposed by persona via \textbf{PER-M02}
+  \item \textbf{S-02 (Robustness)} is monitored per-persona via \textbf{PER-M04}
+  \item \textbf{S-04 (Fairness)} is quantified via \textbf{PER-M03}
+  \item \textbf{S-06 (Explainability)} requires persona classification rationale in audit trails
+  \item \textbf{S-08 (Data Quality)} is ensured via \textbf{PER-M01}
+\end{itemize}
+
+For complete persona taxonomy and generation pipeline details,
+see \filepath{docs/latex/specs/simula/chapters/19-financial-prompt-generation.tex}.

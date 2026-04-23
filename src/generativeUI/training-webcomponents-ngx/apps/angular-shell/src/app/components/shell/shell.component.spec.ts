@@ -49,7 +49,7 @@ const MOCK_NAVIGATION = {
 const MOCK_WORKSPACE = {
   visibleNavLinks: signal([
     { route: '/dashboard' },
-    { route: '/data-explorer' },
+    { route: '/data-products' },
     { route: '/chat' },
     { route: '/pipeline' },
     { route: '/workspace' },

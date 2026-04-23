@@ -1,0 +1,11 @@
+---
+title: Mermaid Smoke Test
+---
+flowchart LR
+    A[.mmd source] --> B[mermaid-cli]
+    B --> C[PDF diagram]
+    C --> D["\mermaidfig{}"]
+    D --> E[Spec PDF]
+
+    classDef node fill:#E8F0FC,stroke:#0064D7,color:#1D1D1F
+    class A,B,C,D,E node

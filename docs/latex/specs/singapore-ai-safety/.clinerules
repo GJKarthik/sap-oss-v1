@@ -1,0 +1,214 @@
+# =============================================================================
+# .clinerules - Singapore AI Safety Framework Specification
+# Path: docs/latex/specs/singapore-ai-safety/.clinerules
+# =============================================================================
+# This specification defines Singapore-aligned AI governance requirements for
+# the SAP-OSS repository, based on IMDA MGF, PDPC, and CSA guidance.
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# SPECIFICATION OVERVIEW
+# -----------------------------------------------------------------------------
+
+Purpose
+- Define a single governance baseline across all AI-enabled surfaces in the repository.
+- Translate Singapore's AI regulatory frameworks into actionable controls and metrics.
+- Provide mathematical models for risk scoring and deployment readiness.
+- Document implementation requirements for compliance.
+
+Key Regulatory Sources
+- SG-01: IMDA Model AI Governance Framework for Agentic AI (Jan 2026)
+- SG-02: IMDA Starter Kit for Testing LLM-Based Applications (Jan 2026)
+- SG-03: PDPC Model AI Governance Framework (2nd Ed, Jan 2020)
+- SG-04: PDPC Advisory Guidelines on Personal Data in AI (Apr 2024)
+- SG-05: IMDA Project Moonshot / AI Verify (May 2024)
+- SG-06: Singapore's Approach to AI Governance (Ongoing)
+- SG-07: CSA Guidelines on Securing AI Systems (Oct 2024)
+- SG-08: CSA Agentic AI Addendum - Consultation Stage (Oct 2025)
+
+# -----------------------------------------------------------------------------
+# RELATED ARTIFACTS
+# -----------------------------------------------------------------------------
+
+Specification Document
+- `singapore-ai-safety-spec.tex` - Main LaTeX specification
+
+Related Specifications
+- `docs/latex/specs/regulations/` - Agentic AI Regulations Corpus
+- `docs/latex/specs/clinerules-agents/` - Agent Rule-Pack Architecture
+
+Implementation Code
+- `src/intelligence/ai-core-pal/governance/identity.py` - Identity attribution
+- `src/intelligence/ai-core-pal/governance/audit.py` - Durable audit trail
+- `src/intelligence/ai-core-pal/agent/governed_agent.py` - Compliant agent
+
+JSON Schemas
+- `docs/schema/regulations/agent-identity.schema.json`
+- `docs/schema/regulations/request-identity.schema.json`
+- `docs/schema/regulations/audit-event.schema.json`
+- `docs/schema/regulations/requirement.schema.json`
+
+# -----------------------------------------------------------------------------
+# 23 MANDATORY CONTROLS (AUTHORITATIVE)
+# -----------------------------------------------------------------------------
+
+The following 23 controls are mandatory per Chapter 3 of the specification:
+
+| ID | Control | Primary Sources |
+|----|---------|----------------|
+| GOV-01 | Named accountable owner | SG-01, SG-03 |
+| GOV-02 | Use-case registration | SG-01, SG-03 |
+| GOV-03 | Model/dependency inventory | SG-01, SG-05, SG-07 |
+| DATA-01 | Data classification | SG-01, SG-03, SG-04 |
+| DATA-02 | Data minimisation | SG-04 |
+| DATA-03 | Retention and deletion | SG-04, SG-07 |
+| AGT-01 | Bounded autonomy | SG-01 |
+| AGT-02 | Least-privilege tools | SG-01, SG-08 |
+| AGT-03 | Agent identity | SG-01, SG-08 |
+| AGT-04 | Sandboxing | SG-01, SG-07, SG-08 |
+| HUM-01 | Checkpoint design | SG-01, SG-03 |
+| HUM-02 | Effective approval UX | SG-01 |
+| HUM-03 | Oversight audit | SG-01 |
+| SEC-01 | Prompt-injection resilience | SG-02, SG-07, SG-08 |
+| SEC-02 | Trusted protocol boundary | SG-01, SG-08 |
+| EVAL-01 | Baseline safety evaluation | SG-02, SG-05 |
+| EVAL-02 | Statistical sufficiency | SG-02 |
+| EVAL-03 | Stage-gate deployment | SG-01, SG-02, SG-03 |
+| MON-01 | Full audit trace | SG-01, SG-05 |
+| MON-02 | Real-time anomaly monitoring | SG-01, SG-07, SG-08 |
+| MON-03 | Incident response and rollback | SG-01, SG-07 |
+| USR-01 | User transparency | SG-01, SG-03, SG-04 |
+| USR-02 | User and reviewer training | SG-01, SG-03 |
+
+Critical Controls (Must Pass for High-Risk/Critical Use Cases):
+- GOV-01, GOV-02, DATA-01, AGT-02, AGT-03, HUM-01, SEC-01
+- EVAL-01, EVAL-03, MON-01, MON-02, MON-03
+
+# -----------------------------------------------------------------------------
+# 12 MANDATORY METRICS
+# -----------------------------------------------------------------------------
+
+| ID | Metric | Definition |
+|----|--------|------------|
+| M-01 | Policy Adherence Rate (PAR) | Fraction of executions within approved policies |
+| M-02 | Tool Call Accuracy (TCA) | Fraction of tool invocations correct and in-policy |
+| M-03 | High-Stakes Checkpoint Coverage (HCC) | Fraction of high-stakes actions with approval |
+| M-04 | Audit Trace Completeness (ATC) | Fraction of events with all required audit fields |
+| M-05 | Adversarial Defense Rate (ADR) | Fraction of adversarial tests safely handled |
+| M-06 | Data Leakage Rate (DLR) | Fraction exposing protected data (lower better) |
+| M-07 | Hallucination/Error Rate (HER) | Fraction of unsupported claims (lower better) |
+| M-08 | Unauthorized Access Rate (UAR) | Attempts per 1,000 runs (lower better) |
+| M-09 | Sandbox Enforcement Ratio (SER) | Fraction of high-risk runs in sandbox |
+| M-10 | Mean Time to Escalation (MTTE) | Mean time to human ownership (lower better) |
+| M-11 | Mean Time to Containment (MTTC) | Mean time to containment (lower better) |
+| M-12 | Oversight Effectiveness Failure (OFR) | Fraction of approvals overturned (lower better) |
+
+# -----------------------------------------------------------------------------
+# RISK SCORING MODEL
+# -----------------------------------------------------------------------------
+
+Inherent Risk Score (IRS):
+```
+IRS = 100 × (0.20×DS + 0.20×AA + 0.15×AU + 0.15×EC + 0.10×RV + 0.10×UI + 0.05×MU + 0.05×TD)
+```
+
+Where:
+- DS = Data sensitivity (0.10-1.00)
+- AA = Action authority (0.10-1.00)
+- AU = Autonomy level (0.10-1.00)
+- EC = Environmental connectivity (0.10-1.00)
+- RV = Irreversibility (0.10-1.00)
+- UI = User/legal impact (0.20-1.00)
+- MU = Model uncertainty (0.20-1.00)
+- TD = Third-party dependency (0.10-1.00)
+
+Residual Risk Score (RRS):
+```
+RRS = min(100, IRS × (1 - 0.55 × AWCC) + Penalty)
+```
+
+Where:
+- AWCC = Applicability-Weighted Control Coverage
+- Penalty = 15×N_audit + 15×N_checkpoint + 10×N_external + 20×N_privacy
+
+Production Gate: RRS ≤ 45
+
+# -----------------------------------------------------------------------------
+# PRODUCTION GATE CRITERIA
+# -----------------------------------------------------------------------------
+
+A use case is eligible for production if and only if:
+1. Residual Risk Score (RRS) ≤ 45
+2. Deployment Readiness Score (DRS) ≥ 70
+3. All critical controls pass
+4. All metric LCB₉₅ values meet thresholds
+
+Wilson Lower Confidence Bound (95%):
+```
+LCB₉₅ = (p̂ + z²/2n - z×√(p̂(1-p̂)/n + z²/4n²)) / (1 + z²/n)
+```
+where z = 1.96
+
+# -----------------------------------------------------------------------------
+# MINIMUM SAMPLE SIZES
+# -----------------------------------------------------------------------------
+
+| Risk Tier | Min Scenarios | Repetitions | Total Runs |
+|-----------|---------------|-------------|------------|
+| Low | 25 | 3 | 75 |
+| Medium | 50 | 3 | 150 |
+| High | 75 | 5 | 375 |
+| Critical | 100 | 5 | 500 |
+
+# -----------------------------------------------------------------------------
+# 12 USE CASES IN SCOPE
+# -----------------------------------------------------------------------------
+
+| ID | Use Case | Risk Tier |
+|----|----------|-----------|
+| UC-01 | Chat and prompt-response synthesis | Medium |
+| UC-02 | AI-generated UI actions | High |
+| UC-03 | HANA query and data-product prompts | High |
+| UC-04 | Retrieval and vector operations | High |
+| UC-05 | Personal knowledge and memory | High |
+| UC-06 | OCR document extraction | High |
+| UC-07 | Data-cleaning workflows | Medium |
+| UC-08 | Training and deployment | Critical |
+| UC-09 | Pipeline orchestration | High |
+| UC-10 | Agent/tool orchestration (MCP) | Critical |
+| UC-11 | Governance and audit | High |
+| UC-12 | Local model serving | High |
+
+# -----------------------------------------------------------------------------
+# SPEC-DRIFT SYNCHRONIZATION RULES
+# -----------------------------------------------------------------------------
+
+Critical Sync Points
+1. Control catalogue (Chapter 3) ↔ Governance module implementation
+2. Risk scoring model (Chapter 4) ↔ Entity params configuration
+3. Metric definitions (Chapter 5) ↔ Monitoring service
+4. Audit schema (Chapter 6) ↔ audit-event.schema.json
+
+Pre-Change Checklist
+- [ ] Run `make audit-spec-drift-domain DOMAIN=regulations`
+- [ ] Verify source documents are current
+- [ ] Check cross-references to regulations spec
+- [ ] Review implementation impact
+
+Post-Change Checklist
+- [ ] Update related JSON schemas if requirements changed
+- [ ] Update governance module if control logic changed
+- [ ] Run `make audit-spec-drift` to verify synchronization
+- [ ] Update implementation status table
+
+# -----------------------------------------------------------------------------
+# VERSION HISTORY
+# -----------------------------------------------------------------------------
+
+| Version | Date | Changes |
+|---------|------|---------|
+| 1.0.0 | 2026-04-22 | Initial Singapore AI Safety Framework specification |
+
+# =============================================================================
+# END OF .clinerules
+# =============================================================================

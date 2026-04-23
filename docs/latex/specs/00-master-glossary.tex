@@ -1,0 +1,516 @@
+% =============================================================================
+% SAP OSS Master Glossary
+% ENHANCED EDITION: Business Language ↔ Code Reality Mapping
+% Unified terminology reference aligned with docs/schema/
+% =============================================================================
+\documentclass[11pt,a4paper]{report}
+
+\usepackage{xcolor}
+\usepackage[a4paper,margin=25mm]{geometry}
+\usepackage{booktabs}
+\usepackage{tabularx}
+\usepackage{longtable}
+\usepackage{enumitem}
+\usepackage{hyperref}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta,positioning,shapes.geometric}
+\usepackage[capitalize,noabbrev]{cleveref}
+\usepackage{fancyhdr}
+\usepackage{mdframed}
+\usepackage{colortbl}
+
+% --- Colors (consistent with all specs) --------------------------------------
+\definecolor{sapblue}{HTML}{0B5FA5}
+\definecolor{sapgreen}{HTML}{00695C}
+\definecolor{sapamber}{HTML}{B8360F}
+\definecolor{sapgrey}{HTML}{546E7A}
+\definecolor{codebg}{HTML}{F5F5F5}
+\definecolor{pathcolor}{HTML}{6A1B9A}
+\definecolor{arabiccolor}{HTML}{E65100}
+\definecolor{tbcolor}{HTML}{1565C0}
+\definecolor{simulacolor}{HTML}{2E7D32}
+\definecolor{regcolor}{HTML}{6A1B9A}
+
+% --- Box Styles --------------------------------------------------------------
+\mdfdefinestyle{schemabox}{
+  linecolor=pathcolor,
+  linewidth=1pt,
+  roundcorner=3pt,
+  backgroundcolor=codebg,
+  innertopmargin=5pt,
+  innerbottommargin=5pt,
+  innerrightmargin=8pt,
+  innerleftmargin=8pt,
+}
+
+% --- Custom Commands ---------------------------------------------------------
+\newcommand{\schemapath}[1]{\texttt{\textcolor{pathcolor}{#1}}}
+\newcommand{\enumval}[1]{\texttt{\textcolor{sapgreen}{#1}}}
+\newcommand{\fieldref}[1]{\texttt{\textcolor{sapblue}{#1}}}
+
+% --- Headers -----------------------------------------------------------------
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\textcolor{sapblue}{\textbf{SAP OSS Master Glossary}}}
+\fancyhead[R]{\textcolor{sapgrey}{v1.2.0 | April 2026}}
+\fancyfoot[C]{\thepage}
+\fancyfoot[R]{\textcolor{pathcolor}{\scriptsize Code-Mapped Edition}}
+\renewcommand{\headrulewidth}{0.4pt}
+
+\hypersetup{
+    colorlinks=true,
+    linkcolor=sapblue,
+    urlcolor=sapblue,
+}
+
+% --- Metadata ----------------------------------------------------------------
+\title{\vspace{-2em}\Large SAP OSS Platform \\
+       \textbf{Master Glossary} \\[0.4em]
+       \large Business Language $\leftrightarrow$ Code Reality Mapping \\
+       Aligned with \texttt{docs/schema/registry.json} v1.2.0}
+\author{SAP-OSS Documentation Working Group}
+\date{April 2026}
+
+\begin{document}
+\maketitle
+
+\chapter*{Document Purpose}
+\addcontentsline{toc}{chapter}{Document Purpose}
+
+This glossary provides the \textbf{single source of truth} for terminology used
+across all four SAP OSS specification documents, with \textbf{canonical schema paths}
+that bridge business language to code reality.
+
+\begin{mdframed}[style=schemabox]
+\textbf{Schema Path Legend:}
+\begin{itemize}[nosep]
+  \item \schemapath{domain/schema.v1/field} --- Full canonical path
+  \item \enumval{ENUM\_VALUE} --- Enumeration value from \texttt{enums.yaml}
+  \item \fieldref{.field.path} --- Relative field within schema
+\end{itemize}
+\end{mdframed}
+
+\vspace{3mm}
+
+\textbf{Specifications Covered:}
+\begin{itemize}
+  \item Arabic AP Invoice Processing Specification
+  \item Trial Balance Review Specification
+  \item Simula Training Data Framework Specification
+  \item Regulations and AI Governance Specification
+\end{itemize}
+
+\paragraph{Validation.} Run \texttt{python3 docs/schema/validate.py --registry-check}
+to verify schema integrity.
+
+\tableofcontents
+\newpage
+
+% =============================================================================
+\chapter{Geographic and Jurisdictional Terms}
+% =============================================================================
+
+\section{Countries}
+
+\begin{longtable}{@{}p{1.5cm}p{2.5cm}p{2cm}p{6cm}@{}}
+\toprule
+\textbf{Code} & \textbf{Name} & \textbf{Currency} & \textbf{Canonical Schema Path} \\
+\midrule
+\endhead
+\enumval{SA} & Saudi Arabia & SAR & \schemapath{arabic/invoice.v1/vendor\_country == "SA"} \\
+\enumval{EG} & Egypt & EGP & \schemapath{arabic/invoice.v1/vendor\_country == "EG"} \\
+\enumval{BH} & Bahrain & BHD & \schemapath{arabic/invoice.v1/vendor\_country == "BH"} \\
+\enumval{QA} & Qatar & QAR & \schemapath{arabic/invoice.v1/vendor\_country == "QA"} \\
+\bottomrule
+\caption{Countries from \schemapath{common/enums.yaml\#/countries}}
+\end{longtable}
+
+\section{Tax Authorities}
+
+\begin{longtable}{@{}p{2cm}p{5cm}p{5cm}@{}}
+\toprule
+\textbf{Code} & \textbf{Full Name} & \textbf{Canonical Schema Path} \\
+\midrule
+\endhead
+\enumval{ZATCA} & Zakat, Tax and Customs Authority & \schemapath{arabic/invoice.v1/tax\_authority == "ZATCA"} \\
+\enumval{ETA} & Egyptian Tax Authority & \schemapath{arabic/invoice.v1/tax\_authority == "ETA"} \\
+\enumval{NBR} & National Bureau for Revenue & \schemapath{arabic/invoice.v1/tax\_authority == "NBR"} \\
+\enumval{QTA} & Qatar Tax Authority & \schemapath{arabic/invoice.v1/tax\_authority == "QTA"} \\
+\bottomrule
+\caption{Tax authorities from \schemapath{common/enums.yaml\#/tax\_authorities}}
+\end{longtable}
+
+% =============================================================================
+\chapter{VAT and Tax Classification Terms}
+% =============================================================================
+
+\section{VAT Categories}
+
+\begin{longtable}{@{}p{1.5cm}p{3cm}p{7.5cm}@{}}
+\toprule
+\textbf{Code} & \textbf{Business Name} & \textbf{Canonical Schema Path} \\
+\midrule
+\endhead
+\enumval{FI} & Full Tax Invoice & \schemapath{arabic/vat-checklist.v1/vat\_category == "FI"} \\
+ & & \footnotesize Invoice amount $\geq$ SI/FI threshold \\[3pt]
+\enumval{SI} & Simplified Invoice & \schemapath{arabic/vat-checklist.v1/vat\_category == "SI"} \\
+ & & \footnotesize Invoice amount $<$ SI/FI threshold \\[3pt]
+\enumval{ZR} & Zero Rated & \schemapath{arabic/vat-checklist.v1/vat\_category == "ZR"} \\
+ & & \footnotesize VAT at 0\% (transport, food, healthcare) \\[3pt]
+\enumval{EX} & Exempt & \schemapath{arabic/vat-checklist.v1/vat\_category == "EX"} \\
+ & & \footnotesize Real estate, financial services \\[3pt]
+\enumval{RC} & Reverse Charge & \schemapath{arabic/vat-checklist.v1/vat\_category == "RC"} \\
+ & & \footnotesize Government counterparty \\[3pt]
+\enumval{UR} & Unregistered Vendor & \schemapath{arabic/vat-checklist.v1/vat\_category == "UR"} \\
+ & & \footnotesize Supplier not VAT-registered \\[3pt]
+\enumval{TCN} & Tax Credit Note & \schemapath{arabic/vat-checklist.v1/vat\_category == "TCN"} \\
+ & & \footnotesize Negative-amount adjustment \\[3pt]
+\enumval{CBR} & Cross-Border & \schemapath{arabic/vat-checklist.v1/vat\_category == "CBR"} \\
+ & & \footnotesize Routed via GBS APU CBR team \\[3pt]
+\enumval{OS} & Out of Scope & \schemapath{arabic/vat-checklist.v1/vat\_category == "OS"} \\
+ & & \footnotesize Pre-Jan 2019, MPV vouchers \\[3pt]
+\enumval{OTHER} & Other / Unknown & \schemapath{arabic/vat-checklist.v1/vat\_category == "OTHER"} \\
+\bottomrule
+\caption{VAT categories from \schemapath{common/enums.yaml\#/vat\_category}}
+\end{longtable}
+
+\section{VAT Engine Verdicts}
+
+\begin{longtable}{@{}p{2cm}p{4cm}p{6cm}@{}}
+\toprule
+\textbf{Verdict} & \textbf{Business Meaning} & \textbf{Canonical Schema Path} \\
+\midrule
+\endhead
+\enumval{RELEASE} & Approved for posting & \schemapath{arabic/vat-checklist.v1/verdict == "RELEASE"} \\
+ & & \footnotesize All rules passed, proceed to payment \\[3pt]
+\enumval{HOLD} & Requires human review & \schemapath{arabic/vat-checklist.v1/verdict == "HOLD"} \\
+ & & \footnotesize One or more rules failed \\[3pt]
+\enumval{REJECT} & Rejected permanently & \schemapath{arabic/vat-checklist.v1/verdict == "REJECT"} \\
+ & & \footnotesize Unrecoverable error \\
+\bottomrule
+\caption{VAT verdicts from \schemapath{common/enums.yaml\#/verdict}}
+\end{longtable}
+
+% =============================================================================
+\chapter{Invoice and Document Terms}
+% =============================================================================
+
+\section{Invoice Types}
+
+\begin{longtable}{@{}p{3cm}p{3cm}p{6cm}@{}}
+\toprule
+\textbf{Type} & \textbf{Business Use} & \textbf{Canonical Schema Path} \\
+\midrule
+\endhead
+\enumval{STANDARD} & Normal invoice & \schemapath{arabic/invoice.v1/invoice\_type == "STANDARD"} \\
+\enumval{CREDIT\_NOTE} & Negative adjustment & \schemapath{arabic/invoice.v1/invoice\_type == "CREDIT\_NOTE"} \\
+\enumval{DEBIT\_NOTE} & Positive adjustment & \schemapath{arabic/invoice.v1/invoice\_type == "DEBIT\_NOTE"} \\
+\enumval{PROFORMA} & Preliminary & \schemapath{arabic/invoice.v1/invoice\_type == "PROFORMA"} \\
+\enumval{SELF\_BILLING} & Buyer-generated & \schemapath{arabic/invoice.v1/invoice\_type == "SELF\_BILLING"} \\
+\bottomrule
+\caption{Invoice types from \schemapath{common/enums.yaml\#/invoice\_type}}
+\end{longtable}
+
+\section{Document Formats}
+
+\begin{longtable}{@{}p{3.5cm}p{3cm}p{5.5cm}@{}}
+\toprule
+\textbf{Format} & \textbf{Description} & \textbf{Canonical Schema Path} \\
+\midrule
+\endhead
+\enumval{PDF} & Born-digital PDF & \schemapath{arabic/ocr-result.v1/source\_format == "PDF"} \\
+\enumval{IMAGE\_SCAN} & Scanned image & \schemapath{arabic/ocr-result.v1/source\_format == "IMAGE\_SCAN"} \\
+\enumval{ELECTRONIC\_XML} & ZATCA/ETA XML & \schemapath{arabic/ocr-result.v1/source\_format == "ELECTRONIC\_XML"} \\
+\enumval{ELECTRONIC\_JSON} & Structured JSON & \schemapath{arabic/ocr-result.v1/source\_format == "ELECTRONIC\_JSON"} \\
+\bottomrule
+\caption{Document formats from \schemapath{common/enums.yaml\#/document\_format}}
+\end{longtable}
+
+\section{Invoice Field Mappings}
+
+\begin{longtable}{@{}p{3cm}p{4cm}p{5cm}@{}}
+\toprule
+\textbf{Business Term} & \textbf{Schema Field} & \textbf{Canonical Path} \\
+\midrule
+\endhead
+Invoice Number & \fieldref{invoice\_number} & \schemapath{arabic/invoice.v1/invoice\_number} \\
+Invoice Date & \fieldref{invoice\_date} & \schemapath{arabic/invoice.v1/invoice\_date} \\
+Vendor Name & \fieldref{vendor\_name} & \schemapath{arabic/invoice.v1/vendor\_name} \\
+Vendor TIN & \fieldref{vendor\_tin} & \schemapath{arabic/invoice.v1/vendor\_tin} \\
+Total Amount & \fieldref{total\_amount} & \schemapath{arabic/invoice.v1/total\_amount} \\
+VAT Amount & \fieldref{vat\_amount} & \schemapath{arabic/invoice.v1/vat\_amount} \\
+Currency & \fieldref{currency} & \schemapath{arabic/invoice.v1/currency} \\
+PO Number & \fieldref{po\_number} & \schemapath{arabic/invoice.v1/po\_number} \\
+\bottomrule
+\caption{Invoice field mappings to \schemapath{arabic/invoice.schema.json}}
+\end{longtable}
+
+% =============================================================================
+\chapter{Workflow and Status Terms}
+% =============================================================================
+
+\section{Workflow Status Values}
+
+\begin{longtable}{@{}p{3cm}p{3.5cm}p{5.5cm}@{}}
+\toprule
+\textbf{Status} & \textbf{Business Meaning} & \textbf{Canonical Schema Path} \\
+\midrule
+\endhead
+\enumval{DRAFT} & Not yet submitted & \schemapath{arabic/invoice.v1/status == "DRAFT"} \\
+\enumval{PENDING\_REVIEW} & Awaiting review & \schemapath{arabic/invoice.v1/status == "PENDING\_REVIEW"} \\
+\enumval{IN\_REVIEW} & Being reviewed & \schemapath{arabic/invoice.v1/status == "IN\_REVIEW"} \\
+\enumval{APPROVED} & Ready to post & \schemapath{arabic/invoice.v1/status == "APPROVED"} \\
+\enumval{REJECTED} & Permanently rejected & \schemapath{arabic/invoice.v1/status == "REJECTED"} \\
+\enumval{ESCALATED} & Escalated to supervisor & \schemapath{arabic/invoice.v1/status == "ESCALATED"} \\
+\enumval{ON\_HOLD} & Temporarily suspended & \schemapath{arabic/invoice.v1/status == "ON\_HOLD"} \\
+\enumval{COMPLETED} & Successfully posted & \schemapath{arabic/invoice.v1/status == "COMPLETED"} \\
+\bottomrule
+\caption{Workflow status from \schemapath{common/enums.yaml\#/workflow\_status}}
+\end{longtable}
+
+\section{Checklist Rule Results}
+
+\begin{longtable}{@{}p{2cm}p{4cm}p{6cm}@{}}
+\toprule
+\textbf{Result} & \textbf{Business Meaning} & \textbf{Canonical Schema Path} \\
+\midrule
+\endhead
+\enumval{Y} & Rule passed & \schemapath{arabic/vat-checklist.v1/rules[*]/result == "Y"} \\
+\enumval{N} & Rule failed & \schemapath{arabic/vat-checklist.v1/rules[*]/result == "N"} \\
+\enumval{NA} & Rule not applicable & \schemapath{arabic/vat-checklist.v1/rules[*]/result == "NA"} \\
+\bottomrule
+\caption{Checklist results from \schemapath{common/enums.yaml\#/checklist\_result}}
+\end{longtable}
+
+% =============================================================================
+\chapter{Trial Balance Terms}
+% =============================================================================
+
+\section{Account Categories}
+
+\begin{longtable}{@{}p{3cm}p{3.5cm}p{5.5cm}@{}}
+\toprule
+\textbf{Category} & \textbf{Normal Balance} & \textbf{Canonical Schema Path} \\
+\midrule
+\endhead
+\enumval{ASSET} & Debit & \schemapath{tb/tb-extract.v1/accounts[*]/category == "ASSET"} \\
+\enumval{LIABILITY} & Credit & \schemapath{tb/tb-extract.v1/accounts[*]/category == "LIABILITY"} \\
+\enumval{EQUITY} & Credit & \schemapath{tb/tb-extract.v1/accounts[*]/category == "EQUITY"} \\
+\enumval{REVENUE} & Credit & \schemapath{tb/tb-extract.v1/accounts[*]/category == "REVENUE"} \\
+\enumval{EXPENSE} & Debit & \schemapath{tb/tb-extract.v1/accounts[*]/category == "EXPENSE"} \\
+\enumval{INTERCOMPANY} & Varies & \schemapath{tb/tb-extract.v1/accounts[*]/category == "INTERCOMPANY"} \\
+\bottomrule
+\caption{Account categories from \schemapath{common/enums.yaml\#/account\_category}}
+\end{longtable}
+
+\section{Variance Flags}
+
+\begin{longtable}{@{}p{3cm}p{3.5cm}p{5.5cm}@{}}
+\toprule
+\textbf{Flag} & \textbf{Business Trigger} & \textbf{Canonical Schema Path} \\
+\midrule
+\endhead
+\enumval{PERIOD\_SPIKE} & $>$30\% MoM change & \schemapath{tb/variance-record.v1/flags[] contains "PERIOD\_SPIKE"} \\
+\enumval{SIGN\_FLIP} & Balance changed sign & \schemapath{tb/variance-record.v1/flags[] contains "SIGN\_FLIP"} \\
+\enumval{NEW\_ACCOUNT} & Not in prior period & \schemapath{tb/variance-record.v1/flags[] contains "NEW\_ACCOUNT"} \\
+\enumval{STALE\_BALANCE} & No movement 90+ days & \schemapath{tb/variance-record.v1/flags[] contains "STALE\_BALANCE"} \\
+\bottomrule
+\caption{Variance flags from \schemapath{common/enums.yaml\#/variance\_flag}}
+\end{longtable}
+
+\section{Decision Points}
+
+\begin{longtable}{@{}p{2cm}p{4cm}p{6cm}@{}}
+\toprule
+\textbf{ID} & \textbf{Decision Question} & \textbf{Canonical Schema Path} \\
+\midrule
+\endhead
+\enumval{DP-001} & Material variance? & \schemapath{tb/decision-point.v1/id == "DP-001"} \\
+\enumval{DP-002} & Journal posted? & \schemapath{tb/decision-point.v1/id == "DP-002"} \\
+\enumval{DP-003} & Further investigation? & \schemapath{tb/decision-point.v1/id == "DP-003"} \\
+\enumval{DP-004} & Confirmation received? & \schemapath{tb/decision-point.v1/id == "DP-004"} \\
+\enumval{DP-005} & Unexplained variance? & \schemapath{tb/decision-point.v1/id == "DP-005"} \\
+\bottomrule
+\caption{Decision points from \schemapath{tb/decision-point.schema.json}}
+\end{longtable}
+
+\section{TB Field Mappings}
+
+\begin{longtable}{@{}p{3cm}p{4cm}p{5cm}@{}}
+\toprule
+\textbf{Business Term} & \textbf{Schema Field} & \textbf{Canonical Path} \\
+\midrule
+\endhead
+Entity Code & \fieldref{entity\_code} & \schemapath{tb/tb-extract.v1/entity\_code} \\
+Period & \fieldref{period} & \schemapath{tb/tb-extract.v1/period} \\
+Account Code & \fieldref{account\_code} & \schemapath{tb/tb-extract.v1/accounts[*]/code} \\
+Opening Balance & \fieldref{opening\_balance} & \schemapath{tb/tb-extract.v1/accounts[*]/opening} \\
+Closing Balance & \fieldref{closing\_balance} & \schemapath{tb/tb-extract.v1/accounts[*]/closing} \\
+Variance & \fieldref{variance} & \schemapath{tb/variance-record.v1/variance\_amount} \\
+Commentary & \fieldref{commentary} & \schemapath{tb/commentary-draft.v1/text} \\
+\bottomrule
+\caption{TB field mappings to \schemapath{tb/*.schema.json}}
+\end{longtable}
+
+% =============================================================================
+\chapter{Simula Training Data Terms}
+% =============================================================================
+
+\section{Taxonomy Node Types}
+
+\begin{longtable}{@{}p{2cm}p{4cm}p{6cm}@{}}
+\toprule
+\textbf{Type} & \textbf{Algorithm Role} & \textbf{Canonical Schema Path} \\
+\midrule
+\endhead
+\enumval{ROOT} & Top-level anchor & \schemapath{simula/taxonomy.v1/nodes[*]/type == "ROOT"} \\
+\enumval{FACTOR} & BFS expansion node & \schemapath{simula/taxonomy.v1/nodes[*]/type == "FACTOR"} \\
+\enumval{LEAF} & Training anchor & \schemapath{simula/taxonomy.v1/nodes[*]/type == "LEAF"} \\
+\bottomrule
+\caption{Node types from \schemapath{common/enums.yaml\#/taxonomy\_node\_type}}
+\end{longtable}
+
+\section{Complexity Levels}
+
+\begin{longtable}{@{}p{2cm}p{2cm}p{3cm}p{4.5cm}@{}}
+\toprule
+\textbf{Level} & \textbf{Range} & \textbf{SQL Features} & \textbf{Canonical Schema Path} \\
+\midrule
+\endhead
+\enumval{EASY} & $c < 0.3$ & Single table & \schemapath{simula/training-example.v1/complexity == "EASY"} \\
+\enumval{MEDIUM} & $0.3 \leq c < 0.7$ & Joins, agg & \schemapath{simula/training-example.v1/complexity == "MEDIUM"} \\
+\enumval{HARD} & $c \geq 0.7$ & CTEs, window & \schemapath{simula/training-example.v1/complexity == "HARD"} \\
+\bottomrule
+\caption{Complexity from \schemapath{common/enums.yaml\#/complexity\_level}}
+\end{longtable}
+
+\section{Critic Verdicts}
+
+\begin{longtable}{@{}p{2cm}p{4cm}p{6cm}@{}}
+\toprule
+\textbf{Verdict} & \textbf{Quality Gate} & \textbf{Canonical Schema Path} \\
+\midrule
+\endhead
+\enumval{ACCEPT} & Passes QC & \schemapath{simula/training-example.v1/critic\_verdict == "ACCEPT"} \\
+\enumval{REVISE} & Needs modification & \schemapath{simula/training-example.v1/critic\_verdict == "REVISE"} \\
+\enumval{REJECT} & Fails QC & \schemapath{simula/training-example.v1/critic\_verdict == "REJECT"} \\
+\bottomrule
+\caption{Critic verdicts from \schemapath{common/enums.yaml\#/critic\_verdict}}
+\end{longtable}
+
+% =============================================================================
+\chapter{Regulations and Compliance Terms}
+% =============================================================================
+
+\section{Requirement Status}
+
+\begin{longtable}{@{}p{2.5cm}p{3.5cm}p{6cm}@{}}
+\toprule
+\textbf{Status} & \textbf{Compliance State} & \textbf{Canonical Schema Path} \\
+\midrule
+\endhead
+\enumval{implemented} & Fully compliant & \schemapath{regulations/requirement.v1/status == "implemented"} \\
+\enumval{partial} & Gaps documented & \schemapath{regulations/requirement.v1/status == "partial"} \\
+\enumval{gap} & Not implemented & \schemapath{regulations/requirement.v1/status == "gap"} \\
+\enumval{na} & Not applicable & \schemapath{regulations/requirement.v1/status == "na"} \\
+\bottomrule
+\caption{Requirement status from \schemapath{common/enums.yaml\#/requirement\_status}}
+\end{longtable}
+
+\section{MAS MGF Four Pillars}
+
+\begin{longtable}{@{}p{1cm}p{3.5cm}p{7.5cm}@{}}
+\toprule
+\textbf{ID} & \textbf{Pillar Name} & \textbf{Canonical Schema Path} \\
+\midrule
+\endhead
+P1 & Assess \& Bound Risks & \schemapath{regulations/requirement.v1/pillar == "P1"} \\
+ & & \footnotesize MCP tool allow-list, reversibility, autonomy bounds \\[3pt]
+P2 & Human Accountability & \schemapath{regulations/requirement.v1/pillar == "P2"} \\
+ & & \footnotesize Approval checkpoints, lifecycle responsibilities \\[3pt]
+P3 & Technical Controls & \schemapath{regulations/requirement.v1/pillar == "P3"} \\
+ & & \footnotesize Monitoring, testing, conformance tools \\[3pt]
+P4 & End-User Responsibility & \schemapath{regulations/requirement.v1/pillar == "P4"} \\
+ & & \footnotesize User training, automation bias awareness \\
+\bottomrule
+\caption{MAS MGF pillars from \schemapath{regulations/requirement.schema.json}}
+\end{longtable}
+
+\section{Agent Identity Fields}
+
+\begin{longtable}{@{}p{3cm}p{4cm}p{5cm}@{}}
+\toprule
+\textbf{Business Term} & \textbf{Schema Field} & \textbf{Canonical Path} \\
+\midrule
+\endhead
+Agent ID & \fieldref{agent\_id} & \schemapath{regulations/agent-identity.v1/agent\_id} \\
+Agent Name & \fieldref{agent\_name} & \schemapath{regulations/agent-identity.v1/agent\_name} \\
+Model Provider & \fieldref{model\_provider} & \schemapath{regulations/agent-identity.v1/model\_provider} \\
+Model Version & \fieldref{model\_version} & \schemapath{regulations/agent-identity.v1/model\_version} \\
+Trace ID & \fieldref{trace\_id} & \schemapath{regulations/agent-identity.v1/trace\_id} \\
+Session ID & \fieldref{session\_id} & \schemapath{regulations/agent-identity.v1/session\_id} \\
+\bottomrule
+\caption{Identity fields from \schemapath{regulations/agent-identity.schema.json}}
+\end{longtable}
+
+% =============================================================================
+\chapter{Schema Registry Quick Reference}
+% =============================================================================
+
+\section{Domain Schema Paths}
+
+\begin{longtable}{@{}p{3cm}p{4cm}p{5cm}@{}}
+\toprule
+\textbf{Domain} & \textbf{Schema ID} & \textbf{Full Path} \\
+\midrule
+\endhead
+\multicolumn{3}{l}{\textbf{Arabic AP}} \\
+& invoice & \schemapath{arabic/invoice.schema.json} \\
+& vat-checklist & \schemapath{arabic/vat-checklist.schema.json} \\
+& vendor & \schemapath{arabic/vendor.schema.json} \\
+& ocr-result & \schemapath{arabic/ocr-result.schema.json} \\
+\midrule
+\multicolumn{3}{l}{\textbf{Trial Balance}} \\
+& tb-extract & \schemapath{tb/tb-extract.schema.json} \\
+& pl-extract & \schemapath{tb/pl-extract.schema.json} \\
+& variance-record & \schemapath{tb/variance-record.schema.json} \\
+& commentary-draft & \schemapath{tb/commentary-draft.schema.json} \\
+& decision-point & \schemapath{tb/decision-point.schema.json} \\
+& entity-params & \schemapath{tb/entity-params.schema.json} \\
+\midrule
+\multicolumn{3}{l}{\textbf{Simula}} \\
+& taxonomy & \schemapath{simula/taxonomy.schema.json} \\
+& training-example & \schemapath{simula/training-example.schema.json} \\
+& hana-schema-entry & \schemapath{simula/hana-schema-entry.schema.json} \\
+& config & \schemapath{simula/config.schema.json} \\
+& meta-prompt & \schemapath{simula/meta-prompt.schema.json} \\
+\midrule
+\multicolumn{3}{l}{\textbf{Regulations}} \\
+& regulation & \schemapath{regulations/regulation.schema.json} \\
+& requirement & \schemapath{regulations/requirement.schema.json} \\
+& conformance-tool & \schemapath{regulations/conformance-tool.schema.json} \\
+& corpus & \schemapath{regulations/corpus.schema.json} \\
+& agent-identity & \schemapath{regulations/agent-identity.schema.json} \\
+& audit-event & \schemapath{regulations/audit-event.schema.json} \\
+\bottomrule
+\caption{Complete schema registry from \texttt{docs/schema/registry.json}}
+\end{longtable}
+
+\section{Validation Commands}
+
+\begin{mdframed}[style=schemabox]
+\begin{verbatim}
+# Check registry integrity
+python3 docs/schema/validate.py --registry-check
+
+# Validate specific field path
+python3 docs/schema/validate.py --domain arabic \
+    --schema invoice.schema.json \
+    --field vendor_country
+
+# Show all enum values
+python3 docs/schema/validate.py --list-enums
+\end{verbatim}
+\end{mdframed}
+
+\end{document}

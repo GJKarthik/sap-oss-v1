@@ -1,0 +1,170 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://sap-oss.github.io/schema/regulations/audit-event.schema.json",
+  "title": "Audit Event",
+  "description": "Schema for immutable audit events produced by agent actions (Chapter 10 §10.3, including Table 'Mandatory audit events by action type')",
+  "type": "object",
+  "required": [
+    "event_id",
+    "event_type",
+    "timestamp",
+    "request_identity",
+    "agent_identity",
+    "outcome"
+  ],
+  "properties": {
+    "event_id": {
+      "type": "string",
+      "description": "Unique audit event identifier (e.g., evt-20260418-567890)"
+    },
+    "event_type": {
+      "type": "string",
+      "enum": [
+        "agent_inference",
+        "agent_write",
+        "review_requested",
+        "review_approved",
+        "review_rejected",
+        "agent_error"
+      ],
+      "description": "Discriminator for the kind of audited action"
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO 8601 timestamp when the event was recorded"
+    },
+    "request_identity": {
+      "$ref": "https://sap-oss.github.io/schema/regulations/request-identity.schema.json"
+    },
+    "agent_identity": {
+      "$ref": "https://sap-oss.github.io/schema/regulations/agent-identity.schema.json"
+    },
+    "action": {
+      "type": "object",
+      "additionalProperties": true,
+      "properties": {
+        "action_type": {
+          "type": "string",
+          "description": "Action subtype label (e.g., variance_calculation)"
+        },
+        "entity_id": {
+          "type": "string",
+          "description": "Identifier of the entity acted upon"
+        },
+        "input_hash": {
+          "type": "string",
+          "description": "Hash of the inference input (e.g., sha256:...)"
+        },
+        "output_hash": {
+          "type": "string",
+          "description": "Hash of the inference output (e.g., sha256:...)"
+        }
+      },
+      "description": "Action payload; required fields are enforced per event_type via oneOf"
+    },
+    "approval_chain": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["approver_id", "approval_type", "timestamp"],
+        "properties": {
+          "approver_id": {
+            "type": "string",
+            "description": "Identifier of the approver"
+          },
+          "approval_type": {
+            "type": "string",
+            "description": "Approval type (e.g., implicit, explicit)"
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time",
+            "description": "ISO 8601 timestamp of the approval step"
+          }
+        }
+      },
+      "description": "Ordered chain of approval steps, if human-in-the-loop was invoked"
+    },
+    "outcome": {
+      "type": "object",
+      "required": ["status"],
+      "properties": {
+        "status": {
+          "type": "string",
+          "enum": ["success", "failure", "pending"],
+          "description": "Terminal outcome status of the action"
+        },
+        "duration_ms": {
+          "type": "integer",
+          "description": "Wall-clock duration of the action in milliseconds"
+        },
+        "tokens_used": {
+          "type": "integer",
+          "description": "Number of LLM tokens consumed by the action"
+        },
+        "error_code": {
+          "type": "string",
+          "description": "Error code if status is failure"
+        }
+      },
+      "description": "Execution outcome of the audited action"
+    }
+  },
+  "oneOf": [
+    {
+      "properties": {
+        "event_type": {"const": "agent_inference"},
+        "action": {
+          "type": "object",
+          "required": ["input_hash", "output_hash"]
+        }
+      }
+    },
+    {
+      "properties": {
+        "event_type": {"const": "agent_write"},
+        "action": {
+          "type": "object",
+          "required": ["entity_id", "before_hash", "after_hash"]
+        }
+      }
+    },
+    {
+      "properties": {
+        "event_type": {"const": "review_requested"},
+        "action": {
+          "type": "object",
+          "required": ["reviewer_id", "queue_id"]
+        }
+      }
+    },
+    {
+      "properties": {
+        "event_type": {"const": "review_approved"},
+        "action": {
+          "type": "object",
+          "required": ["approver_id", "decision", "rationale"]
+        }
+      }
+    },
+    {
+      "properties": {
+        "event_type": {"const": "review_rejected"},
+        "action": {
+          "type": "object",
+          "required": ["rejecter_id", "decision", "rationale"]
+        }
+      }
+    },
+    {
+      "properties": {
+        "event_type": {"const": "agent_error"},
+        "action": {
+          "type": "object",
+          "required": ["error_code", "stack_trace_hash"]
+        }
+      }
+    }
+  ]
+}

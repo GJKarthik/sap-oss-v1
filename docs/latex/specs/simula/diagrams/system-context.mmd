@@ -1,0 +1,33 @@
+---
+title: Simula System Context
+---
+flowchart LR
+    HANA[(SAP HANA<br/>Cloud)]
+    MCP[AI Core PAL<br/>MCP :8084]
+    EXT[Schema<br/>Extractor]
+    REG[(Schema<br/>Registry)]
+    LLM[vLLM TurboQuant<br/>:9180]
+    TAX[Taxonomy<br/>Builder]
+    GEN[Data<br/>Generator]
+    OUT[/Training Data<br/>.jsonl/]
+
+    HANA -->|SYS.TABLE_COLUMNS| MCP
+    MCP  -->|execute_sql| EXT
+    EXT  --> REG
+    REG  --> TAX
+    LLM  -.->|Best-of-N| TAX
+    TAX  --> GEN
+    LLM  -.->|Critic| GEN
+    GEN  --> OUT
+
+    classDef hana  fill:#D7F3E3,stroke:#34C759,color:#1D1D1F
+    classDef mcp   fill:#E8F0FC,stroke:#0064D7,color:#1D1D1F
+    classDef llm   fill:#F3E8FC,stroke:#AF52DE,color:#1D1D1F
+    classDef out   fill:#FFF4D6,stroke:#FF9500,color:#1D1D1F
+    classDef svc   fill:#F4F6F9,stroke:#636366,color:#1D1D1F
+
+    class HANA hana
+    class MCP mcp
+    class LLM llm
+    class OUT out
+    class EXT,REG,TAX,GEN svc

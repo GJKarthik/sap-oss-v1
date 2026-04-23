@@ -1,0 +1,336 @@
+# Arabic AP Specification Addendum v1.1
+# Addresses review issues from April 2026 Critical Review
+# This file contains machine-readable specifications that supplement the main spec
+
+version: "1.1.0"
+last_updated: "2026-04-18"
+addresses_review_issues:
+  - "2.1: OCR pilot design"
+  - "2.2: AI pipeline implementation details"
+  - "2.3: Stakeholder feedback collection mechanism"
+  - "2.4: JSON-Logic expression examples for VAT rules"
+
+# =============================================================================
+# Section 2.1: OCR Pilot Design
+# Review Issue: "OCR thresholds calibrated on 3 documents...pilot not designed"
+# =============================================================================
+
+ocr_pilot:
+  objective: "Calibrate OCR confidence thresholds for production deployment"
+  
+  sample_size:
+    per_country:
+      SA: 50  # Saudi Arabia - minimum documents
+      EG: 50  # Egypt
+      BH: 50  # Bahrain  
+      QA: 50  # Qatar
+    total_minimum: 200
+    rationale: "50 documents per country provides 95% confidence interval width of ±14% for threshold estimates"
+    
+  document_selection:
+    criteria:
+      - "Representative of actual invoice population"
+      - "Mix of tax invoice (60%) and simplified invoice (40%)"
+      - "Mix of scan quality: good (40%), medium (40%), poor (20%)"
+      - "Mix of electronic (30%) and paper-digitized (70%)"
+    stratification:
+      by_supplier_type:
+        CORPORATE: 50%
+        INDIVIDUAL: 20%
+        GOVERNMENT: 20%
+        OTHER: 10%
+        
+  timeline:
+    week_1: "Document collection and ground-truth annotation"
+    week_2: "OCR processing and confidence score collection"
+    week_3: "Threshold analysis and calibration"
+    week_4: "Validation with held-out set (20% of documents)"
+    total_duration: "4 weeks"
+    
+  success_criteria:
+    threshold_calibration:
+      metric: "Confidence interval width for optimal threshold"
+      target: "≤10% at 95% confidence"
+    classification_accuracy:
+      metric: "Accuracy of accept/review/reject classification"
+      target: "≥85% agreement with human judgment"
+    false_rejection_rate:
+      metric: "Rate of correctly readable documents rejected"
+      target: "≤5%"
+      
+  threshold_analysis:
+    method: "ROC curve analysis with human-annotated quality labels"
+    default_thresholds:
+      reject: 30  # preliminary - to be calibrated
+      review: 55  # preliminary - to be calibrated
+    analysis_outputs:
+      - "ROC curves per country"
+      - "Optimal threshold recommendations"
+      - "Confidence intervals for thresholds"
+      - "Per-country adjustment factors"
+      
+  pilot_owner: "GFS Arabic AP Team Lead"
+  pilot_start_date: "TBD - contingent on document collection"
+
+# =============================================================================
+# Section 2.2: AI Pipeline Implementation Details
+# Review Issue: "AI pipeline remains unspecified"
+# =============================================================================
+
+ai_pipeline:
+  structured_output:
+    tooling: "OpenAI-compatible function calling via vLLM"
+    provider: "vLLM TurboQuant (local deployment)"
+    endpoint: "http://localhost:9180/v1/chat/completions"
+    model: "Qwen/Qwen3.5-35B"
+    
+  schema_serialization:
+    method: "JSON Schema subset injection"
+    max_schema_tokens: 2000
+    nested_object_handling: "Flatten to depth 2, reference deeper objects by ID"
+    example_prompt_template: |
+      Extract the invoice data from the following text into a structured JSON object.
+      
+      JSON Schema (required fields marked with *):
+      {schema_subset}
+      
+      Rules:
+      - If a field is not present in the text, omit it from the output
+      - Do not hallucinate or infer values not explicitly stated
+      - For Arabic text, preserve original where schema expects Arabic fields
+      - For amounts, extract numeric values without currency symbols
+      
+      Text to process:
+      {ocr_text}
+      
+      Output JSON:
+      
+  retry_strategy:
+    max_retries: 3
+    retry_conditions:
+      - "JSON parse failure"
+      - "Schema validation failure"
+      - "Timeout (>30s response time)"
+    backoff:
+      type: "exponential"
+      base_delay_ms: 1000
+      max_delay_ms: 10000
+    on_exhausted_retries: "queue_for_human_review"
+    
+  hallucination_detection:
+    methods:
+      - name: "schema_validation"
+        description: "Reject outputs that fail JSON Schema validation"
+        action: "retry"
+      - name: "field_presence_check"
+        description: "Flag if output contains fields not in source text"
+        action: "flag_for_review"
+      - name: "amount_sanity_check"
+        description: "Flag if amounts exceed 10x typical range for supplier"
+        action: "flag_for_review"
+      - name: "date_future_check"
+        description: "Reject dates more than 30 days in future"
+        action: "reject"
+        
+  response_validation:
+    json_parse:
+      strict: true
+      allow_trailing_comma: false
+    schema_validation:
+      validator: "jsonschema Draft7Validator"
+      schema_ref: "docs/schema/arabic/invoice.schema.json"
+    field_type_coercion:
+      enabled: true
+      rules:
+        - "string amounts → number"
+        - "date strings → ISO 8601"
+        
+  performance_requirements:
+    p95_latency_ms: 5000
+    p99_latency_ms: 10000
+    throughput_target: "100 invoices/hour per worker"
+    
+# =============================================================================
+# Section 2.3: Stakeholder Feedback Collection Mechanism  
+# Review Issue: "No mechanism to collect stakeholder feedback"
+# =============================================================================
+
+stakeholder_feedback:
+  session_5_testing:
+    participant_requirements:
+      minimum_count: 5
+      roles:
+        - "GFS Analyst (2)"
+        - "Country Finance Lead (2)"
+        - "IT/Compliance representative (1)"
+      selection_criteria:
+        - "Regular users of current AP process"
+        - "Familiarity with VAT requirements"
+        - "Mix of technical and business expertise"
+        
+  feedback_collection:
+    interface: "Structured feedback form embedded in review UI"
+    form_fields:
+      - name: "extraction_accuracy"
+        type: "rating_1_5"
+        question: "How accurate was the extracted invoice data?"
+      - name: "extraction_completeness"
+        type: "rating_1_5"
+        question: "Were all relevant fields extracted?"
+      - name: "edit_required"
+        type: "boolean"
+        question: "Did you need to edit any extracted values?"
+      - name: "fields_edited"
+        type: "multi_select"
+        options: ["seller_name", "buyer_name", "amounts", "tax_id", "dates", "line_items", "other"]
+      - name: "time_saved"
+        type: "rating_1_5"
+        question: "How much time did AI assistance save compared to manual entry?"
+      - name: "overall_quality"
+        type: "rating_1_5"
+        question: "Overall quality of AI extraction"
+      - name: "comments"
+        type: "freetext"
+        question: "Additional comments or issues observed"
+        
+  metrics_aggregation:
+    human_approval_rate:
+      definition: "Percentage of invoices accepted without edit"
+      target: "≥90%"
+      calculation: "COUNT(edit_required=false) / COUNT(*)"
+    zero_edit_rate:
+      definition: "Percentage of invoices requiring no field corrections"
+      target: "≥85%"
+      calculation: "COUNT(fields_edited IS EMPTY) / COUNT(*)"
+    average_quality_score:
+      definition: "Mean of overall_quality ratings"
+      target: "≥4.0 out of 5.0"
+    net_promoter_score:
+      definition: "NPS based on 'would you recommend' question"
+      target: "≥50"
+      
+  escalation_path:
+    if_targets_missed:
+      - threshold: "human_approval_rate < 85%"
+        action: "Escalate to project sponsor; pause rollout"
+      - threshold: "85% ≤ human_approval_rate < 90%"
+        action: "Continue with additional training focus areas"
+      - threshold: "human_approval_rate ≥ 90%"
+        action: "Proceed to production rollout"
+        
+  feedback_review_cadence: "Weekly during pilot, monthly post-rollout"
+  feedback_owner: "Product Owner, Arabic AP Workstream"
+
+# =============================================================================
+# Section 2.4: JSON-Logic Expression Examples for VAT Rules
+# Review Issue: "VAT engine rule format is underspecified"
+# =============================================================================
+
+vat_rules:
+  format_specification:
+    predicate_types:
+      - json_logic: "JSON-Logic expression (https://jsonlogic.com/)"
+      - named_helper: "Reference to registered helper function"
+      
+  json_logic_examples:
+    - rule_id: "VAT-SA-SI-001"
+      rule_name: "Saudi SI/FI Boundary Check"
+      description: "Determine if invoice qualifies as Simplified Invoice (≤1000 SAR)"
+      predicate:
+        type: "json_logic"
+        expression:
+          "<=":
+            - {"var": "totals.gross"}
+            - 1000
+      context:
+        country: "SA"
+        applies_to: "si_fi_determination"
+        
+    - rule_id: "VAT-SA-FI-002"
+      rule_name: "Full Tax Invoice Seller TIN Required"
+      description: "Full Tax Invoices must have seller VAT registration number"
+      predicate:
+        type: "json_logic"
+        expression:
+          "if":
+            - {"==": [{"var": "si_fi_determination.determination"}, "FI"]}
+            - {"!!": {"var": "seller.tax_id"}}
+            - true
+      context:
+        country: "SA"
+        applies_to: "vat_compliance"
+        severity: "critical"
+        
+    - rule_id: "VAT-ALL-ZR-001"
+      rule_name: "Zero-Rate Export Check"
+      description: "Zero-rated if export invoice (buyer country different from seller)"
+      predicate:
+        type: "json_logic"
+        expression:
+          "and":
+            - {"!=": [{"var": "seller.country"}, {"var": "buyer.country"}]}
+            - {"==": [{"var": "vat_category"}, "ZR"]}
+      context:
+        applies_to: "vat_category_validation"
+        
+    - rule_id: "VAT-BH-TH-001"
+      rule_name: "Bahrain SI/FI Boundary Check"
+      description: "Bahrain uses BHD 500 threshold"
+      predicate:
+        type: "json_logic"
+        expression:
+          "<=":
+            - {"var": "totals.gross"}
+            - 500
+      context:
+        country: "BH"
+        currency: "BHD"
+        threshold_source: "NBR VAT Guidelines Article 12"
+        
+    - rule_id: "VAT-SA-RC-001"
+      rule_name: "Reverse Charge Applicability"
+      description: "Reverse charge applies when non-resident supplier sells to KSA resident"
+      predicate:
+        type: "json_logic"
+        expression:
+          "and":
+            - {"==": [{"var": "buyer.country"}, "SA"]}
+            - {"!=": [{"var": "seller.country"}, "SA"]}
+            - {"==": [{"var": "supplier_type"}, "FOREIGN"]}
+      context:
+        country: "SA"
+        applies_to: "vat_category_determination"
+        result_if_true: "RC"
+        
+  named_helpers:
+    registry:
+      - name: "check_vat_registration_validity"
+        description: "Validate VAT registration number format and check against authority API"
+        parameters:
+          tax_id: "string - VAT registration number"
+          country: "string - ISO country code"
+        returns: "boolean - true if valid"
+        implementation_path: "src/intelligence/vat/helpers/registration_check.py"
+        
+      - name: "calculate_vat_amount"
+        description: "Calculate expected VAT based on rate and subtotal"
+        parameters:
+          subtotal: "number - invoice subtotal"
+          vat_rate_percent: "number - VAT rate as percentage"
+        returns: "number - expected VAT amount"
+        implementation_path: "src/intelligence/vat/helpers/calculations.py"
+        
+      - name: "lookup_activity_code_treatment"
+        description: "Determine VAT treatment based on business activity code"
+        parameters:
+          activity_code: "string - business activity classification"
+          country: "string - ISO country code"
+        returns: "string - VAT category (ZR, EX, FI, etc.)"
+        implementation_path: "src/intelligence/vat/helpers/activity_lookup.py"
+        
+  rule_evaluation:
+    engine: "json-logic-py"
+    version: ">=0.9.1"
+    execution_order: "Rules evaluated in sequence by rule_id"
+    short_circuit: true
+    audit_logging: true

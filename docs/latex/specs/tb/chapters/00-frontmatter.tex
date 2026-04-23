@@ -1,0 +1,55 @@
+\chapter*{Abstract}
+\addcontentsline{toc}{chapter}{Abstract}
+
+This specification defines the target-state implementation of Standard
+Chartered Bank's Trial Balance (TB) review process across all Legal
+Entities, Segment, and Group, together with the AI-augmented operating
+model sanctioned under the business case approved on 2025-12-14
+(requirement \texttt{TB-REQ-001}, author S1 Badrinath). The document
+captures the process as it is currently executed by the Global Financial
+Services (GFS) Analyst and the Head of Africa GFS under three governing
+End User Computing (EUC) controls, and specifies the automation
+envelope that replaces the manual variance analysis, commentary
+generation, and FORTM pack assembly.
+
+Three orthogonal workstreams are specified in full:
+
+\begin{itemize}
+  \item a \textbf{canonical TB corpus} of workflow, control, decision,
+        requirement, KPI, and glossary records, each validated against
+        a JSON Schema in \corpus\texttt{structured/schema/};
+  \item an \textbf{AI augmentation pipeline} that ingests
+        PSGL / S/4 extracts, performs statistical anomaly and materiality
+        detection (percentile-based rules in v1.0; machine-learning
+        methods scoped for v2.0, see Chapter~\ref{ch:future-ml}),
+        drafts variance commentaries with a vLLM-hosted model, and
+        generates the monthly FORTM pack narrative;
+  \item a \textbf{workflow and controls engine} that formalises the
+        28-state BPMN flow extracted from the GLO control narrative
+        and binds the three EUC controls (\texttt{EX/200/1353107/0001/000},
+        \texttt{EX/200/1579702/0001/000}, \texttt{EX/200/1579702/0002/000})
+        to explicit state transitions.
+\end{itemize}
+
+\paragraph{Reading order.} \Cref{ch:overview} situates the work and
+names the 234-entity scope; \cref{ch:schema} defines the normalised
+record types; \cref{ch:ai} covers the AI pipeline; \cref{ch:controls-engine}
+covers the variance and commentary engine; \cref{ch:workflow} covers
+the workflow and approval engine; \cref{ch:controls} specifies controls,
+testing, and acceptance; \cref{ch:references} is a traceability
+appendix linking every requirement to a source document and a structured
+record in \corpus\texttt{structured/}.
+
+\paragraph{Conventions.} Workflow state identifiers appear in
+\textsc{small caps}, for example \stateid{CHECK\_MATERIAL\_VARIANCES}.
+File paths are typeset in \texttt{monospace} and are relative to the
+repository root. Enum values in running text also appear in
+\textsc{small caps}; they are defined authoritatively in
+\corpus\texttt{structured/enums.yaml}. Month-end-relative timing is
+expressed as \texttt{M$\pm$n} where \texttt{n} is the number of working
+days from period close.
+
+\paragraph{Scope exclusion.} SAP / PeopleSoft integration detail and the
+BSS Risk Assessment (a sibling process covered by a separate business
+case) are \emph{not} specified here. The BSS RA source document is
+retained in the corpus for context only.

@@ -1,0 +1,40 @@
+\chapter{Source Analysis: Saudi VAT (ZATCA)}
+\label{ch:analysis-sa-vat}
+
+\section{Document Context}
+The \texttt{Saudi - OTP Entry processing...} (ZATCA) defines the rules for electronic invoicing (E-Invoicing) and simplified vs. full tax invoice criteria. This was processed into \texttt{structured/rules/ksa-vat-q3.yaml}.
+
+\section{Detailed Requirement Mapping}
+
+\begin{longtable}{p{5cm} p{5cm} p{5cm}}
+\caption{Saudi ZATCA: Source-to-Requirement Lineage} \\
+\toprule
+\textbf{Source Provision} & \textbf{Business Requirement} & \textbf{Technical Rule (Spec Ch. 8)} \\
+\midrule
+\endfirsthead
+\toprule
+\textbf{Source Provision} & \textbf{Business Requirement} & \textbf{Technical Rule (Spec Ch. 8)} \\
+\midrule
+\endhead
+Article 53(b): ``Simplified Tax Invoices are issued for transactions < 1,000 SAR.'' & \textbf{BR-VAT-SI:} Determination of Simplified vs Full invoice based on threshold. & Rule \texttt{VAT-SA-THRESHOLD}: \texttt{gross\_amount < 1000} \\
+\midrule
+Article 54: ``Full Tax Invoices must display the Buyer's VAT Registration Number.'' & \textbf{BR-VAT-FULL:} Mandatory TRN/TIN field extraction for Full invoices. & Rule \texttt{VAT-SA-MANDATORY}: \texttt{exists(buyer.trn)} \\
+\midrule
+Phase 2 (ZATCA Integration): ``Invoice must contain a Phase-2 QR code including the ECDSA signature.'' & \textbf{BR-VAT-QR:} Extraction and verification of ZATCA QR signatures. & \texttt{arabic-ap-spec} Ch. 10 (OCR Pilot: QR calibration). \\
+\bottomrule
+\end{longtable}
+
+\section{Machine-Readable Evidence (Fragment)}
+The following YAML extraction defines the logic evaluated by the VAT engine for Saudi Arabian invoices:
+
+\begin{lstlisting}[language=yamlx]
+domain: "ksa-vat"
+rules:
+  - id: "THRESHOLD_CHECK"
+    type: "classification"
+    predicate: "invoice.total_gross < 1000"
+    target_schema: "simplified_invoice"
+  - id: "TRN_CHECK"
+    type: "validation"
+    requirement: "buyer.trn must match ^3[0-9]{14}$"
+\end{lstlisting}

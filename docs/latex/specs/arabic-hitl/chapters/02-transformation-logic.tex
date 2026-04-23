@@ -1,0 +1,55 @@
+\chapter{Transformation Logic}
+\label{ch:transformation}
+
+\section{Compliance Lifecycle: Source to Evidence}
+The following diagram visualizes the value stream for requirements in the SAP OSS platform. It ensures that every line of code is anchored in a verified business mandate.
+
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}[
+    node distance=1.5cm,
+    auto,
+    block/.style={rectangle, draw, rounded corners, fill=sapmidnight!5, text width=8em, text centered, minimum height=3em, font=\scriptsize},
+    arrow/.style={->, >=latex, thick, sapmidnight}
+]
+    \node (source) [block] {\textbf{Source Material}\\(PDF/DOCX/XLS)};
+    \node (analyst) [block, right of=source, xshift=2.5cm] {\textbf{GFS Analyst}\\(Heuristic Extraction)};
+    \node (req) [block, right of=analyst, xshift=2.5cm] {\textbf{Business Req}\\(BR Catalogue)};
+    \node (spec) [block, below of=req, yshift=-1cm] {\textbf{Implementation Spec}\\(Ch. 12 Tasks)};
+    \node (test) [block, left of=spec, xshift=-2.5cm] {\textbf{Test Evidence}\\(Verification Blocks)};
+    \node (signoff) [block, left of=test, xshift=-2.5cm] {\textbf{HITL Sign-off}\\(Final Acceptance)};
+
+    \draw [arrow] (source) -- (analyst);
+    \draw [arrow] (analyst) -- (req);
+    \draw [arrow] (req) -- (spec);
+    \draw [arrow] (spec) -- (test);
+    \draw [arrow] (test) -- (signoff);
+\end{tikzpicture}
+\caption{The end-to-end compliance value stream.}
+\end{figure}
+
+\section{From PDF to Machine-Readable (YAML/JSON)}
+The transformation from narrative prose to technical enforcement uses a semi-automated "Ground Truth" process. \cref{tab:artifact-linkage} maps the raw sources to their corresponding machine-readable counterparts.
+
+\begin{table}[htbp]
+\centering
+\footnotesize
+\caption{Source Material to Machine-Readable Linkage}
+\label{tab:artifact-linkage}
+\begin{tabularx}{\textwidth}{@{}l X X@{}}
+\toprule
+\textbf{Source Material (Raw)} & \textbf{Machine-Readable Artifact} & \textbf{Registry Location} \\
+\midrule
+\texttt{Accounts Payable DOI.docx} & \texttt{bh-ap-doi.json} & \texttt{structured/policies/} \\
+\texttt{Saudi - OTP Entry...} & \texttt{ksa-vat-q3.yaml} & \texttt{structured/rules/} \\
+\texttt{Specification Addendum} & \texttt{spec-addendum.yaml} & \texttt{arabic/machine-readable/} \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\subsection{Extraction Methodology}
+\begin{enumerate}
+    \item \textbf{Heuristic Extraction:} Initial requirement identification by GFS Analysts based on domain knowledge.
+    \item \textbf{Schema Normalization:} Mapping requirements to the \texttt{invoice.schema.json} and \texttt{vat-checklist.schema.json} defined in the technical spec.
+    \item \textbf{Formalization:} Converting narrative rules (e.g., "Full tax invoice must contain TIN") into JSON-Logic predicates for automated enforcement.
+\end{enumerate}

@@ -1,0 +1,165 @@
+\contentsline {chapter}{\numberline {1}Executive Summary}{13}{chapter.1}%
+\contentsline {chapter}{Document status and purpose}{15}{chapter*.2}%
+\contentsline {paragraph}{In scope.}{16}{Item.3}%
+\contentsline {paragraph}{Out of scope.}{16}{Item.3}%
+\contentsline {paragraph}{Audience.}{16}{Item.3}%
+\contentsline {paragraph}{Relationship to other corpora.}{16}{Item.3}%
+\contentsline {chapter}{\numberline {2}Overview and corpus layout}{17}{chapter.2}%
+\contentsline {section}{\numberline {2.1}Why this corpus exists}{17}{section.2.1}%
+\contentsline {section}{\numberline {2.2}Three source classes}{18}{section.2.2}%
+\contentsline {section}{\numberline {2.3}Two conformance tools}{19}{section.2.3}%
+\contentsline {section}{\numberline {2.4}Corpus layout}{19}{section.2.4}%
+\contentsline {section}{\numberline {2.5}End-to-end traceability path}{20}{section.2.5}%
+\contentsline {section}{\numberline {2.6}What the validator enforces}{21}{section.2.6}%
+\contentsline {chapter}{\numberline {3}Canonical data schema}{23}{chapter.3}%
+\contentsline {section}{\numberline {3.1}Schema inventory}{23}{section.3.1}%
+\contentsline {section}{\numberline {3.2}Requirement record --- the linkage schema}{24}{section.3.2}%
+\contentsline {section}{\numberline {3.3}Conformance-tool record}{26}{section.3.3}%
+\contentsline {section}{\numberline {3.4}Enum vocabularies}{26}{section.3.4}%
+\contentsline {chapter}{\numberline {4}MAS Model AI Governance Framework for Agentic AI}{29}{chapter.4}%
+\contentsline {section}{\numberline {4.1}Source document}{29}{section.4.1}%
+\contentsline {section}{\numberline {4.2}Framework structure}{30}{section.4.2}%
+\contentsline {section}{\numberline {4.3}Pillar 1 --- Assess and bound the risks upfront}{30}{section.4.3}%
+\contentsline {section}{\numberline {4.4}Pillar 2 --- Make humans meaningfully accountable}{32}{section.4.4}%
+\contentsline {section}{\numberline {4.5}Pillar 3 --- Implement technical controls and processes}{33}{section.4.5}%
+\contentsline {section}{\numberline {4.6}Pillar 4 --- Enable end-user responsibility}{34}{section.4.6}%
+\contentsline {section}{\numberline {4.7}Coverage heat map}{35}{section.4.7}%
+\contentsline {chapter}{\numberline {5}2025 AI Agent Index}{37}{chapter.5}%
+\contentsline {section}{\numberline {5.1}Source document}{37}{section.5.1}%
+\contentsline {section}{\numberline {5.2}What it catalogues}{38}{section.5.2}%
+\contentsline {section}{\numberline {5.3}Headline finding for governance}{38}{section.5.3}%
+\contentsline {section}{\numberline {5.4}How we verify the transparency requirement}{39}{section.5.4}%
+\contentsline {chapter}{\numberline {6}Empirical evidence: Ju \& Aral (2026)}{41}{chapter.6}%
+\contentsline {section}{\numberline {6.1}Source document}{41}{section.6.1}%
+\contentsline {section}{\numberline {6.2}Study design}{42}{section.6.2}%
+\contentsline {section}{\numberline {6.3}Findings relevant to governance}{42}{section.6.3}%
+\contentsline {section}{\numberline {6.4}Requirements extracted}{43}{section.6.4}%
+\contentsline {section}{\numberline {6.5}Implementation in the corpus}{43}{section.6.5}%
+\contentsline {chapter}{\numberline {7}Conformance tooling}{45}{chapter.7}%
+\contentsline {section}{\numberline {7.1}Two complementary tools}{45}{section.7.1}%
+\contentsline {section}{\numberline {7.2}AI Verify 2.0}{45}{section.7.2}%
+\contentsline {section}{\numberline {7.3}Moonshot CI/CD 1.1.0}{46}{section.7.3}%
+\contentsline {section}{\numberline {7.4}Binding to requirement records}{47}{section.7.4}%
+\contentsline {chapter}{\numberline {8}References and traceability}{51}{chapter.8}%
+\contentsline {section}{\numberline {8.1}Source hashes (sha256)}{51}{section.8.1}%
+\contentsline {section}{\numberline {8.2}Structured records on disk}{51}{section.8.2}%
+\contentsline {section}{\numberline {8.3}Corpus index excerpt}{51}{section.8.3}%
+\contentsline {section}{\numberline {8.4}Consolidated traceability matrix}{53}{section.8.4}%
+\contentsline {section}{\numberline {8.5}Rebuild and revalidate}{55}{section.8.5}%
+\contentsline {section}{\numberline {8.6}Further resources}{55}{section.8.6}%
+\contentsline {section}{\numberline {8.7}Unified Schema Registry}{56}{section.8.7}%
+\contentsline {chapter}{\numberline {9}Capability Monitoring Specification}{59}{chapter.9}%
+\contentsline {section}{\numberline {9.1}Overview}{59}{section.9.1}%
+\contentsline {section}{\numberline {9.2}Architecture}{60}{section.9.2}%
+\contentsline {section}{\numberline {9.3}Metrics collection}{60}{section.9.3}%
+\contentsline {subsection}{\numberline {9.3.1}Required metrics}{60}{subsection.9.3.1}%
+\contentsline {subsection}{\numberline {9.3.2}Collection points}{61}{subsection.9.3.2}%
+\contentsline {section}{\numberline {9.4}Detection triggers}{61}{section.9.4}%
+\contentsline {subsection}{\numberline {9.4.1}Statistical anomaly detection}{62}{subsection.9.4.1}%
+\contentsline {subsection}{\numberline {9.4.2}Behavioural pattern detection}{62}{subsection.9.4.2}%
+\contentsline {subsection}{\numberline {9.4.3}Trigger definitions}{62}{subsection.9.4.3}%
+\contentsline {section}{\numberline {9.5}Alert management}{63}{section.9.5}%
+\contentsline {subsection}{\numberline {9.5.1}Alert severity levels}{64}{subsection.9.5.1}%
+\contentsline {subsection}{\numberline {9.5.2}Alert routing}{64}{subsection.9.5.2}%
+\contentsline {subsection}{\numberline {9.5.3}Circuit breaker integration}{65}{subsection.9.5.3}%
+\contentsline {subsection}{\numberline {9.5.4}Graceful degradation ladder}{65}{subsection.9.5.4}%
+\contentsline {paragraph}{Tagging and auditability.}{65}{table.caption.27}%
+\contentsline {paragraph}{Rung selection rationale.}{65}{table.caption.27}%
+\contentsline {section}{\numberline {9.6}Dashboard specification}{67}{section.9.6}%
+\contentsline {subsection}{\numberline {9.6.1}Real-time view}{67}{subsection.9.6.1}%
+\contentsline {subsection}{\numberline {9.6.2}Historical analysis}{67}{subsection.9.6.2}%
+\contentsline {section}{\numberline {9.7}Audit and compliance}{68}{section.9.7}%
+\contentsline {subsection}{\numberline {9.7.1}Retention requirements}{68}{subsection.9.7.1}%
+\contentsline {subsection}{\numberline {9.7.2}Regulatory reporting}{68}{subsection.9.7.2}%
+\contentsline {section}{\numberline {9.8}Implementation checklist}{69}{section.9.8}%
+\contentsline {chapter}{\numberline {10}Testing Specification}{71}{chapter.10}%
+\contentsline {section}{\numberline {10.1}Test coverage requirements}{71}{section.10.1}%
+\contentsline {section}{\numberline {10.2}Test fixtures}{71}{section.10.2}%
+\contentsline {subsection}{\numberline {10.2.1}Regulation fixtures}{72}{subsection.10.2.1}%
+\contentsline {subsection}{\numberline {10.2.2}Conformance tool fixtures}{72}{subsection.10.2.2}%
+\contentsline {section}{\numberline {10.3}Unit test cases}{73}{section.10.3}%
+\contentsline {subsection}{\numberline {10.3.1}Requirement parsing}{73}{subsection.10.3.1}%
+\contentsline {subsection}{\numberline {10.3.2}Status tracking}{73}{subsection.10.3.2}%
+\contentsline {subsection}{\numberline {10.3.3}Coverage calculation}{74}{subsection.10.3.3}%
+\contentsline {subsection}{\numberline {10.3.4}Implementation pointer validation}{74}{subsection.10.3.4}%
+\contentsline {subsection}{\numberline {10.3.5}Conformance tool integration}{75}{subsection.10.3.5}%
+\contentsline {section}{\numberline {10.4}Integration test suite}{75}{section.10.4}%
+\contentsline {subsection}{\numberline {10.4.1}End-to-end scenarios}{75}{subsection.10.4.1}%
+\contentsline {section}{\numberline {10.5}Schema validation tests}{76}{section.10.5}%
+\contentsline {section}{\numberline {10.6}Compliance verification tests}{76}{section.10.6}%
+\contentsline {section}{\numberline {10.7}CI/CD integration}{76}{section.10.7}%
+\contentsline {section}{\numberline {10.8}Quarterly audit tests}{77}{section.10.8}%
+\contentsline {subsection}{\numberline {10.8.1}Applicable AIVerify plugin subset}{78}{subsection.10.8.1}%
+\contentsline {subsection}{\numberline {10.8.2}GFAIC charter attestation}{79}{subsection.10.8.2}%
+\contentsline {section}{\numberline {10.9}Acceptance criteria}{79}{section.10.9}%
+\contentsline {chapter}{\numberline {11}Per-Request Identity Attribution Specification}{81}{chapter.11}%
+\contentsline {section}{\numberline {11.1}Overview}{81}{section.11.1}%
+\contentsline {section}{\numberline {11.2}Identity model}{82}{section.11.2}%
+\contentsline {subsection}{\numberline {11.2.1}Agent identity schema}{82}{subsection.11.2.1}%
+\contentsline {subsection}{\numberline {11.2.2}Request identity schema}{82}{subsection.11.2.2}%
+\contentsline {section}{\numberline {11.3}Audit trail specification}{83}{section.11.3}%
+\contentsline {subsection}{\numberline {11.3.1}Audit event schema}{83}{subsection.11.3.1}%
+\contentsline {subsection}{\numberline {11.3.2}Required audit events}{84}{subsection.11.3.2}%
+\contentsline {section}{\numberline {11.4}Storage and retention}{84}{section.11.4}%
+\contentsline {subsection}{\numberline {11.4.1}Storage requirements}{84}{subsection.11.4.1}%
+\contentsline {subsection}{\numberline {11.4.2}Immutability requirements}{86}{subsection.11.4.2}%
+\contentsline {section}{\numberline {11.5}API specification}{86}{section.11.5}%
+\contentsline {subsection}{\numberline {11.5.1}Audit write API}{86}{subsection.11.5.1}%
+\contentsline {subsection}{\numberline {11.5.2}Audit query API}{87}{subsection.11.5.2}%
+\contentsline {section}{\numberline {11.6}Integration requirements}{88}{section.11.6}%
+\contentsline {subsection}{\numberline {11.6.1}Pipeline integration}{88}{subsection.11.6.1}%
+\contentsline {subsection}{\numberline {11.6.2}Failure handling}{88}{subsection.11.6.2}%
+\contentsline {section}{\numberline {11.7}Compliance mapping}{89}{section.11.7}%
+\contentsline {section}{\numberline {11.8}Implementation checklist and integration status}{89}{section.11.8}%
+\contentsline {subsection}{\numberline {11.8.1}Audit service (this chapter)}{90}{subsection.11.8.1}%
+\contentsline {subsection}{\numberline {11.8.2}Pipeline integration rollout}{90}{subsection.11.8.2}%
+\contentsline {subsection}{\numberline {11.8.3}Compliance tests}{92}{subsection.11.8.3}%
+\contentsline {chapter}{\numberline {12}Project Roadmap}{93}{chapter.12}%
+\contentsline {section}{Scope of this chapter}{93}{section*.35}%
+\contentsline {paragraph}{Sequence, not dates.}{93}{section*.35}%
+\contentsline {section}{\numberline {12.1}MoSCoW classification}{94}{section.12.1}%
+\contentsline {section}{\numberline {12.2}Dependency graph}{94}{section.12.2}%
+\contentsline {section}{\numberline {12.3}Project milestones}{94}{section.12.3}%
+\contentsline {section}{\numberline {12.4}Launch tiers and exit gates}{97}{section.12.4}%
+\contentsline {section}{\numberline {12.5}Kill-switch conditions}{97}{section.12.5}%
+\contentsline {section}{\numberline {12.6}Shared-platform dependencies}{100}{section.12.6}%
+\contentsline {section}{\numberline {12.7}v2.0 expansion trigger}{100}{section.12.7}%
+\contentsline {section}{\numberline {12.8}Governance and business-case cadence}{101}{section.12.8}%
+\contentsline {paragraph}{Project governance.}{101}{section.12.8}%
+\contentsline {paragraph}{Business-case refresh (M07).}{101}{section.12.8}%
+\contentsline {chapter}{\numberline {13}Agent Implementation Instructions}{103}{chapter.13}%
+\contentsline {section}{\numberline {13.1}Purpose and audience}{103}{section.13.1}%
+\contentsline {section}{\numberline {13.2}Rules of Engagement for AI Agents}{104}{section.13.2}%
+\contentsline {section}{\numberline {13.3}Agent Rule-Pack Architecture (.clinerules)}{105}{section.13.3}%
+\contentsline {subsection}{\numberline {13.3.1}Inheritance Hierarchy}{105}{subsection.13.3.1}%
+\contentsline {subsection}{\numberline {13.3.2}Safety-Critical Flags}{105}{subsection.13.3.2}%
+\contentsline {section}{\numberline {13.4}Platform Overview --- One Codebase, One Instance}{106}{section.13.4}%
+\contentsline {subsection}{\numberline {13.4.1}Integration Stance}{106}{subsection.13.4.1}%
+\contentsline {subsection}{\numberline {13.4.2}Platform Integration Map}{106}{subsection.13.4.2}%
+\contentsline {section}{\numberline {13.5}Transactional Sequence Diagrams}{107}{section.13.5}%
+\contentsline {subsection}{\numberline {13.5.1}Universal Governance Handshake}{107}{subsection.13.5.1}%
+\contentsline {subsection}{\numberline {13.5.2}Arabic AP Golden Path}{107}{subsection.13.5.2}%
+\contentsline {section}{\numberline {13.6}Compute and Resource Alignment}{108}{section.13.6}%
+\contentsline {section}{\numberline {13.7}Human-in-the-Loop (HITL) Critical Gates}{109}{section.13.7}%
+\contentsline {section}{\numberline {13.8}Registry Integrity \& Live Status}{109}{section.13.8}%
+\contentsline {section}{\numberline {13.9}Master Implementation Manifest (Union)}{110}{section.13.9}%
+\contentsline {section}{\numberline {13.10}Governance Obligations (MAS MGF)}{111}{section.13.10}%
+\contentsline {section}{\numberline {13.11}FMEA: Failure Mode and Effects Analysis for AI}{112}{section.13.11}%
+\contentsline {section}{\numberline {13.12}This domain in context}{112}{section.13.12}%
+\contentsline {section}{\numberline {13.13}Schema contribution}{113}{section.13.13}%
+\contentsline {section}{\numberline {13.14}Persona and MCP allow-list}{113}{section.13.14}%
+\contentsline {section}{\numberline {13.15}Agent Rule-Pack Binding}{114}{section.13.15}%
+\contentsline {section}{\numberline {13.16}Implementation tasks for this domain}{114}{section.13.16}%
+\contentsline {section}{\numberline {13.17}Governance obligations applied to this domain}{118}{section.13.17}%
+\contentsline {section}{\numberline {13.18}Cross-spec integration --- full detail}{119}{section.13.18}%
+\contentsline {subsection}{\numberline {13.18.1}With Arabic AP}{119}{subsection.13.18.1}%
+\contentsline {subsection}{\numberline {13.18.2}With Trial Balance}{119}{subsection.13.18.2}%
+\contentsline {subsection}{\numberline {13.18.3}With Regulations}{120}{subsection.13.18.3}%
+\contentsline {subsection}{\numberline {13.18.4}With Simula}{120}{subsection.13.18.4}%
+\contentsline {section}{\numberline {13.19}Wave assignment and sequencing}{120}{section.13.19}%
+\contentsline {section}{\numberline {13.20}Acceptance criteria (platform-wide)}{121}{section.13.20}%
+\contentsline {section}{\numberline {13.21}References}{122}{section.13.21}%
+\contentsline {chapter}{\numberline {14}Global Wave-Dependency Manifest}{123}{chapter.14}%
+\contentsline {section}{\numberline {14.1}Critical Path Visualization (Waves 1--3)}{123}{section.14.1}%
+\contentsline {section}{\numberline {14.2}Inter-Domain Prerequisite Matrix}{124}{section.14.2}%
+\contentsfinish 

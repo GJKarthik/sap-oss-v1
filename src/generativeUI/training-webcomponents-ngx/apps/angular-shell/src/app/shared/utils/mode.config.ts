@@ -22,7 +22,7 @@ export const MODE_CONFIG: Record<AppMode, ModeConfig> = {
     icon: 'accelerated',
     confirmationLevel: 'autonomous',
     suggestedRoutes: [
-      '/pipeline', '/data-explorer', '/model-optimizer', '/deployments',
+      '/pipeline', '/data-products', '/model-optimizer', '/deployments',
       '/vocab-search', '/data-cleaning', '/glossary-manager', '/pair-studio',
     ],
     systemPromptPrefix:

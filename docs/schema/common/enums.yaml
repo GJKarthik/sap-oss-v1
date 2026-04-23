@@ -1,0 +1,148 @@
+key item # =============================================================================
+# Shared Vocabulary Registry
+# Cross-Spec Enum Definitions
+# =============================================================================
+# Maintainer: Controls Architecture Team
+# Change Process: RFC required; all consuming spec owners must approve
+# CI Validation: validate.py --registry-check ensures no local redefinitions
+# =============================================================================
+
+risk_status:
+  $id: "common/risk-status"
+  description: "Shared risk classification vocabulary (TB + BSS)"
+  type: string
+  enum:
+    - substantiated           # Evidence supports balance
+    - substantiated_at_risk   # Evidence exists but control weakness identified  
+    - unsubstantiated_unowned # No evidence; no owner assigned
+    - unsubstantiated_owned   # No evidence; owner assigned for remediation
+  ownership:
+    maintainer: "Controls Architecture Team"
+    consumers: 
+      - "tb-review-spec"
+      - "bss-risk-assessment-spec"
+    change_process: "RFC required; both spec owners must approve"
+    last_updated: "2026-04-20"
+    version: "1.0.0"
+
+decision_outcome:
+  $id: "common/decision-outcome"
+  description: "Standard decision outcomes for HITL review workflows"
+  type: string
+  enum:
+    - accept         # Approved without changes
+    - accept_edited  # Approved with human edits
+    - reject         # Rejected; requires regeneration
+    - escalate       # Escalated to senior reviewer
+    - defer          # Deferred to next cycle
+  ownership:
+    maintainer: "Workflow Architecture Team"
+    consumers:
+      - "tb-review-spec"
+      - "arabic-ap-spec"
+      - "regulations-spec"
+    change_process: "RFC required; majority of consuming spec owners must approve"
+    last_updated: "2026-04-20"
+    version: "1.0.0"
+
+variance_type:
+  $id: "common/variance-type"
+  description: "Standard variance classification types"
+  type: string
+  enum:
+    - spike          # Significant increase (>25% by default)
+    - drop           # Significant decrease (<-25% by default)
+    - new_account    # Account not present in prior period
+    - material       # Exceeds materiality threshold
+    - anomaly        # Statistical outlier (Z-score or MAD)
+    - trend          # Multi-period trend detected
+    - normal         # Within expected variance
+  ownership:
+    maintainer: "Financial Analytics Team"
+    consumers:
+      - "tb-review-spec"
+    change_process: "RFC required; spec owner must approve"
+    last_updated: "2026-04-20"
+    version: "1.0.0"
+
+workflow_state_type:
+  $id: "common/workflow-state-type"
+  description: "BPMN state types"
+  type: string
+  enum:
+    - start          # Process start event
+    - task           # Human or automated task
+    - gateway        # Decision point
+    - error          # Error handling state
+    - end            # Process end event
+  ownership:
+    maintainer: "Process Architecture Team"
+    consumers:
+      - "tb-review-spec"
+      - "bss-risk-assessment-spec"
+    change_process: "RFC required"
+    last_updated: "2026-04-20"
+    version: "1.0.0"
+
+audit_action:
+  $id: "common/audit-action"
+  description: "Standard audit trail action types"
+  type: string
+  enum:
+    - view                    # Resource viewed
+    - claim                   # Reviewer claims item
+    - decide                  # Decision made
+    - escalate                # Escalated to senior
+    - override                # Manual override applied
+    - bulk_assign             # Bulk assignment
+    - bulk_priority_change    # Bulk priority change
+    - bulk_requeue            # Bulk requeue
+    - comment_edit            # Commentary edited
+    - comment_approve         # Commentary approved
+    - comment_reject          # Commentary rejected
+    - export                  # Data exported
+    - import                  # Data imported
+    - divergence_detected     # EUC/Dashboard divergence
+    - threshold_change        # Materiality threshold changed
+    - entity_params_update    # Entity parameters updated
+  ownership:
+    maintainer: "Controls Architecture Team"
+    consumers:
+      - "tb-review-spec"
+      - "bss-risk-assessment-spec"
+      - "arabic-ap-spec"
+    change_process: "RFC required; Controls Architecture must approve"
+    last_updated: "2026-04-20"
+    version: "1.0.0"
+
+source_system:
+  $id: "common/source-system"
+  description: "Systems that can originate audit events"
+  type: string
+  enum:
+    - dashboard   # Web dashboard UI
+    - api         # REST API direct call
+    - batch       # Batch processing job
+    - import      # Data import process
+    - scheduler   # Automated scheduler
+  ownership:
+    maintainer: "Platform Team"
+    consumers:
+      - "tb-review-spec"
+      - "arabic-ap-spec"
+    change_process: "RFC required"
+    last_updated: "2026-04-20"
+    version: "1.0.0"
+
+# =============================================================================
+# Registry Metadata
+# =============================================================================
+_registry_metadata:
+  schema_version: "1.0.0"
+  last_validated: "2026-04-20T15:30:00+08:00"
+  validation_tool: "docs/schema/validate.py --registry-check"
+  total_enums: 6
+  governance:
+    rfc_template: "docs/templates/enum-change-rfc.md"
+    approval_process: "CODEOWNERS review + spec owner sign-off"
+    ci_enforcement: true

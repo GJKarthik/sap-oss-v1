@@ -1,0 +1,138 @@
+% =============================================================================
+% CHAPTER 3: DEDUCTIVE DATABASE ENGINE
+% IP Traceability: IP-002 (safety-ndeductivedatabase-mangle.docx)
+% =============================================================================
+
+\chapter{Deductive Database Engine}
+\label{chap:deductive-database}
+
+\section{IP Document Summary}
+
+\begin{tracerecord}
+\textbf{IP Source ID} & \ipid{IP-002} \\
+\textbf{Document} & safety-ndeductivedatabase-mangle.docx \\
+\textbf{Author} & Craig Turrell, Head of AI \& Design \\
+\textbf{Date} & December 2025 \\
+\textbf{Pages} & 18 \\
+\textbf{Abstract} & Safety guarantees for deductive database engines using Mangle (Datalog) semantics \\
+\end{tracerecord}
+
+\subsection{Document Abstract}
+
+\begin{ipsourcebox}{IP-002, Abstract}
+\textit{``Datalog engines and deductive databases maintain factual integrity through closed-world assumptions. This paper establishes safety invariants for Mangle rule evaluation, ensuring that LLM-generated facts do not violate database consistency. We prove termination, stratification safety, and fact store integrity under concurrent updates.''}
+\end{ipsourcebox}
+
+\section{Key Concepts Identified}
+
+\begin{table}[H]
+\centering
+\caption{IP-002 Key Concepts}
+\begin{tabularx}{\textwidth}{@{}p{3.5cm}Xl@{}}
+\toprule
+\textbf{Concept} & \textbf{Description} & \textbf{Section} \\
+\midrule
+Fixed-point Evaluation & Iterative rule application until convergence & \ref{sec:ip002-fixedpoint} \\
+Closed-world Semantics & Negation-as-failure for safety & \ref{sec:ip002-closedworld} \\
+Fact Store Integrity & Immutable fact records for audit & \ref{sec:ip002-factstore} \\
+LLM Fact Injection & Safe integration of LLM outputs & \ref{sec:ip002-llmfacts} \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\section{Concept: Fixed-point Evaluation}
+\label{sec:ip002-fixedpoint}
+
+\begin{ipsourcebox}{IP-002, Section 3}
+\textit{``Theorem 5 (Termination). For any stratified Mangle program P and finite fact base F, the fixed-point evaluation $T_P^\omega(F)$ terminates in finite steps. The evaluation proceeds by iteratively applying rules until no new facts are derived.''}
+\end{ipsourcebox}
+
+\begin{tracerecord}
+\textbf{IP Source ID} & IP-002 \\
+\textbf{IP Location} & Section 3, Theorem 5 \\
+\textbf{Concept} & Iterative rule application with guaranteed termination \\
+\midrule
+\textbf{Implementation Path} & \filepath{src/intelligence/ai-core-pal/governance/} \\
+\textbf{Adaptation Type} & Conceptual (rule iteration in governance checks) \\
+\end{tracerecord}
+
+\begin{adaptbox}
+The IP paper describes fixed-point evaluation for Datalog rules. In SAP-OSS, this concept is adapted to governance rule evaluation, where safety checks are applied iteratively until all constraints are satisfied. The termination guarantee ensures governance checks complete in bounded time.
+\end{adaptbox}
+
+\section{Concept: Closed-world Semantics}
+\label{sec:ip002-closedworld}
+
+\begin{ipsourcebox}{IP-002, Section 2}
+\textit{``Definition 3 (Closed-world assumption). A fact $f$ is false if and only if $f$ is not derivable from the program. This provides safety through negation-as-failure: if a safety property cannot be proven, it is assumed violated.''}
+\end{ipsourcebox}
+
+\begin{tracerecord}
+\textbf{IP Source ID} & IP-002 \\
+\textbf{IP Location} & Section 2, Definition 3 \\
+\textbf{Concept} & Safety through explicit proof requirement \\
+\midrule
+\textbf{Implementation Path} & \filepath{src/intelligence/ai-core-pal/data\_products/registry.yaml} \\
+\textbf{Adaptation Type} & Structural (explicit boolean fields) \\
+\end{tracerecord}
+
+\begin{adaptbox}
+The IP paper's closed-world assumption (``if not proven, then false'') is adapted to explicit YAML boolean fields in the SAP-OSS registry. Each compliance dimension requires explicit \texttt{true} declaration; absence defaults to non-compliant, preserving the safety-first semantics of the original Datalog formulation.
+\end{adaptbox}
+
+\section{Concept: Fact Store Integrity}
+\label{sec:ip002-factstore}
+
+\begin{ipsourcebox}{IP-002, Section 4}
+\textit{``Invariant 3 (Fact immutability). Once a fact is recorded in the store, it cannot be modified or deleted. New facts may be added, and derived facts may be marked obsolete, but the original record remains for audit purposes.''}
+\end{ipsourcebox}
+
+\begin{tracerecord}
+\textbf{IP Source ID} & IP-002 \\
+\textbf{IP Location} & Section 4, Invariant 3 \\
+\textbf{Concept} & Immutable fact records for complete audit \\
+\midrule
+\textbf{Implementation Path} & \filepath{src/intelligence/ai-core-pal/governance/audit.py} \\
+\textbf{Adaptation Type} & Structural (append-only audit records) \\
+\end{tracerecord}
+
+\begin{adaptbox}
+The IP paper's fact immutability is directly implemented in the \funcname{AuditLogger}, which produces append-only records. Audit entries cannot be modified after creation, preserving the complete history required for governance compliance and matching the Datalog fact store semantics.
+\end{adaptbox}
+
+\section{Concept: LLM Fact Injection}
+\label{sec:ip002-llmfacts}
+
+\begin{ipsourcebox}{IP-002, Section 5}
+\textit{``When LLM outputs are injected as facts, they must pass through a validation gate that checks: (1) syntactic well-formedness, (2) type consistency, (3) non-contradiction with existing facts. Only validated facts are added to the derivation context.''}
+\end{ipsourcebox}
+
+\begin{tracerecord}
+\textbf{IP Source ID} & IP-002 \\
+\textbf{IP Location} & Section 5 \\
+\textbf{Concept} & Safe integration of LLM-generated content \\
+\midrule
+\textbf{Implementation Path} & \filepath{src/intelligence/ai-core-pal/governance/} \\
+\textbf{Adaptation Type} & Conceptual (governance checks on agent outputs) \\
+\end{tracerecord}
+
+\begin{adaptbox}
+The IP paper's LLM fact validation is adapted to the \funcname{GovernedAgent} wrapper, which checks all agent outputs before they affect system state. This implements the validation gate concept: outputs are validated for safety compliance before being acted upon or recorded.
+\end{adaptbox}
+
+\section{Implementation Summary}
+
+\begin{table}[H]
+\centering
+\caption{IP-002 Concept Implementation Summary}
+\begin{tabularx}{\textwidth}{@{}p{3cm}p{3.5cm}Xc@{}}
+\toprule
+\textbf{Concept} & \textbf{IP Reference} & \textbf{Implementation} & \textbf{Status} \\
+\midrule
+Fixed-point Evaluation & Section 3, Thm 5 & Governance rule iteration & Yes \\
+Closed-world Semantics & Section 2, Def 3 & Explicit YAML booleans & Yes \\
+Fact Store Integrity & Section 4, Inv 3 & Append-only audit records & Yes \\
+LLM Fact Injection & Section 5 & \funcname{GovernedAgent} validation & Yes \\
+\bottomrule
+\end{tabularx}
+\end{table}

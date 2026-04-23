@@ -41,6 +41,10 @@ services:
     environment:
       ALLOWED_ORIGINS: http://localhost:${SUITE_GATEWAY_PORT:-8080},http://127.0.0.1:${SUITE_GATEWAY_PORT:-8080}
       PORT: 8000
+      AGENT_DEBUG_LOG: /agent-logs/debug-a31d71.log
+    volumes:
+      - ../training/data_products:/app/src/training/data_products:ro
+      - ../../.cursor:/agent-logs:rw
     restart: unless-stopped
 
   aifabric-web:
@@ -60,6 +64,10 @@ services:
     environment:
       ALLOWED_ORIGINS: http://localhost:${SUITE_GATEWAY_PORT:-8080},http://127.0.0.1:${SUITE_GATEWAY_PORT:-8080}
       PORT: 8000
+      AGENT_DEBUG_LOG: /agent-logs/debug-a31d71.log
+    volumes:
+      - ../training/data_products:/app/src/training/data_products:ro
+      - ../../.cursor:/agent-logs:rw
     restart: unless-stopped
 
   training-web:
