@@ -48,14 +48,15 @@
 \contentsline {subsection}{\numberline {6.2.1}Primary configuration}{37}{subsection.6.2.1}%
 \contentsline {subsection}{\numberline {6.2.2}Domain-specific rule packs}{38}{subsection.6.2.2}%
 \contentsline {section}{\numberline {6.3}Drift types detected}{38}{section.6.3}%
-\contentsline {section}{\numberline {6.4}Enforcement mechanisms}{39}{section.6.4}%
-\contentsline {subsection}{\numberline {6.4.1}Layer 1: CI/CD enforcement (Mandatory)}{39}{subsection.6.4.1}%
+\contentsline {subsection}{\numberline {6.3.1}Text-to-SQL Drift Types (DRIFT-009, DRIFT-010)}{39}{subsection.6.3.1}%
+\contentsline {section}{\numberline {6.4}Enforcement mechanisms}{40}{section.6.4}%
+\contentsline {subsection}{\numberline {6.4.1}Layer 1: CI/CD enforcement (Mandatory)}{40}{subsection.6.4.1}%
 \contentsline {subsection}{\numberline {6.4.2}Layer 2: Local pre-commit hook (Recommended)}{40}{subsection.6.4.2}%
-\contentsline {subsection}{\numberline {6.4.3}Layer 3: Manual audit commands (On-demand)}{40}{subsection.6.4.3}%
+\contentsline {subsection}{\numberline {6.4.3}Layer 3: Manual audit commands (On-demand)}{41}{subsection.6.4.3}%
 \contentsline {section}{\numberline {6.5}Developer onboarding}{41}{section.6.5}%
-\contentsline {section}{\numberline {6.6}Traceability registry}{41}{section.6.6}%
+\contentsline {section}{\numberline {6.6}Traceability registry}{42}{section.6.6}%
 \contentsline {section}{\numberline {6.7}Drift exceptions}{42}{section.6.7}%
-\contentsline {section}{\numberline {6.8}Minimum acceptance criteria}{42}{section.6.8}%
+\contentsline {section}{\numberline {6.8}Minimum acceptance criteria}{43}{section.6.8}%
 \contentsline {section}{\numberline {6.9}Guaranteeing enforcement}{43}{section.6.9}%
 \contentsline {chapter}{\numberline {7}Swarm Delivery Model}{45}{chapter.7}%
 \contentsline {section}{\numberline {7.1}Objective}{45}{section.7.1}%

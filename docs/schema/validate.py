@@ -99,7 +99,8 @@ DOMAIN_SCHEMAS = {
         "schemas": [
             "enums.yaml",
             "moscow.yaml",
-            "base-types.schema.json"
+            "base-types.schema.json",
+            "vocabulary-registry.schema.json"
         ]
     }
 }

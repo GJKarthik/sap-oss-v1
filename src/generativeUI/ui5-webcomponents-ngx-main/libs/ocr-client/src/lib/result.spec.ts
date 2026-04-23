@@ -6,7 +6,7 @@ describe('buildResult', () => {
       file_path: '/test.pdf',
       total_pages: 2,
       overall_confidence: 91.5,
-      total_processing_time_s: 1.23,
+      total_processing_time_ms: 1230,
       pages: [
         { page_number: 1, text: 'Hello', confidence: 95.0 },
         { page_number: 2, text: 'World', confidence: 88.0 },
@@ -59,4 +59,3 @@ describe('buildResult', () => {
     expect(result.processingTime).toBe(0);
   });
 });
-

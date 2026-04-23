@@ -417,7 +417,7 @@ class TestAsyncInterface:
         try:
             result = asyncio.run(service.process_pdf_async(path))
             assert len(result.pages) == 1
-            assert result.total_processing_time_s > 0
+            assert result.total_processing_time_ms > 0
         finally:
             os.unlink(path)
 
@@ -439,7 +439,7 @@ class TestTimingObservability:
         path = _make_real_pdf(1)
         try:
             result = service.process_pdf(path)
-            assert result.pages[0].processing_time_s > 0
+            assert result.pages[0].processing_time_ms > 0
         finally:
             os.unlink(path)
 
@@ -448,8 +448,8 @@ class TestTimingObservability:
         path = _make_real_pdf(2)
         try:
             result = service.process_pdf(path)
-            assert result.total_processing_time_s > 0
-            assert result.metadata["total_processing_time_s"] > 0
+            assert result.total_processing_time_ms > 0
+            assert result.metadata["total_processing_time_ms"] > 0
         finally:
             os.unlink(path)
 
@@ -459,8 +459,8 @@ class TestTimingObservability:
         try:
             result = service.process_pdf(path)
             parsed = json.loads(result.to_json())
-            assert "total_processing_time_s" in parsed
-            assert parsed["total_processing_time_s"] > 0
+            assert "total_processing_time_ms" in parsed
+            assert parsed["total_processing_time_ms"] > 0
         finally:
             os.unlink(path)
 

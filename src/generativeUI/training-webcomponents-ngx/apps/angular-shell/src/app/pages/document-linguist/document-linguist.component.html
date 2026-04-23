@@ -88,7 +88,7 @@
             </div>
             <div class="stat-card">
               <span class="stat-label">{{ i18n.t('linguist.review.processingTime') }}</span>
-              <span class="stat-value">{{ result.total_processing_time_s | localeNumber:'decimal':2:2 }}s</span>
+              <span class="stat-value">{{ result.total_processing_time_ms / 1000 | localeNumber:'decimal':2:2 }}s</span>
             </div>
           </div>
 

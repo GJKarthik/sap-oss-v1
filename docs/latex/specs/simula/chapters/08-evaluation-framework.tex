@@ -293,6 +293,72 @@ print(f"Soundness: {report.soundness:.1%}")        # Should be > 90%
 evaluator.validate_taxonomy(generated_taxonomy, report=report)
 \end{lstlisting}
 
+\section{Natural Language Readiness Assessment}
+\label{sec:nl-readiness-assessment}
+
+Before training examples are accepted, the pipeline must grade whether the
+extracted schema and generated vocabulary are ready for the intended audience.
+This gate is inserted after HANA schema extraction and taxonomy generation, but
+before final training file publication.
+
+\begin{table}[H]
+\centering
+\caption{Natural Language Readiness Metrics}
+\label{tab:nl-readiness-metrics}
+\begin{tabularx}{\textwidth}{lXXl}
+\toprule
+\textbf{Metric} & \textbf{Definition} & \textbf{Required Evidence} & \textbf{Gate} \\
+\midrule
+\metricid{NL-M01} Schema Description Coverage & Fraction of tables and columns with business descriptions, not only technical names & Registry fields \texttt{business\_description} and \texttt{owner} & Human $\geq 95\%$, Agent $\geq 80\%$ \\
+\metricid{NL-M02} Terminology Alias Coverage & Fraction of important business concepts with synonyms or aliases & Versioned dictionary entries linked to schema paths & Human $\geq 90\%$, Agent $\geq 75\%$ \\
+\metricid{NL-M03} Audience Separation Rate & Fraction of examples emitted into the correct audience-specific artifact & \texttt{audience=human} or \texttt{audience=agent} on every example & $100\%$ \\
+\metricid{NL-M04} Dictionary Resolution Accuracy & Fraction of synonym/value mappings resolved to canonical values & Held-out dictionary tests, e.g. \texttt{India -> IN} & $\geq 99\%$ \\
+\metricid{NL-M05} Unsupported Mapping Rate & Fraction of generated examples using values not present in schema or dictionary & Critic report plus SQL validation evidence & $\leq 1\%$ \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\noindent
+Readiness output is a signed JSON report with per-metric scores, unresolved
+terms, owner assignment, and a final grade:
+\begin{description}
+  \item[GREEN] All human and agent gates pass; training may proceed.
+  \item[AMBER] Agent gates pass but human gates fail; publish only agent-facing
+        artifacts and open remediation tasks for descriptions or aliases.
+  \item[RED] Any execution, dictionary, or audience-separation gate fails; block
+        training publication until remediated.
+\end{description}
+
+\subsection{Human and Agent Training Artifacts}
+
+The generation run must emit separate files for human-facing and schema-aware
+agent use. Human artifacts favor business vocabulary, synonyms, clarifying
+questions, and localized phrasing. Agent artifacts may include technical table
+names, column paths, SQL-like structure, and tool-call context. Prompt templates,
+critic criteria, and evaluation thresholds must not be shared implicitly between
+the two audiences.
+
+\begin{lstlisting}[language=jsonx,caption={Readiness assessment artifact split}]
+{
+  "run_id": "simula-run-2026-04-23",
+  "schema_version": "1.2.0",
+  "dictionary_version": "2026.04.23",
+  "readiness_grade": "GREEN",
+  "outputs": {
+    "human_training": "data/training/simula-human.jsonl",
+    "agent_training": "data/training/simula-agent.jsonl",
+    "readiness_report": "reports/simula_nl_readiness.json"
+  },
+  "metrics": {
+    "NL-M01": 0.97,
+    "NL-M02": 0.92,
+    "NL-M03": 1.00,
+    "NL-M04": 0.995,
+    "NL-M05": 0.004
+  }
+}
+\end{lstlisting}
+
 \section{Evaluation Environment Variables}
 
 \begin{table}[H]

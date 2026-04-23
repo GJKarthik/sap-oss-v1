@@ -81,6 +81,85 @@ class DriftAlert:
         }
 
 
+@dataclass
+class DriftRetrainingDecision:
+    """Retraining decision emitted by the schema/vocabulary drift agent."""
+
+    trigger: str
+    severity: str
+    required_action: str
+    retraining_scope: str
+    readiness_grade: str
+    blocked: bool
+    timestamp: str
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "trigger": self.trigger,
+            "severity": self.severity,
+            "required_action": self.required_action,
+            "retraining_scope": self.retraining_scope,
+            "readiness_grade": self.readiness_grade,
+            "blocked": self.blocked,
+            "timestamp": self.timestamp,
+        }
+
+
+DRIFT_RETRAINING_RULES = {
+    "column_dropped_or_type_changed": {
+        "severity": "CRITICAL",
+        "required_action": "Halt affected query patterns and open schema-drift incident",
+        "retraining_scope": "full_affected_domain",
+    },
+    "column_renamed_or_table_added": {
+        "severity": "HIGH",
+        "required_action": "Re-extract schema and regenerate affected taxonomy nodes",
+        "retraining_scope": "targeted_incremental",
+    },
+    "dictionary_value_added_or_changed": {
+        "severity": "HIGH",
+        "required_action": "Regenerate synonym and value mapping tests",
+        "retraining_scope": "dictionary_slice",
+    },
+    "vocabulary_drift_over_threshold": {
+        "severity": "MEDIUM",
+        "required_action": "Generate new human-facing examples and update aliases",
+        "retraining_scope": "persona_or_locale_slice",
+    },
+    "agent_prompt_drift_over_threshold": {
+        "severity": "MEDIUM",
+        "required_action": "Refresh agent templates and rerun audience separation checks",
+        "retraining_scope": "agent_slice",
+    },
+}
+
+
+def decide_retraining(
+    trigger: str,
+    readiness_grade: str = "GREEN",
+) -> DriftRetrainingDecision:
+    """Return the retraining action for a schema, dictionary, or vocabulary trigger."""
+    rule = DRIFT_RETRAINING_RULES.get(trigger)
+    if rule is None:
+        rule = {
+            "severity": "MEDIUM",
+            "required_action": "Investigate drift trigger and assign an owner",
+            "retraining_scope": "manual_review",
+        }
+
+    normalized_grade = readiness_grade.upper()
+    blocked = normalized_grade == "RED"
+    return DriftRetrainingDecision(
+        trigger=trigger,
+        severity=rule["severity"],
+        required_action=rule["required_action"],
+        retraining_scope=rule["retraining_scope"],
+        readiness_grade=normalized_grade,
+        blocked=blocked,
+        timestamp=datetime.now().isoformat(),
+    )
+
+
 # Drift type mappings per Chapter 18 Table 18.1
 DRIFT_TYPES = {
     "TTS-DRIFT-001": {

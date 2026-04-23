@@ -91,7 +91,7 @@ class PageResult:
     width: int = 0
     height: int = 0
     flagged_for_review: bool = False
-    processing_time_s: float = 0.0
+    processing_time_ms: int = 0
     errors: List[str] = field(default_factory=list)
 
 
@@ -104,7 +104,7 @@ class OCRResult:
     pages: List[PageResult] = field(default_factory=list)
     metadata: Dict[str, Any] = field(default_factory=dict)
     overall_confidence: float = 0.0
-    total_processing_time_s: float = 0.0
+    total_processing_time_ms: int = 0
     errors: List[str] = field(default_factory=list)
 
     def to_dict(self) -> Dict[str, Any]:
@@ -378,7 +378,7 @@ class ArabicOCRService:
                         page.flagged_for_review = True
 
         elapsed = time.monotonic() - t0
-        result.total_processing_time_s = round(elapsed, 4)
+        result.total_processing_time_ms = int(round(elapsed * 1000))
         flagged_count = sum(1 for p in result.pages if p.flagged_for_review)
         result.metadata = {
             "languages": self.languages,
@@ -388,7 +388,7 @@ class ArabicOCRService:
             "pages_with_errors": len([p for p in result.pages if p.errors]),
             "pages_flagged_for_review": flagged_count,
             "preprocessing_enabled": self._preprocessor is not None,
-            "total_processing_time_s": result.total_processing_time_s,
+            "total_processing_time_ms": result.total_processing_time_ms,
             "text_layer_pages_skipped": len(text_layer_pages),
         }
 
@@ -534,7 +534,7 @@ class ArabicOCRService:
                 "confidence": round(page.confidence, 2),
                 "word_count": word_count,
                 "flagged": page.flagged_for_review,
-                "processing_time_s": page.processing_time_s,
+                "processing_time_ms": page.processing_time_ms,
             })
             if page.confidence > 0:
                 all_confidences.append(page.confidence)
@@ -630,7 +630,7 @@ class ArabicOCRService:
             result.pages.append(page_result)
 
         elapsed = time.monotonic() - t0
-        result.total_processing_time_s = round(elapsed, 4)
+        result.total_processing_time_ms = int(round(elapsed * 1000))
         if result.pages:
             confs = [p.confidence for p in result.pages if p.confidence > 0]
             result.overall_confidence = (
@@ -641,6 +641,7 @@ class ArabicOCRService:
             "dpi": self.dpi,
             "format": "tiff",
             "pages_processed": len(result.pages),
+            "total_processing_time_ms": result.total_processing_time_ms,
         }
         return result
 
@@ -885,9 +886,7 @@ class ArabicOCRService:
         ):
             page_result.flagged_for_review = True
 
-        page_result.processing_time_s = round(
-            time.monotonic() - page_t0, 4
-        )
+        page_result.processing_time_ms = int(round((time.monotonic() - page_t0) * 1000))
         return page_result
 
     def _run_ocr(

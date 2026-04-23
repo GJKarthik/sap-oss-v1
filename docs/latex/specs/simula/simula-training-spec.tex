@@ -22,12 +22,14 @@
 \usepackage{longtable}
 \usepackage{multirow}
 \usepackage{array}
+\usepackage{colortbl}
 \usepackage{amsmath}
 \usepackage{amssymb}
 \usepackage{enumitem}
 \usepackage{algorithm}
 \usepackage{algpseudocode}
 \usepackage{tikz}
+\usepackage{xparse}
 \usetikzlibrary{arrows.meta,positioning,shapes.geometric,calc}
 \usepackage[capitalize,noabbrev]{cleveref}
 \usepackage{fontawesome5}
@@ -50,12 +52,27 @@
 \newcommand{\tool}[1]{\texttt{#1}}
 \newcommand{\stateid}[1]{\textsc{\lowercase{#1}}}
 \newcommand{\ar}[1]{#1}
+\providecommand{\metricid}[1]{\texttt{#1}}
+\providecommand{\driftid}[1]{\texttt{#1}}
 
 % --- Glossary Helper Commands -----------------------------------------------
 \definecolor{pathcolor}{HTML}{004D40}
 \newcommand{\schemapath}[1]{\texttt{\textcolor{pathcolor}{#1}}}
 \newcommand{\enumval}[1]{\texttt{\textcolor{sapgreen}{#1}}}
 \newcommand{\fieldref}[1]{\texttt{\textcolor{sapblue}{#1}}}
+
+% Compatibility helpers also provided by the Apple-style class.
+\ifdefined\sourcequote\else
+  \newenvironment{sourcequote}{\begin{sourcequotebox}}{\end{sourcequotebox}}
+\fi
+\NewDocumentCommand{\mermaidfig}{O{0.85\textwidth} m m m}{%
+  \begin{figure}[htbp]%
+    \centering
+    \includegraphics[width=#1]{#2.pdf}%
+    \caption{#3}%
+    \label{#4}%
+  \end{figure}%
+}
 
 \title{Simula Training Data Framework Specification}
 \author{SAP Controls Architecture Team}
@@ -85,6 +102,8 @@
 \input{chapters/15-project-roadmap}
 \input{chapters/16-implementation-roadmap}
 \input{chapters/17-future-directions}
+\input{chapters/18-text-to-sql-drift}
+\input{chapters/19-financial-prompt-generation}
 
 \appendix
 \input{chapters/A1-implementation-gap-review}

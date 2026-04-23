@@ -66,6 +66,16 @@
       "type": "boolean",
       "description": "Whether example passed double-critic evaluation"
     },
+    "meta_prompt_id": {
+      "type": "string",
+      "description": "Reference to the meta-prompt record that generated this example"
+    },
+    "audience": {
+      "type": "string",
+      "enum": ["human", "agent", "dual"],
+      "default": "dual",
+      "description": "Training audience for artifact splitting"
+    },
     "critic_evaluation": {
       "$ref": "#/definitions/critic_evaluation",
       "description": "Double-critic evaluation details"

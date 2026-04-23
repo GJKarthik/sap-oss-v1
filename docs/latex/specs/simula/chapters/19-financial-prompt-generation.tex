@@ -195,6 +195,38 @@ Accounts Receivable & A/R, Receivables & Receivables & Money owed to us \\
 \end{tabularx}
 \end{table}
 
+\subsection{Data Dictionary and Value Synonym Mapping}
+
+Aliases are not limited to financial concepts. The prompt generator must also
+train explicit mappings from surface language to canonical values so that user
+phrases are resolved deterministically instead of inferred by the model.
+
+\begin{table}[htbp]
+\centering
+\footnotesize
+\caption{Example Data Dictionary Mappings}
+\label{tab:data-dictionary-mappings}
+\begin{tabularx}{\textwidth}{@{}l l l X@{}}
+\toprule
+\textbf{Schema Field} & \textbf{Surface Forms} & \textbf{Canonical Value} & \textbf{Training Requirement} \\
+\midrule
+\texttt{country\_code} & India, Bharat, Indian entity & \texttt{IN} & Include positive and negative examples for country filters \\
+\texttt{country\_code} & Singapore, SG entity, Singapore branch & \texttt{SG} & Include locale-specific prompt variants \\
+\texttt{currency\_code} & dollars, US dollars, USD & \texttt{USD} & Disambiguate from SGD, AUD, and local reporting currency \\
+\texttt{period} & Q1, first quarter, quarter one & \texttt{Q1} & Include fiscal-calendar context where applicable \\
+\texttt{business\_segment} & wealth, WM, wealth management & \texttt{WEALTH} & Require owner-approved segment vocabulary \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\noindent
+Dictionary entries must be versioned with the training run and linked to schema
+paths. Each entry records \texttt{surface\_forms}, \texttt{canonical\_value},
+\texttt{locale}, \texttt{owner}, and \texttt{valid\_from}. If a prompt contains a
+surface form that is not in the dictionary or schema registry, the generator must
+emit a clarification example or reject the training example; it must not invent a
+mapping.
+
 \section{Multi-Persona Prompt Generation Pipeline}
 
 \subsection{Stage 1: Mix Generation}
@@ -577,7 +609,7 @@ Complexity bounds & Wide & Narrow & Human tasks vary more \\
 
 \subsection{Configuration File}
 
-\begin{lstlisting}[language=yaml,caption={financial\_prompt\_config.yaml}]
+\begin{lstlisting}[language=yamlx,caption={financial\_prompt\_config.yaml}]
 # Financial Domain Prompt Generation Configuration
 domain: "Financial professional and agent communication"
 taxonomy_version: "1.0"

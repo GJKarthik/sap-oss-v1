@@ -28,7 +28,7 @@ domains:
     spec_root: docs/latex/specs/simula
     schema_root: docs/schema/simula
     code_root: src/training
-    
+
     artifacts:
       # Main specification document
       - id: simula-spec-main
@@ -178,7 +178,7 @@ domains:
         sync_rules:
           - "Extract schema changes require spec data model update"
           - "Variance record fields require spec documentation"
-          
+
       - id: tb-ai-pipeline
         type: chapter
         spec_path: docs/latex/specs/tb/chapters/03-ai-pipeline.tex
@@ -327,6 +327,33 @@ domains:
           - docs/schema/regulations/audit-event.schema.json
         sync_rules:
           - "Identity attribution changes require spec and schema update"
+
+  # ---------------------------------------------------------------------------
+  # LANGCHAIN HANA Integration
+  # ---------------------------------------------------------------------------
+  langchain-hana:
+    spec_root: docs/latex/specs/simula
+    schema_root: docs/api
+    code_root: src/data/langchain-integration-for-sap-hana-cloud-main
+
+    artifacts:
+      - id: langchain-hana-api
+        type: openapi
+        path: docs/api/sap-langchain-integration-api.yaml
+        related_code:
+          - src/data/langchain-integration-for-sap-hana-cloud-main/sap_openai_server/server.py
+          - src/data/langchain-integration-for-sap-hana-cloud-main/mcp_server/server.py
+        sync_rules:
+          - "API path changes require OpenAPI spec update"
+
+      - id: hana-vector-api
+        type: openapi
+        path: docs/api/hana-vector-openapi.yaml
+        related_code:
+          - src/data/langchain-integration-for-sap-hana-cloud-main/sap_openai_server/server.py
+          - src/data/langchain-integration-for-sap-hana-cloud-main/langchain_hana/vectorstores/hana_db.py
+        sync_rules:
+          - "Vector engine capability changes require OpenAPI update"
 
   # ---------------------------------------------------------------------------
   # CLINERULES AGENTS

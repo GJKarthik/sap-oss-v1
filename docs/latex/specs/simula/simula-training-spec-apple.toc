@@ -1,374 +1,504 @@
-\contentsline {chapter}{\numberline {1}Executive Summary}{21}{chapter.1}%
-\contentsline {chapter}{Frontmatter}{23}{chapter*.2}%
-\contentsline {section}{Executive Summary}{23}{section*.3}%
-\contentsline {section}{Document Conventions}{24}{Item.4}%
-\contentsline {section}{How to Read This Specification}{25}{table.caption.5}%
-\contentsline {section}{Reading Guide}{26}{Item.10}%
-\contentsline {section}{Version History}{28}{Item.31}%
-\contentsline {section}{Document Scope Matrix}{29}{table.1.3}%
-\contentsline {chapter}{\numberline {2}Overview and Scope}{31}{chapter.2}%
-\contentsline {section}{\numberline {2.1}The Problem}{31}{section.2.1}%
-\contentsline {section}{\numberline {2.2}Goals}{32}{section.2.2}%
-\contentsline {section}{\numberline {2.3}In-Scope Domains}{33}{section.2.3}%
-\contentsline {section}{\numberline {2.4}System Context}{33}{section.2.4}%
-\contentsline {section}{\numberline {2.5}Research Paper Traceability}{34}{section.2.5}%
-\contentsline {section}{\numberline {2.6}Out of Scope}{34}{section.2.6}%
-\contentsline {chapter}{\numberline {3}Business Requirements Specification}{37}{chapter.3}%
-\contentsline {section}{Integration with existing chapters}{37}{section*.11}%
-\contentsline {section}{Scope of this chapter}{38}{section*.11}%
-\contentsline {section}{\numberline {3.1}Requirements Overview}{38}{section.3.1}%
-\contentsline {subsection}{\numberline {3.1.1}Requirement Identification Convention}{38}{subsection.3.1.1}%
-\contentsline {subsection}{\numberline {3.1.2}Priority Classification}{39}{subsection.3.1.2}%
-\contentsline {section}{\numberline {3.2}BR-1: Strategic and Preparation Phase}{39}{section.3.2}%
-\contentsline {subsection}{\numberline {3.2.1}BR-1.1: Use Case Definition}{40}{subsection.3.2.1}%
-\contentsline {subsection}{\numberline {3.2.2}BR-1.2: Value-Risk Assessment}{41}{subsection.3.2.2}%
-\contentsline {subsection}{\numberline {3.2.3}BR-1.3: Governance Framework Integration}{42}{subsection.3.2.3}%
-\contentsline {subsection}{\numberline {3.2.4}BR-1.4: Cross-Functional Team Formation}{43}{subsection.3.2.4}%
-\contentsline {subsection}{\numberline {3.2.5}BR-1.5: ROI Baseline Establishment}{44}{subsection.3.2.5}%
-\contentsline {section}{\numberline {3.3}BR-2: Generation Phase}{44}{section.3.3}%
-\contentsline {subsection}{\numberline {3.3.1}BR-2.1: Domain Taxonomy Construction and Validation}{45}{subsection.3.3.1}%
-\contentsline {subsection}{\numberline {3.3.2}BR-2.2: Controllable Parameter Configuration}{46}{subsection.3.3.2}%
-\contentsline {subsection}{\numberline {3.3.3}BR-2.3: Cost and Resource Budget Control}{47}{subsection.3.3.3}%
-\contentsline {subsection}{\numberline {3.3.4}BR-2.4: Metadata and Provenance Recording}{48}{subsection.3.3.4}%
-\contentsline {subsection}{\numberline {3.3.5}BR-2.5: Incremental Generation and Dataset Evolution}{49}{subsection.3.3.5}%
-\contentsline {section}{\numberline {3.4}BR-3: Quality Assurance and Validation}{49}{section.3.4}%
-\contentsline {subsection}{\numberline {3.4.1}BR-3.1: Intrinsic Quality Assessment}{50}{subsection.3.4.1}%
-\contentsline {subsection}{\numberline {3.4.2}BR-3.2: Downstream Task Validation}{51}{subsection.3.4.2}%
-\contentsline {subsection}{\numberline {3.4.3}BR-3.3: Privacy Risk Assessment}{52}{subsection.3.4.3}%
-\contentsline {subsection}{\numberline {3.4.4}BR-3.4: Bias Detection and Mitigation}{53}{subsection.3.4.4}%
-\contentsline {subsection}{\numberline {3.4.5}BR-3.5: Continuous Monitoring and Drift Detection}{54}{subsection.3.4.5}%
-\contentsline {section}{\numberline {3.5}BR-4: Governance and Compliance}{54}{section.3.5}%
-\contentsline {subsection}{\numberline {3.5.1}BR-4.1: Access Control and Permission Management}{55}{subsection.3.5.1}%
-\contentsline {subsection}{\numberline {3.5.2}BR-4.2: Regulatory Framework Alignment}{56}{subsection.3.5.2}%
-\contentsline {subsection}{\numberline {3.5.3}BR-4.3: Audit Logging and Traceability}{57}{subsection.3.5.3}%
-\contentsline {subsection}{\numberline {3.5.4}BR-4.4: Transparency and Explainability}{58}{subsection.3.5.4}%
-\contentsline {subsection}{\numberline {3.5.5}BR-4.5: Incident Response and Remediation}{59}{subsection.3.5.5}%
-\contentsline {section}{\numberline {3.6}BR-5: Integration and Infrastructure}{59}{section.3.6}%
-\contentsline {subsection}{\numberline {3.6.1}BR-5.1: ML Pipeline Integration}{60}{subsection.3.6.1}%
-\contentsline {subsection}{\numberline {3.6.2}BR-5.2: Data Storage and Version Management}{61}{subsection.3.6.2}%
-\contentsline {subsection}{\numberline {3.6.3}BR-5.3: Elastic Compute Resource Scheduling}{62}{subsection.3.6.3}%
-\contentsline {subsection}{\numberline {3.6.4}BR-5.4: Multi-Environment Deployment Support}{63}{subsection.3.6.4}%
-\contentsline {section}{\numberline {3.7}Requirements Traceability Matrix}{63}{section.3.7}%
-\contentsline {chapter}{\numberline {4}Canonical Data Schema}{65}{chapter.4}%
-\contentsline {section}{\numberline {4.1}Layout of \texttt {src/training/pipeline/}}{66}{section.4.1}%
-\contentsline {section}{\numberline {4.2}Training Example Record}{66}{section.4.2}%
-\contentsline {section}{\numberline {4.3}Schema Registry}{67}{section.4.3}%
-\contentsline {section}{\numberline {4.4}Taxonomy Structure}{67}{section.4.4}%
-\contentsline {section}{\numberline {4.5}Enumerations}{68}{section.4.5}%
-\contentsline {section}{\numberline {4.6}Unified Schema Registry}{68}{section.4.6}%
-\contentsline {chapter}{\numberline {5}HANA Schema Extraction Pipeline}{71}{chapter.5}%
-\contentsline {section}{\numberline {5.1}Pipeline at a Glance}{71}{section.5.1}%
-\contentsline {section}{\numberline {5.2}Stage 1 --- MCP Discovery}{72}{section.5.2}%
-\contentsline {section}{\numberline {5.3}Stage 2 --- Table Enumeration}{72}{section.5.3}%
-\contentsline {section}{\numberline {5.4}Stage 3 --- Column Extraction}{73}{section.5.4}%
-\contentsline {section}{\numberline {5.5}Stage 4 --- Registry Population}{73}{section.5.5}%
-\contentsline {section}{\numberline {5.6}Stage 5 --- JSON Export}{74}{section.5.6}%
-\contentsline {chapter}{\numberline {6}Taxonomy Generation Engine}{75}{chapter.6}%
-\contentsline {section}{\numberline {6.1}Algorithm 1: Reasoning-Driven Taxonomy Generation}{75}{section.6.1}%
-\contentsline {section}{\numberline {6.2}Step 1: Factor Identification}{77}{section.6.2}%
-\contentsline {section}{\numberline {6.3}Step 2: Breadth-First Expansion}{77}{section.6.3}%
-\contentsline {section}{\numberline {6.4}Step 3: Best-of-N Proposal}{78}{section.6.4}%
-\contentsline {section}{\numberline {6.5}Step 4: Critic Refinement}{78}{section.6.5}%
-\contentsline {section}{\numberline {6.6}Step 5: Level Planning}{79}{section.6.6}%
-\contentsline {section}{\numberline {6.7}Taxonomy Depth and Dataset Size Relationship}{80}{section.6.7}%
-\contentsline {subsection}{\numberline {6.7.1}Node Count Growth}{80}{subsection.6.7.1}%
-\contentsline {subsection}{\numberline {6.7.2}Target Examples vs Taxonomy Depth}{81}{subsection.6.7.2}%
-\contentsline {subsection}{\numberline {6.7.3}Configuration Guidelines}{81}{subsection.6.7.3}%
-\contentsline {subsection}{\numberline {6.7.4}Cost Estimation}{82}{subsection.6.7.4}%
-\contentsline {section}{\numberline {6.8}Worked Example: Trial Balance Taxonomy}{82}{section.6.8}%
-\contentsline {chapter}{\numberline {7}Training Data Generation Engine}{83}{chapter.7}%
-\contentsline {section}{\numberline {7.1}Algorithm 2: Agentic Data Synthesis}{83}{section.7.1}%
-\contentsline {section}{\numberline {7.2}Step 1: Mix Sampling (Global Diversity)}{85}{section.7.2}%
-\contentsline {section}{\numberline {7.3}Step 2: Meta-Prompt Generation (Local Diversity)}{85}{section.7.3}%
-\contentsline {section}{\numberline {7.4}Step 3: Complexification}{86}{section.7.4}%
-\contentsline {section}{\numberline {7.5}Step 4: Example Generation}{86}{section.7.5}%
-\contentsline {section}{\numberline {7.6}Step 5: Double-Critic Filtering}{87}{section.7.6}%
-\contentsline {section}{\numberline {7.7}Schema Context Pruning}{88}{section.7.7}%
-\contentsline {subsection}{\numberline {7.7.1}Token Budget}{88}{subsection.7.7.1}%
-\contentsline {subsection}{\numberline {7.7.2}Pruning Algorithm}{89}{subsection.7.7.2}%
-\contentsline {subsection}{\numberline {7.7.3}Relevance Scoring}{90}{subsection.7.7.3}%
-\contentsline {subsection}{\numberline {7.7.4}Configuration}{90}{subsection.7.7.4}%
-\contentsline {subsection}{\numberline {7.7.5}Quality Impact}{91}{subsection.7.7.5}%
-\contentsline {section}{\numberline {7.8}Output Format}{91}{section.7.8}%
-\contentsline {chapter}{\numberline {8}Environment and CLI}{93}{chapter.8}%
-\contentsline {section}{\numberline {8.1}Configuration Table}{93}{section.8.1}%
-\contentsline {section}{\numberline {8.2}CLI Usage}{94}{section.8.2}%
-\contentsline {section}{\numberline {8.3}Output Files}{95}{section.8.3}%
-\contentsline {chapter}{\numberline {9}Evaluation Framework}{97}{chapter.9}%
-\contentsline {section}{\numberline {9.1}Calibrated Complexity Scoring (Algorithm 3)}{97}{section.9.1}%
-\contentsline {subsection}{\numberline {9.1.1}Elo Rating Algorithm}{98}{subsection.9.1.1}%
-\contentsline {subsection}{\numberline {9.1.2}Usage}{98}{subsection.9.1.2}%
-\contentsline {section}{\numberline {9.2}Taxonomic Coverage Evaluation}{99}{section.9.2}%
-\contentsline {section}{\numberline {9.3}Embedding-Based Diversity Metrics}{100}{section.9.3}%
-\contentsline {section}{\numberline {9.4}Critic Calibration Validation}{101}{section.9.4}%
-\contentsline {section}{\numberline {9.5}Student-Teacher Gap Analysis}{102}{section.9.5}%
-\contentsline {section}{\numberline {9.6}Adaptive Features (v1.2)}{102}{section.9.6}%
-\contentsline {subsection}{\numberline {9.6.1}Adaptive Complexity Ratio (Figure 7)}{102}{subsection.9.6.1}%
-\contentsline {subsection}{\numberline {9.6.2}Adaptive Critic Thresholding (Figure 3b)}{103}{subsection.9.6.2}%
-\contentsline {subsection}{\numberline {9.6.3}Automatic Coverage Gap Filling}{103}{subsection.9.6.3}%
-\contentsline {subsection}{\numberline {9.6.4}Diversity Optimizer}{104}{subsection.9.6.4}%
-\contentsline {subsection}{\numberline {9.6.5}Taxonomy Quality Gate (Section B.1, Table 2)}{104}{subsection.9.6.5}%
-\contentsline {section}{\numberline {9.7}Evaluation Environment Variables}{106}{section.9.7}%
-\contentsline {section}{\numberline {9.8}CI Integration of Evaluation Tolerances}{107}{section.9.8}%
-\contentsline {chapter}{\numberline {10}Worked Example: Trial Balance Domain}{109}{chapter.10}%
-\contentsline {section}{\numberline {10.1}Step 1: Schema Extraction}{109}{section.10.1}%
-\contentsline {section}{\numberline {10.2}Step 2: Factor Identification}{110}{section.10.2}%
-\contentsline {section}{\numberline {10.3}Step 3: Taxonomy Generation}{111}{section.10.3}%
-\contentsline {section}{\numberline {10.4}Step 4: Mix Sampling and Meta-Prompt Generation}{111}{section.10.4}%
-\contentsline {section}{\numberline {10.5}Step 5: Example Generation}{112}{section.10.5}%
-\contentsline {section}{\numberline {10.6}Step 6: Evaluation Metrics}{112}{section.10.6}%
-\contentsline {subsection}{\numberline {10.6.1}Reproducibility}{113}{subsection.10.6.1}%
-\contentsline {section}{\numberline {10.7}Step 7: Output Files}{114}{section.10.7}%
-\contentsline {chapter}{\numberline {11}Testing Specification}{115}{chapter.11}%
-\contentsline {section}{\numberline {11.1}Test coverage requirements}{115}{section.11.1}%
-\contentsline {section}{\numberline {11.2}Test fixtures}{115}{section.11.2}%
-\contentsline {subsection}{\numberline {11.2.1}Taxonomy fixtures}{116}{subsection.11.2.1}%
-\contentsline {subsection}{\numberline {11.2.2}Training example fixtures}{116}{subsection.11.2.2}%
-\contentsline {section}{\numberline {11.3}Unit test cases}{117}{section.11.3}%
-\contentsline {subsection}{\numberline {11.3.1}Taxonomy traversal}{117}{subsection.11.3.1}%
-\contentsline {subsection}{\numberline {11.3.2}Complexity scoring}{117}{subsection.11.3.2}%
-\contentsline {subsection}{\numberline {11.3.3}Critic evaluation}{118}{subsection.11.3.3}%
-\contentsline {subsection}{\numberline {11.3.4}Diversity metrics}{118}{subsection.11.3.4}%
-\contentsline {subsection}{\numberline {11.3.5}Adaptive features}{119}{subsection.11.3.5}%
-\contentsline {subsection}{\numberline {11.3.6}HANA type handling}{119}{subsection.11.3.6}%
-\contentsline {subsubsection}{SIM-HANA-002 implementation}{119}{subsection.11.3.6}%
-\contentsline {section}{\numberline {11.4}Integration test suite}{121}{section.11.4}%
-\contentsline {subsection}{\numberline {11.4.1}End-to-end scenarios}{121}{subsection.11.4.1}%
-\contentsline {section}{\numberline {11.5}Performance benchmarks}{122}{section.11.5}%
-\contentsline {subsection}{\numberline {11.5.1}Reference hardware profile}{122}{subsection.11.5.1}%
-\contentsline {section}{\numberline {11.6}Quality metrics tests}{123}{section.11.6}%
-\contentsline {section}{\numberline {11.7}CI/CD integration}{123}{section.11.7}%
-\contentsline {section}{\numberline {11.8}Acceptance criteria}{124}{section.11.8}%
-\contentsline {chapter}{\numberline {12}Test Fixture Specification}{125}{chapter.12}%
-\contentsline {section}{\numberline {12.1}Overview}{125}{section.12.1}%
-\contentsline {section}{\numberline {12.2}Fixture Count Calculation Methodology}{126}{section.12.2}%
-\contentsline {subsection}{\numberline {12.2.1}Coverage-Based Calculation}{126}{subsection.12.2.1}%
-\contentsline {subsection}{\numberline {12.2.2}Fixture Count Derivation by Domain}{126}{subsection.12.2.2}%
-\contentsline {subsection}{\numberline {12.2.3}Edge Case Multiplier}{127}{subsection.12.2.3}%
-\contentsline {subsection}{\numberline {12.2.4}Extending Fixture Counts}{127}{subsection.12.2.4}%
-\contentsline {section}{\numberline {12.3}Fixture organisation}{128}{section.12.3}%
-\contentsline {section}{\numberline {12.4}Arabic AP fixtures}{129}{section.12.4}%
-\contentsline {subsection}{\numberline {12.4.1}Invoice fixtures}{129}{subsection.12.4.1}%
-\contentsline {subsubsection}{Fixture schema}{129}{table.caption.33}%
-\contentsline {subsection}{\numberline {12.4.2}OCR fixtures}{129}{subsection.12.4.2}%
-\contentsline {section}{\numberline {12.5}Trial Balance fixtures}{130}{section.12.5}%
-\contentsline {subsection}{\numberline {12.5.1}TB extract fixtures}{130}{subsection.12.5.1}%
-\contentsline {subsection}{\numberline {12.5.2}Variance fixtures}{130}{subsection.12.5.2}%
-\contentsline {section}{\numberline {12.6}Simula fixtures}{131}{section.12.6}%
-\contentsline {subsection}{\numberline {12.6.1}Taxonomy fixtures}{131}{subsection.12.6.1}%
-\contentsline {subsection}{\numberline {12.6.2}Training example fixtures}{132}{subsection.12.6.2}%
-\contentsline {section}{\numberline {12.7}Common fixtures}{132}{section.12.7}%
-\contentsline {subsection}{\numberline {12.7.1}Mock LLM responses}{132}{subsection.12.7.1}%
-\contentsline {subsection}{\numberline {12.7.2}Schema copies}{133}{subsection.12.7.2}%
-\contentsline {section}{\numberline {12.8}Data sanitisation requirements}{133}{section.12.8}%
-\contentsline {section}{\numberline {12.9}Fixture validation}{133}{section.12.9}%
-\contentsline {subsection}{\numberline {12.9.1}Schema validation}{134}{subsection.12.9.1}%
-\contentsline {subsection}{\numberline {12.9.2}Coverage verification}{134}{subsection.12.9.2}%
-\contentsline {section}{\numberline {12.10}Implementation checklist}{134}{section.12.10}%
-\contentsline {chapter}{\numberline {13}Agent Implementation Instructions}{137}{chapter.13}%
-\contentsline {section}{\numberline {13.1}Purpose and audience}{137}{section.13.1}%
-\contentsline {section}{\numberline {13.2}Rules of Engagement for AI Agents}{138}{section.13.2}%
-\contentsline {section}{\numberline {13.3}Agent Rule-Pack Architecture (.clinerules)}{138}{section.13.3}%
-\contentsline {subsection}{\numberline {13.3.1}Inheritance Hierarchy}{139}{subsection.13.3.1}%
-\contentsline {subsection}{\numberline {13.3.2}Safety-Critical Flags}{139}{subsection.13.3.2}%
-\contentsline {section}{\numberline {13.4}Platform Overview --- One Codebase, One Instance}{139}{section.13.4}%
-\contentsline {subsection}{\numberline {13.4.1}Integration Stance}{140}{subsection.13.4.1}%
-\contentsline {subsection}{\numberline {13.4.2}Platform Integration Map}{140}{subsection.13.4.2}%
-\contentsline {section}{\numberline {13.5}Transactional Sequence Diagrams}{140}{section.13.5}%
-\contentsline {subsection}{\numberline {13.5.1}Universal Governance Handshake}{141}{subsection.13.5.1}%
-\contentsline {subsection}{\numberline {13.5.2}Arabic AP Golden Path}{141}{subsection.13.5.2}%
-\contentsline {section}{\numberline {13.6}Compute and Resource Alignment}{142}{section.13.6}%
-\contentsline {section}{\numberline {13.7}Human-in-the-Loop (HITL) Critical Gates}{142}{section.13.7}%
-\contentsline {section}{\numberline {13.8}Registry Integrity \& Live Status}{143}{section.13.8}%
-\contentsline {section}{\numberline {13.9}Master Implementation Manifest (Union)}{143}{section.13.9}%
-\contentsline {section}{\numberline {13.10}Governance Obligations (MAS MGF)}{144}{section.13.10}%
-\contentsline {section}{\numberline {13.11}FMEA: Failure Mode and Effects Analysis for AI}{145}{section.13.11}%
-\contentsline {section}{\numberline {13.12}This domain in context}{146}{section.13.12}%
-\contentsline {section}{\numberline {13.13}Schema contribution}{146}{section.13.13}%
-\contentsline {section}{\numberline {13.14}Persona and MCP allow-list}{147}{section.13.14}%
-\contentsline {section}{\numberline {13.15}Agent Rule-Pack Binding}{147}{section.13.15}%
-\contentsline {section}{\numberline {13.16}Current Implementation Gap Analysis}{148}{section.13.16}%
-\contentsline {subsection}{\numberline {13.16.1}Key Findings Summary}{148}{subsection.13.16.1}%
-\contentsline {subsection}{\numberline {13.16.2}Gap Analysis Validity}{149}{subsection.13.16.2}%
-\contentsline {section}{\numberline {13.17}Implementation tasks for this domain}{149}{section.13.17}%
-\contentsline {subsubsection}{Task S1 --- HANA schema extraction.}{149}{section.13.17}%
-\contentsline {subsubsection}{Task S2 --- Taxonomy generation (Algorithm 1).}{150}{lstnumber.-5.6}%
-\contentsline {subsubsection}{Task S3 --- Agentic data synthesis (Algorithm 2).}{151}{lstnumber.-5.6}%
-\contentsline {subsubsection}{Task S4 --- Environment and CLI.}{151}{lstnumber.-5.6}%
-\contentsline {subsubsection}{Task S5 --- Evaluation framework.}{151}{lstnumber.-5.6}%
-\contentsline {subsubsection}{Task S6 --- Test fixtures and testing.}{152}{lstnumber.-5.6}%
-\contentsline {section}{\numberline {13.18}Governance obligations applied to this domain}{152}{section.13.18}%
-\contentsline {section}{\numberline {13.19}Cross-spec integration --- full detail}{153}{section.13.19}%
-\contentsline {subsection}{\numberline {13.19.1}With Arabic AP}{153}{subsection.13.19.1}%
-\contentsline {subsection}{\numberline {13.19.2}With Trial Balance}{153}{subsection.13.19.2}%
-\contentsline {subsection}{\numberline {13.19.3}With Regulations}{153}{subsection.13.19.3}%
-\contentsline {subsection}{\numberline {13.19.4}With Simula}{154}{subsection.13.19.4}%
-\contentsline {section}{\numberline {13.20}Wave assignment and sequencing}{154}{section.13.20}%
-\contentsline {section}{\numberline {13.21}Acceptance criteria (platform-wide)}{155}{section.13.21}%
-\contentsline {section}{\numberline {13.22}References}{155}{section.13.22}%
-\contentsline {chapter}{\numberline {14}Cross-Specification Dependencies}{157}{chapter.14}%
-\contentsline {section}{\numberline {14.1}Architecture Position}{157}{section.14.1}%
-\contentsline {subsection}{\numberline {14.1.1}Cross-domain handshake}{158}{subsection.14.1.1}%
-\contentsline {subsection}{\numberline {14.1.2}Wave-dependency manifest}{158}{subsection.14.1.2}%
-\contentsline {section}{\numberline {14.2}Schema Dependencies}{160}{section.14.2}%
-\contentsline {subsection}{\numberline {14.2.1}Schemas Owned by Simula}{160}{subsection.14.2.1}%
-\contentsline {subsection}{\numberline {14.2.2}Schemas Consumed from Other Domains}{160}{subsection.14.2.2}%
-\contentsline {section}{\numberline {14.3}Regulations Integration}{161}{section.14.3}%
-\contentsline {subsection}{\numberline {14.3.1}Pillar 1: Training Data Bounds}{161}{subsection.14.3.1}%
-\contentsline {subsection}{\numberline {14.3.2}Pillar 2: Human Accountability}{161}{subsection.14.3.2}%
-\contentsline {subsection}{\numberline {14.3.3}Pillar 3: Technical Controls}{161}{subsection.14.3.3}%
-\contentsline {subsection}{\numberline {14.3.4}Pillar 4: Data Provenance}{162}{subsection.14.3.4}%
-\contentsline {section}{\numberline {14.4}Arabic AP Integration}{162}{section.14.4}%
-\contentsline {section}{\numberline {14.5}Trial Balance Integration}{162}{section.14.5}%
-\contentsline {section}{\numberline {14.6}Cross-Reference Summary}{163}{section.14.6}%
-\contentsline {chapter}{\numberline {15}Schema Versioning and Interface Contracts}{165}{chapter.15}%
-\contentsline {section}{\numberline {15.1}Versioning Policy}{165}{section.15.1}%
-\contentsline {subsection}{\numberline {15.1.1}Semantic Versioning for Schemas}{166}{subsection.15.1.1}%
-\contentsline {subsection}{\numberline {15.1.2}Current Schema Versions}{166}{subsection.15.1.2}%
-\contentsline {section}{\numberline {15.2}Schema Evolution Rules}{166}{section.15.2}%
-\contentsline {subsection}{\numberline {15.2.1}Backward Compatibility Requirements}{166}{subsection.15.2.1}%
-\contentsline {subsection}{\numberline {15.2.2}Deprecation Process}{167}{subsection.15.2.2}%
-\contentsline {section}{\numberline {15.3}Cross-Domain Interface Contracts}{167}{section.15.3}%
-\contentsline {subsection}{\numberline {15.3.1}Schema-In, TrainingExample-Out Contract}{167}{subsection.15.3.1}%
-\contentsline {subsection}{\numberline {15.3.2}Interface Versioning}{168}{subsection.15.3.2}%
-\contentsline {section}{\numberline {15.4}Schema Validation}{168}{section.15.4}%
-\contentsline {subsection}{\numberline {15.4.1}Validation Points}{168}{subsection.15.4.1}%
-\contentsline {subsection}{\numberline {15.4.2}Validation Implementation}{169}{subsection.15.4.2}%
-\contentsline {section}{\numberline {15.5}Changelog Management}{169}{section.15.5}%
-\contentsline {subsection}{\numberline {15.5.1}Schema Changelog Location}{169}{subsection.15.5.1}%
-\contentsline {subsection}{\numberline {15.5.2}Changelog Entry Format}{170}{subsection.15.5.2}%
-\contentsline {section}{\numberline {15.6}Version Negotiation}{170}{section.15.6}%
-\contentsline {subsection}{\numberline {15.6.1}Runtime Version Checking}{170}{subsection.15.6.1}%
-\contentsline {subsection}{\numberline {15.6.2}Graceful Degradation}{171}{subsection.15.6.2}%
-\contentsline {section}{\numberline {15.7}Implementation Checklist}{171}{section.15.7}%
-\contentsline {section}{\numberline {15.8}Governance}{172}{section.15.8}%
-\contentsline {subsection}{\numberline {15.8.1}Schema Change Approval}{172}{subsection.15.8.1}%
-\contentsline {subsection}{\numberline {15.8.2}Change Ownership}{172}{subsection.15.8.2}%
-\contentsline {chapter}{\numberline {16}Project Roadmap}{173}{chapter.16}%
-\contentsline {subsection}{Scope of this chapter}{173}{section*.50}%
-\contentsline {subsubsection}{Sequence, not dates.}{173}{section*.50}%
-\contentsline {section}{\numberline {16.1}MoSCoW classification}{174}{section.16.1}%
-\contentsline {section}{\numberline {16.2}Dependency graph}{174}{section.16.2}%
-\contentsline {section}{\numberline {16.3}Project milestones}{174}{section.16.3}%
-\contentsline {section}{\numberline {16.4}Launch tiers and exit gates}{177}{section.16.4}%
-\contentsline {section}{\numberline {16.5}Kill-switch conditions}{177}{section.16.5}%
-\contentsline {section}{\numberline {16.6}Shared-platform dependencies}{177}{section.16.6}%
-\contentsline {section}{\numberline {16.7}v1.3 expansion trigger}{180}{section.16.7}%
-\contentsline {section}{\numberline {16.8}Governance and business-case cadence}{181}{section.16.8}%
-\contentsline {subsubsection}{Project governance.}{181}{section.16.8}%
-\contentsline {subsubsection}{Business-case refresh (M08).}{181}{section.16.8}%
-\contentsline {chapter}{\numberline {17}Implementation Roadmap}{183}{chapter.17}%
-\contentsline {section}{Integration with existing chapters}{183}{section*.57}%
-\contentsline {section}{Scope of this chapter}{184}{section*.57}%
-\contentsline {section}{Relationship to Project Milestones}{184}{section*.57}%
-\contentsline {section}{\numberline {17.1}Roadmap Overview}{185}{section.17.1}%
-\contentsline {subsection}{\numberline {17.1.1}Phase Dependencies}{186}{subsection.17.1.1}%
-\contentsline {section}{\numberline {17.2}Phase 1: Foundation Capability Building}{186}{section.17.2}%
-\contentsline {subsection}{\numberline {17.2.1}Phase 1 Objectives}{187}{subsection.17.2.1}%
-\contentsline {subsection}{\numberline {17.2.2}Phase 1 Deliverables}{187}{subsection.17.2.2}%
-\contentsline {subsubsection}{1.1 Use Case Definition and Value-Risk Assessment}{187}{subsection.17.2.2}%
-\contentsline {subsubsection}{1.2 Cross-Functional Team Assembly}{188}{subsection.17.2.2}%
-\contentsline {subsubsection}{1.3 Governance Framework Integration}{189}{subsection.17.2.2}%
-\contentsline {subsubsection}{1.4 Domain Taxonomy Construction}{190}{subsection.17.2.2}%
-\contentsline {subsubsection}{1.5 Metadata and Provenance Infrastructure}{191}{subsection.17.2.2}%
-\contentsline {subsubsection}{1.6 Quality Assessment Pipeline}{192}{subsection.17.2.2}%
-\contentsline {subsection}{\numberline {17.2.3}Phase 1 Exit Criteria}{192}{subsection.17.2.3}%
-\contentsline {section}{\numberline {17.3}Phase 2: Scaled Deployment}{193}{section.17.3}%
-\contentsline {subsection}{\numberline {17.3.1}Phase 2 Objectives}{193}{subsection.17.3.1}%
-\contentsline {subsection}{\numberline {17.3.2}Phase 2 Deliverables}{193}{subsection.17.3.2}%
-\contentsline {subsubsection}{2.1 Parameter Configuration Interface}{194}{subsection.17.3.2}%
-\contentsline {subsubsection}{2.2 Privacy Risk Assessment System}{195}{subsection.17.3.2}%
-\contentsline {subsubsection}{2.3 Bias Detection and Mitigation}{196}{subsection.17.3.2}%
-\contentsline {subsubsection}{2.4 Access Control and Permissions}{197}{subsection.17.3.2}%
-\contentsline {subsubsection}{2.5 ML Pipeline Integration}{198}{subsection.17.3.2}%
-\contentsline {subsubsection}{2.6 Audit Logging System}{199}{subsection.17.3.2}%
-\contentsline {subsection}{\numberline {17.3.3}Phase 2 Exit Criteria}{199}{subsection.17.3.3}%
-\contentsline {section}{\numberline {17.4}Phase 3: Mature Operations and Continuous Optimization}{200}{section.17.4}%
-\contentsline {subsection}{\numberline {17.4.1}Phase 3 Objectives}{200}{subsection.17.4.1}%
-\contentsline {subsection}{\numberline {17.4.2}Phase 3 Deliverables}{200}{subsection.17.4.2}%
-\contentsline {subsubsection}{3.1 Continuous Monitoring and Drift Detection}{201}{subsection.17.4.2}%
-\contentsline {subsubsection}{3.2 Regulatory Compliance Completion}{202}{subsection.17.4.2}%
-\contentsline {subsubsection}{3.3 Transparency and Explainability}{203}{subsection.17.4.2}%
-\contentsline {subsubsection}{3.4 Incident Response Procedures}{204}{subsection.17.4.2}%
-\contentsline {subsubsection}{3.5 Cost and Budget Optimization}{205}{subsection.17.4.2}%
-\contentsline {subsubsection}{3.6 Incremental Generation Capability}{206}{subsection.17.4.2}%
-\contentsline {subsection}{\numberline {17.4.3}Phase 3 Exit Criteria}{206}{subsection.17.4.3}%
-\contentsline {section}{\numberline {17.5}Key Success Factors}{207}{section.17.5}%
-\contentsline {subsection}{\numberline {17.5.1}Critical Success Factors}{207}{subsection.17.5.1}%
-\contentsline {subsection}{\numberline {17.5.2}Risk Mitigation Summary}{207}{subsection.17.5.2}%
-\contentsline {section}{\numberline {17.6}Requirements Coverage by Phase}{208}{section.17.6}%
-\contentsline {section}{\numberline {17.7}SAP Technology Stack Summary}{208}{section.17.7}%
-\contentsline {chapter}{\numberline {18}Future Directions (v1.3+)}{211}{chapter.18}%
-\contentsline {section}{Integration with existing chapters}{212}{section*.65}%
-\contentsline {section}{Scope of this chapter}{213}{section*.65}%
-\contentsline {section}{\numberline {18.1}Enhancement Overview}{213}{section.18.1}%
-\contentsline {section}{\numberline {18.2}Enhancement 1: Multi-Modal Extension}{214}{section.18.2}%
-\contentsline {subsection}{\numberline {18.2.1}Current Limitation}{214}{subsection.18.2.1}%
-\contentsline {subsection}{\numberline {18.2.2}Cross-Modal Reasoning Scaffolds}{214}{subsection.18.2.2}%
-\contentsline {subsection}{\numberline {18.2.3}Modality-Aware Complexification}{215}{subsection.18.2.3}%
-\contentsline {subsection}{\numberline {18.2.4}SAP Integration: Document Information Extraction}{216}{subsection.18.2.4}%
-\contentsline {section}{\numberline {18.3}Enhancement 2: Domain Adaptation Calibration}{217}{section.18.3}%
-\contentsline {subsection}{\numberline {18.3.1}Current Limitation}{217}{subsection.18.3.1}%
-\contentsline {subsection}{\numberline {18.3.2}Human-in-Loop Knowledge Anchors}{217}{subsection.18.3.2}%
-\contentsline {subsection}{\numberline {18.3.3}Vertical-Specific Complexity Metrics}{218}{subsection.18.3.3}%
-\contentsline {subsection}{\numberline {18.3.4}SAP Integration: S/4HANA Domain Schemas}{219}{subsection.18.3.4}%
-\contentsline {section}{\numberline {18.4}Enhancement 3: Closed-Loop Validation}{220}{section.18.4}%
-\contentsline {subsection}{\numberline {18.4.1}Current Limitation}{220}{subsection.18.4.1}%
-\contentsline {subsection}{\numberline {18.4.2}Training-Validation Feedback Loop}{221}{subsection.18.4.2}%
-\contentsline {subsection}{\numberline {18.4.3}Adversarial Verification Layer}{223}{subsection.18.4.3}%
-\contentsline {subsection}{\numberline {18.4.4}SAP Integration: AI Core MLOps}{224}{subsection.18.4.4}%
-\contentsline {section}{\numberline {18.5}Enhancement 4: Programmable Workflow Engine}{224}{section.18.5}%
-\contentsline {subsection}{\numberline {18.5.1}Current Limitation}{225}{subsection.18.5.1}%
-\contentsline {subsection}{\numberline {18.5.2}Declarative Dataset Specification Language}{225}{subsection.18.5.2}%
-\contentsline {subsection}{\numberline {18.5.3}Version Control and Reproducibility}{226}{subsection.18.5.3}%
-\contentsline {subsection}{\numberline {18.5.4}SAP Integration: BTP and HANA Cloud}{228}{subsection.18.5.4}%
-\contentsline {section}{\numberline {18.6}Regulatory Framework Alignment}{229}{section.18.6}%
-\contentsline {subsection}{\numberline {18.6.1}UK FCA Synthetic Data Expert Group}{229}{subsection.18.6.1}%
-\contentsline {subsection}{\numberline {18.6.2}IEEE Synthetic Data White Paper}{230}{subsection.18.6.2}%
-\contentsline {subsection}{\numberline {18.6.3}World Economic Forum Guidelines}{230}{subsection.18.6.3}%
-\contentsline {section}{\numberline {18.7}Implementation Checklist}{231}{section.18.7}%
-\contentsline {chapter}{\numberline {A}Implementation Gap Review and Agent Rule Pack}{233}{appendix.A}%
-\contentsline {section}{\numberline {A.1}Review scope and constraints}{234}{section.A.1}%
-\contentsline {section}{\numberline {A.2}Executive assessment}{234}{section.A.2}%
-\contentsline {section}{\numberline {A.3}Validation performed}{234}{section.A.3}%
-\contentsline {section}{\numberline {A.4}Gap-to-Milestone Mapping Summary}{236}{section.A.4}%
-\contentsline {section}{\numberline {A.5}Findings in \texttt {src/training}}{236}{section.A.5}%
-\contentsline {section}{\numberline {A.6}Findings in \texttt {src/generativeUI/training-webcomponents-ngx}}{243}{section.A.6}%
-\contentsline {section}{\numberline {A.7}Proposed implementation-agent rule file}{246}{section.A.7}%
-\contentsline {section}{\numberline {A.8}Proposed runtime-monitor agent rule file}{248}{section.A.8}%
-\contentsline {section}{\numberline {A.9}Sequenced remediation order}{249}{section.A.9}%
-\contentsline {chapter}{\numberline {B}SAP Integration Guide}{251}{appendix.B}%
-\contentsline {section}{\numberline {B.1}SAP HANA Cloud Integration}{251}{section.B.1}%
-\contentsline {subsection}{\numberline {B.1.1}Connection Configuration}{251}{subsection.B.1.1}%
-\contentsline {subsection}{\numberline {B.1.2}Required Database Permissions}{252}{subsection.B.1.2}%
-\contentsline {subsection}{\numberline {B.1.3}HANA-Specific Type Mapping}{253}{subsection.B.1.3}%
-\contentsline {subsection}{\numberline {B.1.4}Spatial Type Handling}{254}{subsection.B.1.4}%
-\contentsline {section}{\numberline {B.2}SAP AI Core Integration}{255}{section.B.2}%
-\contentsline {subsection}{\numberline {B.2.1}Deployment Configuration}{255}{subsection.B.2.1}%
-\contentsline {subsection}{\numberline {B.2.2}Training Pipeline Integration}{256}{subsection.B.2.2}%
-\contentsline {section}{\numberline {B.3}SAP BTP Services Integration}{257}{section.B.3}%
-\contentsline {subsection}{\numberline {B.3.1}Credential Store}{257}{subsection.B.3.1}%
-\contentsline {subsection}{\numberline {B.3.2}Audit Log Service}{258}{subsection.B.3.2}%
-\contentsline {subsection}{\numberline {B.3.3}Alert Notification Service}{258}{subsection.B.3.3}%
-\contentsline {section}{\numberline {B.4}SAP Analytics Cloud Integration}{259}{section.B.4}%
-\contentsline {subsection}{\numberline {B.4.1}Cost Tracking Dashboard}{260}{subsection.B.4.1}%
-\contentsline {subsection}{\numberline {B.4.2}Recommended Dashboard Widgets}{261}{subsection.B.4.2}%
-\contentsline {section}{\numberline {B.5}SAP GRC Integration}{261}{section.B.5}%
-\contentsline {subsection}{\numberline {B.5.1}Policy Management}{261}{subsection.B.5.1}%
-\contentsline {subsection}{\numberline {B.5.2}Compliance Evidence Collection}{262}{subsection.B.5.2}%
-\contentsline {section}{\numberline {B.6}SAP Build Apps Integration}{263}{section.B.6}%
-\contentsline {subsection}{\numberline {B.6.1}API Endpoints}{263}{subsection.B.6.1}%
-\contentsline {subsection}{\numberline {B.6.2}Build Apps Data Entity}{263}{subsection.B.6.2}%
-\contentsline {section}{\numberline {B.7}Quick Reference: Environment Variables}{265}{section.B.7}%
-\contentsline {chapter}{\numberline {C}References}{267}{appendix.C}%
-\contentsline {section}{\numberline {C.1}Source Documents}{267}{section.C.1}%
-\contentsline {section}{\numberline {C.2}Implementation Files}{268}{section.C.2}%
-\contentsline {section}{\numberline {C.3}Tools and Dependencies}{269}{section.C.3}%
-\contentsline {section}{\numberline {C.4}Academic References}{269}{section.C.4}%
-\contentsline {section}{\numberline {C.5}Related Specifications}{270}{section.C.5}%
-\contentsline {section}{\numberline {C.6}Schema Registry}{270}{section.C.6}%
-\contentsline {section}{\numberline {C.7}External Standards}{271}{section.C.7}%
-\contentsline {chapter}{\numberline {D}Global Wave-Dependency Manifest}{273}{appendix.D}%
-\contentsline {section}{\numberline {D.1}Critical Path Visualization (Waves 1--3)}{273}{section.D.1}%
-\contentsline {section}{\numberline {D.2}Inter-Domain Prerequisite Matrix}{274}{section.D.2}%
+\contentsline {chapter}{\numberline {1}Executive Summary}{25}{chapter.1}%
+\contentsline {chapter}{Frontmatter}{27}{chapter*.2}%
+\contentsline {section}{Executive Summary}{27}{section*.3}%
+\contentsline {section}{Document Conventions}{28}{Item.4}%
+\contentsline {section}{How to Read This Specification}{29}{table.caption.5}%
+\contentsline {section}{Reading Guide}{30}{Item.10}%
+\contentsline {section}{Version History}{32}{Item.31}%
+\contentsline {section}{Document Scope Matrix}{33}{table.1.3}%
+\contentsline {chapter}{\numberline {2}Overview and Scope}{35}{chapter.2}%
+\contentsline {section}{\numberline {2.1}The Problem}{35}{section.2.1}%
+\contentsline {section}{\numberline {2.2}Goals}{36}{section.2.2}%
+\contentsline {section}{\numberline {2.3}In-Scope Domains}{37}{section.2.3}%
+\contentsline {section}{\numberline {2.4}System Context}{37}{section.2.4}%
+\contentsline {section}{\numberline {2.5}Research Paper Traceability}{38}{section.2.5}%
+\contentsline {section}{\numberline {2.6}Out of Scope}{38}{section.2.6}%
+\contentsline {chapter}{\numberline {3}Business Requirements Specification}{41}{chapter.3}%
+\contentsline {section}{Integration with existing chapters}{41}{section*.11}%
+\contentsline {section}{Scope of this chapter}{42}{section*.11}%
+\contentsline {section}{\numberline {3.1}Requirements Overview}{42}{section.3.1}%
+\contentsline {subsection}{\numberline {3.1.1}Requirement Identification Convention}{42}{subsection.3.1.1}%
+\contentsline {subsection}{\numberline {3.1.2}Priority Classification}{43}{subsection.3.1.2}%
+\contentsline {section}{\numberline {3.2}BR-1: Strategic and Preparation Phase}{43}{section.3.2}%
+\contentsline {subsection}{\numberline {3.2.1}BR-1.1: Use Case Definition}{44}{subsection.3.2.1}%
+\contentsline {subsection}{\numberline {3.2.2}BR-1.2: Value-Risk Assessment}{45}{subsection.3.2.2}%
+\contentsline {subsection}{\numberline {3.2.3}BR-1.3: Governance Framework Integration}{46}{subsection.3.2.3}%
+\contentsline {subsection}{\numberline {3.2.4}BR-1.4: Cross-Functional Team Formation}{47}{subsection.3.2.4}%
+\contentsline {subsection}{\numberline {3.2.5}BR-1.5: ROI Baseline Establishment}{48}{subsection.3.2.5}%
+\contentsline {section}{\numberline {3.3}BR-2: Generation Phase}{48}{section.3.3}%
+\contentsline {subsection}{\numberline {3.3.1}BR-2.1: Domain Taxonomy Construction and Validation}{49}{subsection.3.3.1}%
+\contentsline {subsection}{\numberline {3.3.2}BR-2.2: Controllable Parameter Configuration}{50}{subsection.3.3.2}%
+\contentsline {subsection}{\numberline {3.3.3}BR-2.3: Cost and Resource Budget Control}{51}{subsection.3.3.3}%
+\contentsline {subsection}{\numberline {3.3.4}BR-2.4: Metadata and Provenance Recording}{52}{subsection.3.3.4}%
+\contentsline {subsection}{\numberline {3.3.5}BR-2.5: Incremental Generation and Dataset Evolution}{53}{subsection.3.3.5}%
+\contentsline {section}{\numberline {3.4}BR-3: Quality Assurance and Validation}{53}{section.3.4}%
+\contentsline {subsection}{\numberline {3.4.1}BR-3.1: Intrinsic Quality Assessment}{54}{subsection.3.4.1}%
+\contentsline {subsection}{\numberline {3.4.2}BR-3.2: Downstream Task Validation}{55}{subsection.3.4.2}%
+\contentsline {subsection}{\numberline {3.4.3}BR-3.3: Privacy Risk Assessment}{56}{subsection.3.4.3}%
+\contentsline {subsection}{\numberline {3.4.4}BR-3.4: Bias Detection and Mitigation}{57}{subsection.3.4.4}%
+\contentsline {subsection}{\numberline {3.4.5}BR-3.5: Continuous Monitoring and Drift Detection}{58}{subsection.3.4.5}%
+\contentsline {section}{\numberline {3.5}BR-4: Governance and Compliance}{58}{section.3.5}%
+\contentsline {subsection}{\numberline {3.5.1}BR-4.1: Access Control and Permission Management}{59}{subsection.3.5.1}%
+\contentsline {subsection}{\numberline {3.5.2}BR-4.2: Regulatory Framework Alignment}{60}{subsection.3.5.2}%
+\contentsline {subsection}{\numberline {3.5.3}BR-4.3: Audit Logging and Traceability}{61}{subsection.3.5.3}%
+\contentsline {subsection}{\numberline {3.5.4}BR-4.4: Transparency and Explainability}{62}{subsection.3.5.4}%
+\contentsline {subsection}{\numberline {3.5.5}BR-4.5: Incident Response and Remediation}{63}{subsection.3.5.5}%
+\contentsline {section}{\numberline {3.6}BR-5: Integration and Infrastructure}{63}{section.3.6}%
+\contentsline {subsection}{\numberline {3.6.1}BR-5.1: ML Pipeline Integration}{64}{subsection.3.6.1}%
+\contentsline {subsection}{\numberline {3.6.2}BR-5.2: Data Storage and Version Management}{65}{subsection.3.6.2}%
+\contentsline {subsection}{\numberline {3.6.3}BR-5.3: Elastic Compute Resource Scheduling}{66}{subsection.3.6.3}%
+\contentsline {subsection}{\numberline {3.6.4}BR-5.4: Multi-Environment Deployment Support}{67}{subsection.3.6.4}%
+\contentsline {section}{\numberline {3.7}Requirements Traceability Matrix}{67}{section.3.7}%
+\contentsline {chapter}{\numberline {4}Canonical Data Schema}{69}{chapter.4}%
+\contentsline {section}{\numberline {4.1}Layout of \texttt {src/training/pipeline/}}{70}{section.4.1}%
+\contentsline {section}{\numberline {4.2}Training Example Record}{70}{section.4.2}%
+\contentsline {section}{\numberline {4.3}Schema Registry}{71}{section.4.3}%
+\contentsline {section}{\numberline {4.4}Taxonomy Structure}{71}{section.4.4}%
+\contentsline {section}{\numberline {4.5}Enumerations}{72}{section.4.5}%
+\contentsline {section}{\numberline {4.6}Unified Schema Registry}{72}{section.4.6}%
+\contentsline {chapter}{\numberline {5}HANA Schema Extraction Pipeline}{75}{chapter.5}%
+\contentsline {section}{\numberline {5.1}Pipeline at a Glance}{75}{section.5.1}%
+\contentsline {section}{\numberline {5.2}Stage 1 --- MCP Discovery}{76}{section.5.2}%
+\contentsline {section}{\numberline {5.3}Stage 2 --- Table Enumeration}{76}{section.5.3}%
+\contentsline {section}{\numberline {5.4}Stage 3 --- Column Extraction}{77}{section.5.4}%
+\contentsline {section}{\numberline {5.5}Stage 4 --- Registry Population}{77}{section.5.5}%
+\contentsline {section}{\numberline {5.6}Stage 5 --- JSON Export}{78}{section.5.6}%
+\contentsline {chapter}{\numberline {6}Taxonomy Generation Engine}{79}{chapter.6}%
+\contentsline {section}{\numberline {6.1}Algorithm 1: Reasoning-Driven Taxonomy Generation}{79}{section.6.1}%
+\contentsline {section}{\numberline {6.2}Step 1: Factor Identification}{81}{section.6.2}%
+\contentsline {section}{\numberline {6.3}Step 2: Breadth-First Expansion}{81}{section.6.3}%
+\contentsline {section}{\numberline {6.4}Step 3: Best-of-N Proposal}{82}{section.6.4}%
+\contentsline {section}{\numberline {6.5}Step 4: Critic Refinement}{82}{section.6.5}%
+\contentsline {section}{\numberline {6.6}Step 5: Level Planning}{83}{section.6.6}%
+\contentsline {section}{\numberline {6.7}Taxonomy Depth and Dataset Size Relationship}{84}{section.6.7}%
+\contentsline {subsection}{\numberline {6.7.1}Node Count Growth}{84}{subsection.6.7.1}%
+\contentsline {subsection}{\numberline {6.7.2}Target Examples vs Taxonomy Depth}{85}{subsection.6.7.2}%
+\contentsline {subsection}{\numberline {6.7.3}Configuration Guidelines}{85}{subsection.6.7.3}%
+\contentsline {subsection}{\numberline {6.7.4}Cost Estimation}{86}{subsection.6.7.4}%
+\contentsline {section}{\numberline {6.8}Worked Example: Trial Balance Taxonomy}{86}{section.6.8}%
+\contentsline {chapter}{\numberline {7}Training Data Generation Engine}{87}{chapter.7}%
+\contentsline {section}{\numberline {7.1}Algorithm 2: Agentic Data Synthesis}{87}{section.7.1}%
+\contentsline {section}{\numberline {7.2}Step 1: Mix Sampling (Global Diversity)}{89}{section.7.2}%
+\contentsline {section}{\numberline {7.3}Step 2: Meta-Prompt Generation (Local Diversity)}{89}{section.7.3}%
+\contentsline {section}{\numberline {7.4}Step 3: Complexification}{90}{section.7.4}%
+\contentsline {section}{\numberline {7.5}Step 4: Example Generation}{90}{section.7.5}%
+\contentsline {section}{\numberline {7.6}Step 5: Double-Critic Filtering}{91}{section.7.6}%
+\contentsline {section}{\numberline {7.7}Schema Context Pruning}{92}{section.7.7}%
+\contentsline {subsection}{\numberline {7.7.1}Token Budget}{92}{subsection.7.7.1}%
+\contentsline {subsection}{\numberline {7.7.2}Pruning Algorithm}{93}{subsection.7.7.2}%
+\contentsline {subsection}{\numberline {7.7.3}Relevance Scoring}{94}{subsection.7.7.3}%
+\contentsline {subsection}{\numberline {7.7.4}Configuration}{94}{subsection.7.7.4}%
+\contentsline {subsection}{\numberline {7.7.5}Quality Impact}{95}{subsection.7.7.5}%
+\contentsline {section}{\numberline {7.8}Output Format}{95}{section.7.8}%
+\contentsline {chapter}{\numberline {8}Environment and CLI}{97}{chapter.8}%
+\contentsline {section}{\numberline {8.1}Configuration Table}{97}{section.8.1}%
+\contentsline {section}{\numberline {8.2}CLI Usage}{98}{section.8.2}%
+\contentsline {section}{\numberline {8.3}Output Files}{99}{section.8.3}%
+\contentsline {chapter}{\numberline {9}Evaluation Framework}{101}{chapter.9}%
+\contentsline {section}{\numberline {9.1}Calibrated Complexity Scoring (Algorithm 3)}{101}{section.9.1}%
+\contentsline {subsection}{\numberline {9.1.1}Elo Rating Algorithm}{102}{subsection.9.1.1}%
+\contentsline {subsection}{\numberline {9.1.2}Usage}{102}{subsection.9.1.2}%
+\contentsline {section}{\numberline {9.2}Taxonomic Coverage Evaluation}{103}{section.9.2}%
+\contentsline {section}{\numberline {9.3}Embedding-Based Diversity Metrics}{104}{section.9.3}%
+\contentsline {section}{\numberline {9.4}Critic Calibration Validation}{105}{section.9.4}%
+\contentsline {section}{\numberline {9.5}Student-Teacher Gap Analysis}{106}{section.9.5}%
+\contentsline {section}{\numberline {9.6}Adaptive Features (v1.2)}{106}{section.9.6}%
+\contentsline {subsection}{\numberline {9.6.1}Adaptive Complexity Ratio (Figure 7)}{106}{subsection.9.6.1}%
+\contentsline {subsection}{\numberline {9.6.2}Adaptive Critic Thresholding (Figure 3b)}{107}{subsection.9.6.2}%
+\contentsline {subsection}{\numberline {9.6.3}Automatic Coverage Gap Filling}{107}{subsection.9.6.3}%
+\contentsline {subsection}{\numberline {9.6.4}Diversity Optimizer}{108}{subsection.9.6.4}%
+\contentsline {subsection}{\numberline {9.6.5}Taxonomy Quality Gate (Section B.1, Table 2)}{108}{subsection.9.6.5}%
+\contentsline {section}{\numberline {9.7}Natural Language Readiness Assessment}{109}{section.9.7}%
+\contentsline {subsection}{\numberline {9.7.1}Human and Agent Training Artifacts}{111}{subsection.9.7.1}%
+\contentsline {section}{\numberline {9.8}Evaluation Environment Variables}{112}{section.9.8}%
+\contentsline {section}{\numberline {9.9}CI Integration of Evaluation Tolerances}{113}{section.9.9}%
+\contentsline {chapter}{\numberline {10}Worked Example: Trial Balance Domain}{115}{chapter.10}%
+\contentsline {section}{\numberline {10.1}Step 1: Schema Extraction}{115}{section.10.1}%
+\contentsline {section}{\numberline {10.2}Step 2: Factor Identification}{116}{section.10.2}%
+\contentsline {section}{\numberline {10.3}Step 3: Taxonomy Generation}{117}{section.10.3}%
+\contentsline {section}{\numberline {10.4}Step 4: Mix Sampling and Meta-Prompt Generation}{117}{section.10.4}%
+\contentsline {section}{\numberline {10.5}Step 5: Example Generation}{118}{section.10.5}%
+\contentsline {section}{\numberline {10.6}Step 6: Evaluation Metrics}{118}{section.10.6}%
+\contentsline {subsection}{\numberline {10.6.1}Reproducibility}{119}{subsection.10.6.1}%
+\contentsline {section}{\numberline {10.7}Step 7: Output Files}{120}{section.10.7}%
+\contentsline {chapter}{\numberline {11}Testing Specification}{121}{chapter.11}%
+\contentsline {section}{\numberline {11.1}Test coverage requirements}{121}{section.11.1}%
+\contentsline {section}{\numberline {11.2}Test fixtures}{121}{section.11.2}%
+\contentsline {subsection}{\numberline {11.2.1}Taxonomy fixtures}{122}{subsection.11.2.1}%
+\contentsline {subsection}{\numberline {11.2.2}Training example fixtures}{122}{subsection.11.2.2}%
+\contentsline {section}{\numberline {11.3}Unit test cases}{123}{section.11.3}%
+\contentsline {subsection}{\numberline {11.3.1}Taxonomy traversal}{123}{subsection.11.3.1}%
+\contentsline {subsection}{\numberline {11.3.2}Complexity scoring}{123}{subsection.11.3.2}%
+\contentsline {subsection}{\numberline {11.3.3}Critic evaluation}{124}{subsection.11.3.3}%
+\contentsline {subsection}{\numberline {11.3.4}Diversity metrics}{124}{subsection.11.3.4}%
+\contentsline {subsection}{\numberline {11.3.5}Adaptive features}{125}{subsection.11.3.5}%
+\contentsline {subsection}{\numberline {11.3.6}HANA type handling}{125}{subsection.11.3.6}%
+\contentsline {subsubsection}{SIM-HANA-002 implementation}{125}{subsection.11.3.6}%
+\contentsline {section}{\numberline {11.4}Integration test suite}{127}{section.11.4}%
+\contentsline {subsection}{\numberline {11.4.1}End-to-end scenarios}{127}{subsection.11.4.1}%
+\contentsline {section}{\numberline {11.5}Performance benchmarks}{128}{section.11.5}%
+\contentsline {subsection}{\numberline {11.5.1}Reference hardware profile}{128}{subsection.11.5.1}%
+\contentsline {section}{\numberline {11.6}Quality metrics tests}{129}{section.11.6}%
+\contentsline {section}{\numberline {11.7}CI/CD integration}{129}{section.11.7}%
+\contentsline {section}{\numberline {11.8}Acceptance criteria}{130}{section.11.8}%
+\contentsline {chapter}{\numberline {12}Test Fixture Specification}{131}{chapter.12}%
+\contentsline {section}{\numberline {12.1}Overview}{131}{section.12.1}%
+\contentsline {section}{\numberline {12.2}Fixture Count Calculation Methodology}{132}{section.12.2}%
+\contentsline {subsection}{\numberline {12.2.1}Coverage-Based Calculation}{132}{subsection.12.2.1}%
+\contentsline {subsection}{\numberline {12.2.2}Fixture Count Derivation by Domain}{132}{subsection.12.2.2}%
+\contentsline {subsection}{\numberline {12.2.3}Edge Case Multiplier}{133}{subsection.12.2.3}%
+\contentsline {subsection}{\numberline {12.2.4}Extending Fixture Counts}{133}{subsection.12.2.4}%
+\contentsline {section}{\numberline {12.3}Fixture organisation}{134}{section.12.3}%
+\contentsline {section}{\numberline {12.4}Arabic AP fixtures}{135}{section.12.4}%
+\contentsline {subsection}{\numberline {12.4.1}Invoice fixtures}{135}{subsection.12.4.1}%
+\contentsline {subsubsection}{Fixture schema}{135}{table.caption.34}%
+\contentsline {subsection}{\numberline {12.4.2}OCR fixtures}{135}{subsection.12.4.2}%
+\contentsline {section}{\numberline {12.5}Trial Balance fixtures}{136}{section.12.5}%
+\contentsline {subsection}{\numberline {12.5.1}TB extract fixtures}{136}{subsection.12.5.1}%
+\contentsline {subsection}{\numberline {12.5.2}Variance fixtures}{136}{subsection.12.5.2}%
+\contentsline {section}{\numberline {12.6}Simula fixtures}{137}{section.12.6}%
+\contentsline {subsection}{\numberline {12.6.1}Taxonomy fixtures}{137}{subsection.12.6.1}%
+\contentsline {subsection}{\numberline {12.6.2}Training example fixtures}{138}{subsection.12.6.2}%
+\contentsline {section}{\numberline {12.7}Common fixtures}{138}{section.12.7}%
+\contentsline {subsection}{\numberline {12.7.1}Mock LLM responses}{138}{subsection.12.7.1}%
+\contentsline {subsection}{\numberline {12.7.2}Schema copies}{139}{subsection.12.7.2}%
+\contentsline {section}{\numberline {12.8}Data sanitisation requirements}{139}{section.12.8}%
+\contentsline {section}{\numberline {12.9}Fixture validation}{139}{section.12.9}%
+\contentsline {subsection}{\numberline {12.9.1}Schema validation}{140}{subsection.12.9.1}%
+\contentsline {subsection}{\numberline {12.9.2}Coverage verification}{140}{subsection.12.9.2}%
+\contentsline {section}{\numberline {12.10}Implementation checklist}{140}{section.12.10}%
+\contentsline {chapter}{\numberline {13}Agent Implementation Instructions}{143}{chapter.13}%
+\contentsline {section}{\numberline {13.1}Purpose and audience}{143}{section.13.1}%
+\contentsline {section}{\numberline {13.2}Rules of Engagement for AI Agents}{144}{section.13.2}%
+\contentsline {section}{\numberline {13.3}Agent Rule-Pack Architecture (.clinerules)}{144}{section.13.3}%
+\contentsline {subsection}{\numberline {13.3.1}Inheritance Hierarchy}{145}{subsection.13.3.1}%
+\contentsline {subsection}{\numberline {13.3.2}Safety-Critical Flags}{145}{subsection.13.3.2}%
+\contentsline {section}{\numberline {13.4}Platform Overview --- One Codebase, One Instance}{145}{section.13.4}%
+\contentsline {subsection}{\numberline {13.4.1}Integration Stance}{146}{subsection.13.4.1}%
+\contentsline {subsection}{\numberline {13.4.2}Platform Integration Map}{146}{subsection.13.4.2}%
+\contentsline {section}{\numberline {13.5}Transactional Sequence Diagrams}{146}{section.13.5}%
+\contentsline {subsection}{\numberline {13.5.1}Universal Governance Handshake}{147}{subsection.13.5.1}%
+\contentsline {subsection}{\numberline {13.5.2}Arabic AP Golden Path}{147}{subsection.13.5.2}%
+\contentsline {section}{\numberline {13.6}Compute and Resource Alignment}{148}{section.13.6}%
+\contentsline {section}{\numberline {13.7}Human-in-the-Loop (HITL) Critical Gates}{148}{section.13.7}%
+\contentsline {section}{\numberline {13.8}Registry Integrity \& Live Status}{149}{section.13.8}%
+\contentsline {section}{\numberline {13.9}Master Implementation Manifest (Union)}{149}{section.13.9}%
+\contentsline {section}{\numberline {13.10}Governance Obligations (MAS MGF)}{150}{section.13.10}%
+\contentsline {section}{\numberline {13.11}FMEA: Failure Mode and Effects Analysis for AI}{151}{section.13.11}%
+\contentsline {section}{\numberline {13.12}This domain in context}{152}{section.13.12}%
+\contentsline {section}{\numberline {13.13}Schema contribution}{152}{section.13.13}%
+\contentsline {section}{\numberline {13.14}Persona and MCP allow-list}{153}{section.13.14}%
+\contentsline {section}{\numberline {13.15}Agent Rule-Pack Binding}{153}{section.13.15}%
+\contentsline {section}{\numberline {13.16}Current Implementation Gap Analysis}{154}{section.13.16}%
+\contentsline {subsection}{\numberline {13.16.1}Key Findings Summary}{154}{subsection.13.16.1}%
+\contentsline {subsection}{\numberline {13.16.2}Gap Analysis Validity}{155}{subsection.13.16.2}%
+\contentsline {section}{\numberline {13.17}Implementation tasks for this domain}{155}{section.13.17}%
+\contentsline {subsubsection}{Task S1 --- HANA schema extraction.}{155}{section.13.17}%
+\contentsline {subsubsection}{Task S2 --- Taxonomy generation (Algorithm 1).}{156}{lstnumber.-5.6}%
+\contentsline {subsubsection}{Task S3 --- Agentic data synthesis (Algorithm 2).}{157}{lstnumber.-5.6}%
+\contentsline {subsubsection}{Task S4 --- Environment and CLI.}{157}{lstnumber.-5.6}%
+\contentsline {subsubsection}{Task S5 --- Evaluation framework.}{157}{lstnumber.-5.6}%
+\contentsline {subsubsection}{Task S6 --- Test fixtures and testing.}{158}{lstnumber.-5.6}%
+\contentsline {section}{\numberline {13.18}Governance obligations applied to this domain}{158}{section.13.18}%
+\contentsline {section}{\numberline {13.19}Cross-spec integration --- full detail}{159}{section.13.19}%
+\contentsline {subsection}{\numberline {13.19.1}With Arabic AP}{159}{subsection.13.19.1}%
+\contentsline {subsection}{\numberline {13.19.2}With Trial Balance}{159}{subsection.13.19.2}%
+\contentsline {subsection}{\numberline {13.19.3}With Regulations}{159}{subsection.13.19.3}%
+\contentsline {subsection}{\numberline {13.19.4}With Simula}{160}{subsection.13.19.4}%
+\contentsline {section}{\numberline {13.20}Wave assignment and sequencing}{160}{section.13.20}%
+\contentsline {section}{\numberline {13.21}Acceptance criteria (platform-wide)}{161}{section.13.21}%
+\contentsline {section}{\numberline {13.22}References}{161}{section.13.22}%
+\contentsline {chapter}{\numberline {14}Cross-Specification Dependencies}{163}{chapter.14}%
+\contentsline {section}{\numberline {14.1}Architecture Position}{163}{section.14.1}%
+\contentsline {subsection}{\numberline {14.1.1}Cross-domain handshake}{164}{subsection.14.1.1}%
+\contentsline {subsection}{\numberline {14.1.2}Wave-dependency manifest}{164}{subsection.14.1.2}%
+\contentsline {section}{\numberline {14.2}Schema Dependencies}{166}{section.14.2}%
+\contentsline {subsection}{\numberline {14.2.1}Schemas Owned by Simula}{166}{subsection.14.2.1}%
+\contentsline {subsection}{\numberline {14.2.2}Schemas Consumed from Other Domains}{166}{subsection.14.2.2}%
+\contentsline {section}{\numberline {14.3}Regulations Integration}{167}{section.14.3}%
+\contentsline {subsection}{\numberline {14.3.1}Pillar 1: Training Data Bounds}{167}{subsection.14.3.1}%
+\contentsline {subsection}{\numberline {14.3.2}Pillar 2: Human Accountability}{167}{subsection.14.3.2}%
+\contentsline {subsection}{\numberline {14.3.3}Pillar 3: Technical Controls}{167}{subsection.14.3.3}%
+\contentsline {subsection}{\numberline {14.3.4}Pillar 4: Data Provenance}{168}{subsection.14.3.4}%
+\contentsline {section}{\numberline {14.4}Arabic AP Integration}{168}{section.14.4}%
+\contentsline {section}{\numberline {14.5}Trial Balance Integration}{168}{section.14.5}%
+\contentsline {section}{\numberline {14.6}Cross-Reference Summary}{169}{section.14.6}%
+\contentsline {chapter}{\numberline {15}Schema Versioning and Interface Contracts}{171}{chapter.15}%
+\contentsline {section}{\numberline {15.1}Versioning Policy}{171}{section.15.1}%
+\contentsline {subsection}{\numberline {15.1.1}Semantic Versioning for Schemas}{172}{subsection.15.1.1}%
+\contentsline {subsection}{\numberline {15.1.2}Current Schema Versions}{172}{subsection.15.1.2}%
+\contentsline {section}{\numberline {15.2}Schema Evolution Rules}{172}{section.15.2}%
+\contentsline {subsection}{\numberline {15.2.1}Backward Compatibility Requirements}{172}{subsection.15.2.1}%
+\contentsline {subsection}{\numberline {15.2.2}Deprecation Process}{173}{subsection.15.2.2}%
+\contentsline {section}{\numberline {15.3}Cross-Domain Interface Contracts}{173}{section.15.3}%
+\contentsline {subsection}{\numberline {15.3.1}Schema-In, TrainingExample-Out Contract}{173}{subsection.15.3.1}%
+\contentsline {subsection}{\numberline {15.3.2}Interface Versioning}{174}{subsection.15.3.2}%
+\contentsline {section}{\numberline {15.4}Schema Validation}{174}{section.15.4}%
+\contentsline {subsection}{\numberline {15.4.1}Validation Points}{174}{subsection.15.4.1}%
+\contentsline {subsection}{\numberline {15.4.2}Validation Implementation}{175}{subsection.15.4.2}%
+\contentsline {section}{\numberline {15.5}Changelog Management}{175}{section.15.5}%
+\contentsline {subsection}{\numberline {15.5.1}Schema Changelog Location}{175}{subsection.15.5.1}%
+\contentsline {subsection}{\numberline {15.5.2}Changelog Entry Format}{176}{subsection.15.5.2}%
+\contentsline {section}{\numberline {15.6}Version Negotiation}{176}{section.15.6}%
+\contentsline {subsection}{\numberline {15.6.1}Runtime Version Checking}{176}{subsection.15.6.1}%
+\contentsline {subsection}{\numberline {15.6.2}Graceful Degradation}{177}{subsection.15.6.2}%
+\contentsline {section}{\numberline {15.7}Implementation Checklist}{177}{section.15.7}%
+\contentsline {section}{\numberline {15.8}Governance}{178}{section.15.8}%
+\contentsline {subsection}{\numberline {15.8.1}Schema Change Approval}{178}{subsection.15.8.1}%
+\contentsline {subsection}{\numberline {15.8.2}Change Ownership}{178}{subsection.15.8.2}%
+\contentsline {chapter}{\numberline {16}Project Roadmap}{179}{chapter.16}%
+\contentsline {subsection}{Scope of this chapter}{179}{section*.51}%
+\contentsline {subsubsection}{Sequence, not dates.}{179}{section*.51}%
+\contentsline {section}{\numberline {16.1}MoSCoW classification}{180}{section.16.1}%
+\contentsline {section}{\numberline {16.2}Dependency graph}{180}{section.16.2}%
+\contentsline {section}{\numberline {16.3}Project milestones}{180}{section.16.3}%
+\contentsline {section}{\numberline {16.4}Launch tiers and exit gates}{183}{section.16.4}%
+\contentsline {section}{\numberline {16.5}Kill-switch conditions}{183}{section.16.5}%
+\contentsline {section}{\numberline {16.6}Shared-platform dependencies}{183}{section.16.6}%
+\contentsline {section}{\numberline {16.7}v1.3 expansion trigger}{186}{section.16.7}%
+\contentsline {section}{\numberline {16.8}Governance and business-case cadence}{187}{section.16.8}%
+\contentsline {subsubsection}{Project governance.}{187}{section.16.8}%
+\contentsline {subsubsection}{Business-case refresh (M08).}{187}{section.16.8}%
+\contentsline {chapter}{\numberline {17}Implementation Roadmap}{189}{chapter.17}%
+\contentsline {section}{Integration with existing chapters}{189}{section*.58}%
+\contentsline {section}{Scope of this chapter}{190}{section*.58}%
+\contentsline {section}{Relationship to Project Milestones}{190}{section*.58}%
+\contentsline {section}{\numberline {17.1}Roadmap Overview}{191}{section.17.1}%
+\contentsline {subsection}{\numberline {17.1.1}Phase Dependencies}{192}{subsection.17.1.1}%
+\contentsline {section}{\numberline {17.2}Phase 1: Foundation Capability Building}{192}{section.17.2}%
+\contentsline {subsection}{\numberline {17.2.1}Phase 1 Objectives}{193}{subsection.17.2.1}%
+\contentsline {subsection}{\numberline {17.2.2}Phase 1 Deliverables}{193}{subsection.17.2.2}%
+\contentsline {subsubsection}{1.1 Use Case Definition and Value-Risk Assessment}{193}{subsection.17.2.2}%
+\contentsline {subsubsection}{1.2 Cross-Functional Team Assembly}{194}{subsection.17.2.2}%
+\contentsline {subsubsection}{1.3 Governance Framework Integration}{195}{subsection.17.2.2}%
+\contentsline {subsubsection}{1.4 Domain Taxonomy Construction}{196}{subsection.17.2.2}%
+\contentsline {subsubsection}{1.5 Metadata and Provenance Infrastructure}{197}{subsection.17.2.2}%
+\contentsline {subsubsection}{1.6 Quality Assessment Pipeline}{198}{subsection.17.2.2}%
+\contentsline {subsection}{\numberline {17.2.3}Phase 1 Exit Criteria}{198}{subsection.17.2.3}%
+\contentsline {section}{\numberline {17.3}Phase 2: Scaled Deployment}{199}{section.17.3}%
+\contentsline {subsection}{\numberline {17.3.1}Phase 2 Objectives}{199}{subsection.17.3.1}%
+\contentsline {subsection}{\numberline {17.3.2}Phase 2 Deliverables}{199}{subsection.17.3.2}%
+\contentsline {subsubsection}{2.1 Parameter Configuration Interface}{200}{subsection.17.3.2}%
+\contentsline {subsubsection}{2.2 Privacy Risk Assessment System}{201}{subsection.17.3.2}%
+\contentsline {subsubsection}{2.3 Bias Detection and Mitigation}{202}{subsection.17.3.2}%
+\contentsline {subsubsection}{2.4 Access Control and Permissions}{203}{subsection.17.3.2}%
+\contentsline {subsubsection}{2.5 ML Pipeline Integration}{204}{subsection.17.3.2}%
+\contentsline {subsubsection}{2.6 Audit Logging System}{205}{subsection.17.3.2}%
+\contentsline {subsection}{\numberline {17.3.3}Phase 2 Exit Criteria}{205}{subsection.17.3.3}%
+\contentsline {section}{\numberline {17.4}Phase 3: Mature Operations and Continuous Optimization}{206}{section.17.4}%
+\contentsline {subsection}{\numberline {17.4.1}Phase 3 Objectives}{206}{subsection.17.4.1}%
+\contentsline {subsection}{\numberline {17.4.2}Phase 3 Deliverables}{206}{subsection.17.4.2}%
+\contentsline {subsubsection}{3.1 Continuous Monitoring and Drift Detection}{207}{subsection.17.4.2}%
+\contentsline {subsubsection}{3.2 Regulatory Compliance Completion}{208}{subsection.17.4.2}%
+\contentsline {subsubsection}{3.3 Transparency and Explainability}{209}{subsection.17.4.2}%
+\contentsline {subsubsection}{3.4 Incident Response Procedures}{210}{subsection.17.4.2}%
+\contentsline {subsubsection}{3.5 Cost and Budget Optimization}{211}{subsection.17.4.2}%
+\contentsline {subsubsection}{3.6 Incremental Generation Capability}{212}{subsection.17.4.2}%
+\contentsline {subsection}{\numberline {17.4.3}Phase 3 Exit Criteria}{212}{subsection.17.4.3}%
+\contentsline {section}{\numberline {17.5}Key Success Factors}{213}{section.17.5}%
+\contentsline {subsection}{\numberline {17.5.1}Critical Success Factors}{213}{subsection.17.5.1}%
+\contentsline {subsection}{\numberline {17.5.2}Risk Mitigation Summary}{213}{subsection.17.5.2}%
+\contentsline {section}{\numberline {17.6}Requirements Coverage by Phase}{214}{section.17.6}%
+\contentsline {section}{\numberline {17.7}SAP Technology Stack Summary}{214}{section.17.7}%
+\contentsline {chapter}{\numberline {18}Future Directions (v1.3+)}{217}{chapter.18}%
+\contentsline {section}{Integration with existing chapters}{218}{section*.66}%
+\contentsline {section}{Scope of this chapter}{219}{section*.66}%
+\contentsline {section}{\numberline {18.1}Enhancement Overview}{219}{section.18.1}%
+\contentsline {section}{\numberline {18.2}Enhancement 1: Multi-Modal Extension}{220}{section.18.2}%
+\contentsline {subsection}{\numberline {18.2.1}Current Limitation}{220}{subsection.18.2.1}%
+\contentsline {subsection}{\numberline {18.2.2}Cross-Modal Reasoning Scaffolds}{220}{subsection.18.2.2}%
+\contentsline {subsection}{\numberline {18.2.3}Modality-Aware Complexification}{221}{subsection.18.2.3}%
+\contentsline {subsection}{\numberline {18.2.4}SAP Integration: Document Information Extraction}{222}{subsection.18.2.4}%
+\contentsline {section}{\numberline {18.3}Enhancement 2: Domain Adaptation Calibration}{223}{section.18.3}%
+\contentsline {subsection}{\numberline {18.3.1}Current Limitation}{223}{subsection.18.3.1}%
+\contentsline {subsection}{\numberline {18.3.2}Human-in-Loop Knowledge Anchors}{223}{subsection.18.3.2}%
+\contentsline {subsection}{\numberline {18.3.3}Vertical-Specific Complexity Metrics}{224}{subsection.18.3.3}%
+\contentsline {subsection}{\numberline {18.3.4}SAP Integration: S/4HANA Domain Schemas}{225}{subsection.18.3.4}%
+\contentsline {section}{\numberline {18.4}Enhancement 3: Closed-Loop Validation}{226}{section.18.4}%
+\contentsline {subsection}{\numberline {18.4.1}Current Limitation}{226}{subsection.18.4.1}%
+\contentsline {subsection}{\numberline {18.4.2}Training-Validation Feedback Loop}{227}{subsection.18.4.2}%
+\contentsline {subsection}{\numberline {18.4.3}Adversarial Verification Layer}{229}{subsection.18.4.3}%
+\contentsline {subsection}{\numberline {18.4.4}SAP Integration: AI Core MLOps}{230}{subsection.18.4.4}%
+\contentsline {section}{\numberline {18.5}Enhancement 4: Programmable Workflow Engine}{230}{section.18.5}%
+\contentsline {subsection}{\numberline {18.5.1}Current Limitation}{231}{subsection.18.5.1}%
+\contentsline {subsection}{\numberline {18.5.2}Declarative Dataset Specification Language}{231}{subsection.18.5.2}%
+\contentsline {subsection}{\numberline {18.5.3}Version Control and Reproducibility}{232}{subsection.18.5.3}%
+\contentsline {subsection}{\numberline {18.5.4}SAP Integration: BTP and HANA Cloud}{234}{subsection.18.5.4}%
+\contentsline {section}{\numberline {18.6}Regulatory Framework Alignment}{235}{section.18.6}%
+\contentsline {subsection}{\numberline {18.6.1}UK FCA Synthetic Data Expert Group}{235}{subsection.18.6.1}%
+\contentsline {subsection}{\numberline {18.6.2}IEEE Synthetic Data White Paper}{236}{subsection.18.6.2}%
+\contentsline {subsection}{\numberline {18.6.3}World Economic Forum Guidelines}{236}{subsection.18.6.3}%
+\contentsline {section}{\numberline {18.7}Implementation Checklist}{237}{section.18.7}%
+\contentsline {chapter}{\numberline {19}Text-to-SQL Drift Detection Framework}{239}{chapter.19}%
+\contentsline {section}{\numberline {19.1}Purpose and Scope}{239}{section.19.1}%
+\contentsline {section}{\numberline {19.2}Drift Taxonomy}{240}{section.19.2}%
+\contentsline {subsection}{\numberline {19.2.1}Schema Drift Sources (TTS-DRIFT-001, TTS-DRIFT-002)}{241}{subsection.19.2.1}%
+\contentsline {subsection}{\numberline {19.2.2}User Prompt Drift Sources (TTS-DRIFT-004, TTS-DRIFT-008)}{241}{subsection.19.2.2}%
+\contentsline {subsection}{\numberline {19.2.3}Agent Prompt Drift Sources (TTS-DRIFT-003, TTS-DRIFT-007)}{242}{subsection.19.2.3}%
+\contentsline {subsection}{\numberline {19.2.4}Distinguishing User vs Agent Prompts}{244}{subsection.19.2.4}%
+\contentsline {subsection}{\numberline {19.2.5}Combined Drift Assessment Matrix}{245}{subsection.19.2.5}%
+\contentsline {section}{\numberline {19.3}Mandatory Drift Metrics}{246}{section.19.3}%
+\contentsline {subsection}{\numberline {19.3.1}Metric Overview}{246}{subsection.19.3.1}%
+\contentsline {subsection}{\numberline {19.3.2}Schema Drift Metrics (TTS-M01 to TTS-M04)}{247}{subsection.19.3.2}%
+\contentsline {subsubsection}{TTS-M01: Schema Coverage Rate (SCR)}{247}{subsection.19.3.2}%
+\contentsline {subsubsection}{TTS-M02: Schema Staleness Score (SSS)}{247}{equation.19.1}%
+\contentsline {subsubsection}{TTS-M03: Column Type Mismatch Rate (CTMR)}{247}{equation.19.2}%
+\contentsline {subsubsection}{TTS-M04: Foreign Key Consistency Rate (FKCR)}{248}{equation.19.3}%
+\contentsline {subsection}{\numberline {19.3.3}Semantic Drift Metrics (TTS-M05 to TTS-M08)}{248}{subsection.19.3.3}%
+\contentsline {subsubsection}{TTS-M05: Semantic Alignment Score (SAS)}{248}{subsection.19.3.3}%
+\contentsline {subsubsection}{TTS-M06: Intent Preservation Rate (IPR)}{249}{equation.19.5}%
+\contentsline {subsubsection}{TTS-M07: Terminology Drift Score (TDS)}{249}{equation.19.6}%
+\contentsline {subsubsection}{TTS-M08: Ambiguity Resolution Rate (ARR)}{249}{equation.19.7}%
+\contentsline {subsection}{\numberline {19.3.4}Generation Quality Drift Metrics (TTS-M09 to TTS-M12)}{250}{subsection.19.3.4}%
+\contentsline {subsubsection}{TTS-M09: Execution Success Rate (ESR)}{250}{subsection.19.3.4}%
+\contentsline {subsubsection}{TTS-M10: Result Fidelity Score (RFS)}{250}{equation.19.9}%
+\contentsline {subsubsection}{TTS-M11: Complexity Distribution Drift (CDD)}{250}{equation.19.10}%
+\contentsline {subsubsection}{TTS-M12: Taxonomy Coverage Drift (TCD)}{251}{equation.19.11}%
+\contentsline {subsection}{\numberline {19.3.5}Statistical Foundation Metrics (TTS-M13 to TTS-M15)}{251}{subsection.19.3.5}%
+\contentsline {subsubsection}{TTS-M13: Wasserstein Distance (W1D)}{251}{subsection.19.3.5}%
+\contentsline {subsubsection}{TTS-M14: Population Stability Index (PSI)}{252}{equation.19.14}%
+\contentsline {subsubsection}{TTS-M15: Kolmogorov-Smirnov Statistic (KSS)}{253}{equation.19.16}%
+\contentsline {subsection}{\numberline {19.3.6}Statistical Metric Comparison}{253}{subsection.19.3.6}%
+\contentsline {section}{\numberline {19.4}Composite TTS-EVAL Score}{253}{section.19.4}%
+\contentsline {subsection}{\numberline {19.4.1}TTS-EVAL Interpretation}{254}{subsection.19.4.1}%
+\contentsline {section}{\numberline {19.5}Statistical Evaluation Rules}{255}{section.19.5}%
+\contentsline {section}{\numberline {19.6}Minimum Sample Sizes}{255}{section.19.6}%
+\contentsline {section}{\numberline {19.7}User Population Sampling Strategy}{256}{section.19.7}%
+\contentsline {section}{\numberline {19.8}Training-Time Drift Evaluation}{257}{section.19.8}%
+\contentsline {section}{\numberline {19.9}Production Monitoring}{261}{section.19.9}%
+\contentsline {subsection}{\numberline {19.9.1}Schema Drift Agent and Retraining Trigger}{263}{subsection.19.9.1}%
+\contentsline {subsection}{\numberline {19.9.2}Monitoring UI Requirements}{265}{subsection.19.9.2}%
+\contentsline {section}{\numberline {19.10}CI/CD Integration}{265}{section.19.10}%
+\contentsline {subsection}{\numberline {19.10.1}Training Data Generation Gate}{265}{subsection.19.10.1}%
+\contentsline {subsection}{\numberline {19.10.2}Drift Alert Workflow}{266}{subsection.19.10.2}%
+\contentsline {section}{\numberline {19.11}HANA Cloud Telemetry Tables}{266}{section.19.11}%
+\contentsline {section}{\numberline {19.12}Stochastic Surprise Gate (SSG) Framework}{267}{section.19.12}%
+\contentsline {subsection}{\numberline {19.12.1}Mathematical Foundation}{267}{subsection.19.12.1}%
+\contentsline {subsection}{\numberline {19.12.2}Surprise Score Calculation}{268}{subsection.19.12.2}%
+\contentsline {subsubsection}{Step 1: Compute Residual (Innovation)}{268}{subsection.19.12.2}%
+\contentsline {subsubsection}{Step 2: Update Volatility Estimate}{268}{equation.19.22}%
+\contentsline {subsubsection}{Step 3: Compute Z-Score (Surprise)}{268}{equation.19.23}%
+\contentsline {subsubsection}{Step 4: Apply Surprise Gate}{268}{equation.19.24}%
+\contentsline {subsubsection}{Step 5: Convert to p-Value}{269}{equation.19.25}%
+\contentsline {subsection}{\numberline {19.12.3}SSG Surprise Metrics (TTS-M16 to TTS-M19)}{269}{subsection.19.12.3}%
+\contentsline {subsubsection}{TTS-M16: Codebase Surprise Score (CSS)}{269}{table.caption.86}%
+\contentsline {subsubsection}{TTS-M17: Schema Surprise Score (SSS-HW)}{270}{equation.19.27}%
+\contentsline {subsubsection}{TTS-M18: Prompt Surprise Score (PSS)}{270}{equation.19.28}%
+\contentsline {subsubsection}{TTS-M19: Token Surprise Score (TSS)}{271}{equation.19.29}%
+\contentsline {subsection}{\numberline {19.12.4}Significance Classification}{271}{subsection.19.12.4}%
+\contentsline {subsection}{\numberline {19.12.5}Online Calibration}{271}{subsection.19.12.5}%
+\contentsline {subsection}{\numberline {19.12.6}Audit Trail Structure}{272}{subsection.19.12.6}%
+\contentsline {section}{\numberline {19.13}Future Directions: TOON and DSPy Integration}{273}{section.19.13}%
+\contentsline {subsection}{\numberline {19.13.1}Token-Oriented Object Notation (TOON)}{274}{subsection.19.13.1}%
+\contentsline {subsection}{\numberline {19.13.2}DSPy Integration}{274}{subsection.19.13.2}%
+\contentsline {section}{\numberline {19.14}Known Limitations \& Roadmap}{276}{section.19.14}%
+\contentsline {subsection}{\numberline {19.14.1}Review Summary (v1.2)}{276}{subsection.19.14.1}%
+\contentsline {subsection}{\numberline {19.14.2}Known Limitations}{277}{subsection.19.14.2}%
+\contentsline {subsection}{\numberline {19.14.3}Computational Optimizations}{277}{subsection.19.14.3}%
+\contentsline {subsubsection}{Sliced Wasserstein Approximation}{277}{subsection.19.14.3}%
+\contentsline {subsubsection}{Tiered Metric Strategy}{278}{lstnumber.-6.5}%
+\contentsline {subsection}{\numberline {19.14.4}Calibration Health Checks}{278}{subsection.19.14.4}%
+\contentsline {subsection}{\numberline {19.14.5}Roadmap}{280}{subsection.19.14.5}%
+\contentsline {subsection}{\numberline {19.14.6}Pilot Deployment Strategy}{280}{subsection.19.14.6}%
+\contentsline {section}{\numberline {19.15}Detailed Implementation Specifications}{281}{section.19.15}%
+\contentsline {subsection}{\numberline {19.15.1}Sliced Wasserstein Distance Implementation}{281}{subsection.19.15.1}%
+\contentsline {subsubsection}{Algorithm}{281}{subsection.19.15.1}%
+\contentsline {subsubsection}{Python Implementation}{282}{algorithm.1}%
+\contentsline {subsubsection}{Parameters and Thresholds}{283}{lstnumber.19.12.69}%
+\contentsline {subsection}{\numberline {19.15.2}Calibration Health Check Implementation}{284}{subsection.19.15.2}%
+\contentsline {subsubsection}{Health Check Algorithm}{284}{subsection.19.15.2}%
+\contentsline {subsubsection}{Python Implementation}{284}{algorithm.2}%
+\contentsline {subsection}{\numberline {19.15.3}Spider Dataset Validation Specification}{288}{subsection.19.15.3}%
+\contentsline {subsubsection}{Dataset Requirements}{288}{subsection.19.15.3}%
+\contentsline {subsubsection}{Synthetic Drift Injection Protocol}{288}{table.caption.93}%
+\contentsline {subsubsection}{Validation Metrics Protocol}{291}{lstnumber.19.14.83}%
+\contentsline {subsubsection}{Expected Outputs}{291}{Item.246}%
+\contentsline {subsection}{\numberline {19.15.4}Threshold Bootstrap Analysis Specification}{292}{subsection.19.15.4}%
+\contentsline {subsubsection}{Bootstrap Protocol}{292}{subsection.19.15.4}%
+\contentsline {subsubsection}{Python Implementation}{293}{algorithm.3}%
+\contentsline {subsubsection}{Threshold Documentation Template}{295}{lstnumber.19.15.99}%
+\contentsline {subsection}{\numberline {19.15.5}Ambiguity Resolution Rate (ARR) Module Specification}{296}{subsection.19.15.5}%
+\contentsline {subsubsection}{Ambiguity Classification}{296}{subsection.19.15.5}%
+\contentsline {subsubsection}{Ambiguity Detector Architecture}{296}{table.caption.95}%
+\contentsline {subsubsection}{ARR Metric Computation}{300}{lstnumber.19.17.155}%
+\contentsline {section}{\numberline {19.16}Implementation Checklist}{301}{section.19.16}%
+\contentsline {chapter}{\numberline {20}Financial Domain Multi-Persona Prompt Generation}{303}{chapter.20}%
+\contentsline {section}{\numberline {20.1}Purpose and Scope}{303}{section.20.1}%
+\contentsline {subsection}{\numberline {20.1.1}Integration Points}{304}{subsection.20.1.1}%
+\contentsline {subsection}{\numberline {20.1.2}Core Design Principles}{304}{subsection.20.1.2}%
+\contentsline {section}{\numberline {20.2}Persona Taxonomy}{305}{section.20.2}%
+\contentsline {subsection}{\numberline {20.2.1}Persona Classification Axes}{305}{subsection.20.2.1}%
+\contentsline {subsection}{\numberline {20.2.2}Human User Personas}{305}{subsection.20.2.2}%
+\contentsline {subsection}{\numberline {20.2.3}AI Agent Worker Personas}{305}{subsection.20.2.3}%
+\contentsline {subsection}{\numberline {20.2.4}Persona Communication Patterns}{306}{subsection.20.2.4}%
+\contentsline {section}{\numberline {20.3}Financial Domain Taxonomy}{307}{section.20.3}%
+\contentsline {subsection}{\numberline {20.3.1}Hierarchical Concept Structure}{307}{subsection.20.3.1}%
+\contentsline {subsection}{\numberline {20.3.2}Alias Mapping for Terminology Tolerance}{308}{subsection.20.3.2}%
+\contentsline {subsection}{\numberline {20.3.3}Data Dictionary and Value Synonym Mapping}{308}{subsection.20.3.3}%
+\contentsline {section}{\numberline {20.4}Multi-Persona Prompt Generation Pipeline}{309}{section.20.4}%
+\contentsline {subsection}{\numberline {20.4.1}Stage 1: Mix Generation}{309}{subsection.20.4.1}%
+\contentsline {subsection}{\numberline {20.4.2}Stage 2: Persona-Aware Meta-Prompt Templates}{310}{subsection.20.4.2}%
+\contentsline {subsection}{\numberline {20.4.3}Stage 3: Complexification by Expertise}{311}{subsection.20.4.3}%
+\contentsline {subsection}{\numberline {20.4.4}Stage 4: Dual-Reviewer Validation}{312}{subsection.20.4.4}%
+\contentsline {section}{\numberline {20.5}Persona-Aware Metrics}{313}{section.20.5}%
+\contentsline {subsection}{\numberline {20.5.1}New Metrics (PER-M01 to PER-M04)}{313}{subsection.20.5.1}%
+\contentsline {subsubsection}{PER-M01: Persona Coverage Rate}{314}{table.caption.104}%
+\contentsline {subsubsection}{PER-M02: Expertise Consistency Rate}{314}{equation.20.1}%
+\contentsline {subsubsection}{PER-M03: Cross-Persona Fairness}{314}{equation.20.2}%
+\contentsline {subsubsection}{PER-M04: Per-Persona Drift Score}{315}{equation.20.3}%
+\contentsline {section}{\numberline {20.6}Integration with TTS Drift Framework}{315}{section.20.6}%
+\contentsline {subsection}{\numberline {20.6.1}Extended User Population Sampling}{315}{subsection.20.6.1}%
+\contentsline {subsection}{\numberline {20.6.2}Persona-Attributed Drift Alerts}{315}{subsection.20.6.2}%
+\contentsline {section}{\numberline {20.7}Integration with AI Safety Framework}{317}{section.20.7}%
+\contentsline {subsection}{\numberline {20.7.1}Mapping to Singapore AI Safety Metrics}{317}{subsection.20.7.1}%
+\contentsline {subsection}{\numberline {20.7.2}Safety Thresholds by Persona Type}{317}{subsection.20.7.2}%
+\contentsline {section}{\numberline {20.8}Orchestration Pipeline}{318}{section.20.8}%
+\contentsline {subsection}{\numberline {20.8.1}Configuration File}{318}{subsection.20.8.1}%
+\contentsline {subsection}{\numberline {20.8.2}Pipeline Implementation}{319}{subsection.20.8.2}%
+\contentsline {section}{\numberline {20.9}Implementation Checklist}{323}{section.20.9}%
+\contentsline {section}{\numberline {20.10}Cross-References}{324}{section.20.10}%
+\contentsline {chapter}{\numberline {A}Implementation Gap Review and Agent Rule Pack}{325}{appendix.A}%
+\contentsline {section}{\numberline {A.1}Review scope and constraints}{326}{section.A.1}%
+\contentsline {section}{\numberline {A.2}Executive assessment}{326}{section.A.2}%
+\contentsline {section}{\numberline {A.3}Validation performed}{326}{section.A.3}%
+\contentsline {section}{\numberline {A.4}Gap-to-Milestone Mapping Summary}{328}{section.A.4}%
+\contentsline {section}{\numberline {A.5}Findings in \texttt {src/training}}{328}{section.A.5}%
+\contentsline {section}{\numberline {A.6}Findings in \texttt {src/generativeUI/training-webcomponents-ngx}}{335}{section.A.6}%
+\contentsline {section}{\numberline {A.7}Proposed implementation-agent rule file}{338}{section.A.7}%
+\contentsline {section}{\numberline {A.8}Proposed runtime-monitor agent rule file}{340}{section.A.8}%
+\contentsline {section}{\numberline {A.9}Sequenced remediation order}{341}{section.A.9}%
+\contentsline {chapter}{\numberline {B}SAP Integration Guide}{343}{appendix.B}%
+\contentsline {section}{\numberline {B.1}SAP HANA Cloud Integration}{343}{section.B.1}%
+\contentsline {subsection}{\numberline {B.1.1}Connection Configuration}{343}{subsection.B.1.1}%
+\contentsline {subsection}{\numberline {B.1.2}Required Database Permissions}{344}{subsection.B.1.2}%
+\contentsline {subsection}{\numberline {B.1.3}HANA-Specific Type Mapping}{345}{subsection.B.1.3}%
+\contentsline {subsection}{\numberline {B.1.4}Spatial Type Handling}{346}{subsection.B.1.4}%
+\contentsline {section}{\numberline {B.2}SAP AI Core Integration}{347}{section.B.2}%
+\contentsline {subsection}{\numberline {B.2.1}Deployment Configuration}{347}{subsection.B.2.1}%
+\contentsline {subsection}{\numberline {B.2.2}Training Pipeline Integration}{348}{subsection.B.2.2}%
+\contentsline {section}{\numberline {B.3}SAP BTP Services Integration}{349}{section.B.3}%
+\contentsline {subsection}{\numberline {B.3.1}Credential Store}{349}{subsection.B.3.1}%
+\contentsline {subsection}{\numberline {B.3.2}Audit Log Service}{350}{subsection.B.3.2}%
+\contentsline {subsection}{\numberline {B.3.3}Alert Notification Service}{350}{subsection.B.3.3}%
+\contentsline {section}{\numberline {B.4}SAP Analytics Cloud Integration}{351}{section.B.4}%
+\contentsline {subsection}{\numberline {B.4.1}Cost Tracking Dashboard}{352}{subsection.B.4.1}%
+\contentsline {subsection}{\numberline {B.4.2}Recommended Dashboard Widgets}{353}{subsection.B.4.2}%
+\contentsline {section}{\numberline {B.5}SAP GRC Integration}{353}{section.B.5}%
+\contentsline {subsection}{\numberline {B.5.1}Policy Management}{353}{subsection.B.5.1}%
+\contentsline {subsection}{\numberline {B.5.2}Compliance Evidence Collection}{354}{subsection.B.5.2}%
+\contentsline {section}{\numberline {B.6}SAP Build Apps Integration}{355}{section.B.6}%
+\contentsline {subsection}{\numberline {B.6.1}API Endpoints}{355}{subsection.B.6.1}%
+\contentsline {subsection}{\numberline {B.6.2}Build Apps Data Entity}{355}{subsection.B.6.2}%
+\contentsline {section}{\numberline {B.7}Quick Reference: Environment Variables}{357}{section.B.7}%
+\contentsline {chapter}{\numberline {C}References}{359}{appendix.C}%
+\contentsline {section}{\numberline {C.1}Source Documents}{359}{section.C.1}%
+\contentsline {section}{\numberline {C.2}Implementation Files}{360}{section.C.2}%
+\contentsline {section}{\numberline {C.3}Tools and Dependencies}{361}{section.C.3}%
+\contentsline {section}{\numberline {C.4}Academic References}{361}{section.C.4}%
+\contentsline {section}{\numberline {C.5}Related Specifications}{362}{section.C.5}%
+\contentsline {section}{\numberline {C.6}Schema Registry}{362}{section.C.6}%
+\contentsline {section}{\numberline {C.7}External Standards}{363}{section.C.7}%
+\contentsline {chapter}{\numberline {D}Global Wave-Dependency Manifest}{365}{appendix.D}%
+\contentsline {section}{\numberline {D.1}Critical Path Visualization (Waves 1--3)}{365}{section.D.1}%
+\contentsline {section}{\numberline {D.2}Inter-Domain Prerequisite Matrix}{366}{section.D.2}%
 \contentsfinish 

@@ -22,7 +22,7 @@ const mockFetch = jest.fn();
 const MOCK_RESPONSE = {
   total_pages: 1,
   overall_confidence: 92.0,
-  total_processing_time_s: 0.5,
+  total_processing_time_ms: 500,
   pages: [{ page_number: 1, text: 'Hello World', confidence: 92.0 }],
 };
 
@@ -148,4 +148,3 @@ describe('OCR', () => {
     });
   });
 });
-

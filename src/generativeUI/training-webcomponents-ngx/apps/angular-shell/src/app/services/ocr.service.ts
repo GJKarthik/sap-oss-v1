@@ -34,7 +34,7 @@ export interface OcrPageResult {
   width: number;
   height: number;
   flagged_for_review: boolean;
-  processing_time_s: number;
+  processing_time_ms: number;
   errors: string[];
 }
 
@@ -44,7 +44,7 @@ export interface OcrResult {
   pages: OcrPageResult[];
   metadata: Record<string, unknown>;
   overall_confidence: number;
-  total_processing_time_s: number;
+  total_processing_time_ms: number;
   errors: string[];
 }
 

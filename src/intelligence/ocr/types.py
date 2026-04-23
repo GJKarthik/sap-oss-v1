@@ -50,7 +50,7 @@ class AnalyticsPageStat(TypedDict):
     confidence: float
     word_count: int
     flagged: bool
-    processing_time_s: float
+    processing_time_ms: float
 
 
 class AnalyticsSummary(TypedDict):
@@ -112,4 +112,3 @@ class TableDetectorProtocol(Protocol):
     def detect(self, image: Image.Image) -> list:
         """Detect tables in an image; return list of table objects."""
         ...
-

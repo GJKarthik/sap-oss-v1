@@ -64,15 +64,14 @@ specs/
 │
 └── simula/                      # Training Data Framework
     ├── simula-training-spec.tex # Main document
-    └── chapters/                # 8 chapter files
+    └── chapters/                # 20 numbered chapters plus appendices
         ├── 00-frontmatter.tex
         ├── 01-overview.tex
-        ├── 02-data-schema.tex
-        ├── 03-extraction-pipeline.tex
-        ├── 04-taxonomy-engine.tex
-        ├── 05-generation-engine.tex
-        ├── 06-environment-cli.tex
-        └── 07-references.tex
+        ├── 02-business-requirements.tex
+        ├── ...
+        ├── 18-text-to-sql-drift.tex
+        ├── 19-financial-prompt-generation.tex
+        └── A1-A3 appendices
 ```
 
 ## Building PDFs
@@ -140,6 +139,9 @@ Specifies the synthetic training data generation pipeline:
 - Multi-agent data generation (GPT-4o/Claude)
 - Complexity calibration and diversity optimization
 - Quality validation with critic agents
+- Natural-language readiness assessment for human vs. agent artifacts
+- Text-to-SQL schema, vocabulary, and prompt drift monitoring
+- Persona-aware financial prompt generation and data dictionary mappings
 
 ### 5. `.clinerules` Agent Swarm Supplement (`clinerules-agents/`)
 

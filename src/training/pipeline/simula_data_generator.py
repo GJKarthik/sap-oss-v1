@@ -12,9 +12,11 @@ Reference: "Reasoning-Driven Synthetic Data Generation and Evaluation" (2026)
 from __future__ import annotations
 
 import asyncio
+import hashlib
 import json
 import logging
 import random
+import re
 from dataclasses import dataclass, field
 from datetime import datetime
 from itertools import product
@@ -158,6 +160,8 @@ class TrainingExample:
     difficulty: str = "medium"  # Maps to complexity_level
     taxonomy_mix: dict = field(default_factory=dict)  # Maps to taxonomy_path
     meta_prompt: str = ""
+    meta_prompt_id: str = ""
+    audience: str = "dual"  # human, agent, or dual
     critic_verdict: Optional[str] = None  # Maps to critic_evaluation.verdict
     
     def __post_init__(self):
@@ -210,6 +214,10 @@ class TrainingExample:
             result["original_question"] = self.original_question
         if self.original_sql:
             result["original_sql"] = self.original_sql
+        if self.meta_prompt_id:
+            result["meta_prompt_id"] = self.meta_prompt_id
+        if self.audience:
+            result["audience"] = self.audience
         if self.critic_evaluation:
             result["critic_evaluation"] = self.critic_evaluation.to_dict()
         if self.generation_metadata:
@@ -230,6 +238,8 @@ class TrainingExample:
             "difficulty": self.difficulty,
             "taxonomy_mix": self.taxonomy_mix,
             "meta_prompt": self.meta_prompt,
+            "meta_prompt_id": self.meta_prompt_id,
+            "audience": self.audience,
             "is_complexified": self.is_complexified,
         }
     
@@ -293,6 +303,47 @@ class SimulaDataGenerator:
         self._example_counter += 1
         timestamp = datetime.now().strftime("%Y%m%d")
         return f"simula_{timestamp}_{self._example_counter:08d}"
+
+    @staticmethod
+    def _meta_prompt_id(table: TableSchema, mix: dict[str, str], meta_prompt: str) -> str:
+        """Create a stable identifier for a generated meta-prompt."""
+        payload = json.dumps(
+            {
+                "table": f"{table.schema_name}.{table.name}",
+                "mix": mix,
+                "meta_prompt": meta_prompt,
+            },
+            sort_keys=True,
+        )
+        return f"mp-{hashlib.sha256(payload.encode('utf-8')).hexdigest()[:12]}"
+
+    @staticmethod
+    def _infer_audience(question: str, meta_prompt: str) -> str:
+        """Infer whether the prompt is human-facing, agent-facing, or usable by both."""
+        text = f"{question} {meta_prompt}"
+        technical_patterns = [
+            r"\b[A-Z]{3,}\b",
+            r"\b\w+_\w+\b",
+            r"\b[A-Za-z0-9]+\.[A-Za-z0-9_.]+\b",
+            r"\b(SELECT|FROM|WHERE|JOIN|GROUP BY|HAVING)\b",
+        ]
+        human_patterns = [
+            r"\b(show|display|list|get|find|what|how|which|please|can you)\b",
+            r"\b(total|average|sum|count|trend|compare)\b",
+        ]
+        technical_count = sum(
+            len(re.findall(pattern, text, flags=re.IGNORECASE))
+            for pattern in technical_patterns
+        )
+        human_count = sum(
+            len(re.findall(pattern, text, flags=re.IGNORECASE))
+            for pattern in human_patterns
+        )
+        if technical_count >= 2 and human_count == 0:
+            return "agent"
+        if human_count > 0 and technical_count == 0:
+            return "human"
+        return "dual"
     
     # =========================================================================
     # Phase 1: Taxonomic Sampling (Global Diversity)
@@ -639,6 +690,8 @@ Respond with JSON:
                 difficulty=difficulty,
                 taxonomy_mix=mix,
                 meta_prompt=meta_prompt,
+                meta_prompt_id=self._meta_prompt_id(table, mix, meta_prompt),
+                audience=self._infer_audience(question, meta_prompt),
                 is_complexified=is_complexified,
             )
             
@@ -718,8 +771,10 @@ Provide corrected version as JSON:
                 difficulty=result.get("difficulty", example.difficulty),
                 taxonomy_mix=example.taxonomy_mix,
                 meta_prompt=example.meta_prompt,
+                meta_prompt_id=example.meta_prompt_id,
+                audience=example.audience,
                 is_complexified=example.is_complexified,
-                critic_verdict="refined",
+                critic_verdict="ACCEPT",
             )
         except Exception as e:
             logger.warning(f"Example refinement failed: {e}")
@@ -796,12 +851,12 @@ Provide corrected version as JSON:
                             if refined:
                                 is_valid, explanation = await self.critic_filter(refined)
                                 if is_valid:
-                                    refined.critic_verdict = "passed_after_refinement"
+                                    refined.critic_verdict = "ACCEPT"
                                     return refined
                         
                         return None  # Rejected after retries
                     
-                    example.critic_verdict = "passed"
+                    example.critic_verdict = "ACCEPT"
                 
                 return example
         
@@ -888,8 +943,48 @@ Provide corrected version as JSON:
         stats_file = output_dir / f"simula_stats_{timestamp}.json"
         with open(stats_file, "w") as f:
             json.dump(stats, f, indent=2)
+
+        self.save_audience_splits(examples, output_dir, timestamp)
         
         return output_file
+
+    def save_audience_splits(
+        self,
+        examples: list[TrainingExample],
+        output_dir: str | Path | None = None,
+        timestamp: str | None = None,
+    ) -> tuple[Path, Path]:
+        """Save separate human-facing and schema-aware-agent training files."""
+        output_dir = Path(output_dir or self.config.output_dir)
+        output_dir.mkdir(parents=True, exist_ok=True)
+        timestamp = timestamp or datetime.now().strftime("%Y%m%d_%H%M%S")
+
+        human_file = output_dir / f"simula_training_{timestamp}_human.jsonl"
+        agent_file = output_dir / f"simula_training_{timestamp}_agent.jsonl"
+
+        human_examples = [
+            example for example in examples
+            if example.audience in ("human", "dual")
+        ]
+        agent_examples = [
+            example for example in examples
+            if example.audience in ("agent", "dual")
+        ]
+
+        with open(human_file, "w") as f:
+            for example in human_examples:
+                f.write(example.to_jsonl() + "\n")
+
+        with open(agent_file, "w") as f:
+            for example in agent_examples:
+                f.write(example.to_jsonl() + "\n")
+
+        logger.info(
+            "Saved audience splits: %s human examples, %s agent examples",
+            len(human_examples),
+            len(agent_examples),
+        )
+        return human_file, agent_file
 
 
 # Convenience functions

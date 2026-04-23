@@ -32,7 +32,7 @@ const MOCK_OCR_RESULT: OcrResult = {
       width: 2480,
       height: 3508,
       flagged_for_review: false,
-      processing_time_s: 1.0,
+      processing_time_ms: 1000,
       errors: [],
     },
     {
@@ -44,13 +44,13 @@ const MOCK_OCR_RESULT: OcrResult = {
       width: 2480,
       height: 3508,
       flagged_for_review: false,
-      processing_time_s: 0.8,
+      processing_time_ms: 800,
       errors: [],
     },
   ],
   errors: [],
   overall_confidence: 89,
-  total_processing_time_s: 1.8,
+  total_processing_time_ms: 1800,
   file_path: 'test.pdf',
   metadata: {},
 };
@@ -355,8 +355,8 @@ describe('DocumentOcrComponent', () => {
       // Flush the upload HTTP request
       httpMock.expectOne('/ocr/pdf').flush({
         total_pages: 1,
-        pages: [{ page_number: 1, text: '', text_regions: [], tables: [], confidence: 90, width: 100, height: 100, flagged_for_review: false, processing_time_s: 0, errors: [] }],
-        errors: [], overall_confidence: 90, total_processing_time_s: 0, file_path: 'report.pdf', metadata: {},
+        pages: [{ page_number: 1, text: '', text_regions: [], tables: [], confidence: 90, width: 100, height: 100, flagged_for_review: false, processing_time_ms: 0, errors: [] }],
+        errors: [], overall_confidence: 90, total_processing_time_ms: 0, file_path: 'report.pdf', metadata: {},
       });
       tick();
       expect(component.getState().sourceFile).toBe(file);

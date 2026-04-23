@@ -1000,6 +1000,50 @@ class TTSProductionMonitor:
         )
 \end{lstlisting}
 
+\subsection{Schema Drift Agent and Retraining Trigger}
+
+A dedicated drift agent monitors versioned HANA schema snapshots, dictionary
+versions, and training artifact versions. The agent must compare the live schema
+registry against the latest approved training baseline on every scheduled check
+and on every schema registry commit.
+
+\begin{table}[htbp]
+\centering
+\caption{Drift Agent Trigger Rules}
+\label{tab:drift-agent-triggers}
+\begin{tabularx}{\textwidth}{@{}l l X l@{}}
+\toprule
+\textbf{Trigger} & \textbf{Severity} & \textbf{Required Action} & \textbf{Retraining Scope} \\
+\midrule
+Column dropped or type changed & CRITICAL & Halt affected query patterns, open schema-drift incident & Full affected domain \\
+Column renamed or table added & HIGH & Re-extract schema, regenerate affected taxonomy nodes & Targeted incremental \\
+Dictionary value added or changed & HIGH & Regenerate synonym/value mapping tests & Dictionary slice \\
+Vocabulary drift over threshold & MEDIUM & Generate new human-facing examples and update aliases & Persona or locale slice \\
+Agent prompt drift over threshold & MEDIUM & Refresh agent templates and re-run audience separation checks & Agent slice \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\noindent
+Every trigger must write an auditable event containing the schema version,
+training artifact version, dictionary version, triggering metric, owner, and
+retraining decision. Retraining is blocked until the readiness assessment in
+Section~\ref{sec:nl-readiness-assessment} returns GREEN for the target audience
+or AMBER with an explicit waiver for agent-only publication.
+
+\subsection{Monitoring UI Requirements}
+
+The operations UI must expose schema, specification, and vocabulary drift as
+separate surfaces instead of collapsing them into one health indicator. The
+minimum dashboard fields are:
+\begin{itemize}
+  \item current schema version, latest training schema version, and schema delta count;
+  \item TTS-EVAL trend, per-metric failures, and confidence-bounded pass/fail state;
+  \item unresolved vocabulary terms, dictionary miss rate, and top affected locales;
+  \item human vs. agent readiness grade and artifact publication status;
+  \item active retraining jobs, blocked deployments, and owner assignment.
+\end{itemize}
+
 \section{CI/CD Integration}
 
 \subsection{Training Data Generation Gate}

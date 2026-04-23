@@ -230,6 +230,36 @@ $ python3 docs/tb/structured/validate.py
 13/13 records validated, corpus OK
 \end{lstlisting}
 
+\section{Variance record}\label{sec:variance-schema}
+
+A variance record is produced by the Stage 2 anomaly detection pipeline
+(\cref{ch:ai}). It captures the statistical deviation of an account
+balance from its historical trend and records the outcome of initial
+materiality and anomaly checks.
+
+\begin{table}[htbp]
+\caption{\texttt{variance-record.schema.json} fields.}\label{tab:variance-fields}
+\centering
+\small
+\begin{tabularx}{\linewidth}{@{}lllX@{}}
+\toprule
+\textbf{Field} & \textbf{Type} & \textbf{Req} & \textbf{Notes} \\ \midrule
+\texttt{variance\_id}       & string  & Y & Unique record identifier \\
+\texttt{account\_code}      & string  & Y & GL account code \\
+\texttt{period}             & string  & Y & YYYY-MM format \\
+\texttt{current\_balance}   & number  & N & Current period balance \\
+\texttt{prior\_balance}     & number  & N & Prior period balance \\
+\texttt{variance\_amount}   & number  & Y & Absolute variance ($|C - P|$) \\
+\texttt{variance\_percent}  & number  & N & Percentage variance \\
+\texttt{flags}              & array   & Y & Anomaly flags (\textsc{spike}, \textsc{flip}, \dots) \\
+\texttt{anomaly\_detection}  & object  & N & Statistical check details (3$\sigma$, MAD) \\
+\texttt{materiality\_assessment} & object  & N & DP-001 assessment details \\
+\texttt{investigation\_status}   & enum    & N & \textsc{pending}, \textsc{in\_progress}, \textsc{completed} \\
+\texttt{is\_unexplained}     & boolean & N & True if remains unexplained at M+4 \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
 \section{Unified Schema Registry}
 
 As of 18 April 2026, all schemas in this specification are published in the

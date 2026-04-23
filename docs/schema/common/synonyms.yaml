@@ -71,6 +71,42 @@ domains:
         synonyms: ["category", "taxonomy entry", "classification node"]
         nl_ready: true
 
+    entity_mappings:
+      - entity_type: "country_code"
+        name: "India"
+        code: "IN"
+        variations: ["Bharat", "Indian entity", "India branch"]
+        locale_names:
+          hi-IN: "भारत"
+        training_requirement: "Resolve country filters to IN; reject unsupported country synonyms"
+
+      - entity_type: "country_code"
+        name: "Singapore"
+        code: "SG"
+        variations: ["SG entity", "Singapore branch", "Republic of Singapore"]
+        locale_names:
+          zh-CN: "新加坡"
+          ms: "Singapura"
+        training_requirement: "Resolve country filters to SG with locale-specific variants"
+
+      - entity_type: "currency_code"
+        name: "US Dollar"
+        code: "USD"
+        variations: ["dollars", "US dollars", "U.S. dollars"]
+        training_requirement: "Disambiguate USD from SGD, AUD, and local reporting currency"
+
+      - entity_type: "period"
+        name: "First Quarter"
+        code: "Q1"
+        variations: ["Q1", "first quarter", "quarter one"]
+        training_requirement: "Apply fiscal-calendar context where configured"
+
+      - entity_type: "business_segment"
+        name: "Wealth Management"
+        code: "WEALTH"
+        variations: ["wealth", "WM", "wealth management"]
+        training_requirement: "Use owner-approved segment vocabulary only"
+
   # ---------------------------------------------------------------------------
   # TRIAL BALANCE (TB)
   # ---------------------------------------------------------------------------

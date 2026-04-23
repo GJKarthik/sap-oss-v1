@@ -278,11 +278,42 @@ if USE_FASTAPI:
         ids: Optional[List[str]] = None
         model: Optional[str] = None
 
+    # HANA Vector Store Models (OpenAPI compliant)
+    class VectorDocument(BaseModel):
+        id: str
+        content: str
+        embedding: List[float]
+        metadata: Optional[Dict[str, Any]] = None
+
+    class AddDocumentsRequest(BaseModel):
+        table_name: str  # Added to request for context
+        documents: List[VectorDocument]
+        batchSize: Optional[int] = 1000
+
+    class SimilaritySearchRequest(BaseModel):
+        query_embedding: List[float]
+        top_k: Optional[int] = 4
+        filter: Optional[Dict[str, Any]] = None
+        table_name: str
+
+    class CreateTableRequest(BaseModel):
+        table_name: str
+        vector_dim: int
+        distance_strategy: Optional[str] = "cosine"
+        schema_config: Optional[Dict[str, str]] = None  # Renamed from schema as it's a reserved word
+
+    class CreateHnswIndexRequest(BaseModel):
+        index_name: str
+        table_name: str
+        m: Optional[int] = 16
+        ef_construction: Optional[int] = 64
+
     # =========================================================================
     # Core OpenAI Endpoints
     # =========================================================================
     
     @app.get("/health")
+    @app.get("/api/health")
     def health():
         """Health check endpoint."""
         hana_status = "connected" if get_hana_connection() else "not_configured"
@@ -297,7 +328,7 @@ if USE_FASTAPI:
         """List available models."""
         config = AICoreConfig.from_env()
         deployments = get_deployments(config)
-        
+
         return {
             "object": "list",
             "data": [
@@ -319,7 +350,7 @@ if USE_FASTAPI:
         """Get model details."""
         config = AICoreConfig.from_env()
         deployment = find_deployment(config, model_id)
-        
+
         if not deployment:
             raise HTTPException(status_code=404, detail="Model not found")
         
@@ -417,6 +448,7 @@ if USE_FASTAPI:
             )
             return {"id": completion_id, **result, "model": deployment["id"]}
     
+    @app.post("/embeddings")
     @app.post("/v1/embeddings")
     async def embeddings(request: EmbeddingRequest):
         """Embeddings with optional HANA storage."""
@@ -1117,14 +1149,15 @@ if USE_FASTAPI:
     # =========================================================================
     # HANA Cloud Vector Store Endpoints
     # =========================================================================
-    
+
+    @app.get("/vectorstore/collections")
     @app.get("/v1/hana/tables")
     def list_hana_vector_tables():
         """List HANA vector tables."""
         conn = get_hana_connection()
         if not conn:
             return {"object": "list", "data": list(_vector_tables.keys()), "source": "memory"}
-        
+
         try:
             # Query HANA for vector tables
             result = conn.sql("""
@@ -1136,9 +1169,214 @@ if USE_FASTAPI:
             return {"object": "list", "data": tables, "source": "hana"}
         except:
             return {"object": "list", "data": list(_vector_tables.keys()), "source": "memory"}
-    
-    @app.post("/v1/hana/vectors")
-    async def store_hana_vectors(request: HANAVectorRequest):
+
+    @app.post("/documents")
+    async def add_documents(request: AddDocumentsRequest):
+        """Add documents to HANA Vector Store."""
+        conn = get_hana_connection()
+        if not conn:
+            raise HTTPException(status_code=503, detail="HANA connection not available")
+
+        texts = [doc.content for doc in request.documents]
+        metadatas = [doc.metadata or {} for doc in request.documents]
+        embeddings = [doc.embedding for doc in request.documents]
+        ids = [doc.id for doc in request.documents]
+
+        await _store_vectors_in_hana(
+            table_name=request.table_name,
+            documents=texts,
+            embeddings=embeddings,
+            ids=ids,
+            metadatas=metadatas
+        )
+        return {"added": len(texts), "ids": ids}
+
+    @app.post("/documents/upsert")
+    async def upsert_documents(request: AddDocumentsRequest):
+        """Upsert documents to HANA Vector Store."""
+        # For simplicity, same as add in this implementation
+        return await add_documents(request)
+
+    @app.get("/documents/{id}")
+    def get_document(id: str, tableName: str):
+        """Get a document by ID."""
+        conn = get_hana_connection()
+        if not conn:
+            raise HTTPException(status_code=503, detail="HANA connection not available")
+
+        try:
+            result = conn.sql(f'SELECT "id", "content", "metadata" FROM "{tableName}" WHERE "id" = \'{id}\'').collect()
+            if result.empty:
+                raise HTTPException(status_code=404, detail=f"Document {id} not found")
+
+            row = result.iloc[0]
+            return {
+                "id": row["id"],
+                "content": row["content"],
+                "metadata": json.loads(row["metadata"]) if isinstance(row["metadata"], str) else row["metadata"]
+            }
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=str(e))
+
+    @app.delete("/documents/{id}")
+    def delete_document(id: str, tableName: str):
+        """Delete a document by ID."""
+        conn = get_hana_connection()
+        if not conn:
+            raise HTTPException(status_code=503, detail="HANA connection not available")
+
+        try:
+            conn.sql(f'DELETE FROM "{tableName}" WHERE "id" = \'{id}\'')
+            return Response(status_code=204)
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=str(e))
+
+    @app.get("/documents/batch")
+    async def get_documents_batch(ids: str):
+        """Get documents in batch (placeholder)."""
+        raise HTTPException(status_code=501, detail="Batch retrieval not yet implemented.")
+
+    @app.delete("/documents/batch")
+    async def delete_documents_batch(request: Request):
+        """Delete documents in batch (placeholder)."""
+        raise HTTPException(status_code=501, detail="Batch deletion not yet implemented.")
+
+    @app.post("/search/similarity")
+    async def similarity_search_api(request: SimilaritySearchRequest):
+        """Perform similarity search directly with embeddings."""
+        conn = get_hana_connection()
+        if not conn:
+            raise HTTPException(status_code=503, detail="HANA connection not available")
+
+        try:
+            emb_str = ",".join(str(x) for x in request.query_embedding)
+            result = conn.sql(f'''
+                SELECT TOP {request.top_k} "content", "metadata",
+                       COSINE_SIMILARITY("embedding", TO_REAL_VECTOR('[{emb_str}]')) AS score
+                FROM "{request.table_name}"
+                ORDER BY score DESC
+            ''').collect()
+
+            items = []
+            if not result.empty:
+                for _, row in result.iterrows():
+                    items.append({
+                        "content": row["content"],
+                        "metadata": json.loads(row["metadata"]) if isinstance(row["metadata"], str) else row["metadata"],
+                        "score": float(row["score"])
+                    })
+            return {"object": "list", "data": items}
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"HANA search error: {str(e)}")
+
+    @app.post("/search/mmr")
+    async def mmr_search_api(request: Request):
+        """Placeholder for MMR search (MMR logic requires full vector store state)."""
+        raise HTTPException(status_code=501, detail="MMR search not yet implemented in standalone server.")
+
+    @app.post("/search/hybrid")
+    async def hybrid_search_api(request: Request):
+        """Placeholder for hybrid search."""
+        raise HTTPException(status_code=501, detail="Hybrid search not yet implemented.")
+
+    @app.post("/table")
+    async def create_vector_table(request: CreateTableRequest):
+        """Create a new vector table."""
+        conn = get_hana_connection()
+        if not conn:
+            raise HTTPException(status_code=503, detail="HANA connection not available")
+
+        try:
+            # Simple implementation - in a real scenario we'd use HanaDB class
+            sql = f'''
+                CREATE TABLE "{request.table_name}" (
+                    "id" NVARCHAR(36) PRIMARY KEY,
+                    "content" NCLOB,
+                    "metadata" NCLOB,
+                    "embedding" REAL_VECTOR({request.vector_dim})
+                )
+            '''
+            conn.sql(sql)
+            return {"status": "created", "table": request.table_name}
+        except Exception as e:
+            if "already exists" in str(e):
+                raise HTTPException(status_code=409, detail=f"Table {request.table_name} already exists")
+            raise HTTPException(status_code=500, detail=str(e))
+
+    @app.delete("/table")
+    async def drop_vector_table(tableName: str):
+        """Drop a vector table."""
+        conn = get_hana_connection()
+        if not conn:
+            raise HTTPException(status_code=503, detail="HANA connection not available")
+
+        try:
+            sql = f'DROP TABLE "{tableName}"'
+            conn.sql(sql)
+            return Response(status_code=204)
+        except Exception as e:
+            raise HTTPException(status_code=404, detail=str(e))
+
+    @app.get("/table/exists")
+    def check_table_exists(tableName: str):
+        """Check if a table exists."""
+        conn = get_hana_connection()
+        if not conn:
+            return {"exists": tableName in _vector_tables}
+
+        try:
+            result = conn.sql(f"SELECT COUNT(*) FROM SYS.TABLES WHERE TABLE_NAME = '{tableName}'").collect()
+            exists = int(result.iloc[0, 0]) > 0 if not result.empty else False
+            return {"exists": exists}
+        except:
+            return {"exists": False}
+
+    @app.get("/table/count")
+    def get_table_count(tableName: str):
+        """Get number of documents in a table."""
+        conn = get_hana_connection()
+        if not conn:
+            return {"count": len(_vector_tables.get(tableName, []))}
+
+        try:
+            result = conn.sql(f'SELECT COUNT(*) FROM "{tableName}"').collect()
+            count = int(result.iloc[0, 0]) if not result.empty else 0
+            return {"count": count}
+        except:
+            raise HTTPException(status_code=404, detail=f"Table {tableName} not found")
+
+    @app.post("/index/hnsw")
+    async def create_hnsw_index(request: CreateHnswIndexRequest):
+        """Create an HNSW index on a vector table."""
+        conn = get_hana_connection()
+        if not conn:
+            raise HTTPException(status_code=503, detail="HANA connection not available")
+
+        try:
+            sql = f'''
+                CREATE HNSW INDEX "{request.index_name}" ON "{request.table_name}" ("embedding")
+                M {request.m} EF_CONSTRUCTION {request.ef_construction}
+            '''
+            conn.sql(sql)
+            return {"status": "created", "index": request.index_name}
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=str(e))
+
+    @app.delete("/index/hnsw")
+    async def drop_hnsw_index(indexName: str):
+        """Drop an HNSW index."""
+        conn = get_hana_connection()
+        if not conn:
+            raise HTTPException(status_code=503, detail="HANA connection not available")
+
+        try:
+            sql = f'DROP INDEX "{indexName}"'
+            conn.sql(sql)
+            return Response(status_code=204)
+        except Exception as e:
+            raise HTTPException(status_code=404, detail=str(e))
+
+    @app.post("/v1/hana/vectors")    async def store_hana_vectors(request: HANAVectorRequest):
         """Store vectors in HANA Cloud."""
         config = AICoreConfig.from_env()
         

@@ -14,7 +14,7 @@ export function buildResult(raw: Record<string, any>): ScanResult {
   const text = pages.map((p) => p.text).join('\n\n');
   const confidence = raw['overall_confidence'] ?? 0;
   const totalPages = raw['total_pages'] ?? pages.length;
-  const processingTime = raw['total_processing_time_s'] ?? 0;
+  const processingTime = (raw['total_processing_time_ms'] ?? 0) / 1000;
 
   return {
     text,
@@ -31,4 +31,3 @@ export function buildResult(raw: Record<string, any>): ScanResult {
     },
   };
 }
-

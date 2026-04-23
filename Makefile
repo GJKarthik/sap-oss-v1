@@ -301,8 +301,8 @@ sbom-parity: sbom-full-audit sbom-sarif sbom-risk-report
 spec-arabic:
 	@mkdir -p $(PDF_DIR)/specs
 	@if [ -n "$(LATEX_ENGINE)" ]; then \
-	  cd $(SPECS_LATEX)/arabic && $(LATEX_ENGINE) -interaction=nonstopmode arabic-ap-spec.tex > /dev/null && \
-	    $(LATEX_ENGINE) -interaction=nonstopmode arabic-ap-spec.tex > /dev/null && \
+	  cd $(SPECS_LATEX)/arabic && TEXINPUTS=.:../../shared//: $(LATEX_ENGINE) -interaction=nonstopmode arabic-ap-spec.tex > /dev/null && \
+	    TEXINPUTS=.:../../shared//: $(LATEX_ENGINE) -interaction=nonstopmode arabic-ap-spec.tex > /dev/null && \
 	    mv arabic-ap-spec.pdf ../../../pdf/specs/; \
 	elif [ -n "$(TECTONIC)" ]; then \
 	  cd $(SPECS_LATEX)/arabic && $(TECTONIC) --outdir ../../../pdf/specs arabic-ap-spec.tex > /dev/null; \
@@ -316,8 +316,8 @@ spec-arabic:
 spec-tb:
 	@mkdir -p $(PDF_DIR)/specs
 	@if [ -n "$(LATEX_ENGINE)" ]; then \
-	  cd $(SPECS_LATEX)/tb && $(LATEX_ENGINE) -interaction=nonstopmode tb-review-spec.tex > /dev/null && \
-	    $(LATEX_ENGINE) -interaction=nonstopmode tb-review-spec.tex > /dev/null && \
+	  cd $(SPECS_LATEX)/tb && TEXINPUTS=.:../../shared//: $(LATEX_ENGINE) -interaction=nonstopmode tb-review-spec.tex > /dev/null && \
+	    TEXINPUTS=.:../../shared//: $(LATEX_ENGINE) -interaction=nonstopmode tb-review-spec.tex > /dev/null && \
 	    mv tb-review-spec.pdf ../../../pdf/specs/; \
 	elif [ -n "$(TECTONIC)" ]; then \
 	  cd $(SPECS_LATEX)/tb && $(TECTONIC) --outdir ../../../pdf/specs tb-review-spec.tex > /dev/null; \
@@ -331,8 +331,8 @@ spec-tb:
 spec-regulations:
 	@mkdir -p $(PDF_DIR)/specs
 	@if [ -n "$(LATEX_ENGINE)" ]; then \
-	  cd $(SPECS_LATEX)/regulations && $(LATEX_ENGINE) -interaction=nonstopmode regulations-spec.tex > /dev/null && \
-	    $(LATEX_ENGINE) -interaction=nonstopmode regulations-spec.tex > /dev/null && \
+	  cd $(SPECS_LATEX)/regulations && TEXINPUTS=.:../../shared//: $(LATEX_ENGINE) -interaction=nonstopmode regulations-spec.tex > /dev/null && \
+	    TEXINPUTS=.:../../shared//: $(LATEX_ENGINE) -interaction=nonstopmode regulations-spec.tex > /dev/null && \
 	    mv regulations-spec.pdf ../../../pdf/specs/; \
 	elif [ -n "$(TECTONIC)" ]; then \
 	  cd $(SPECS_LATEX)/regulations && $(TECTONIC) --outdir ../../../pdf/specs regulations-spec.tex > /dev/null; \
@@ -346,8 +346,8 @@ spec-regulations:
 spec-simula:
 	@mkdir -p $(PDF_DIR)/specs
 	@if [ -n "$(LATEX_ENGINE)" ]; then \
-	  cd $(SPECS_LATEX)/simula && $(LATEX_ENGINE) -interaction=nonstopmode simula-training-spec.tex > /dev/null && \
-	    $(LATEX_ENGINE) -interaction=nonstopmode simula-training-spec.tex > /dev/null && \
+	  cd $(SPECS_LATEX)/simula && TEXINPUTS=.:../../shared//: $(LATEX_ENGINE) -interaction=nonstopmode simula-training-spec.tex > /dev/null && \
+	    TEXINPUTS=.:../../shared//: $(LATEX_ENGINE) -interaction=nonstopmode simula-training-spec.tex > /dev/null && \
 	    mv simula-training-spec.pdf ../../../pdf/specs/; \
 	elif [ -n "$(TECTONIC)" ]; then \
 	  cd $(SPECS_LATEX)/simula && $(TECTONIC) --outdir ../../../pdf/specs simula-training-spec.tex > /dev/null; \
@@ -361,8 +361,8 @@ spec-simula:
 spec-clinerules-agents:
 	@mkdir -p $(PDF_DIR)/specs
 	@if [ -n "$(LATEX_ENGINE)" ]; then \
-	  cd $(SPECS_LATEX)/clinerules-agents && $(LATEX_ENGINE) -interaction=nonstopmode clinerules-agents-spec.tex > /dev/null && \
-	    $(LATEX_ENGINE) -interaction=nonstopmode clinerules-agents-spec.tex > /dev/null && \
+	  cd $(SPECS_LATEX)/clinerules-agents && TEXINPUTS=.:../../shared//: $(LATEX_ENGINE) -interaction=nonstopmode clinerules-agents-spec.tex > /dev/null && \
+	    TEXINPUTS=.:../../shared//: $(LATEX_ENGINE) -interaction=nonstopmode clinerules-agents-spec.tex > /dev/null && \
 	    mv clinerules-agents-spec.pdf ../../../pdf/specs/; \
 	elif [ -n "$(TECTONIC)" ]; then \
 	  cd $(SPECS_LATEX)/clinerules-agents && $(TECTONIC) --outdir ../../../pdf/specs clinerules-agents-spec.tex > /dev/null; \

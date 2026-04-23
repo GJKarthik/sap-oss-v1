@@ -154,12 +154,12 @@
               </div>
               <div class="meta-item">
                 <span class="meta-label">{{ i18n.t('ocr.meta.processingTime') }}</span>
-                <span class="meta-value">{{ result()!.total_processing_time_s | localeNumber:'decimal':2:2 }}s</span>
+                <span class="meta-value">{{ result()!.total_processing_time_ms / 1000 | localeNumber:'decimal':2:2 }}s</span>
               </div>
               @for (page of result()!.pages; track page.page_number) {
                 <div class="meta-item">
                   <span class="meta-label">{{ i18n.t('ocr.page') }} {{ page.page_number }}</span>
-                  <span class="meta-value">{{ page.confidence | localeNumber:'decimal':1:1 }}% · {{ page.processing_time_s | localeNumber:'decimal':2:2 }}s</span>
+                  <span class="meta-value">{{ page.confidence | localeNumber:'decimal':1:1 }}% · {{ page.processing_time_ms / 1000 | localeNumber:'decimal':2:2 }}s</span>
                 </div>
               }
             </div>

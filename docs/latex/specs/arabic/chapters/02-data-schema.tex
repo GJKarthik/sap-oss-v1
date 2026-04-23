@@ -255,6 +255,32 @@ find docs/arabic/source -type f -print0 \
 A clean diff proves the corpus is unaltered since the last
 specification snapshot.
 
+\section{OCR result record}\label{sec:ocr-schema}
+
+The OCR result record captures the raw output of the Tesseract engine and
+the outcome of the Stage 2 quality gate (\cref{ch:ai}). It provides the
+authoritative text source for the VAT engine (\cref{ch:vat}).
+
+\begin{table}[htbp]
+\centering
+\caption{Fields of \texttt{ocr-result.schema.json}.}
+\label{tab:ocr-fields}
+\small
+\begin{tabularx}{\linewidth}{@{}l l c X@{}}
+\toprule
+\textbf{Field} & \textbf{Type} & \textbf{Req.} & \textbf{Notes} \\ \midrule
+\texttt{ocr\_id}             & string & \checkmark & Unique extraction ID. \\
+\texttt{source\_document}    & object & \checkmark & Path, sha256, and mime\_type. \\
+\texttt{pages[]}             & array  & \checkmark & Per-page text, confidence, and images. \\
+\texttt{overall\_confidence} & number & \checkmark & Mean confidence percentage (0--100). \\
+\texttt{status}              & enum   & \checkmark & \textsc{accepted}, \textsc{flagged\_review}, \textsc{rejected}. \\
+\texttt{quality\_gate}       & object & --         & Thresholds and evaluation result (\cref{ch:ai}). \\
+\texttt{language\_detected}  & enum   & --         & \textsc{ar}, \textsc{en}, \textsc{ar+en}. \\
+\texttt{processing\_metadata} & object & --         & Engine version, DPI, and \texttt{processing\_time\_ms}. \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
 \section{Unified Schema Registry}
 
 As of 18 April 2026, all schemas in this specification are published in the

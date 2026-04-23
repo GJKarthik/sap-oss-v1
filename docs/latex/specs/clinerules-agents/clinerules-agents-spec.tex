@@ -68,6 +68,14 @@
 \newcommand{\artifact}[1]{\texttt{\textcolor{sapblue}{#1}}}
 \newcommand{\reqid}[1]{\texttt{\textcolor{regred}{#1}}}
 \newcolumntype{L}[1]{>{\raggedright\arraybackslash}p{#1}}
+\newcommand{\mermaidfig}[4][0.85\textwidth]{%
+  \begin{figure}[htbp]%
+    \centering
+    \includegraphics[width=#1]{#2.pdf}%
+    \caption{#3}%
+    \label{#4}%
+  \end{figure}%
+}
 
 \raggedbottom
 \onehalfspacing

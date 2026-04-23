@@ -14,6 +14,15 @@ from pipeline.hana_sql_builder import build_aggregation, build_select
 from pipeline.json_emitter import emit_pairs_json, emit_schema_json, load_pairs_json
 from pipeline.schema_extractor import extract_from_staging_csv_string
 from pipeline.schema_registry import Column, Domain, SchemaRegistry, TableSchema
+from pipeline.simula_data_generator import SimulaDataGenerator, TrainingExample
+from pipeline.simula_tts_drift_evaluator import (
+    GenerationQualityMetrics,
+    MetricValue,
+    SchemaDriftMetrics,
+    SemanticDriftMetrics,
+    TTSMetricReport,
+)
+from pipeline.simula_tts_drift_monitor import decide_retraining
 from pipeline.spider_formatter import format_for_spider
 from pipeline.template_expander import TrainingPair, expand_all, expand_template
 from pipeline.template_parser import Template, TemplateParam, parse_templates_csv_string
@@ -214,3 +223,108 @@ class TestJsonEmitter:
         data = json.loads(path.read_text())
         assert len(data) == 1
         assert data[0]["name"] == "T1"
+
+
+# ── Simula Generator ─────────────────────────────────────────────────────────
+
+
+class TestSimulaDataGenerator:
+    def test_training_example_emits_prompt_id_and_audience(self):
+        example = TrainingExample(
+            id="simula_test_0001",
+            question="Show total revenue by company",
+            sql="SELECT COMPANY, SUM(REVENUE) FROM T GROUP BY COMPANY",
+            meta_prompt="Generate a revenue aggregation query",
+            meta_prompt_id="mp-test",
+            audience="human",
+        )
+
+        data = example.to_dict()
+
+        assert data["meta_prompt_id"] == "mp-test"
+        assert data["audience"] == "human"
+        assert "meta_prompt" not in data
+
+    def test_save_audience_splits(self, tmp_path: Path):
+        registry = SchemaRegistry()
+        generator = SimulaDataGenerator(taxonomies=[], registry=registry)
+        examples = [
+            TrainingExample(
+                id="human",
+                question="Show total revenue",
+                sql="SELECT SUM(REVENUE) FROM T",
+                audience="human",
+            ),
+            TrainingExample(
+                id="agent",
+                question="Use T.REVENUE in an aggregation",
+                sql="SELECT SUM(REVENUE) FROM T",
+                audience="agent",
+            ),
+            TrainingExample(
+                id="dual",
+                question="List customers by country code",
+                sql="SELECT CUSTOMER, COUNTRY_CODE FROM T",
+                audience="dual",
+            ),
+        ]
+
+        human_file, agent_file = generator.save_audience_splits(
+            examples,
+            tmp_path,
+            timestamp="20260423",
+        )
+
+        human_lines = human_file.read_text().splitlines()
+        agent_lines = agent_file.read_text().splitlines()
+
+        assert [json.loads(line)["id"] for line in human_lines] == ["human", "dual"]
+        assert [json.loads(line)["id"] for line in agent_lines] == ["agent", "dual"]
+
+
+class TestTTSDriftEvaluator:
+    def test_metric_report_uses_schema_metric_keys(self):
+        metric = MetricValue(value=1.0, threshold=0.5, passed=True)
+        report = TTSMetricReport(
+            report_id="tts-report-12345678",
+            evaluated_at="2026-04-23T00:00:00",
+            sample_size=1,
+            confidence_level=0.95,
+            evaluation_context="training",
+            baseline_id=None,
+            schema_drift_metrics=SchemaDriftMetrics(
+                scr=metric,
+                sss=metric,
+                ctmr=metric,
+                fkcr=metric,
+            ),
+            semantic_drift_metrics=SemanticDriftMetrics(
+                sas=metric,
+                ipr=metric,
+                tds=metric,
+                arr=metric,
+            ),
+            generation_quality_metrics=GenerationQualityMetrics(
+                esr=metric,
+                rfs=metric,
+                cdd=metric,
+                tcd=metric,
+            ),
+            tts_eval=90,
+            tts_eval_status="GREEN",
+        )
+
+        quality_metrics = report.to_dict()["generation_quality_metrics"]
+
+        assert "cdd" in quality_metrics
+        assert "cdd_threshold" not in quality_metrics
+
+    def test_retraining_decision_blocks_red_readiness(self):
+        decision = decide_retraining(
+            "dictionary_value_added_or_changed",
+            readiness_grade="RED",
+        )
+
+        assert decision.severity == "HIGH"
+        assert decision.retraining_scope == "dictionary_slice"
+        assert decision.blocked is True

@@ -2525,6 +2525,26 @@ def run_full_audit(domain: Optional[str] = None, dry_run: bool = False) -> Audit
             code_paths = []
             
             for domain_name, domain_config in domains_to_check.items():
+                # First check for explicit mapping in artifacts
+                domain_artifacts = domain_config.get("artifacts", [])
+                found_explicit = False
+                for art in domain_artifacts:
+                    if art.get("type") == "openapi" and (
+                        art.get("path") == str(openapi_file) or
+                        art.get("path") == f"docs/api/{openapi_file.name}"
+                    ):
+                        matched_domain = domain_name
+                        explicit_code = art.get("related_code", [])
+                        if explicit_code:
+                            code_paths.extend(explicit_code)
+                        elif domain_config.get("code_root"):
+                            code_paths.append(domain_config.get("code_root"))
+                        found_explicit = True
+                        break
+
+                if found_explicit:
+                    break
+
                 if domain_name.lower() in openapi_name or openapi_name in domain_name.lower():
                     matched_domain = domain_name
                     code_root = domain_config.get("code_root")

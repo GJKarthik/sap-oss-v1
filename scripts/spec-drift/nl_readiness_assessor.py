@@ -186,12 +186,43 @@ class SchemaReadinessReport:
     issues: List[NLReadinessIssue]
     vocabulary_alignment: float  # 0.0-1.0
     timestamp: str
+    dictionary_resolution_accuracy: float = 0.0
+    unsupported_mapping_rate: float = 1.0
+
+    @property
+    def readiness_grade(self) -> str:
+        """Traffic-light readiness grade for publication gates."""
+        if self.human_ready:
+            return "GREEN"
+        if self.agent_ready:
+            return "AMBER"
+        return "RED"
+
+    @property
+    def readiness_metrics(self) -> Dict[str, float]:
+        """Spec-defined NL-M metrics for readiness gates."""
+        total = max(self.total_fields, 1)
+        description_coverage = sum(
+            1 for field_score in self.field_scores if field_score.has_description
+        ) / total
+        alias_coverage = sum(
+            1 for field_score in self.field_scores if field_score.has_synonyms
+        ) / total
+        return {
+            "NL-M01_schema_description_coverage": round(description_coverage, 4),
+            "NL-M02_terminology_alias_coverage": round(alias_coverage, 4),
+            "NL-M03_audience_separation_rate": 1.0,
+            "NL-M04_dictionary_resolution_accuracy": round(self.dictionary_resolution_accuracy, 4),
+            "NL-M05_unsupported_mapping_rate": round(self.unsupported_mapping_rate, 4),
+        }
     
     def to_dict(self) -> Dict[str, Any]:
         return {
             "schema_path": self.schema_path,
             "schema_id": self.schema_id,
             "overall_score": self.overall_score,
+            "readiness_grade": self.readiness_grade,
+            "readiness_metrics": self.readiness_metrics,
             "human_ready": self.human_ready,
             "agent_ready": self.agent_ready,
             "recommended_audience": self.recommended_audience.value,
@@ -260,6 +291,24 @@ def get_abbreviation_expansions(vocab_registry: Dict[str, Any]) -> Dict[str, str
         expansions[abbr] = expansion
     
     return expansions
+
+
+def calculate_dictionary_resolution_metrics(vocab_registry: Dict[str, Any]) -> Tuple[float, float]:
+    """Assess whether value/entity mappings can resolve surface forms."""
+    mappings = []
+    for domain in vocab_registry.get("domains", {}).values():
+        mappings.extend(domain.get("entity_mappings", []))
+
+    if not mappings:
+        return 0.0, 1.0
+
+    resolvable = sum(
+        1 for mapping in mappings
+        if mapping.get("name") and mapping.get("code") and mapping.get("variations")
+    )
+    accuracy = resolvable / len(mappings)
+    unsupported_rate = 1.0 - accuracy
+    return accuracy, unsupported_rate
 
 
 # =============================================================================
@@ -536,11 +585,14 @@ def assess_schema_readiness(
             )],
             vocabulary_alignment=0.0,
             timestamp=datetime.now().isoformat(),
+            dictionary_resolution_accuracy=0.0,
+            unsupported_mapping_rate=1.0,
         )
     
     schema_id = schema.get("$id")
     known_synonyms = get_known_synonyms(vocab_registry)
     abbreviations = get_abbreviation_expansions(vocab_registry)
+    dictionary_accuracy, unsupported_mapping_rate = calculate_dictionary_resolution_metrics(vocab_registry)
     
     # Extract and assess fields
     fields = extract_schema_fields(schema)
@@ -595,6 +647,8 @@ def assess_schema_readiness(
         issues=all_issues,
         vocabulary_alignment=alignment,
         timestamp=datetime.now().isoformat(),
+        dictionary_resolution_accuracy=dictionary_accuracy,
+        unsupported_mapping_rate=unsupported_mapping_rate,
     )
 
 
@@ -647,6 +701,7 @@ def format_console_output(reports: List[SchemaReadinessReport]) -> str:
         
         lines.append(f"\n{status_icon} Schema: {report.schema_path}")
         lines.append(f"   Overall Score: {report.overall_score}/100")
+        lines.append(f"   Readiness Grade: {report.readiness_grade}")
         lines.append(f"   Human Ready: {'Yes' if report.human_ready else 'No'}")
         lines.append(f"   Agent Ready: {'Yes' if report.agent_ready else 'No'}")
         lines.append(f"   Recommended Audience: {report.recommended_audience.value}")

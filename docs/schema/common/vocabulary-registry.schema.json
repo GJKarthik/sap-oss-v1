@@ -53,6 +53,7 @@
       }
     }
   },
+  "additionalProperties": false,
   "$defs": {
     "DomainVocabulary": {
       "type": "object",
@@ -181,7 +182,7 @@
         "entity_type": {
           "type": "string",
           "description": "Type of entity (country, currency, company, etc.)",
-          "enum": ["country", "currency", "company", "legal_entity", "cost_center", "gl_account", "custom"]
+          "enum": ["country", "country_code", "currency", "currency_code", "company", "legal_entity", "cost_center", "gl_account", "period", "business_segment", "custom"]
         },
         "name": {
           "type": "string",
@@ -204,6 +205,10 @@
           "additionalProperties": {
             "type": "string"
           }
+        },
+        "training_requirement": {
+          "type": "string",
+          "description": "Training rule for resolving this surface form to the canonical code"
         }
       }
     },

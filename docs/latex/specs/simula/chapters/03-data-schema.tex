@@ -35,7 +35,8 @@ class TrainingExample:
     schema_context: str        # Table/column descriptions
     taxonomy_path: list[str]   # Factor nodes used
     complexity_score: float    # 0.0 to 1.0
-    meta_prompt: str           # The meta-prompt used
+    meta_prompt_id: str        # Reference to meta-prompt record
+    audience: str              # human, agent, or dual
     is_complexified: bool      # Whether complexification applied
     critic_passed: bool        # Whether double-critic passed
     generation_metadata: dict  # Timestamps, model, etc.
