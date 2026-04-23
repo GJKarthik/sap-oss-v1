@@ -1,0 +1,42 @@
+\chapter{Source Analysis: Bahrain AP DOI}
+\label{ch:analysis-bh-doi}
+
+\section{Document Context}
+The \texttt{Accounts Payable DOI.docx} (Bahrain) defines the delegation of authority and mandatory controls for invoice processing. This document was processed into \texttt{structured/policies/bh-ap-doi.json}.
+
+\section{Detailed Requirement Mapping}
+
+\begin{longtable}{p{5cm} p{5cm} p{5cm}}
+\caption{Bahrain DOI: Source-to-Requirement Lineage} \\
+\toprule
+\textbf{Source Paragraph} & \textbf{Business Requirement} & \textbf{Formal Requirement (Spec)} \\
+\midrule
+\endfirsthead
+\toprule
+\textbf{Source Paragraph} & \textbf{Business Requirement} & \textbf{Formal Requirement (Spec)} \\
+\midrule
+\endhead
+Section 4.1: ``All invoices must be matched against a valid Purchase Order prior to processing.'' & \textbf{BR-DOI-M1:} Mandatory PO-Matching for standard AP flow. & \texttt{arabic-ap-spec} Ch. 5 (PO-EPROC state machine). \\
+\midrule
+Section 4.2: ``Any variance > 5\% between PO and Invoice must be routed to the Finance Head.'' & \textbf{BR-DOI-V1:} Automated variance threshold detection. & \texttt{arabic-ap-spec} Ch. 6 (Variance Control C3). \\
+\midrule
+Section 4.7: ``The final payment file must be hashed and signed by two distinct personas.'' & \textbf{BR-DOI-S1:} Dual-Persona Cryptographic Sign-off. & \texttt{arabic-ap-spec} Ch. 12 (HITL Gate: Payment Instruction). \\
+\bottomrule
+\end{longtable}
+
+\section{Machine-Readable Evidence (Fragment)}
+The following YAML fragment was extracted from the DOI to drive the 28-state workflow engine:
+
+\begin{lstlisting}[language=jsonx]
+{
+  "policy_id": "BH-DOI-2026",
+  "controls": [
+    {
+      "id": "C3",
+      "description": "PO-Invoice Variance check",
+      "threshold": 0.05,
+      "escalation_persona": "finance_head"
+    }
+  ]
+}
+\end{lstlisting}

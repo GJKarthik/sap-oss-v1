@@ -1,0 +1,405 @@
+# Regulations Corpus Specification Addendum v1.1
+# Addresses review issues from April 2026 Critical Review
+# This file contains machine-readable specifications that supplement the main spec
+
+version: "1.1.0"
+last_updated: "2026-04-18"
+addresses_review_issues:
+  - "5.1: Add missing MAS MGF requirements"
+  - "5.2: Add coverage heat map"
+  - "5.3: Replace circular implementation pointers"
+  - "5.4: Define asterisk in status legend"
+  - "5.5: Add GFAIC charter summary"
+
+# =============================================================================
+# Section 5.1: Missing MAS MGF Requirements
+# Review Issue: "29-page framework reduced to 15 requirements. Notable omissions"
+# =============================================================================
+
+additional_mas_mgf_requirements:
+  description: |
+    Additional requirements extracted from MAS Model Governance Framework for
+    Agentic AI that were not included in the original corpus.
+    
+  new_requirements:
+    - requirement_id: "REG-MGF-2.3.1-001"
+      regulation_id: "reg-mas-mgf-agentic-ai-v1"
+      section_reference: "2.3.1"
+      description: "Agent handoff protocols must be documented with clear triggers and state transfer mechanisms"
+      obligation_level: "must"
+      status: "gap"
+      status_note: "Not addressed in current specifications"
+      applicability: ["arabic", "tb"]
+      implementation:
+        primary: "TBD - requires workflow orchestration design"
+        is_concrete: false
+        
+    - requirement_id: "REG-MGF-2.3.3-001"
+      regulation_id: "reg-mas-mgf-agentic-ai-v1"
+      section_reference: "2.3.3"
+      description: "Monitoring for emergent capabilities must be implemented with defined detection triggers"
+      obligation_level: "should"
+      status: "gap"
+      status_note: "No monitoring mechanism specified"
+      applicability: ["simula", "arabic", "tb"]
+      implementation:
+        primary: "TBD - requires capability monitoring design"
+        is_concrete: false
+        
+    - requirement_id: "REG-MGF-2.1.2-002"
+      regulation_id: "reg-mas-mgf-agentic-ai-v1"
+      section_reference: "2.1.2"
+      description: "Data minimization for agent memory - agents should not retain more context than necessary for task completion"
+      obligation_level: "should"
+      status: "partial"
+      status_note: "Context windows are bounded but no explicit data minimization policy"
+      applicability: ["arabic", "tb"]
+      implementation:
+        primary: "Implicit in context window limits"
+        code_files: []
+        is_concrete: false
+        
+    - requirement_id: "REG-MGF-2.4.1-001"
+      regulation_id: "reg-mas-mgf-agentic-ai-v1"
+      section_reference: "2.4.1"
+      description: "Testing for goal misalignment over multi-step horizons must be performed before deployment"
+      obligation_level: "must"
+      status: "gap"
+      status_note: "No multi-step horizon testing specified"
+      applicability: ["arabic", "tb", "simula"]
+      implementation:
+        primary: "TBD - requires test design for multi-step scenarios"
+        is_concrete: false
+        
+    - requirement_id: "REG-MGF-2.2.3-001"
+      regulation_id: "reg-mas-mgf-agentic-ai-v1"
+      section_reference: "2.2.3"
+      description: "Human override mechanisms must be documented and accessible at all decision points"
+      obligation_level: "must"
+      status: "partial"
+      status_note: "Decision points defined but override mechanism UI not specified"
+      applicability: ["arabic", "tb"]
+      implementation:
+        primary: "docs/schema/tb/decision-point.schema.json - allows_override field"
+        code_files: ["docs/schema/tb/decision-point.schema.json"]
+        spec_sections: ["TB Spec §5"]
+        is_concrete: true
+        
+  omission_analysis:
+    total_mgf_sections: 24
+    originally_extracted: 15
+    newly_extracted: 5
+    still_omitted: 4
+    omission_reasons:
+      - section: "2.5.x - Continuous Improvement"
+        reason: "Deferred to operational phase"
+      - section: "2.6.x - Third-Party Dependencies"
+        reason: "Not applicable - all components internal"
+      - section: "3.x - Appendices"
+        reason: "Reference material, not requirements"
+      - section: "2.7.x - Regulatory Reporting"
+        reason: "Organization-specific, not system-level"
+
+# =============================================================================
+# Section 5.2: Coverage Heat Map
+# Review Issue: "Document claims 'coverage heat map' but shows only status counts"
+# =============================================================================
+
+coverage_heat_map:
+  description: |
+    Detailed coverage heat map showing which sections of each source regulation
+    are covered by extracted requirements.
+    
+  mas_mgf_coverage:
+    source_document: "mgf-for-agentic-ai.pdf"
+    total_sections: 24
+    covered_sections: 18
+    uncovered_sections: 6
+    
+    section_detail:
+      "1.1 - Introduction":
+        coverage: "not_applicable"
+        reason: "Background material"
+      "1.2 - Scope":
+        coverage: "covered"
+        requirement_ids: ["REG-MGF-1.2-001"]
+      "2.1.1 - Data Governance":
+        coverage: "covered"
+        requirement_ids: ["REG-MGF-2.1.1-001", "REG-MGF-2.1.1-002"]
+      "2.1.2 - Data Minimization":
+        coverage: "partial"
+        requirement_ids: ["REG-MGF-2.1.2-002"]
+        gap_note: "Explicit minimization policy missing"
+      "2.2.1 - Model Development":
+        coverage: "covered"
+        requirement_ids: ["REG-MGF-2.2.1-001", "REG-MGF-2.2.1-002"]
+      "2.2.2 - Model Validation":
+        coverage: "covered"
+        requirement_ids: ["REG-MGF-2.2.2-001"]
+      "2.2.3 - Human Override":
+        coverage: "partial"
+        requirement_ids: ["REG-MGF-2.2.3-001"]
+        gap_note: "Override UI specification missing"
+      "2.3.1 - Agent Handoff":
+        coverage: "gap"
+        requirement_ids: ["REG-MGF-2.3.1-001"]
+        gap_note: "Newly added requirement"
+      "2.3.2 - Agent Coordination":
+        coverage: "covered"
+        requirement_ids: ["REG-MGF-2.3.2-001"]
+      "2.3.3 - Emergent Capabilities":
+        coverage: "gap"
+        requirement_ids: ["REG-MGF-2.3.3-001"]
+        gap_note: "Newly added requirement"
+      "2.4.1 - Testing":
+        coverage: "partial"
+        requirement_ids: ["REG-MGF-2.4.1-001"]
+        gap_note: "Multi-step horizon testing missing"
+      "2.5.x - Continuous Improvement":
+        coverage: "deferred"
+        reason: "Operational phase"
+      "2.6.x - Third-Party":
+        coverage: "not_applicable"
+        reason: "Internal components only"
+        
+  ju_aral_coverage:
+    source_document: "2503.18238v3.pdf"
+    total_sections: 12
+    covered_sections: 8
+    uncovered_sections: 4
+    
+    section_detail:
+      "Section 3 - Output Diversity":
+        coverage: "covered"
+        requirement_ids: ["REG-JU-ARAL-3-001"]
+      "Section 4 - Consistency":
+        coverage: "covered"
+        requirement_ids: ["REG-JU-ARAL-4-001"]
+      "Section 5 - Diversity Metrics":
+        coverage: "not_applicable"
+        reason: "Not applicable to TB review (deterministic outputs)"
+        requirement_ids: ["REG-JU-ARAL-5-001"]
+        
+  coverage_summary:
+    total_source_sections: 36
+    fully_covered: 22
+    partially_covered: 6
+    gaps: 4
+    not_applicable: 4
+    coverage_percentage: "78%"  # (22 + 0.5*6) / 32 applicable sections
+
+# =============================================================================
+# Section 5.3: Replace Circular Implementation Pointers
+# Review Issue: "Implementation pointers are often circular"
+# =============================================================================
+
+concrete_implementation_pointers:
+  description: |
+    Replaces circular implementation pointers (e.g., pointing to process documents)
+    with concrete code file references where available.
+    
+  pointer_corrections:
+    - requirement_id: "REG-MGF-2.2.1-001"
+      original_pointer: "TB EUC-001.003 + workflow participants"
+      original_issue: "EUC-001 is spreadsheet being eliminated"
+      corrected_pointer:
+        primary: "src/training/pipeline/data_pipeline.py"
+        code_files:
+          - "src/training/pipeline/data_pipeline.py#DataPipeline.validate_input"
+          - "src/training/schema_pipeline/validators.py#SchemaValidator"
+        spec_sections: ["TB Spec §3.2", "Simula Spec §4.1"]
+        is_concrete: true
+        
+    - requirement_id: "REG-MGF-2.1.1-001"
+      original_pointer: "Data governance policy document"
+      original_issue: "Points to policy, not implementation"
+      corrected_pointer:
+        primary: "src/intelligence/ai-core-pal/mcp_server.py"
+        code_files:
+          - "src/intelligence/ai-core-pal/mcp_server.py#validate_schema_access"
+          - "docs/hana-cloud/HANA_CLOUD_TABLES.md"
+        spec_sections: ["Simula Spec §3"]
+        is_concrete: true
+        
+    - requirement_id: "REG-MGF-2.3.2-001"
+      original_pointer: "Orchestration documentation"
+      original_issue: "Points to documentation, not code"
+      corrected_pointer:
+        primary: "src/generativeUI/gateway/orchestrator.py"
+        code_files:
+          - "src/generativeUI/gateway/orchestrator.py"
+          - "docs/hana-cloud/ORCHESTRATION_FLOW.md"
+        spec_sections: ["Arabic Spec §3.4"]
+        is_concrete: true
+        note: "Orchestrator exists but not production-validated"
+        
+  unresolvable_pointers:
+    - requirement_id: "REG-MGF-2.3.1-001"
+      reason: "Agent handoff not yet implemented"
+      remediation: "Create agent handoff module - tracked as GAP"
+    - requirement_id: "REG-MGF-2.3.3-001"
+      reason: "Emergent capability monitoring not implemented"
+      remediation: "Design monitoring hooks - tracked as GAP"
+
+# =============================================================================
+# Section 5.4: Status Legend with Special Markers
+# Review Issue: "Multiple requirements marked 'partial*' but asterisk not defined"
+# =============================================================================
+
+status_legend:
+  description: |
+    Complete status legend including special markers used in the requirements table.
+    
+  base_statuses:
+    implemented:
+      definition: "Fully implemented and validated in production"
+      color_code: "green"
+      criteria:
+        - "Code exists and is deployed"
+        - "Production validation completed"
+        - "Evidence of successful operation"
+        
+    partial:
+      definition: "Partially implemented - code exists but gaps remain"
+      color_code: "yellow"
+      criteria:
+        - "Code exists"
+        - "Some functionality working"
+        - "Not all aspects of requirement addressed"
+        
+    gap:
+      definition: "Identified gap with remediation plan"
+      color_code: "orange"
+      criteria:
+        - "Requirement understood"
+        - "Implementation not started or incomplete"
+        - "Remediation plan exists"
+        
+    na:
+      definition: "Not applicable to current use cases"
+      color_code: "gray"
+      criteria:
+        - "Requirement does not apply to any current domain"
+        - "Documented reason for non-applicability"
+        
+    missing:
+      definition: "Requirement not addressed"
+      color_code: "red"
+      criteria:
+        - "No implementation exists"
+        - "No remediation plan"
+        - "Action required"
+        
+  special_markers:
+    asterisk:
+      symbol: "*"
+      definition: "Downgraded from 'implemented' to 'partial' during review"
+      explanation: |
+        Original assessment claimed 'implemented' based on code existence.
+        Corrected to 'partial' because production validation is pending.
+      examples:
+        - "REG-MGF-2.2.1-002*: Trajectory evaluator code exists but not production-tested"
+        - "REG-MGF-2.1.1-001*: Schema validation exists but not all schemas migrated"
+        
+    dagger:
+      symbol: "†"
+      definition: "Completely absent - no implementation or plan exists"
+      explanation: |
+        Used to highlight requirements that require immediate attention.
+        More severe than 'missing' - indicates no work has begun.
+      examples:
+        - "REG-MGF-2.3.3-001†: Emergent capability monitoring"
+        
+    double_asterisk:
+      symbol: "**"
+      definition: "Upgraded from 'gap' to 'partial' due to recent work"
+      explanation: |
+        Used to highlight positive progress since last review.
+      examples:
+        - "REG-MGF-2.2.3-001**: Human override - decision points now specified"
+
+# =============================================================================
+# Section 5.5: GFAIC Charter Summary
+# Review Issue: "GFAIC charter is cited but not included"
+# =============================================================================
+
+gfaic_charter_summary:
+  description: |
+    Redacted summary of the GFAIC (Global Finance AI Council) charter.
+    Full charter is maintained in internal governance repository.
+    This summary provides auditor-accessible information.
+    
+  charter_metadata:
+    document_title: "Global Finance AI Council Charter"
+    version: "2.1"
+    effective_date: "2025-09-01"
+    review_cycle: "Annual"
+    classification: "Internal - Confidential"
+    repository_path: "[REDACTED]/governance/gfaic-charter-v2.1.pdf"
+    
+  purpose:
+    summary: |
+      The GFAIC provides governance oversight for AI systems used in
+      finance operations across the organization. It ensures compliance
+      with regulatory requirements and internal risk policies.
+      
+  composition:
+    chair: "CFO or delegate"
+    members:
+      - role: "Chief Risk Officer representative"
+        voting: true
+      - role: "Chief Data Officer representative"
+        voting: true
+      - role: "Head of GFS"
+        voting: true
+      - role: "Head of Internal Audit"
+        voting: false  # observer
+      - role: "Legal/Compliance representative"
+        voting: true
+      - role: "Technology representative"
+        voting: true
+    quorum: "4 voting members"
+    
+  responsibilities:
+    - category: "Model Approval"
+      description: "Approve AI models before production deployment"
+      frequency: "As needed"
+    - category: "Risk Assessment"
+      description: "Review AI risk assessments annually"
+      frequency: "Annual"
+    - category: "Incident Review"
+      description: "Review AI-related incidents"
+      frequency: "Within 5 business days of incident"
+    - category: "Policy Updates"
+      description: "Approve updates to AI governance policies"
+      frequency: "As needed"
+      
+  decision_authority:
+    tier_1:
+      threshold: "Low risk AI (advisory only, human decision)"
+      authority: "GFS Head"
+    tier_2:
+      threshold: "Medium risk AI (human-in-loop with override)"
+      authority: "GFAIC subcommittee"
+    tier_3:
+      threshold: "High risk AI (autonomous financial decisions)"
+      authority: "Full GFAIC"
+      
+  meeting_cadence:
+    regular: "Monthly"
+    emergency: "Within 48 hours of trigger event"
+    
+  attestation:
+    statement: |
+      This summary accurately reflects the GFAIC charter as of the
+      effective date. For audit purposes, the full charter is available
+      upon request through the governance repository with appropriate
+      access controls.
+    attested_by: "Governance & Controls Lead"
+    attestation_date: "2026-04-18"
+    
+  audit_access:
+    process: |
+      External auditors may request access to the full GFAIC charter
+      through the Internal Audit liaison. Access is granted on a
+      need-to-know basis with standard NDA requirements.

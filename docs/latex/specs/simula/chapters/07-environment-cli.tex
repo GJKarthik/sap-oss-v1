@@ -1,0 +1,75 @@
+\chapter{Environment and CLI}
+\label{chap:config}
+
+\section{Configuration Table}
+
+\begin{longtable}{p{5cm}p{3cm}p{6cm}}
+\caption{Environment Variables} \\
+\toprule
+\textbf{Variable} & \textbf{Default} & \textbf{Description} \\
+\midrule
+\endfirsthead
+\toprule
+\textbf{Variable} & \textbf{Default} & \textbf{Description} \\
+\midrule
+\endhead
+\texttt{AICORE\_PAL\_MCP\_URL} & \texttt{http://localhost:8084} & AI Core PAL MCP endpoint \\
+\texttt{VLLM\_BASE\_URL} & \texttt{http://localhost:9180/v1} & vLLM TurboQuant endpoint \\
+\texttt{VLLM\_MODEL} & \texttt{Qwen/Qwen3.5-35B} & Model for generation \\
+\texttt{SIMULA\_TARGET\_COUNT} & \texttt{100000} & Target training examples \\
+\texttt{SIMULA\_COMPLEXITY\_RATIO} & \texttt{0.5} & Fraction to complexify \\
+\texttt{SIMULA\_TAXONOMY\_DEPTH} & \texttt{4} & Max taxonomy depth \\
+\texttt{SIMULA\_BEST\_OF\_N} & \texttt{5} & Proposals per expansion \\
+\texttt{SIMULA\_ENABLE\_CRITIC} & \texttt{true} & Enable double-critic \\
+\texttt{SIMULA\_OUTPUT\_DIR} & \texttt{data/training/} & Output directory \\
+\bottomrule
+\end{longtable}
+
+\section{CLI Usage}
+
+\begin{lstlisting}[language=bash,caption={CLI entry point}]
+# Basic usage
+python src/training/scripts/run_hana_pipeline.py
+
+# Full customization
+python src/training/scripts/run_hana_pipeline.py \
+    --hana-schemas PAL_STORE,ESG_METRICS \
+    --llm-url http://localhost:9180/v1 \
+    --target-count 50000 \
+    --complexity-ratio 0.5 \
+    --taxonomy-depth 4 \
+    --output data/training/
+
+# Schema extraction only
+python src/training/scripts/run_hana_pipeline.py \
+    --extract-only \
+    --output schemas/
+\end{lstlisting}
+
+\section{Output Files}
+
+\begin{table}[H]
+\centering
+\caption{Pipeline Output Files}
+\label{tab:outputs}
+\begin{tabularx}{\textwidth}{lX}
+\toprule
+\textbf{File} & \textbf{Description} \\
+\midrule
+\texttt{schemas.json} & Extracted HANA schema metadata \\
+\texttt{taxonomies.json} & Generated taxonomy trees \\
+\texttt{training\_data.jsonl} & Final training examples \\
+\texttt{generation\_stats.json} & Statistics (counts, rates, timing) \\
+\texttt{rejected\_examples.jsonl} & Examples that failed critic \\
+\texttt{complexity\_elo\_scores.json} & Elo-calibrated complexity scores \\
+\texttt{coverage\_report.json} & Taxonomic coverage metrics \\
+\texttt{diversity\_metrics.json} & Global + local diversity \\
+\texttt{critic\_calibration.json} & Critic validation results \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+% =============================================================================
+% CHAPTER 7: EVALUATION FRAMEWORK
+% =============================================================================
+\newpage

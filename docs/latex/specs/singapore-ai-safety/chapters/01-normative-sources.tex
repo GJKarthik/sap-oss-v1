@@ -1,0 +1,169 @@
+% =============================================================================
+% Chapter 1 --- Normative Source Hierarchy
+% =============================================================================
+\chapter{Normative Source Hierarchy}
+\label{ch:sources}
+
+\section{Why a source hierarchy matters}
+
+Singapore's AI governance landscape comprises multiple overlapping documents
+from different agencies (IMDA, PDPC, CSA) with different publication statuses
+(official, consultation, reference). Without explicit precedence, an
+organisation cannot answer the question \emph{``Which source should I follow
+when guidance conflicts?''}
+
+This chapter establishes the authoritative ordering and explains how each
+source class contributes to the overall framework.
+
+\section{Source precedence}
+
+Sources are applied in the following order:
+
+\begin{enumerate}
+  \item \textbf{Normative Singapore governance baseline}: Official IMDA and
+        PDPC guidance on AI governance, agentic AI, LLM testing, and personal
+        data use in AI.
+  \item \textbf{Normative operational assurance baseline}: Official IMDA/AI
+        Verify materials on LLM testing and AI assurance.
+  \item \textbf{Supplementary security baseline}: Official CSA secure-AI
+        guidance, with explicit notation where guidance is draft or
+        consultation-stage.
+  \item \textbf{Supporting reference material}: AI Verify open-source
+        artefacts and academic references.
+\end{enumerate}
+
+\section{Normative Singapore sources}
+
+\begin{table}[htbp]
+\centering
+\footnotesize
+\caption{Normative and Supplementary Source Set}
+\label{tab:sources}
+\begin{tabularx}{\textwidth}{@{}l l l X@{}}
+\toprule
+\textbf{ID} & \textbf{Source} & \textbf{Date} & \textbf{Role} \\
+\midrule
+\sourceid{SG-01} & IMDA MGF for Agentic AI & Jan 2026 & Primary normative baseline for agentic use-case selection, bounded autonomy, human accountability \\
+\sourceid{SG-02} & IMDA Starter Kit for LLM Testing & Jan 2026 & Primary baseline for pre-deployment testing structure \\
+\sourceid{SG-03} & PDPC Model AI Governance Framework & Jan 2020 & Baseline governance structure \\
+\sourceid{SG-04} & PDPC Advisory Guidelines (Personal Data in AI) & Apr 2024 & PDPA-aligned data handling \\
+\sourceid{SG-05} & IMDA Project Moonshot / AI Verify & May 2024 & Benchmarking and red-teaming \\
+\sourceid{SG-06} & Singapore's Approach to AI Governance & Ongoing & Practical risk-based position \\
+\sourceid{SG-07} & CSA Guidelines on Securing AI Systems & Oct 2024 & Supplementary secure-by-design baseline \\
+\sourceid{SG-08} & CSA Agentic AI Addendum (Consultation) & Oct 2025 & Supplementary security input (consultation-stage) \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\section{Source class descriptions}
+
+\subsection{SG-01: IMDA Model Governance Framework for Agentic AI}
+
+The MGF for Agentic AI is the primary normative source. It defines four
+pillars:
+
+\begin{enumerate}
+  \item \textbf{Pillar 1}: Assess and Bound Risks Upfront
+  \item \textbf{Pillar 2}: Make Humans Meaningfully Accountable
+  \item \textbf{Pillar 3}: Implement Technical Controls and Processes
+  \item \textbf{Pillar 4}: Enable End-User Responsibility
+\end{enumerate}
+
+Each requirement in this specification traces back to one or more MGF sections.
+
+\subsection{SG-02: IMDA Starter Kit for Testing LLM-Based Applications}
+
+Provides the structure for pre-deployment safety testing:
+
+\begin{itemize}
+  \item Baseline safety evaluation methodology
+  \item Statistical sufficiency requirements
+  \item Red-teaming and adversarial testing guidance
+\end{itemize}
+
+\subsection{SG-03: PDPC Model AI Governance Framework}
+
+The foundational governance document establishing:
+
+\begin{itemize}
+  \item Named accountable ownership requirement
+  \item Risk-based approach to AI deployment
+  \item Internal governance structures
+\end{itemize}
+
+\subsection{SG-04: PDPC Advisory Guidelines on Personal Data in AI}
+
+PDPA-aligned guidance for personal data handling:
+
+\begin{itemize}
+  \item Lawful basis for AI processing
+  \item Data minimisation requirements
+  \item Retention and deletion obligations
+\end{itemize}
+
+\subsection{SG-05: IMDA Project Moonshot / AI Verify}
+
+Operationalisation tooling:
+
+\begin{itemize}
+  \item AI Verify benchmarking framework
+  \item Moonshot red-teaming capabilities
+  \item Testing artefact structure
+\end{itemize}
+
+\subsection{SG-07: CSA Guidelines on Securing AI Systems}
+
+Security baseline covering:
+
+\begin{itemize}
+  \item Secure-by-design principles
+  \item Adversarial resilience
+  \item Incident response
+\end{itemize}
+
+\subsection{SG-08: CSA Agentic AI Addendum (Consultation)}
+
+\begin{tcolorbox}[colback=sgamber!10,colframe=sgamber!70,title=\faIcon{exclamation-triangle} Consultation-Stage Document]
+This source is in public consultation as of October 2025. Requirements derived
+from SG-08 are marked as \textbf{supplementary} and may change when the final
+version is published.
+\end{tcolorbox}
+
+Covers agentic-specific security concerns:
+
+\begin{itemize}
+  \item Tool access sandboxing
+  \item Agent identity attestation
+  \item Least-privilege tool boundaries
+\end{itemize}
+
+\section{Source document locations}
+
+\begin{table}[htbp]
+\centering
+\footnotesize
+\caption{Source Document Repository Paths}
+\begin{tabularx}{\textwidth}{@{}l X@{}}
+\toprule
+\textbf{Source ID} & \textbf{Repository Path} \\
+\midrule
+\sourceid{SG-01} & \filepath{docs/regulations/mgf-for-agentic-ai.pdf} \\
+\sourceid{SG-02} & \filepath{docs/regulations/aiverify-main/} \\
+\sourceid{SG-05} & \filepath{docs/regulations/moonshot-cicd-main/} \\
+\sourceid{SG-06} & \filepath{docs/pdf/technical-reports/06-singapore-ai-safety-framework.pdf} \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\section{Cross-referencing peer specifications}
+
+This specification cross-references the following peer documents:
+
+\begin{itemize}
+  \item \textbf{Regulations Corpus} (\filepath{docs/latex/specs/regulations/}) --- 
+        Agentic AI regulatory requirements and implementation evidence
+  \item \textbf{Clinerules-Agents} (\filepath{docs/latex/specs/clinerules-agents/}) --- 
+        Agent rule-pack architecture
+  \item \textbf{TB-HITL Specification} (\filepath{docs/latex/specs/tb/}) --- 
+        Trial Balance human-in-the-loop workflow
+\end{itemize}

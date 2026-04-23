@@ -1,0 +1,219 @@
+# =============================================================================
+# .clinerules - Arabic-HITL Business Requirements Traceability Specification
+# Arabic AP Invoice Human-in-the-Loop Requirements & Lineage
+# =============================================================================
+# This specification provides business requirements traceability for the
+# Arabic AP Invoice HITL system with full source document lineage.
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# SPECIFICATION OVERVIEW
+# -----------------------------------------------------------------------------
+
+## Purpose
+
+The Arabic-HITL specification provides:
+- **Requirements Traceability**: Full lineage from source documents to implementation
+- **Business Rules**: Derived business logic with source citations
+- **Acceptance Criteria**: Measurable verification criteria
+- **Gap Analysis**: Implementation gaps and remediation plans
+
+## Relationship to Arabic Spec
+
+| Aspect | arabic/ Spec | arabic-hitl/ Spec |
+|--------|--------------|-------------------|
+| Focus | Technical design | Business requirements |
+| Audience | Developers | Business owners, auditors |
+| Traceability | Implementation | Source documents |
+| Primary Use | Build reference | Compliance & audit |
+
+## Key Documents
+
+| Document | Purpose |
+|----------|---------|
+| `arabic-hitl-spec.tex` | Main specification document |
+| `chapters/03-business-requirements.tex` | Derived requirements |
+| `chapters/10-traceability-matrix.tex` | Full traceability |
+
+# -----------------------------------------------------------------------------
+# RELATED ARTIFACTS
+# -----------------------------------------------------------------------------
+
+## Source Documents (Governing)
+
+| Document ID | Document | Location |
+|-------------|----------|----------|
+| ARA-BI-001 | Business Instruction Template | `docs/arabic/Business Instruction Template*.xlsm` |
+| ARA-DOI-001 | DOI for AP Processing | `docs/arabic/Accounts Payable DOI.docx` |
+| ARA-INV-* | Sample Invoices | `docs/arabic/*.pdf` |
+
+## Machine-Readable Extractions
+
+| Extraction | Location |
+|------------|----------|
+| DOI MD | `docs/arabic/machine-readable/ap-doi.md` |
+| Business Instruction MD | `docs/arabic/machine-readable/business-instruction.md` |
+
+## Related Specifications
+
+| Spec | Relationship |
+|------|--------------|
+| `docs/latex/specs/arabic/` | Technical design (implements this) |
+| `docs/schema/arabic/` | Data contracts (validates against this) |
+
+# -----------------------------------------------------------------------------
+# REQUIREMENT DERIVATION RULES
+# -----------------------------------------------------------------------------
+
+## Source Citation Standards
+
+When deriving requirements from source documents:
+
+1. **Always quote source text verbatim**
+   - Use italics for quoted text
+   - Preserve exact wording (including Arabic text when relevant)
+   - Do NOT paraphrase unless explicitly noted
+
+2. **Include precise location references**
+   - Format: "ARA-BI-001, Tab X, Row Y, Column Z (Lines N-M in extracted MD)"
+   - Include line numbers from machine-readable extraction
+   - Reference cell references for Excel sources
+
+3. **Handle Arabic text properly**
+   - Include both Arabic original and English translation
+   - Mark translations explicitly: "[Translation: ...]"
+   - Note any transliteration conventions used
+
+## Citation Format (LaTeX)
+
+```latex
+\begin{tcolorbox}[colback=sourcegreen!5,colframe=sourcegreen!70,title=Source Quotation]
+\textit{``Exact quoted text from source document...''}
+
+\textbf{Arabic Original:} \textarabic{النص العربي الأصلي}
+\end{tcolorbox}
+
+\begin{tabularx}{\textwidth}{@{}lX@{}}
+\toprule
+\textbf{Attribute} & \textbf{Value} \\
+\midrule
+\textbf{Requirement ID} & ARA-REQ-XXnn \\
+\textbf{MoSCoW Priority} & MUST/SHOULD/COULD/WON'T \\
+\textbf{Source Document} & Full document name \\
+\textbf{Source ID} & ARA-BI-001/ARA-DOI-001/etc. \\
+\textbf{Source Location} & Tab, Row, Column (Lines) \\
+\bottomrule
+\end{tabularx}
+```
+
+# -----------------------------------------------------------------------------
+# SPEC-DRIFT SYNCHRONIZATION RULES
+# -----------------------------------------------------------------------------
+
+## Critical Sync Points
+
+1. **Requirements → Technical Spec**
+   - Arabic-HITL requirements ↔ Arabic spec implementation
+   - New requirements need corresponding technical design
+
+2. **Requirements → Schema**
+   - Acceptance criteria ↔ Schema validation rules
+   - Field requirements must be in both spec and schema
+
+3. **Requirements → Test Cases**
+   - Acceptance criteria → Test implementations
+   - Every AC-* must have corresponding test
+
+## Pre-Change Checklist
+
+Before modifying this specification:
+
+- [ ] Run `make audit-spec-drift-domain DOMAIN=arabic`
+- [ ] Check source document is still current
+- [ ] Verify requirement doesn't conflict with existing ones
+- [ ] Confirm acceptance criteria are measurable
+
+## Post-Change Checklist
+
+After modifying this specification:
+
+- [ ] Update traceability matrix (Chapter 10)
+- [ ] Update related Arabic technical spec if needed
+- [ ] Update schemas if data requirements changed
+- [ ] Run `make audit-spec-drift` to verify synchronization
+
+# -----------------------------------------------------------------------------
+# REQUIREMENT ID CONVENTIONS
+# -----------------------------------------------------------------------------
+
+| Category | Prefix | Example |
+|----------|--------|---------|
+| Extraction | ARA-REQ-EXT | ARA-REQ-EXT01 |
+| HITL Workflow | ARA-REQ-HITL | ARA-REQ-HITL01 |
+| Quality | ARA-REQ-QA | ARA-REQ-QA01 |
+| Integration | ARA-REQ-INT | ARA-REQ-INT01 |
+
+## Acceptance Criteria IDs
+
+Format: `AC-<REQ-ID>-<NUMBER>`
+
+Example: `AC-EXT01-1`, `AC-HITL02-1`, `AC-QA01-2`
+
+# -----------------------------------------------------------------------------
+# MoSCoW PRIORITIZATION
+# -----------------------------------------------------------------------------
+
+| Priority | Definition | v1.0 Impact |
+|----------|------------|-------------|
+| **MUST** | Non-negotiable for v1.0 | Blocks release |
+| **SHOULD** | Important but can slip | Creates tech debt |
+| **COULD** | Nice to have | Deferred to v1.1 |
+| **WON'T** | Explicitly out of scope | Documented exclusion |
+
+# -----------------------------------------------------------------------------
+# ARABIC-SPECIFIC REQUIREMENTS
+# -----------------------------------------------------------------------------
+
+## RTL Processing Requirements
+
+All Arabic-HITL requirements MUST consider:
+- Right-to-left text direction handling
+- Mixed Arabic/English content alignment
+- Unicode normalization (NFC vs NFD)
+- Font requirements for Arabic rendering
+
+## Invoice Field Mapping
+
+| English Field | Arabic Label | Validation Rule |
+|---------------|--------------|-----------------|
+| Invoice Number | رقم الفاتورة | Required, alphanumeric |
+| Amount | المبلغ | Required, numeric > 0 |
+| Date | التاريخ | Required, valid date |
+| Vendor Name | اسم المورد | Required, text |
+
+# -----------------------------------------------------------------------------
+# DRIFT DETECTION COMMANDS
+# -----------------------------------------------------------------------------
+
+```bash
+# Full audit for arabic domain (includes arabic-hitl)
+make audit-spec-drift-domain DOMAIN=arabic
+
+# Check source document currency
+ls -la docs/arabic/machine-readable/
+
+# Verify requirement coverage
+grep -c "ARA-REQ-" docs/latex/specs/arabic-hitl/chapters/*.tex
+```
+
+# -----------------------------------------------------------------------------
+# VERSION HISTORY
+# -----------------------------------------------------------------------------
+
+| Version | Date | Changes |
+|---------|------|---------|
+| 1.0.0 | 2026-04-21 | Initial .clinerules for Arabic-HITL spec |
+
+# =============================================================================
+# END OF .clinerules
+# =============================================================================

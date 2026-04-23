@@ -1,0 +1,218 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://sap-oss.github.io/schema/simula/training-example.schema.json",
+  "title": "Training Example",
+  "description": "Schema for Simula-generated training examples (Chapter 5)",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["id", "question", "sql", "complexity_score", "critic_passed"],
+  "properties": {
+    "id": {
+      "type": "string",
+      "description": "Unique example identifier (e.g., sim-001)"
+    },
+    "question": {
+      "type": "string",
+      "description": "Natural language question"
+    },
+    "sql": {
+      "type": "string",
+      "description": "SQL query answer"
+    },
+    "schema_context": {
+      "type": "string",
+      "description": "Schema context used for generation"
+    },
+    "taxonomy_path": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Taxonomy paths that guided this example (e.g., ['query_type/aggregation/sum', 'time_granularity/MoM'])"
+    },
+    "mix_id": {
+      "type": "string",
+      "description": "Reference to the mix that generated this example"
+    },
+    "complexity_score": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1,
+      "description": "Raw complexity score (0-1)"
+    },
+    "complexity_level": {
+      "type": "string",
+      "enum": ["EASY", "MEDIUM", "HARD"],
+      "description": "Complexity level per docs/schema/common/enums.yaml"
+    },
+    "elo_rating": {
+      "type": "number",
+      "description": "Elo-calibrated complexity rating (Algorithm 3)"
+    },
+    "is_complexified": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether this example underwent complexification"
+    },
+    "original_question": {
+      "type": "string",
+      "description": "Original question before complexification (if applicable)"
+    },
+    "original_sql": {
+      "type": "string",
+      "description": "Original SQL before complexification (if applicable)"
+    },
+    "critic_passed": {
+      "type": "boolean",
+      "description": "Whether example passed double-critic evaluation"
+    },
+    "critic_evaluation": {
+      "$ref": "#/definitions/critic_evaluation",
+      "description": "Double-critic evaluation details"
+    },
+    "generation_metadata": {
+      "$ref": "#/definitions/generation_metadata",
+      "description": "Generation process metadata"
+    },
+    "quality_signals": {
+      "$ref": "#/definitions/quality_signals",
+      "description": "Quality signals for this example"
+    },
+    "metadata": {
+      "$ref": "https://sap-oss.github.io/schema/common/base-types.schema.json#/definitions/Metadata",
+      "description": "Record metadata"
+    }
+  },
+  "definitions": {
+    "critic_evaluation": {
+      "type": "object",
+      "description": "Double-critic evaluation results (Step 5)",
+      "properties": {
+        "verdict": {
+          "type": "string",
+          "enum": ["ACCEPT", "REVISE", "REJECT"],
+          "description": "Critic verdict per docs/schema/common/enums.yaml"
+        },
+        "correct_query_response": {
+          "type": "string",
+          "description": "Response to 'Is this correct?' query"
+        },
+        "correct_query_answer": {
+          "type": "string",
+          "enum": ["YES", "NO", "UNCERTAIN"],
+          "description": "Parsed answer from correct query"
+        },
+        "incorrect_query_response": {
+          "type": "string",
+          "description": "Response to 'Is this incorrect?' query"
+        },
+        "incorrect_query_answer": {
+          "type": "string",
+          "enum": ["YES", "NO", "UNCERTAIN"],
+          "description": "Parsed answer from incorrect query"
+        },
+        "is_valid": {
+          "type": "boolean",
+          "description": "Whether example is valid (correct=YES AND incorrect=NO)"
+        },
+        "confidence": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "description": "Critic confidence in evaluation"
+        },
+        "evaluated_at": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Evaluation timestamp"
+        },
+        "adaptive_threshold_applied": {
+          "type": "number",
+          "description": "Adaptive threshold used (if adaptive critic enabled)"
+        }
+      }
+    },
+    "generation_metadata": {
+      "type": "object",
+      "properties": {
+        "model": {
+          "type": "string",
+          "description": "LLM model used for generation"
+        },
+        "temperature": {
+          "type": "number",
+          "description": "Generation temperature"
+        },
+        "generated_at": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Generation timestamp"
+        },
+        "latency_ms": {
+          "type": "integer",
+          "description": "Generation latency"
+        },
+        "batch_id": {
+          "type": "string",
+          "description": "Batch identifier"
+        },
+        "seed": {
+          "type": "integer",
+          "description": "Random seed for reproducibility"
+        },
+        "meta_prompt_id": {
+          "type": "string",
+          "description": "Reference to meta-prompt used"
+        }
+      }
+    },
+    "quality_signals": {
+      "type": "object",
+      "properties": {
+        "sql_valid": {
+          "type": "boolean",
+          "description": "Whether SQL parses correctly"
+        },
+        "sql_executable": {
+          "type": "boolean",
+          "description": "Whether SQL executes without error"
+        },
+        "question_length": {
+          "type": "integer",
+          "description": "Question character length"
+        },
+        "sql_length": {
+          "type": "integer",
+          "description": "SQL character length"
+        },
+        "join_count": {
+          "type": "integer",
+          "description": "Number of JOINs in SQL"
+        },
+        "subquery_count": {
+          "type": "integer",
+          "description": "Number of subqueries"
+        },
+        "cte_count": {
+          "type": "integer",
+          "description": "Number of CTEs"
+        },
+        "aggregate_count": {
+          "type": "integer",
+          "description": "Number of aggregate functions"
+        },
+        "embedding_vector": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          },
+          "description": "Question embedding for diversity analysis"
+        },
+        "nearest_neighbor_distance": {
+          "type": "number",
+          "description": "Distance to nearest neighbor in embedding space"
+        }
+      }
+    }
+  }
+}

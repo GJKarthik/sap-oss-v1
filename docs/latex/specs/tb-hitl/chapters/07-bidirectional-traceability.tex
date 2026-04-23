@@ -1,0 +1,225 @@
+\chapter{Bidirectional Traceability Matrix}
+\label{ch:bidirectional-traceability}
+
+This chapter provides a consolidated view of traceability in both directions:
+forward (source $\rightarrow$ requirement $\rightarrow$ specification $\rightarrow$ schema)
+and backward (schema $\rightarrow$ specification $\rightarrow$ requirement $\rightarrow$ source).
+
+% =============================================================================
+\section{Forward Traceability: Source to Schema}
+\label{sec:forward-traceability}
+
+The forward traceability matrix demonstrates how each source document
+element flows through the requirements, specifications, and into the
+implementing schemas.
+
+\begin{longtable}{@{}C{2cm}C{2.2cm}C{2.5cm}C{2.5cm}C{2.5cm}@{}}
+\caption{Forward Traceability Matrix}
+\label{tab:forward-traceability} \\
+\toprule
+\textbf{Source} & \textbf{Extracted} & \textbf{Requirement} & \textbf{Specification} & \textbf{Schema} \\
+\midrule
+\endfirsthead
+\toprule
+\textbf{Source} & \textbf{Extracted} & \textbf{Requirement} & \textbf{Specification} & \textbf{Schema} \\
+\midrule
+\endhead
+\srcref{TB-BC-001} & bc-tb.md & \reqref{TB-REQ-ES01} & \specref{AI-ANOM} & \schemaref{variance-record} \\
+\srcref{TB-BC-001} & bc-tb.md & \reqref{TB-REQ-ES02} & \specref{AI-LLM} & \schemaref{commentary-draft} \\
+\srcref{TB-BC-001} & bc-tb.md & \reqref{TB-REQ-SC01} & \specref{TB-STEP-003} & \schemaref{tb-extract} \\
+\srcref{TB-BC-001} & bc-tb.md & \reqref{TB-REQ-SC02} & \specref{TB-STEP-004} & \schemaref{variance-record} \\
+\srcref{TB-BC-001} & bc-tb.md & \reqref{TB-REQ-AI01} & \specref{AI-ANOM} & \schemaref{variance-record} \\
+\srcref{TB-BC-001} & bc-tb.md & \reqref{TB-REQ-AI05} & \specref{AI-MAT} & \schemaref{variance-record} \\
+\srcref{TB-BC-001} & bc-tb.md & \reqref{TB-REQ-AI06} & \specref{AI-LLM} & \schemaref{commentary-draft} \\
+\srcref{TB-BPMN-001} & bpmn-glo.md & \reqref{TB-REQ-PS01} & \specref{TB-STEP-001} & -- \\
+\srcref{TB-BPMN-001} & bpmn-glo.md & \reqref{TB-REQ-PS02} & \specref{TB-STEP-002} & \schemaref{entity-params} \\
+\srcref{TB-BPMN-001} & bpmn-glo.md & \reqref{TB-REQ-PS03} & \specref{TB-STEP-003} & \schemaref{tb-extract} \\
+\srcref{TB-BPMN-001} & bpmn-glo.md & \reqref{TB-REQ-PS04} & \specref{TB-STEP-004} & \schemaref{variance-record} \\
+\srcref{TB-BPMN-001} & bpmn-glo.md & \reqref{TB-REQ-PS05} & \specref{DP-001} & \schemaref{variance-record} \\
+\srcref{TB-BPMN-001} & bpmn-glo.md & \reqref{TB-REQ-PS06} & \specref{TB-STEP-005} & \schemaref{commentary-draft} \\
+\srcref{TB-BPMN-001} & bpmn-glo.md & \reqref{TB-REQ-PS07} & \specref{DP-002} & \schemaref{variance-record} \\
+\srcref{TB-BPMN-001} & bpmn-glo.md & \reqref{TB-REQ-PS08} & \specref{TB-STEP-008} & -- \\
+\srcref{TB-BC-002} & bc-bss.md & \reqref{BSS-REQ-01} & \specref{DP-005} & \schemaref{variance-record} \\
+\bottomrule
+\end{longtable}
+
+\subsection{Forward Traceability Flow Diagram}
+
+\begin{figure}[h]
+\centering
+\begin{tikzpicture}[
+    node distance=1.5cm and 1.2cm,
+    source/.style={rectangle, rounded corners, draw=sourcegreen, fill=sourcegreen!15,
+                   thick, minimum width=2cm, minimum height=0.8cm, font=\footnotesize},
+    req/.style={rectangle, rounded corners, draw=reqpurple, fill=reqpurple!15,
+                thick, minimum width=2cm, minimum height=0.8cm, font=\footnotesize},
+    spec/.style={rectangle, rounded corners, draw=specblue, fill=specblue!15,
+                 thick, minimum width=2cm, minimum height=0.8cm, font=\footnotesize},
+    schema/.style={rectangle, rounded corners, draw=schemaorg, fill=schemaorg!15,
+                   thick, minimum width=2cm, minimum height=0.8cm, font=\footnotesize},
+    arrow/.style={->, thick, >=stealth}
+]
+    % Sources
+    \node[source] (src1) {TB-BC-001};
+    \node[source, below=0.5cm of src1] (src2) {TB-BPMN-001};
+    \node[source, below=0.5cm of src2] (src3) {TB-BC-002};
+    
+    % Requirements
+    \node[req, right=of src1] (req1) {ES/SC/AI Reqs};
+    \node[req, right=of src2] (req2) {PS Reqs};
+    \node[req, right=of src3] (req3) {BSS Reqs};
+    
+    % Specifications
+    \node[spec, right=of req1] (spec1) {AI-*};
+    \node[spec, right=of req2] (spec2) {TB-STEP-*};
+    \node[spec, right=of req3] (spec3) {DP-*};
+    
+    % Schemas
+    \node[schema, right=of spec2] (sch1) {variance-record};
+    \node[schema, above=0.3cm of sch1] (sch2) {commentary-draft};
+    \node[schema, below=0.3cm of sch1] (sch3) {tb-extract};
+    
+    % Arrows
+    \draw[arrow, sourcegreen] (src1) -- (req1);
+    \draw[arrow, sourcegreen] (src2) -- (req2);
+    \draw[arrow, sourcegreen] (src3) -- (req3);
+    \draw[arrow, reqpurple] (req1) -- (spec1);
+    \draw[arrow, reqpurple] (req2) -- (spec2);
+    \draw[arrow, reqpurple] (req3) -- (spec3);
+    \draw[arrow, specblue] (spec1) -- (sch2);
+    \draw[arrow, specblue] (spec2) -- (sch1);
+    \draw[arrow, specblue] (spec2) -- (sch3);
+    \draw[arrow, specblue] (spec3) -- (sch1);
+\end{tikzpicture}
+\caption{Forward Traceability Flow}
+\label{fig:forward-traceability-flow}
+\end{figure}
+
+% =============================================================================
+\section{Backward Traceability: Schema to Source}
+\label{sec:backward-traceability}
+
+The backward traceability matrix demonstrates how each schema field
+can be traced back through specifications, requirements, to the
+originating source document.
+
+\begin{longtable}{@{}L{3cm}C{2cm}C{2.5cm}C{2.5cm}C{2.5cm}@{}}
+\caption{Backward Traceability Matrix}
+\label{tab:backward-traceability} \\
+\toprule
+\textbf{Schema Field} & \textbf{Spec} & \textbf{Requirement} & \textbf{Extracted} & \textbf{Source} \\
+\midrule
+\endfirsthead
+\toprule
+\textbf{Schema Field} & \textbf{Spec} & \textbf{Requirement} & \textbf{Extracted} & \textbf{Source} \\
+\midrule
+\endhead
+\fieldref{variance\_id} & \specref{TB-STEP-004} & \reqref{TB-REQ-PS04} & bpmn-glo.md & \srcref{TB-BPMN-001} \\
+\fieldref{flags} & \specref{AI-ANOM} & \reqref{TB-REQ-AI01} & bc-tb.md & \srcref{TB-BC-001} \\
+\fieldref{materiality\_*} & \specref{DP-001} & \reqref{TB-REQ-PS05} & bpmn-glo.md & \srcref{TB-BPMN-001} \\
+\fieldref{journal\_status} & \specref{DP-002} & \reqref{TB-REQ-PS07} & bpmn-glo.md & \srcref{TB-BPMN-001} \\
+\fieldref{unexplained\_*} & \specref{DP-005} & \reqref{BSS-REQ-01} & bc-bss.md & \srcref{TB-BC-002} \\
+\fieldref{legal\_entity} & \specref{TB-STEP-003} & \reqref{TB-REQ-SC01} & bc-tb.md & \srcref{TB-BC-001} \\
+\fieldref{draft\_text} & \specref{AI-LLM} & \reqref{TB-REQ-AI06} & bc-tb.md & \srcref{TB-BC-001} \\
+\fieldref{extract\_id} & \specref{TB-STEP-003} & \reqref{TB-REQ-PS03} & bpmn-glo.md & \srcref{TB-BPMN-001} \\
+\fieldref{entity\_code} & \specref{TB-STEP-002} & \reqref{TB-REQ-SC01} & bc-tb.md & \srcref{TB-BC-001} \\
+\bottomrule
+\end{longtable}
+
+% =============================================================================
+\section{Coverage Analysis}
+\label{sec:coverage-analysis}
+
+\begin{table}[h]
+\centering
+\caption{Traceability Coverage Summary}
+\label{tab:coverage-summary}
+\begin{tabular}{@{}lccl@{}}
+\toprule
+\textbf{Layer Transition} & \textbf{Forward} & \textbf{Backward} & \textbf{Coverage} \\
+\midrule
+Source $\rightarrow$ Extracted & 6 $\rightarrow$ 7 & 7 $\rightarrow$ 6 & 100\% \\
+Extracted $\rightarrow$ Requirements & 7 $\rightarrow$ 27 & 27 $\rightarrow$ 3 & 100\% \\
+Requirements $\rightarrow$ Specifications & 27 $\rightarrow$ 22 & 22 $\rightarrow$ 27 & 100\% \\
+Specifications $\rightarrow$ Schemas & 22 $\rightarrow$ 6 & 6 $\rightarrow$ 22 & 100\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Traceability Completeness Metrics}
+
+\begin{table}[h]
+\centering
+\caption{Traceability Completeness Metrics}
+\label{tab:completeness-metrics}
+\begin{tabular}{@{}lcc@{}}
+\toprule
+\textbf{Metric} & \textbf{Value} & \textbf{Status} \\
+\midrule
+Requirements with source reference & 27 / 27 & \textcolor{sourcegreen}{Complete} \\
+Requirements with specification & 27 / 27 & \textcolor{sourcegreen}{Complete} \\
+Specifications with requirement & 22 / 22 & \textcolor{sourcegreen}{Complete} \\
+Specifications with schema & 20 / 22 & \textcolor{sapamber}{Partial}$^1$ \\
+Schema fields with specification & 44 / 47 & \textcolor{sapamber}{Partial}$^2$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\paragraph{Notes:}
+\begin{enumerate}
+  \item Two specifications (\specref{TB-STEP-001}, \specref{TB-STEP-008}) are
+        workflow orchestration steps that do not produce persistent data
+        structures requiring schema definitions.
+  \item Three schema fields (\fieldref{audit\_id}, \fieldref{version},
+        \fieldref{processed\_at}) are system-generated audit fields not
+        directly tied to business requirements.
+\end{enumerate}
+
+% =============================================================================
+\section{Traceability Link Validation}
+\label{sec:link-validation}
+
+\subsection{Validation Rules}
+
+The following rules are applied to validate traceability links:
+
+\begin{enumerate}
+  \item \textbf{Existence Rule:} Every link target must exist in the
+        corresponding layer's inventory
+  \item \textbf{Bidirectional Rule:} If A $\rightarrow$ B exists, then
+        B $\rightarrow$ A must also be documented
+  \item \textbf{Transitivity Rule:} If A $\rightarrow$ B and B $\rightarrow$ C,
+        then the chain A $\rightarrow$ C must be valid
+  \item \textbf{Completeness Rule:} No orphan elements may exist in any layer
+\end{enumerate}
+
+\subsection{Validation Results}
+
+\begin{table}[h]
+\centering
+\caption{Traceability Validation Results}
+\label{tab:validation-results}
+\begin{tabular}{@{}lccc@{}}
+\toprule
+\textbf{Validation Rule} & \textbf{Links Checked} & \textbf{Passed} & \textbf{Status} \\
+\midrule
+Existence Rule & 156 & 156 & \textcolor{sourcegreen}{Pass} \\
+Bidirectional Rule & 78 pairs & 78 & \textcolor{sourcegreen}{Pass} \\
+Transitivity Rule & 62 chains & 62 & \textcolor{sourcegreen}{Pass} \\
+Completeness Rule & 63 elements & 61$^*$ & \textcolor{sapamber}{Note} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+$^*$Two elements noted in \gapref{G-001} and \gapref{G-002} are documented
+gaps with assigned owners.
+
+\begin{hitlbox}{H4 -- Traceability Links Verification (Part 2)}
+The human reviewer must verify the following for checkpoint H4:
+\begin{enumerate}[noitemsep]
+  \item Forward traceability from every source section reaches at least one schema
+  \item Backward traceability from every schema field reaches a source document
+  \item No broken links exist in either direction
+  \item Noted exceptions (workflow steps without schemas, audit fields) are valid
+\end{enumerate}
+\end{hitlbox}

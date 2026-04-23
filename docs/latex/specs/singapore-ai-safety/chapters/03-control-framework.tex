@@ -1,0 +1,221 @@
+% =============================================================================
+% Chapter 3 --- Control Framework
+% =============================================================================
+\chapter{Control Framework}
+\label{ch:controls}
+
+\section{Control design principles}
+
+Five principles guide the control framework design:
+
+\begin{enumerate}
+  \item \textbf{Bound the use case} before building or deploying it.
+  \item \textbf{Make a human unambiguously accountable}.
+  \item \textbf{Treat tools, memory, and data access} as first-class risk surfaces.
+  \item \textbf{Require evidence-driven go/no-go decisions}.
+  \item \textbf{Monitor after deployment} because pre-deployment testing is
+        necessary but insufficient.
+\end{enumerate}
+
+\section{Mandatory control catalogue}
+
+\begin{longtable}{@{}l l p{5cm} p{3cm} l@{}}
+\caption{Mandatory Control Catalogue (23 Controls)} \\
+\toprule
+\textbf{ID} & \textbf{Control} & \textbf{Requirement} & \textbf{Primary Evidence} & \textbf{Sources} \\
+\midrule
+\endfirsthead
+\multicolumn{5}{c}{\tablename\ \thetable{} -- continued} \\
+\toprule
+\textbf{ID} & \textbf{Control} & \textbf{Requirement} & \textbf{Primary Evidence} & \textbf{Sources} \\
+\midrule
+\endhead
+\midrule
+\multicolumn{5}{r}{Continued on next page} \\
+\endfoot
+\bottomrule
+\endlastfoot
+\controlid{GOV-01} & Named accountable owner & Business owner, technical owner, security reviewer & Use-case registry, RACI & SG-01, SG-03 \\
+\controlid{GOV-02} & Use-case registration & Must register before implementation & Use-case card, ticket & SG-01, SG-03 \\
+\controlid{GOV-03} & Model/dependency inventory & All models and tools inventoried & Inventory table, SBOM & SG-01, SG-05, SG-07 \\
+\controlid{DATA-01} & Data classification & Classify as public/internal/confidential/personal/restricted & Data map, access matrix & SG-01, SG-03, SG-04 \\
+\controlid{DATA-02} & Data minimisation & Personal-data use documented and PDPA-aligned & DPIA/LIA, consent record & SG-04 \\
+\controlid{DATA-03} & Retention and deletion & Retention and purge rules defined & Retention schedule & SG-04, SG-07 \\
+\controlid{AGT-01} & Bounded autonomy & Maximum autonomy level declared & Autonomy classification & SG-01 \\
+\controlid{AGT-02} & Least-privilege tools & Explicit allow-list, least privilege & Tool allowlist, matrix & SG-01, SG-08 \\
+\controlid{AGT-03} & Agent identity & Unique identity and delegation record & Agent ID, approval logs & SG-01, SG-08 \\
+\controlid{AGT-04} & Sandboxing & High-risk execution sandboxed & Sandbox config & SG-01, SG-07, SG-08 \\
+\controlid{HUM-01} & Checkpoint design & High-stakes actions require human approval & Approval policies & SG-01, SG-03 \\
+\controlid{HUM-02} & Effective approval UX & Contextual, concise, auditable & Approval payload schema & SG-01 \\
+\controlid{HUM-03} & Oversight audit & Approvals sampled for effectiveness & QA sample pack & SG-01 \\
+\controlid{SEC-01} & Prompt-injection resilience & Defend against injection and exfiltration & Red-team results & SG-02, SG-07, SG-08 \\
+\controlid{SEC-02} & Trusted protocol boundary & Only approved MCP/APIs/services & Allowlist, trust review & SG-01, SG-08 \\
+\controlid{EVAL-01} & Baseline safety evaluation & Test for hallucination, bias, leakage, adversarial & Test plan, benchmarks & SG-02, SG-05 \\
+\controlid{EVAL-02} & Statistical sufficiency & Defined sample sizes and confidence methods & Sample design & SG-02 \\
+\controlid{EVAL-03} & Stage-gate deployment & Numeric readiness gates & Gate decision memo & SG-01, SG-02, SG-03 \\
+\controlid{MON-01} & Full audit trace & Every execution records required fields & Audit logs, completeness & SG-01, SG-05 \\
+\controlid{MON-02} & Real-time anomaly monitoring & High-risk anomalies trigger alerts & Alert definitions, runbooks & SG-01, SG-07, SG-08 \\
+\controlid{MON-03} & Incident response and rollback & AI incidents triaged and contained & Incident tickets & SG-01, SG-07 \\
+\controlid{USR-01} & User transparency & Users informed of AI involvement & UI notice, documentation & SG-01, SG-03, SG-04 \\
+\controlid{USR-02} & User and reviewer training & Training on failure modes and escalation & Training records & SG-01, SG-03 \\
+\end{longtable}
+
+\section{Critical controls}
+
+The following controls are \textbf{critical controls}. They must pass with no
+exception for any high-risk or critical use case:
+
+\begin{itemize}
+  \item \controlid{GOV-01}, \controlid{GOV-02} --- Governance ownership
+  \item \controlid{DATA-01} --- Data classification
+  \item \controlid{AGT-02}, \controlid{AGT-03} --- Agent tool and identity
+  \item \controlid{HUM-01} --- Human checkpoint
+  \item \controlid{SEC-01} --- Prompt-injection resilience
+  \item \controlid{EVAL-01}, \controlid{EVAL-03} --- Evaluation and gating
+  \item \controlid{MON-01}, \controlid{MON-02}, \controlid{MON-03} --- Monitoring
+\end{itemize}
+
+\begin{tcolorbox}[colback=sgred!5,colframe=sgred!70,title=\faIcon{exclamation-circle} Critical Control Requirement]
+A use case that fails any critical control cannot be approved for production.
+\end{tcolorbox}
+
+\section{Control category descriptions}
+
+\subsection{Governance controls (GOV)}
+
+Governance controls ensure accountable ownership and proper registration:
+
+\begin{description}
+  \item[\controlid{GOV-01}] Every use case must have a named business owner
+        (accountable for outcomes), technical owner (responsible for
+        implementation), and security reviewer.
+  \item[\controlid{GOV-02}] Use cases must be registered in the governance
+        system before implementation begins.
+  \item[\controlid{GOV-03}] All models, tools, and dependencies must be
+        inventoried with version tracking and SBOM generation.
+\end{description}
+
+\subsection{Data controls (DATA)}
+
+Data controls address classification, minimisation, and retention:
+
+\begin{description}
+  \item[\controlid{DATA-01}] All data must be classified according to
+        sensitivity levels: public, internal, confidential, personal, restricted.
+  \item[\controlid{DATA-02}] Personal data use must be documented with lawful
+        basis under PDPA and subject to minimisation requirements.
+  \item[\controlid{DATA-03}] Retention periods and purge schedules must be
+        defined for all AI-processed data.
+\end{description}
+
+\subsection{Agent controls (AGT)}
+
+Agent controls bound autonomy and tool access:
+
+\begin{description}
+  \item[\controlid{AGT-01}] Each agent must declare its maximum autonomy level
+        (L1-Observe, L2-Collaborate, L3-Delegate, L4-Autonomous).
+  \item[\controlid{AGT-02}] Tools must be explicitly allow-listed; agents
+        operate with least-privilege tool access.
+  \item[\controlid{AGT-03}] Each agent must have a unique identity with
+        delegation records for audit attribution.
+  \item[\controlid{AGT-04}] High-risk agent executions must be sandboxed.
+\end{description}
+
+\subsection{Human controls (HUM)}
+
+Human controls ensure meaningful human accountability:
+
+\begin{description}
+  \item[\controlid{HUM-01}] High-stakes actions must require human approval
+        before execution.
+  \item[\controlid{HUM-02}] Approval UX must be contextual, concise, and
+        provide actionable information.
+  \item[\controlid{HUM-03}] Approval decisions must be sampled and audited
+        for effectiveness.
+\end{description}
+
+\subsection{Security controls (SEC)}
+
+Security controls address adversarial resilience:
+
+\begin{description}
+  \item[\controlid{SEC-01}] Systems must defend against prompt injection,
+        jailbreaking, and data exfiltration.
+  \item[\controlid{SEC-02}] Only approved MCP servers, APIs, and services
+        may be accessed.
+\end{description}
+
+\subsection{Evaluation controls (EVAL)}
+
+Evaluation controls ensure pre-deployment readiness:
+
+\begin{description}
+  \item[\controlid{EVAL-01}] Baseline safety evaluation must test for
+        hallucination, bias, data leakage, and adversarial robustness.
+  \item[\controlid{EVAL-02}] Sample sizes and statistical methods must be
+        defined to ensure confidence in results.
+  \item[\controlid{EVAL-03}] Numeric stage gates must be met before
+        deployment proceeds.
+\end{description}
+
+\subsection{Monitoring controls (MON)}
+
+Monitoring controls ensure post-deployment oversight:
+
+\begin{description}
+  \item[\controlid{MON-01}] Every governed execution must produce a complete
+        audit record with required fields.
+  \item[\controlid{MON-02}] Real-time monitoring must detect anomalies and
+        trigger alerts.
+  \item[\controlid{MON-03}] AI incidents must be triaged, contained, and
+        rolled back when necessary.
+\end{description}
+
+\subsection{User controls (USR)}
+
+User controls address transparency and training:
+
+\begin{description}
+  \item[\controlid{USR-01}] Users must be informed when they are interacting
+        with AI-generated content or recommendations.
+  \item[\controlid{USR-02}] Users and reviewers must be trained on AI failure
+        modes and escalation procedures.
+\end{description}
+
+\section{Control-to-source traceability}
+
+\begin{table}[htbp]
+\centering
+\footnotesize
+\caption{Control-to-Source Traceability Matrix}
+\begin{tabularx}{\textwidth}{@{}l c c c c c c c c@{}}
+\toprule
+\textbf{Control} & \textbf{SG-01} & \textbf{SG-02} & \textbf{SG-03} & \textbf{SG-04} & \textbf{SG-05} & \textbf{SG-07} & \textbf{SG-08} \\
+\midrule
+GOV-01 & \ding{51} & & \ding{51} & & & & \\
+GOV-02 & \ding{51} & & \ding{51} & & & & \\
+GOV-03 & \ding{51} & & & & \ding{51} & \ding{51} & \\
+DATA-01 & \ding{51} & & \ding{51} & \ding{51} & & & \\
+DATA-02 & & & & \ding{51} & & & \\
+DATA-03 & & & & \ding{51} & & \ding{51} & \\
+AGT-01 & \ding{51} & & & & & & \\
+AGT-02 & \ding{51} & & & & & & \ding{51} \\
+AGT-03 & \ding{51} & & & & & & \ding{51} \\
+AGT-04 & \ding{51} & & & & & \ding{51} & \ding{51} \\
+HUM-01 & \ding{51} & & \ding{51} & & & & \\
+HUM-02 & \ding{51} & & & & & & \\
+HUM-03 & \ding{51} & & & & & & \\
+SEC-01 & & \ding{51} & & & & \ding{51} & \ding{51} \\
+SEC-02 & \ding{51} & & & & & & \ding{51} \\
+EVAL-01 & & \ding{51} & & & \ding{51} & & \\
+EVAL-02 & & \ding{51} & & & & & \\
+EVAL-03 & \ding{51} & \ding{51} & \ding{51} & & & & \\
+MON-01 & \ding{51} & & & & \ding{51} & & \\
+MON-02 & \ding{51} & & & & & \ding{51} & \ding{51} \\
+MON-03 & \ding{51} & & & & & \ding{51} & \\
+USR-01 & \ding{51} & & \ding{51} & \ding{51} & & & \\
+USR-02 & \ding{51} & & \ding{51} & & & & \\
+\bottomrule
+\end{tabularx}
+\end{table}

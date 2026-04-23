@@ -1,6 +1,6 @@
 # Training Console
 
-Full-platform UI for the SAP AI Training stack — covering all four `training-main` components: **Pipeline**, **Model Optimizer**, **HANA Explorer**, and **Data Explorer**.
+Full-platform UI for the SAP AI Training stack — covering the operational workbench for **Pipeline**, **Model Optimizer**, **HANA Explorer**, and **Data Products**.
 Includes integrated **Data Cleaning** workflows for preparing model training data inside the same app.
 
 Built with **Angular 20** + **SAP UI5 Web Components**.
@@ -23,7 +23,7 @@ training-webcomponents-ngx/
 │       │   │   │   ├── pipeline/       # 7-stage Text-to-SQL pipeline
 │       │   │   │   ├── model-optimizer/# Model catalog + job management
 │       │   │   │   ├── hana-explorer/  # HANA Cloud explorer + SQL workspace
-│       │   │   │   ├── data-explorer/  # Banking Excel/CSV asset browser
+│       │   │   │   ├── data-product-manager/ # Data products catalog and governance surface
 │       │   │   │   └── chat/           # LLM chat (OpenAI-compatible API)
 │       │   │   └── services/           # ApiService, AuthService
 │       │   ├── index.html
@@ -139,7 +139,7 @@ The FastAPI proxy uses the following environment variables. They can be set in a
 | `/pipeline` | 7-stage Text-to-SQL data generation pipeline |
 | `/model-optimizer` | Model catalog browser + quantisation job management |
 | `/hana-explorer` | HANA Cloud explorer with live SQL workspace |
-| `/data-explorer` | Banking Excel/CSV training data asset browser |
+| `/data-products` | Data products catalog, access controls, and prompt previews |
 | `/data-cleaning` | Native data cleaning copilot + workflow execution |
 | `/chat` | OpenAI-compatible LLM chat (proxied to ModelOpt backend) |
 

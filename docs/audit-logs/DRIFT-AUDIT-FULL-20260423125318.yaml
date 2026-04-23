@@ -1,0 +1,431 @@
+report_id: DRIFT-AUDIT-FULL-20260423125318
+trigger: full
+commit_sha: ea61e7406d5b059d73a91b683c98867707ad6f11
+branch: main
+timestamp: '2026-04-23T12:53:18.066091'
+changed_files: []
+findings:
+- id: DRIFT-001-SCHEMA-001
+  type: DRIFT_001
+  type_description: Schema-Spec Drift
+  severity: MEDIUM
+  confidence: 0.86
+  source_file: docs/schema/simula/hana-schema-entry.schema.json
+  message: Schema has 19 fields not documented in spec
+  related_artifacts:
+  - path: docs/latex/specs/simula/chapters/04-extraction-pipeline.tex
+    type: specification
+    status: possibly_stale
+    domain: simula
+  evidence:
+    schema_only_fields:
+    - base_tables
+    - default_value
+    - definition_sql
+    - extraction_duration_ms
+    - extraction_metadata
+    - foreign_keys
+    - hana_types_mapping
+    - hana_version
+    - is_primary_key
+    - mcp_server
+    - metadata
+    - nullable
+    - primary_key
+    - references_columns
+    - references_table
+    - row_count_estimate
+    - schema_name
+    - sql_type
+    - views
+    fuzzy_matched_fields:
+    - schema_id
+    schema_field_count: 26
+    spec_field_count: 8
+  remediation: 'Document these fields in docs/latex/specs/simula/chapters/04-extraction-pipeline.tex:
+    base_tables, default_value, definition_sql, extraction_duration_ms, extraction_metadata,
+    foreign_keys, hana_types_mapping, hana_version, is_primary_key, mcp_server'
+  blocking: false
+- id: DRIFT-002-MISMATCH-002
+  type: DRIFT_002
+  type_description: Code-Schema Drift
+  severity: MEDIUM
+  confidence: 0.86
+  source_file: src/training/pipeline/hana_schema_extractor.py
+  message: Code accesses 'get_primary_keys' but schema has 'is_primary_key' (possible
+    typo or rename)
+  related_artifacts:
+  - path: docs/schema/simula/hana-schema-entry.schema.json
+    type: schema
+    status: possibly_stale
+    domain: simula
+  evidence:
+    code_field: get_primary_keys
+    similar_schema_field: is_primary_key
+    similarity_score: 0.96
+  remediation: Update code to use 'is_primary_key' instead of 'get_primary_keys',
+    or update schema
+  blocking: false
+- id: DRIFT-001-SCHEMA-001
+  type: DRIFT_001
+  type_description: Schema-Spec Drift
+  severity: MEDIUM
+  confidence: 0.92
+  source_file: docs/schema/simula/taxonomy.schema.json
+  message: Schema has 34 fields not documented in spec
+  related_artifacts:
+  - path: docs/latex/specs/simula/chapters/05-taxonomy-engine.tex
+    type: specification
+    status: possibly_stale
+    domain: simula
+  evidence:
+    schema_only_fields:
+    - avg_branching_factor
+    - best_of_n
+    - children
+    - completeness
+    - coverage_ratio
+    - domain
+    - evaluated_at
+    - examples
+    - expert_taxonomy_path
+    - generated_at
+    - generation_metadata
+    - leaf_count
+    - level
+    - level_distribution
+    - max_depth
+    - metadata
+    - method
+    - model
+    - node_id
+    - node_type
+    fuzzy_matched_fields:
+    - factor_count
+    schema_field_count: 37
+    spec_field_count: 6
+  remediation: 'Document these fields in docs/latex/specs/simula/chapters/05-taxonomy-engine.tex:
+    avg_branching_factor, best_of_n, children, completeness, coverage_ratio, domain,
+    evaluated_at, examples, expert_taxonomy_path, generated_at'
+  blocking: false
+- id: DRIFT-001-SCHEMA-001
+  type: DRIFT_001
+  type_description: Schema-Spec Drift
+  severity: MEDIUM
+  confidence: 0.91
+  source_file: docs/schema/simula/training-example.schema.json
+  message: Schema has 38 fields not documented in spec
+  related_artifacts:
+  - path: docs/latex/specs/simula/chapters/06-generation-engine.tex
+    type: specification
+    status: possibly_stale
+    domain: simula
+  evidence:
+    schema_only_fields:
+    - adaptive_threshold_applied
+    - aggregate_count
+    - batch_id
+    - complexity_level
+    - confidence
+    - correct_query_answer
+    - correct_query_response
+    - critic_evaluation
+    - critic_passed
+    - cte_count
+    - elo_rating
+    - embedding_vector
+    - evaluated_at
+    - generated_at
+    - generation_metadata
+    - incorrect_query_answer
+    - incorrect_query_response
+    - is_complexified
+    - is_valid
+    - join_count
+    fuzzy_matched_fields: []
+    schema_field_count: 43
+    spec_field_count: 9
+  remediation: 'Document these fields in docs/latex/specs/simula/chapters/06-generation-engine.tex:
+    adaptive_threshold_applied, aggregate_count, batch_id, complexity_level, confidence,
+    correct_query_answer, correct_query_response, critic_evaluation, critic_passed,
+    cte_count'
+  blocking: false
+- id: DRIFT-001-SCHEMA-001
+  type: DRIFT_001
+  type_description: Schema-Spec Drift
+  severity: MEDIUM
+  confidence: 0.95
+  source_file: docs/schema/simula/meta-prompt.schema.json
+  message: Schema has 15 fields not documented in spec
+  related_artifacts:
+  - path: docs/latex/specs/simula/chapters/06-generation-engine.tex
+    type: specification
+    status: possibly_stale
+    domain: simula
+  evidence:
+    schema_only_fields:
+    - examples_generated
+    - generated_at
+    - generation_metadata
+    - meta_prompt_id
+    - metadata
+    - mix
+    - model
+    - node_name
+    - node_path
+    - prompt_text
+    - sampling_strategy
+    - schema_context
+    - seed
+    - taxonomy_id
+    - temperature
+    fuzzy_matched_fields: []
+    schema_field_count: 15
+    spec_field_count: 9
+  remediation: 'Document these fields in docs/latex/specs/simula/chapters/06-generation-engine.tex:
+    examples_generated, generated_at, generation_metadata, meta_prompt_id, metadata,
+    mix, model, node_name, node_path, prompt_text'
+  blocking: false
+- id: DRIFT-002-MISMATCH-005
+  type: DRIFT_002
+  type_description: Code-Schema Drift
+  severity: MEDIUM
+  confidence: 0.9
+  source_file: src/training/pipeline/simula_complexity_calibrator.py
+  message: Code accesses 'join' but schema has 'join_count' (possible typo or rename)
+  related_artifacts:
+  - path: docs/schema/simula/training-example.schema.json
+    type: schema
+    status: possibly_stale
+    domain: simula
+  evidence:
+    code_field: join
+    similar_schema_field: join_count
+    similarity_score: 1.0
+  remediation: Update code to use 'join_count' instead of 'join', or update schema
+  blocking: false
+- id: DRIFT-001-SCHEMA-001
+  type: DRIFT_001
+  type_description: Schema-Spec Drift
+  severity: MEDIUM
+  confidence: 0.94
+  source_file: docs/schema/simula/training-example.schema.json
+  message: Schema has 42 fields not documented in spec
+  related_artifacts:
+  - path: docs/latex/specs/simula/chapters/08-evaluation-framework.tex
+    type: specification
+    status: possibly_stale
+    domain: simula
+  evidence:
+    schema_only_fields:
+    - adaptive_threshold_applied
+    - aggregate_count
+    - batch_id
+    - complexity_level
+    - complexity_score
+    - confidence
+    - correct_query_answer
+    - correct_query_response
+    - critic_evaluation
+    - critic_passed
+    - cte_count
+    - elo_rating
+    - embedding_vector
+    - evaluated_at
+    - generated_at
+    - generation_metadata
+    - incorrect_query_answer
+    - incorrect_query_response
+    - is_complexified
+    - is_valid
+    fuzzy_matched_fields: []
+    schema_field_count: 43
+    spec_field_count: 1
+  remediation: 'Document these fields in docs/latex/specs/simula/chapters/08-evaluation-framework.tex:
+    adaptive_threshold_applied, aggregate_count, batch_id, complexity_level, complexity_score,
+    confidence, correct_query_answer, correct_query_response, critic_evaluation, critic_passed'
+  blocking: false
+- id: DRIFT-002-MISMATCH-005
+  type: DRIFT_002
+  type_description: Code-Schema Drift
+  severity: MEDIUM
+  confidence: 0.9
+  source_file: src/training/pipeline/simula_critic_validator.py
+  message: Code accesses 'join' but schema has 'join_count' (possible typo or rename)
+  related_artifacts:
+  - path: docs/schema/simula/training-example.schema.json
+    type: schema
+    status: possibly_stale
+    domain: simula
+  evidence:
+    code_field: join
+    similar_schema_field: join_count
+    similarity_score: 1.0
+  remediation: Update code to use 'join_count' instead of 'join', or update schema
+  blocking: false
+- id: DRIFT-001-SCHEMA-001
+  type: DRIFT_001
+  type_description: Schema-Spec Drift
+  severity: MEDIUM
+  confidence: 0.95
+  source_file: docs/schema/simula/config.schema.json
+  message: Schema has 69 fields not documented in spec
+  related_artifacts:
+  - path: docs/latex/specs/simula/chapters/07-environment-cli.tex
+    type: specification
+    status: possibly_stale
+    domain: simula
+  evidence:
+    schema_only_fields:
+    - adaptive
+    - artifact
+    - base_threshold
+    - base_url
+    - batch_size
+    - best_of_n
+    - checksum_sha256
+    - circuit_breaker_reset_seconds
+    - circuit_breaker_threshold
+    - complexity
+    - complexity_ratio
+    - coverage
+    - coverage_gap_filling
+    - critic_threshold
+    - critic_validation
+    - directory
+    - diversity
+    - diversity_optimizer
+    - elo_k_factor
+    - embedding_model
+    fuzzy_matched_fields: []
+    schema_field_count: 69
+    spec_field_count: 1
+  remediation: 'Document these fields in docs/latex/specs/simula/chapters/07-environment-cli.tex:
+    adaptive, artifact, base_threshold, base_url, batch_size, best_of_n, checksum_sha256,
+    circuit_breaker_reset_seconds, circuit_breaker_threshold, complexity'
+  blocking: false
+- id: DRIFT-002-MISMATCH-004
+  type: DRIFT_002
+  type_description: Code-Schema Drift
+  severity: MEDIUM
+  confidence: 0.85
+  source_file: src/training/pipeline/simula_tts_drift_evaluator.py
+  message: Code accesses 'threshold' but schema has 'thresholds' (possible typo or
+    rename)
+  related_artifacts:
+  - path: docs/schema/simula/tts-drift-baseline.schema.json
+    type: schema
+    status: possibly_stale
+    domain: simula
+  evidence:
+    code_field: threshold
+    similar_schema_field: thresholds
+    similarity_score: 0.95
+  remediation: Update code to use 'thresholds' instead of 'threshold', or update schema
+  blocking: false
+- id: DRIFT-002-MISMATCH-002
+  type: DRIFT_002
+  type_description: Code-Schema Drift
+  severity: MEDIUM
+  confidence: 0.9
+  source_file: src/training/pipeline/simula_tts_drift_monitor.py
+  message: Code accesses 'baseline' but schema has 'baseline_value' (possible typo
+    or rename)
+  related_artifacts:
+  - path: docs/schema/simula/tts-drift-alert.schema.json
+    type: schema
+    status: possibly_stale
+    domain: simula
+  evidence:
+    code_field: baseline
+    similar_schema_field: baseline_value
+    similarity_score: 1.0
+  remediation: Update code to use 'baseline_value' instead of 'baseline', or update
+    schema
+  blocking: false
+- id: DRIFT-002-MISMATCH-001
+  type: DRIFT_002
+  type_description: Code-Schema Drift
+  severity: MEDIUM
+  confidence: 0.85
+  source_file: src/training/pipeline/simula_tts_drift_monitor.py
+  message: Code accesses 'threshold' but schema has 'thresholds' (possible typo or
+    rename)
+  related_artifacts:
+  - path: docs/schema/simula/tts-drift-baseline.schema.json
+    type: schema
+    status: possibly_stale
+    domain: simula
+  evidence:
+    code_field: threshold
+    similar_schema_field: thresholds
+    similarity_score: 0.95
+  remediation: Update code to use 'thresholds' instead of 'threshold', or update schema
+  blocking: false
+- id: DRIFT-002-MISMATCH-004
+  type: DRIFT_002
+  type_description: Code-Schema Drift
+  severity: MEDIUM
+  confidence: 0.9
+  source_file: src/training/pipeline/simula_tts_drift_sampler.py
+  message: Code accesses 'sample' but schema has 'sample_count' (possible typo or
+    rename)
+  related_artifacts:
+  - path: docs/schema/simula/tts-drift-metrics.schema.json
+    type: schema
+    status: possibly_stale
+    domain: simula
+  evidence:
+    code_field: sample
+    similar_schema_field: sample_count
+    similarity_score: 1.0
+  remediation: Update code to use 'sample_count' instead of 'sample', or update schema
+  blocking: false
+- id: DRIFT-002-MISMATCH-005
+  type: DRIFT_002
+  type_description: Code-Schema Drift
+  severity: MEDIUM
+  confidence: 0.9
+  source_file: src/training/pipeline/simula_tts_drift_sampler.py
+  message: Code accesses 'power_user_threshold' but schema has 'power_user' (possible
+    typo or rename)
+  related_artifacts:
+  - path: docs/schema/simula/tts-drift-metrics.schema.json
+    type: schema
+    status: possibly_stale
+    domain: simula
+  evidence:
+    code_field: power_user_threshold
+    similar_schema_field: power_user
+    similarity_score: 1.0
+  remediation: Update code to use 'power_user' instead of 'power_user_threshold',
+    or update schema
+  blocking: false
+- id: DRIFT-002-MISMATCH-002
+  type: DRIFT_002
+  type_description: Code-Schema Drift
+  severity: MEDIUM
+  confidence: 0.9
+  source_file: src/training/pipeline/simula_tts_drift_sampler.py
+  message: Code accesses 'get_user_segment' but schema has 'user_segment' (possible
+    typo or rename)
+  related_artifacts:
+  - path: docs/schema/simula/tts-drift-alert.schema.json
+    type: schema
+    status: possibly_stale
+    domain: simula
+  evidence:
+    code_field: get_user_segment
+    similar_schema_field: user_segment
+    similarity_score: 1.0
+  remediation: Update code to use 'user_segment' instead of 'get_user_segment', or
+    update schema
+  blocking: false
+summary:
+  critical_count: 0
+  high_count: 0
+  medium_count: 15
+  low_count: 0
+  high_confidence_count: 15
+  total_findings: 15
+  blocking: false

@@ -1,0 +1,138 @@
+% =============================================================================
+% Chapter 2 --- Canonical data schema
+% =============================================================================
+\chapter{Canonical data schema}
+\label{ch:schema}
+
+The structured layer uses four Draft-07 JSON Schemas and a central
+\path{docs/schema/common/enums.yaml} for controlled vocabulary.
+
+\section{Schema inventory}
+
+\begin{table}[h]
+\centering
+\small
+\begin{tabularx}{\textwidth}{p{5.2cm}X}
+\toprule
+\textbf{Schema} & \textbf{Describes} \\
+\midrule
+\tool{regulation.schema.json}        & One published framework, standard, guideline, research paper, or index. Captures publisher, version, scope, section tree, and a hash of the source PDF. \\
+\tool{requirement.schema.json}       & One atomic requirement or observational claim. Carries \texttt{implementation[]} and \texttt{verification[]} arrays that bind it to the repository and to the conformance tools. \\
+\tool{conformance-tool.schema.json}  & One vendored testing framework. Enumerates plugins, benchmarks, and integration points. \\
+\tool{corpus-index.schema.json}      & The top-level index that lists every item in the corpus, typed as regulation, requirement, conformance\_tool, or rag\_artifact. \\
+\bottomrule
+\end{tabularx}
+\caption{Schemas under \path{docs/schema/regulations/}.}
+\label{tab:schemas}
+\end{table}
+
+\section{Requirement record --- the linkage schema}
+
+The requirement schema is the key extension that separates this corpus
+from the earlier finance corpora. Each requirement carries:
+
+\begin{itemize}
+  \item \texttt{source}: regulation id, section, page, and (optionally) a
+        verbatim quote.
+  \item \texttt{normativeText}: a paraphrased imperative.
+  \item \texttt{category} and \texttt{obligation}: structured priority
+        (\emph{must}, \emph{should}, \emph{may}, \emph{descriptive}).
+  \item \texttt{lifecyclePhase}: where in the agent lifecycle the
+        requirement applies (planning, design, development,
+        pre-deployment, deployment, post-deployment, decommission).
+  \item \texttt{implementation[]}: an array of pointers to code, config,
+        documentation, schema, or dataset evidence. A \texttt{kind: "none"}
+        entry explicitly records a known gap.
+  \item \texttt{verification[]}: an array of pointers to AI Verify plugins
+        (by \texttt{plugin}), Moonshot benchmarks (by \texttt{testId}),
+        repository tests (by \texttt{path}), manual-review entries, or
+        process-checklist items.
+  \item \texttt{status}: \emph{implemented}, \emph{partial}, \emph{gap},
+        \emph{planned}, or \emph{not\_applicable}.
+\end{itemize}
+
+\begin{lstlisting}[language=jsonx,caption={Example requirement with
+implementation and verification arrays (excerpt).},label={lst:req-example}]
+{
+  "requirementId": "REG-MGF-2.1.2-001",
+  "source": {
+    "regulationId": "imda-mgf-agentic-ai-v1",
+    "section": "2.1.2",
+    "page": 11,
+    "quote": "Bound risks through design by defining agents' limits ..."
+  },
+  "normativeText": "The agent must operate against an explicit allow-list
+                    of tools and external systems; broader access must be
+                    denied by default.",
+  "category": "bound_risks",
+  "obligation": "must",
+  "lifecyclePhase": "design",
+  "implementation": [
+    {"kind": "code",
+     "path": "src/intelligence/ai-core-pal/mcp_server/btp_pal_mcp_server.py",
+     "symbol": "btp_pal_mcp_server"},
+    {"kind": "config",
+     "path": "src/intelligence/ai-core-pal/data_products/registry.yaml"}
+  ],
+  "verification": [
+    {"kind": "test",
+     "path": "src/intelligence/ai-core-pal/tests/test_mcp_server.py"},
+    {"kind": "moonshot-test", "testId": "adversarial_prompts"}
+  ],
+  "status": "partial",
+  "priority": "critical"
+}
+\end{lstlisting}
+
+\section{Conformance-tool record}
+
+The conformance-tool schema captures the tools themselves so that
+requirement records can reference them by stable identifiers. Every
+\texttt{plugin.pluginId} and \texttt{benchmark.benchmarkId} is part of the
+vocabulary that requirement records can cite.
+
+\begin{lstlisting}[language=jsonx,caption={Excerpt of
+\path{docs/regulations/machine-readable/specification-addendum.yaml} (\texttt{conformance-tools.aiverify}).}]
+{
+  "toolId": "aiverify",
+  "vendoredPath": "docs/regulations/aiverify-main",
+  "kind": "testing-framework",
+  "plugins": [
+    { "pluginId": "aiverify.stock.process-checklist",
+      "path": "docs/regulations/aiverify-main/stock-plugins/...",
+      "purpose": "11-principle process-checklist questionnaire ...",
+      "algorithmType": "process" },
+    { "pluginId": "aiverify.stock.robustness-toolbox",
+      "algorithmType": "robustness" }
+    // ... nine more plugins
+  ]
+}
+\end{lstlisting}
+
+\section{Enum vocabularies}
+
+\path{docs/schema/common/enums.yaml} centralises the controlled vocabularies
+that recur across schemas. The authoritative values live in the schemas
+themselves; \texttt{enums.yaml} is the human index.
+
+\begin{table}[h]
+\centering
+\small
+\begin{tabularx}{\textwidth}{lX}
+\toprule
+\textbf{Enum} & \textbf{Values} \\
+\midrule
+Regulation type & framework, standard, guideline, statute, research, index, toolkit \\
+Normativity    & mandatory, recommended, advisory, descriptive \\
+Obligation verb & must, should, may, descriptive \\
+Requirement category & bound\_risks, human\_accountability, technical\_controls, end\_user\_responsibility, transparency, evaluation, observation \\
+Lifecycle phase & planning, design, development, pre\_deployment, deployment, post\_deployment, decommission \\
+Implementation kind & code, config, doc, schema, dataset, none \\
+Verification kind & aiverify-plugin, moonshot-test, test, manual-review, process-checklist, external-audit \\
+Status & implemented, partial, gap, planned, not\_applicable \\
+\bottomrule
+\end{tabularx}
+\caption{Controlled vocabularies.}
+\label{tab:enums}
+\end{table}
+\clearpage

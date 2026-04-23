@@ -1,0 +1,312 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://sap-oss.github.io/schema/common/vocabulary-registry.schema.json",
+  "title": "Vocabulary Registry Schema",
+  "description": "Schema for registering canonical vocabulary terms, synonyms, and mappings to prevent hallucinations and enable vocabulary drift detection",
+  "type": "object",
+  "required": ["$schema", "version", "domains"],
+  "properties": {
+    "$schema": {
+      "type": "string",
+      "const": "https://sap-oss.github.io/schema/common/vocabulary-registry.schema.json"
+    },
+    "version": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$",
+      "description": "Semantic version of this vocabulary registry"
+    },
+    "generated": {
+      "type": "string",
+      "format": "date",
+      "description": "Date this registry was last updated"
+    },
+    "description": {
+      "type": "string",
+      "description": "Human-readable description of this vocabulary registry"
+    },
+    "domains": {
+      "type": "object",
+      "description": "Vocabulary organized by domain",
+      "additionalProperties": {
+        "$ref": "#/$defs/DomainVocabulary"
+      }
+    },
+    "global_synonyms": {
+      "type": "array",
+      "description": "Cross-domain synonym mappings",
+      "items": {
+        "$ref": "#/$defs/SynonymMapping"
+      }
+    },
+    "abbreviations": {
+      "type": "array",
+      "description": "Common abbreviations and their expansions",
+      "items": {
+        "$ref": "#/$defs/Abbreviation"
+      }
+    },
+    "locale_variants": {
+      "type": "object",
+      "description": "Locale-specific vocabulary variants",
+      "additionalProperties": {
+        "$ref": "#/$defs/LocaleVocabulary"
+      }
+    }
+  },
+  "$defs": {
+    "DomainVocabulary": {
+      "type": "object",
+      "description": "Vocabulary entries for a specific domain",
+      "required": ["canonical_terms"],
+      "properties": {
+        "description": {
+          "type": "string",
+          "description": "Description of this domain's vocabulary scope"
+        },
+        "canonical_terms": {
+          "type": "array",
+          "description": "Canonical terms and their variations",
+          "items": {
+            "$ref": "#/$defs/CanonicalTerm"
+          }
+        },
+        "technical_terms": {
+          "type": "array",
+          "description": "Technical terms that may need human-friendly aliases",
+          "items": {
+            "$ref": "#/$defs/TechnicalTerm"
+          }
+        },
+        "entity_mappings": {
+          "type": "array",
+          "description": "Entity name to code mappings (e.g., India -> IN)",
+          "items": {
+            "$ref": "#/$defs/EntityMapping"
+          }
+        }
+      }
+    },
+    "CanonicalTerm": {
+      "type": "object",
+      "description": "A canonical term with its variations and metadata",
+      "required": ["canonical", "variations"],
+      "properties": {
+        "canonical": {
+          "type": "string",
+          "description": "The canonical/preferred form of this term"
+        },
+        "variations": {
+          "type": "array",
+          "description": "Acceptable variations of this term",
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1
+        },
+        "context": {
+          "type": "string",
+          "description": "Context in which this term is used (e.g., 'country', 'financial', 'technical')"
+        },
+        "training_forms": {
+          "type": "array",
+          "description": "Forms that should appear in training data",
+          "items": {
+            "type": "string"
+          }
+        },
+        "human_friendly": {
+          "type": "string",
+          "description": "Human-friendly version for UI display"
+        },
+        "agent_friendly": {
+          "type": "string",
+          "description": "Agent-friendly version for programmatic use"
+        },
+        "deprecated_forms": {
+          "type": "array",
+          "description": "Deprecated variations that should trigger warnings",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "TechnicalTerm": {
+      "type": "object",
+      "description": "A technical term (like SAP field names) with human-readable aliases",
+      "required": ["technical_name", "human_name"],
+      "properties": {
+        "technical_name": {
+          "type": "string",
+          "description": "The technical/system name (e.g., BUKRS, WAERS)"
+        },
+        "human_name": {
+          "type": "string",
+          "description": "Human-readable name (e.g., 'Company Code', 'Currency')"
+        },
+        "description": {
+          "type": "string",
+          "description": "Full description of what this term means"
+        },
+        "source_system": {
+          "type": "string",
+          "description": "Source system (e.g., 'SAP', 'HANA', 'Custom')"
+        },
+        "synonyms": {
+          "type": "array",
+          "description": "Additional synonyms users might use",
+          "items": {
+            "type": "string"
+          }
+        },
+        "nl_ready": {
+          "type": "boolean",
+          "description": "Whether this term is ready for natural language interfaces",
+          "default": false
+        },
+        "nl_readiness_issues": {
+          "type": "array",
+          "description": "Issues preventing NL readiness",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "EntityMapping": {
+      "type": "object",
+      "description": "Maps entity names to codes (prevents hallucinations like India vs IN)",
+      "required": ["entity_type", "name", "code"],
+      "properties": {
+        "entity_type": {
+          "type": "string",
+          "description": "Type of entity (country, currency, company, etc.)",
+          "enum": ["country", "currency", "company", "legal_entity", "cost_center", "gl_account", "custom"]
+        },
+        "name": {
+          "type": "string",
+          "description": "Full name of the entity"
+        },
+        "code": {
+          "type": "string",
+          "description": "Code/abbreviation for the entity"
+        },
+        "variations": {
+          "type": "array",
+          "description": "All acceptable variations of name or code",
+          "items": {
+            "type": "string"
+          }
+        },
+        "locale_names": {
+          "type": "object",
+          "description": "Locale-specific names",
+          "additionalProperties": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "SynonymMapping": {
+      "type": "object",
+      "description": "Global synonym mapping across domains",
+      "required": ["canonical", "synonyms", "type"],
+      "properties": {
+        "canonical": {
+          "type": "string",
+          "description": "The canonical/preferred term"
+        },
+        "synonyms": {
+          "type": "array",
+          "description": "List of synonyms for this term",
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1
+        },
+        "type": {
+          "type": "string",
+          "description": "Category of this synonym mapping",
+          "enum": ["financial_term", "technical_term", "process_term", "entity", "abbreviation", "colloquial"]
+        },
+        "bidirectional": {
+          "type": "boolean",
+          "description": "Whether synonyms can be used interchangeably",
+          "default": true
+        },
+        "context_required": {
+          "type": "string",
+          "description": "Context where this mapping applies"
+        }
+      }
+    },
+    "Abbreviation": {
+      "type": "object",
+      "description": "Abbreviation expansion mapping",
+      "required": ["abbreviation", "expansion"],
+      "properties": {
+        "abbreviation": {
+          "type": "string",
+          "description": "The abbreviated form"
+        },
+        "expansion": {
+          "type": "string",
+          "description": "Full expanded form"
+        },
+        "domain": {
+          "type": "string",
+          "description": "Domain where this abbreviation is used"
+        },
+        "source_system": {
+          "type": "string",
+          "description": "System where this abbreviation originates"
+        },
+        "ambiguous": {
+          "type": "boolean",
+          "description": "Whether this abbreviation has multiple meanings",
+          "default": false
+        },
+        "disambiguation": {
+          "type": "array",
+          "description": "If ambiguous, list other possible meanings",
+          "items": {
+            "type": "object",
+            "properties": {
+              "expansion": { "type": "string" },
+              "context": { "type": "string" }
+            }
+          }
+        }
+      }
+    },
+    "LocaleVocabulary": {
+      "type": "object",
+      "description": "Locale-specific vocabulary additions",
+      "required": ["locale", "terms"],
+      "properties": {
+        "locale": {
+          "type": "string",
+          "description": "Locale identifier (e.g., 'en-US', 'en-SG', 'ar-SA')"
+        },
+        "terms": {
+          "type": "array",
+          "description": "Locale-specific terms",
+          "items": {
+            "$ref": "#/$defs/CanonicalTerm"
+          }
+        },
+        "overrides": {
+          "type": "array",
+          "description": "Overrides for global terms in this locale",
+          "items": {
+            "type": "object",
+            "properties": {
+              "global_canonical": { "type": "string" },
+              "local_preferred": { "type": "string" }
+            }
+          }
+        }
+      }
+    }
+  }
+}

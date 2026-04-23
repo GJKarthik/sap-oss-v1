@@ -37,10 +37,8 @@ export const routes: Routes = [
       },
       {
         path: 'data-explorer',
-        loadComponent: () =>
-          import('./pages/data-explorer/data-explorer.component').then(
-            (m) => m.DataExplorerComponent
-          ),
+        redirectTo: 'data-products',
+        pathMatch: 'full',
       },
       {
         path: 'data-cleaning',

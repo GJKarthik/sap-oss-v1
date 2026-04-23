@@ -111,12 +111,14 @@ export class WorkspaceService {
     this.syncStoredUserId(this._settings().identity.userId);
 
     const userId = this._settings().identity.userId;
-    const url = `${environment.openAiBaseUrl.replace(/\/$/, '')}/v1/workspace?userId=${encodeURIComponent(userId)}`;
+    const url = `${environment.openAiBaseUrl.replace(/\/$/, '')}/workspace?userId=${encodeURIComponent(userId)}`;
 
     return this.http.get<WorkspaceSettings>(url, { observe: 'response' }).pipe(
       map(response => {
-        if (response.status === 200 && response.body && response.body.version === 1) {
-          return response.body;
+        if (response.status === 200 && response.body) {
+          const body = response.body as any;
+          const settings = body.settings ?? (body.version === 1 ? body : null);
+          return settings && settings.version === 1 ? settings : null;
         }
         return null;
       }),
@@ -242,7 +244,7 @@ export class WorkspaceService {
 
   private persistToServer(): Observable<void> {
     const settings = this._settings();
-    const url = `${environment.openAiBaseUrl.replace(/\/$/, '')}/v1/workspace`;
+    const url = `${environment.openAiBaseUrl.replace(/\/$/, '')}/workspace`;
     return this.http.put(url, settings).pipe(
       map(() => void 0),
       catchError(() => of(void 0)),

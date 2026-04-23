@@ -5,7 +5,7 @@ apiVersion: v1
 kind: Secret
 metadata:
   name: odata-vocab-secrets
-  namespace: kube-scb
+  namespace: sap-ai-services
 type: Opaque
 stringData:
   # MCP authentication token (generate with: openssl rand -base64 32)
@@ -18,26 +18,23 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: odata-vocab-config
-  namespace: kube-scb
+  namespace: sap-ai-services
 data:
   MCP_PORT: "9150"
   MCP_HOST: "0.0.0.0"
   LOG_LEVEL: "INFO"
   CORS_ENABLED: "true"
-  CORS_ALLOWED_ORIGINS: "https://*.kyma.shoot.canary.k8s-hana.ondemand.com"
+  CORS_ALLOWED_ORIGINS: "https://*.kyma.ondemand.com"
   # Feature flags
   FEATURE_SEMANTIC_SEARCH: "true"
   FEATURE_RAG_CONTEXT: "true"
   FEATURE_CDS_GENERATOR: "true"
-  # Optional: AI Core config (uncomment if using real embeddings)
-  # AICORE_BASE_URL: "https://api.ai.prod.eu10.aws.ml.hana.ondemand.com/v2"
-  # AICORE_RESOURCE_GROUP: "default"
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: odata-vocab-server
-  namespace: kube-scb
+  namespace: sap-ai-services
   labels:
     app: odata-vocab
     version: v3.0.0
@@ -56,14 +53,14 @@ spec:
     spec:
       serviceAccountName: odata-vocab-sa
       imagePullSecrets:
-      - name: ollamadocker
+      - name: dockerhub-plturrell
       securityContext:
         runAsNonRoot: true
         runAsUser: 1000
         fsGroup: 1000
       containers:
       - name: mcp-server
-        image: docker.io/gjkarthik/odata-vocab:v3.0.0
+        image: docker.io/plturrell/odata-vocab:v3.0.0
         imagePullPolicy: Always
         ports:
         - containerPort: 9150
@@ -116,7 +113,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: odata-vocab-service
-  namespace: kube-scb
+  namespace: sap-ai-services
   labels:
     app: odata-vocab
 spec:
@@ -133,77 +130,14 @@ apiVersion: v1
 kind: ServiceAccount
 metadata:
   name: odata-vocab-sa
-  namespace: kube-scb
----
-# Istio VirtualService for external access
-apiVersion: networking.istio.io/v1beta1
-kind: VirtualService
-metadata:
-  name: odata-vocab-vs
-  namespace: kube-scb
-spec:
-  hosts:
-  - "odata-vocab.KYMA_DOMAIN"  # Replace with your Kyma domain
-  gateways:
-  - kyma-system/kyma-gateway
-  http:
-  - match:
-    - uri:
-        prefix: /
-    route:
-    - destination:
-        host: odata-vocab-service
-        port:
-          number: 9150
-    timeout: 30s
-    retries:
-      attempts: 3
-      perTryTimeout: 10s
----
-# API Rule for external access (alternative to VirtualService)
-apiVersion: gateway.kyma-project.io/v1beta1
-kind: APIRule
-metadata:
-  name: odata-vocab-api
-  namespace: kube-scb
-spec:
-  gateway: kyma-system/kyma-gateway
-  host: odata-vocab  # Will be: odata-vocab.<kyma-domain>
-  service:
-    name: odata-vocab-service
-    port: 9150
-  rules:
-  - path: /health
-    methods: ["GET"]
-    accessStrategies:
-    - handler: noop  # Public health endpoint
-  - path: /stats
-    methods: ["GET"]
-    accessStrategies:
-    - handler: noop  # Public stats endpoint
-  - path: /mcp
-    methods: ["POST", "OPTIONS"]
-    accessStrategies:
-    - handler: jwt
-      config:
-        jwks_urls:
-        - "https://auth.kyma.io/.well-known/jwks.json"
-        trusted_issuers:
-        - "https://auth.kyma.io"
-  - path: /mcp/tools/.*
-    methods: ["POST", "OPTIONS"]
-    accessStrategies:
-    - handler: jwt
-      config:
-        jwks_urls:
-        - "https://auth.kyma.io/.well-known/jwks.json"
+  namespace: sap-ai-services
 ---
 # HorizontalPodAutoscaler for scaling
 apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
 metadata:
   name: odata-vocab-hpa
-  namespace: kube-scb
+  namespace: sap-ai-services
 spec:
   scaleTargetRef:
     apiVersion: apps/v1
@@ -230,7 +164,7 @@ apiVersion: policy/v1
 kind: PodDisruptionBudget
 metadata:
   name: odata-vocab-pdb
-  namespace: kube-scb
+  namespace: sap-ai-services
 spec:
   minAvailable: 1
   selector:

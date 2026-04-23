@@ -1,0 +1,317 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://sap-oss.github.io/schema/simula/tts-drift-metrics.schema.json",
+  "title": "TTS Drift Metrics Report",
+  "description": "Schema for Text-to-SQL drift metric reports (Chapter 18)",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "report_id",
+    "evaluated_at",
+    "sample_size",
+    "schema_drift_metrics",
+    "semantic_drift_metrics",
+    "generation_quality_metrics",
+    "tts_eval"
+  ],
+  "properties": {
+    "report_id": {
+      "type": "string",
+      "description": "Unique report identifier",
+      "pattern": "^tts-report-[a-f0-9]{8}$"
+    },
+    "evaluated_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Evaluation timestamp"
+    },
+    "sample_size": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "Number of examples/queries evaluated"
+    },
+    "confidence_level": {
+      "type": "number",
+      "minimum": 0.8,
+      "maximum": 1.0,
+      "default": 0.95,
+      "description": "Statistical confidence level for bounds"
+    },
+    "evaluation_context": {
+      "type": "string",
+      "enum": ["training", "ci_cd", "production", "adhoc"],
+      "description": "Context in which evaluation was performed"
+    },
+    "baseline_id": {
+      "type": "string",
+      "description": "Reference to baseline report for drift comparison"
+    },
+    "schema_drift_metrics": {
+      "$ref": "#/definitions/schema_drift_metrics",
+      "description": "Schema-related drift metrics (TTS-M01 to TTS-M04)"
+    },
+    "semantic_drift_metrics": {
+      "$ref": "#/definitions/semantic_drift_metrics",
+      "description": "Semantic drift metrics (TTS-M05 to TTS-M08)"
+    },
+    "generation_quality_metrics": {
+      "$ref": "#/definitions/generation_quality_metrics",
+      "description": "Generation quality drift metrics (TTS-M09 to TTS-M12)"
+    },
+    "statistical_foundation_metrics": {
+      "$ref": "#/definitions/statistical_foundation_metrics",
+      "description": "Statistical foundation metrics (TTS-M13 to TTS-M15)"
+    },
+    "tts_eval": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 100,
+      "description": "Composite TTS-EVAL score"
+    },
+    "tts_eval_status": {
+      "type": "string",
+      "enum": ["GREEN", "AMBER", "RED"],
+      "description": "Traffic-light status based on TTS-EVAL score"
+    },
+    "drift_alerts": {
+      "type": "array",
+      "items": {
+        "$ref": "https://sap-oss.github.io/schema/simula/tts-drift-alert.schema.json"
+      },
+      "description": "List of triggered drift alerts"
+    },
+    "user_segment_breakdown": {
+      "$ref": "#/definitions/user_segment_breakdown",
+      "description": "Metrics breakdown by user population segment"
+    },
+    "metadata": {
+      "$ref": "https://sap-oss.github.io/schema/common/base-types.schema.json#/definitions/Metadata",
+      "description": "Record metadata"
+    }
+  },
+  "definitions": {
+    "metric_value": {
+      "type": "object",
+      "required": ["value", "threshold", "passed"],
+      "properties": {
+        "value": {
+          "type": "number",
+          "description": "Computed metric value"
+        },
+        "threshold": {
+          "type": "number",
+          "description": "Pass/fail threshold"
+        },
+        "passed": {
+          "type": "boolean",
+          "description": "Whether metric meets threshold"
+        },
+        "confidence_bound": {
+          "type": "number",
+          "description": "Wilson confidence bound (LCB or UCB depending on direction)"
+        },
+        "direction": {
+          "type": "string",
+          "enum": ["higher_better", "lower_better"],
+          "description": "Optimization direction"
+        },
+        "baseline_value": {
+          "type": "number",
+          "description": "Baseline value for drift comparison"
+        },
+        "delta": {
+          "type": "number",
+          "description": "Change from baseline"
+        }
+      }
+    },
+    "schema_drift_metrics": {
+      "type": "object",
+      "description": "Schema-related drift metrics",
+      "properties": {
+        "scr": {
+          "allOf": [{ "$ref": "#/definitions/metric_value" }],
+          "description": "TTS-M01: Schema Coverage Rate"
+        },
+        "sss": {
+          "allOf": [{ "$ref": "#/definitions/metric_value" }],
+          "description": "TTS-M02: Schema Staleness Score"
+        },
+        "ctmr": {
+          "allOf": [{ "$ref": "#/definitions/metric_value" }],
+          "description": "TTS-M03: Column Type Mismatch Rate"
+        },
+        "fkcr": {
+          "allOf": [{ "$ref": "#/definitions/metric_value" }],
+          "description": "TTS-M04: Foreign Key Consistency Rate"
+        }
+      },
+      "required": ["scr", "sss", "ctmr", "fkcr"]
+    },
+    "semantic_drift_metrics": {
+      "type": "object",
+      "description": "Semantic drift metrics",
+      "properties": {
+        "sas": {
+          "allOf": [{ "$ref": "#/definitions/metric_value" }],
+          "description": "TTS-M05: Semantic Alignment Score"
+        },
+        "ipr": {
+          "allOf": [{ "$ref": "#/definitions/metric_value" }],
+          "description": "TTS-M06: Intent Preservation Rate"
+        },
+        "tds": {
+          "allOf": [{ "$ref": "#/definitions/metric_value" }],
+          "description": "TTS-M07: Terminology Drift Score"
+        },
+        "arr": {
+          "allOf": [{ "$ref": "#/definitions/metric_value" }],
+          "description": "TTS-M08: Ambiguity Resolution Rate"
+        }
+      },
+      "required": ["sas", "ipr", "tds", "arr"]
+    },
+    "generation_quality_metrics": {
+      "type": "object",
+      "description": "Generation quality drift metrics",
+      "properties": {
+        "esr": {
+          "allOf": [{ "$ref": "#/definitions/metric_value" }],
+          "description": "TTS-M09: Execution Success Rate"
+        },
+        "rfs": {
+          "allOf": [{ "$ref": "#/definitions/metric_value" }],
+          "description": "TTS-M10: Result Fidelity Score"
+        },
+        "cdd": {
+          "allOf": [{ "$ref": "#/definitions/metric_value" }],
+          "description": "TTS-M11: Complexity Distribution Drift"
+        },
+        "tcd": {
+          "allOf": [{ "$ref": "#/definitions/metric_value" }],
+          "description": "TTS-M12: Taxonomy Coverage Drift"
+        }
+      },
+      "required": ["esr", "rfs", "cdd", "tcd"]
+    },
+    "statistical_foundation_metrics": {
+      "type": "object",
+      "description": "Statistical foundation metrics (TTS-M13 to TTS-M15) providing rigorous hypothesis testing",
+      "properties": {
+        "w1d": {
+          "type": "object",
+          "description": "TTS-M13: Wasserstein Distance (Earth Mover's Distance)",
+          "properties": {
+            "value": { "type": "number", "minimum": 0 },
+            "value_normalized": { "type": "number", "minimum": 0, "maximum": 1 },
+            "threshold": { "type": "number", "default": 0.10 },
+            "passed": { "type": "boolean" },
+            "direction": { "type": "string", "enum": ["lower_better"] },
+            "baseline_value": { "type": ["number", "null"] },
+            "delta": { "type": ["number", "null"] },
+            "feature_name": { "type": "string", "description": "Name of the feature/column being compared" },
+            "sample_size_p": { "type": "integer", "description": "Sample size of distribution P (real)" },
+            "sample_size_q": { "type": "integer", "description": "Sample size of distribution Q (synthetic)" }
+          },
+          "required": ["value", "value_normalized", "threshold", "passed", "direction"]
+        },
+        "psi": {
+          "type": "object",
+          "description": "TTS-M14: Population Stability Index",
+          "properties": {
+            "value": { "type": "number", "minimum": 0 },
+            "threshold_low": { "type": "number", "default": 0.10 },
+            "threshold_high": { "type": "number", "default": 0.25 },
+            "passed": { "type": "boolean" },
+            "drift_level": { 
+              "type": "string", 
+              "enum": ["no_drift", "moderate_drift", "significant_drift"],
+              "description": "Industry-standard PSI interpretation"
+            },
+            "direction": { "type": "string", "enum": ["lower_better"] },
+            "baseline_value": { "type": ["number", "null"] },
+            "delta": { "type": ["number", "null"] },
+            "num_bins": { "type": "integer", "default": 10 },
+            "bin_contributions": {
+              "type": "array",
+              "description": "PSI contribution per bin for diagnostics",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "bin_index": { "type": "integer" },
+                  "bin_label": { "type": "string" },
+                  "p_proportion": { "type": "number" },
+                  "q_proportion": { "type": "number" },
+                  "contribution": { "type": "number" }
+                }
+              }
+            }
+          },
+          "required": ["value", "threshold_low", "threshold_high", "passed", "drift_level", "direction"]
+        },
+        "kss": {
+          "type": "object",
+          "description": "TTS-M15: Kolmogorov-Smirnov Statistic",
+          "properties": {
+            "statistic": { "type": "number", "minimum": 0, "maximum": 1 },
+            "p_value": { "type": "number", "minimum": 0, "maximum": 1 },
+            "p_value_threshold": { "type": "number", "default": 0.05 },
+            "passed": { "type": "boolean", "description": "True if p_value > p_value_threshold (no significant drift)" },
+            "direction": { "type": "string", "enum": ["higher_pvalue_better"] },
+            "null_hypothesis": { "type": "string", "default": "P = Q (distributions are identical)" },
+            "reject_null": { "type": "boolean", "description": "True if drift detected (reject H0)" },
+            "confidence_level": { "type": "number", "default": 0.95 },
+            "sample_size_p": { "type": "integer" },
+            "sample_size_q": { "type": "integer" }
+          },
+          "required": ["statistic", "p_value", "p_value_threshold", "passed", "reject_null"]
+        }
+      }
+    },
+    "user_segment_breakdown": {
+      "type": "object",
+      "description": "Metrics breakdown by user population segment",
+      "properties": {
+        "power_user": {
+          "$ref": "#/definitions/segment_metrics"
+        },
+        "regular_user": {
+          "$ref": "#/definitions/segment_metrics"
+        },
+        "occasional_user": {
+          "$ref": "#/definitions/segment_metrics"
+        },
+        "new_user": {
+          "$ref": "#/definitions/segment_metrics"
+        }
+      }
+    },
+    "segment_metrics": {
+      "type": "object",
+      "properties": {
+        "sample_count": {
+          "type": "integer",
+          "description": "Number of samples in this segment"
+        },
+        "sample_rate": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "description": "Sampling rate applied to this segment"
+        },
+        "esr": {
+          "type": "number",
+          "description": "Execution Success Rate for this segment"
+        },
+        "ipr": {
+          "type": "number",
+          "description": "Intent Preservation Rate for this segment"
+        },
+        "tts_eval": {
+          "type": "number",
+          "description": "Composite score for this segment"
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,267 @@
+# =============================================================================
+# Regulations Runtime Monitor And Alerting Agent Rules
+# Path: src/intelligence/.clinerules.runtime-monitor
+# =============================================================================
+
+Purpose
+- Monitor the Regulations control model as a live governance system, not as a documentation artifact.
+- Detect allow-list bypass, identity loss, audit failures, monitoring blind spots, and misleading health states before they become compliance incidents.
+- Produce actionable alerts with exact evidence, exact thresholds, and a next operator action.
+
+Mission
+- Watch the horizontal Regulations runtime end to end across gateway, PAL, monitoring, analytics, governance API, and compliance UI surfaces.
+- Distinguish real governance from partial, stale, in-memory, or training-branded approximations.
+- Escalate control failures early enough that unhealthy or unauditable actions cannot be treated as compliant.
+
+Source Of Truth
+- Normative spec:
+  - `docs/pdf/specs/regulations-spec.pdf`
+  - `docs/latex/specs/regulations/chapters/03-mgf-framework.tex`
+  - `docs/latex/specs/regulations/chapters/08-monitoring-spec.tex`
+  - `docs/latex/specs/regulations/chapters/09-testing.tex`
+  - `docs/latex/specs/regulations/chapters/10-identity-attribution.tex`
+  - `docs/latex/specs/regulations/chapters/12-implementation-instructions.tex`
+- Normative contracts:
+  - `docs/schema/regulations/agent-identity.schema.json`
+  - `docs/schema/regulations/request-identity.schema.json`
+  - `docs/schema/regulations/audit-event.schema.json`
+  - `docs/schema/regulations/capability-monitoring-metrics.schema.json`
+  - `docs/schema/regulations/conformance-tool.schema.json`
+- Core runtime paths:
+  - `src/intelligence/ai-core-pal/agent/aicore_pal_agent.py`
+  - `src/intelligence/ai-core-pal/mcp_server/btp_pal_mcp_server.py`
+  - `src/intelligence/ai-core-pal/data_products/registry.yaml`
+  - `src/intelligence/analytics/anomaly_detector.py`
+  - `src/intelligence/monitoring/kill_switch_monitor.py`
+- Operational integration paths:
+  - `src/generativeUI/gateway/nginx.conf.template`
+  - `src/generativeUI/gateway/health/main.py`
+  - `src/generativeUI/gateway/README.md`
+  - `src/generativeUI/training-webcomponents-ngx/packages/api-server/src/main.py`
+  - `src/generativeUI/training-webcomponents-ngx/apps/angular-shell/src/app/services/training-governance.service.ts`
+  - `src/generativeUI/training-webcomponents-ngx/apps/angular-shell/src/app/services/team-governance.service.ts`
+  - `src/generativeUI/training-webcomponents-ngx/apps/angular-shell/src/app/pages/governance/governance.component.ts`
+
+Primary Monitoring Objective
+- A Regulations-governed request is healthy only when:
+  - the ingress path is deny-by-default
+  - the requested tool or action is explicitly allow-listed
+  - request identity and agent identity are present and attributable
+  - the audit reservation succeeds before action execution
+  - the audit completion is written after action execution
+  - the required Chapter 8 monitoring metrics are emitted
+  - conformance state, health state, and UI/API state all reflect the same truth
+
+Evidence Sources
+- Gateway `/health` and `/health/details`
+- Gateway route configuration and upstream exposure
+- MCP `/health`, `tools/list`, and `tools/call` responses
+- Registry entries in `src/intelligence/ai-core-pal/data_products/registry.yaml`
+- PAL governance outcomes, including blocked and pending-approval states
+- Governance API runs, approvals, audit entries, and metrics endpoints
+- Monitoring outputs from `kill_switch_monitor.py` and `anomaly_detector.py`
+- Conformance reports and any schema validation output
+- UI governance views when checking truthfulness of operator-facing state
+
+What Counts As Healthy
+- No undeclared tool or route bypass was used.
+- Request identity and agent identity are present and schema-valid where validation is available.
+- The pre-action audit reservation succeeded before execution.
+- The post-action audit completion succeeded, or any failure is visible as an explicit incident state.
+- Required metrics are emitted:
+  - `output_token_count`
+  - `response_latency_ms`
+  - `confidence_score`
+  - `refusal_rate`
+  - `tool_call_frequency`
+  - `output_format_violations`
+  - `hallucination_flags`
+  - `unexpected_topic_detections`
+  - `novel_capability_indicators`
+- Health, governance, and conformance surfaces agree on the control state.
+
+What Must Never Be Reported As Healthy
+- A request executed without a request identity or agent identity.
+- A request executed after audit reservation failure.
+- A runtime surface exposing undeclared tools while governance claims compliance.
+- A production-governed path with missing monitoring metrics.
+- A UI or API claiming healthy governance while evidence exists only in memory or is missing entirely.
+- A path that has opened the circuit breaker or entered degrade/manual-only mode.
+
+Known Failure Registry
+- `REG-KI-001` allow-list bypass or undeclared tool exposure:
+  - severity bias: Critical
+- `REG-KI-002` identity envelope missing or partial:
+  - severity bias: Critical
+- `REG-KI-003` audit reservation/completion failure:
+  - severity bias: Critical
+- `REG-KI-004` monitoring blind spot or threshold drift:
+  - severity bias: High
+- `REG-KI-005` governance surface fragmentation:
+  - severity bias: High
+
+Core Stages To Monitor
+1. Gateway ingress and route selection
+2. Allow-list and policy check
+3. Identity envelope creation and propagation
+4. Audit reservation-before-action
+5. MCP or downstream tool execution
+6. Audit completion-after-action
+7. Monitoring metric emission and anomaly detection
+8. Governance API/UI publication of state
+9. Circuit-break and degradation handling
+
+Critical Alert Conditions
+1. Undeclared tool use or allow-list bypass is observed.
+2. Request identity is missing for a governed action.
+3. Agent identity is missing for a governed action.
+4. Audit reservation fails but execution still proceeds.
+5. Schema-violation surge exceeds `0.05` of requests.
+6. Refusal rate exceeds `3x` baseline for the active window.
+7. Conformance or governance surface reports healthy while critical evidence is missing.
+8. Circuit breaker opens after `3 consecutive` critical alerts within `15 minutes`.
+
+High Severity Alert Conditions
+1. Audit completion fails and leaves an orphaned action record.
+2. Topic similarity drops below `0.7`.
+3. Latency p95 rises above `1.5x` baseline.
+4. Required capability-monitoring metrics stop arriving.
+5. Gateway, PAL, API, and UI disagree about approval, audit, or health state.
+6. Conformance report output is missing or does not match the conformance schema.
+
+Medium Severity Alert Conditions
+1. Monitoring metrics are delayed or stale but not yet absent.
+2. Repeated approval bottlenecks or policy-block loops occur.
+3. Non-production or degraded mode is entered and clearly labeled, but recovery does not happen in expected time.
+4. Runtime still depends on hard-coded local facts where durable policy evidence should exist.
+
+Informational Conditions
+1. Governed request started.
+2. Audit reservation written successfully.
+3. Audit completion written successfully.
+4. Conformance run completed successfully.
+5. Circuit breaker recovered after human intervention.
+
+Synthetic Check Cadence
+- For active production environments, run lightweight synthetic checks every 5 minutes.
+- For lower environments, run synthetic checks on deploy and at least hourly.
+- Re-run critical checks immediately after any gateway, PAL, governance API, or monitoring deployment.
+
+Example Automated Checks
+- Allow-list check:
+  - verify exposed tool names match the explicit governance allow-list
+- Identity check:
+  - verify every governed request has `request_id`, `correlation_id`, and `agent_id`
+- Audit check:
+  - verify reservation exists before action completion and no orphaned completions are hidden
+- Monitoring check:
+  - verify required metrics are present and thresholds are computed against a baseline window
+- Truthfulness check:
+  - verify the UI/API does not advertise green health while the runtime is degraded or evidence is missing
+
+Required Alert Payload
+- `request_id`
+- `correlation_id`
+- `agent_id`
+- `severity`
+- `condition_code`
+- exact failing condition
+- evidence source
+- last relevant log lines
+- affected route, tool, or path
+- expected value or threshold
+- observed value
+- recommended next action
+- timestamp
+
+Condition Codes
+- `REG-ING-001` undeclared tool or route bypass detected
+- `REG-ID-001` request identity missing
+- `REG-ID-002` agent identity missing
+- `REG-AUD-001` audit reservation missing or failed
+- `REG-AUD-002` audit completion missing or orphaned
+- `REG-MET-001` required monitoring metrics missing
+- `REG-MET-002` schema violation surge above threshold
+- `REG-MET-003` refusal rate above threshold
+- `REG-MET-004` topic similarity below threshold
+- `REG-MET-005` latency p95 above threshold
+- `REG-CONF-001` conformance report missing or schema invalid
+- `REG-GOV-001` governance surface inconsistent with runtime truth
+- `REG-CB-001` circuit breaker opened
+
+Response Rules
+1. Open an operator-visible notification for every Critical and High alert.
+2. Append a governance note for every Critical and High alert.
+3. Collapse duplicate alerts by `request_id` plus `condition_code` when possible.
+4. Never emit a healthy summary if any Critical alert is active.
+5. Never emit a healthy summary when evidence is incomplete.
+6. Prefer exact evidence over inferred summaries.
+7. If a Critical alert indicates execution without identity or audit reservation, fail closed immediately.
+
+Correlation Rules
+- Correlate gateway, PAL, monitoring, API, and UI evidence before closing an alert.
+- If the API says healthy but audit or identity evidence is missing, trust the missing evidence and alert.
+- If gateway health is green but the control path exposes undeclared tools, trust the control failure and alert.
+- If the UI shows approval or compliance success while runtime evidence disagrees, raise `REG-GOV-001`.
+
+Schema And Identity Monitoring Rules
+- Validate identity and audit payloads against the Regulations schemas when validation tooling is available.
+- Treat field-name drift between schemas and runtime payloads as a production defect, not a warning.
+- If identity or audit payloads cannot be attributed to a request, alert immediately.
+
+Audit Integrity Rules
+- The reservation-before-action invariant is mandatory.
+- If completion fails, the system must preserve an orphaned state that operators can query.
+- A missing completion after a side effect is never informational.
+- Evidence that exists only in process memory is insufficient for a healthy production-governed verdict.
+
+Monitoring Threshold Rules
+- Schema violations above `5%` are Critical.
+- Refusal rate above `3x` baseline is Critical.
+- Topic similarity below `0.7` is High.
+- Latency p95 above `1.5x` baseline is High.
+- `3 consecutive` Critical alerts in `15 minutes` must open the circuit breaker.
+
+Circuit Break And Degradation Rules
+- The circuit breaker is the last rung after repeated Critical alerts.
+- Before circuit break, use explicit degraded states that remain visible to operators.
+- Opening the circuit breaker routes governed traffic to manual handling or blocks it entirely until recovery.
+- Only a clear human recovery action may close the circuit breaker.
+
+Recommended Next Actions By Class
+- Allow-list issue:
+  - inspect gateway route exposure and MCP tool exposure
+  - compare exposed tools against the Chapter 12 allow-list
+- Identity issue:
+  - inspect request envelope creation and propagation
+  - inspect schema alignment for request and agent identity
+- Audit issue:
+  - inspect reservation-before-action path
+  - inspect completion writes and orphan handling
+- Monitoring issue:
+  - inspect metric emission and baseline windows
+  - inspect anomaly thresholds and routing
+- Governance truthfulness issue:
+  - inspect API/UI health claims against runtime evidence
+
+Operator Triage Checklist
+1. Confirm whether the incident is production-governed or lower-environment.
+2. Confirm the gateway route and requested tool or action.
+3. Confirm the request identity and agent identity envelope.
+4. Confirm whether audit reservation succeeded before execution.
+5. Confirm whether audit completion succeeded after execution.
+6. Confirm current metric values and the baseline window used.
+7. Confirm whether circuit breaker or degraded mode is active.
+8. Confirm whether API and UI views agree with the runtime evidence.
+
+Minimum Evidence Required To Close An Alert
+- A concrete fix or recovery event tied to the same condition code.
+- Fresh evidence showing the threshold or invariant is back within bounds.
+- Correlated confirmation from the relevant runtime surface, not just one layer.
+- An explicit note if the incident was contained by degrade mode or circuit break rather than fully fixed.
+
+Completion Standard
+- Alerts are based on the Regulations spec thresholds and invariants.
+- Condition codes are unique, explicit, and actionable.
+- Required evidence sources are cited and correlated.
+- No unhealthy governed action can be labeled healthy because of missing or partial evidence.

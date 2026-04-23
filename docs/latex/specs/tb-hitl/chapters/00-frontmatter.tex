@@ -1,0 +1,55 @@
+\chapter*{Abstract}
+\addcontentsline{toc}{chapter}{Abstract}
+
+This specification defines the Human-in-the-Loop (HITL) Requirements
+Traceability framework for Standard Chartered Bank's Trial Balance (TB)
+review process. It provides the complete audit trail from source documents
+(business cases, detailed operating instructions, BPMN process maps, and
+workbooks) through machine-readable extraction, structured business
+requirements, formal specifications, and validating JSON schemas.
+
+The document serves as the \textbf{human validation checkpoint} for the
+automated requirements extraction and traceability process, enabling
+reviewers to verify the accuracy of automated extractions and establish
+a clear audit trail from source to implementation.
+
+Four orthogonal workstreams are traced in full:
+
+\begin{itemize}
+  \item a \textbf{source document inventory} cataloguing 6 source files
+        totalling 137~MB, including business cases, DOI, BPMN process map,
+        and HKG TB/PL review workbooks;
+  \item an \textbf{extraction layer} of 7 machine-readable outputs
+        (markdown, JSON, YAML, CSV) validated against YAML frontmatter
+        schemas;
+  \item a \textbf{requirements layer} of 27 business requirements
+        categorised across executive summary, scope, process steps,
+        AI augmentation, and BSS risk assessment;
+  \item a \textbf{specification and schema layer} comprising 21
+        specification elements and 6 JSON schemas with field-level
+        traceability back to requirements.
+\end{itemize}
+
+\paragraph{Reading order.} \Cref{ch:overview} introduces the HITL framework
+and traceability model; \cref{ch:source-documents} catalogues source
+documents; \cref{ch:extraction-layer} covers machine-readable extraction;
+\cref{ch:business-requirements} details requirement derivation;
+\cref{ch:specification-mapping} maps specifications to requirements;
+\cref{ch:schema-mapping} provides schema field traceability;
+\cref{ch:bidirectional-traceability} presents the full forward and
+backward matrices; \cref{ch:gap-analysis} identifies traceability gaps;
+\cref{ch:human-review-signoff} captures review checkpoints and approvals.
+
+\paragraph{Conventions.} Source document references appear as
+\srcref{TB-BC-001}. Business requirement IDs appear as \reqref{TB-REQ-ES01}.
+Specification elements appear as \specref{TB-STEP-003}. Schema references
+appear as \schemaref{variance-record}. Gap references appear as
+\gapref{G-001}. File paths are typeset in \texttt{monospace} and are
+relative to the repository root.
+
+\paragraph{Companion files.} The machine-readable companion to this
+specification is \texttt{docs/tb/machine-readable/hitl-traceability-manifest.yaml},
+which enables automated validation of all traceability links documented
+in this specification.
+
+\tableofcontents

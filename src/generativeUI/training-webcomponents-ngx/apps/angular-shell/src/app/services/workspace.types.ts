@@ -63,7 +63,6 @@ export const TRAINING_NAV_LINKS: TrainingNavLink[] = [
   // Home
   { route: '/dashboard', labelKey: 'nav.dashboard', icon: 'home' },
   // Data Work
-  { route: '/data-explorer', labelKey: 'nav.dataExplorer', icon: 'folder' },
   { route: '/data-cleaning', labelKey: 'nav.dataCleaning', icon: 'edit' },
   { route: '/schema-browser', labelKey: 'nav.schemaBrowser', icon: 'table-view' },
   { route: '/data-products', labelKey: 'nav.dataProducts', icon: 'product' },

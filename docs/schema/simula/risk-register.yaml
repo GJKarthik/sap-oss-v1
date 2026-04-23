@@ -1,0 +1,541 @@
+# =============================================================================
+# Simula Enterprise Risk Register
+# Machine-readable risk register for synthetic data governance
+# Version: 1.0.0
+# Last Updated: 2026-04-21
+# =============================================================================
+
+$schema: "https://json-schema.org/draft/2020-12/schema"
+$id: "https://sap-oss.github.io/schema/simula/risk-register.yaml"
+
+metadata:
+  version: "1.0.0"
+  title: "Simula Synthetic Data Risk Register"
+  description: |
+    Machine-readable risk register for enterprise deployment of the Simula
+    synthetic data framework. Aligned with FCA Synthetic Data Expert Group
+    principles, IEEE governance guidelines, and WEF financial services framework.
+  regulatory_references:
+    - id: "FCA-SDEG-2024"
+      title: "Synthetic Data Expert Group Report"
+      authority: "UK Financial Conduct Authority"
+      year: 2024
+    - id: "IEEE-SDG-2025"
+      title: "Synthetic Data: Generation, Validation, and Governance"
+      authority: "IEEE Standards Association"
+      year: 2025
+    - id: "WEF-SDFS-2024"
+      title: "Synthetic Data for Financial Services"
+      authority: "World Economic Forum"
+      year: 2024
+  owner: "Controls Architecture Team"
+  review_cadence: "quarterly"
+
+# =============================================================================
+# Risk Definitions
+# =============================================================================
+
+risks:
+  # ---------------------------------------------------------------------------
+  # RISK-001: Model-Inherited Bias
+  # ---------------------------------------------------------------------------
+  - id: "RISK-001"
+    name: "Model-Inherited Bias"
+    category: "quality"
+    description: |
+      Reasoning model biases may be amplified and encoded into generated
+      synthetic data, leading to discriminatory model outputs or unfair
+      treatment of protected groups.
+    
+    likelihood: "medium"  # low, medium, high, critical
+    impact: "high"
+    risk_score: 12  # likelihood (1-4) × impact (1-4)
+    
+    causes:
+      - "LLM training data imbalances"
+      - "Taxonomy construction reflects model biases"
+      - "Sampling strategy over-represents majority patterns"
+      - "Complexification amplifies existing biases"
+    
+    consequences:
+      - "Discriminatory downstream model behavior"
+      - "Regulatory non-compliance (FCA Principle 8)"
+      - "Reputational damage"
+      - "Legal liability"
+    
+    controls:
+      preventive:
+        - id: "CTRL-001-P1"
+          description: "Bias detection in taxonomy construction"
+          implementation_phase: "Phase 2"
+          requirement_ref: "BR-3.4"
+        - id: "CTRL-001-P2"
+          description: "Distribution analysis on sensitive attributes"
+          implementation_phase: "Phase 2"
+          requirement_ref: "BR-3.4"
+      
+      detective:
+        - id: "CTRL-001-D1"
+          description: "Fairness metric dashboards"
+          implementation_phase: "Phase 2"
+          requirement_ref: "BR-3.4"
+        - id: "CTRL-001-D2"
+          description: "Downstream model bias testing"
+          implementation_phase: "Phase 2"
+          requirement_ref: "BR-3.2"
+      
+      corrective:
+        - id: "CTRL-001-C1"
+          description: "Over/under-sampling recommendations"
+          implementation_phase: "Phase 2"
+          requirement_ref: "BR-3.4"
+        - id: "CTRL-001-C2"
+          description: "Targeted regeneration for biased regions"
+          implementation_phase: "Phase 3"
+          requirement_ref: "BR-2.5"
+    
+    monitoring:
+      metrics:
+        - name: "demographic_parity_diff"
+          threshold: 0.1
+          alert_severity: "high"
+        - name: "equalized_odds_diff"
+          threshold: 0.1
+          alert_severity: "high"
+      frequency: "per_generation"
+    
+    regulatory_alignment:
+      - "FCA Principle 8 (Fairness)"
+      - "EU AI Act Article 10 (Training Data)"
+    
+    owner: "AI Ethics Lead"
+    review_date: "2026-07-21"
+
+  # ---------------------------------------------------------------------------
+  # RISK-002: Privacy Leakage
+  # ---------------------------------------------------------------------------
+  - id: "RISK-002"
+    name: "Privacy Leakage"
+    category: "privacy"
+    description: |
+      Even in seedless generation mode, synthetic data may exhibit unintended
+      similarity to real data seen during reasoning model training, potentially
+      exposing personal information or enabling re-identification.
+    
+    likelihood: "low"
+    impact: "critical"
+    risk_score: 12
+    
+    causes:
+      - "LLM memorization of training data"
+      - "Taxonomy specificity reveals real patterns"
+      - "Complexification reproduces rare real scenarios"
+      - "Insufficient diversity in generation"
+    
+    consequences:
+      - "GDPR/HIPAA violations"
+      - "Data subject re-identification"
+      - "Regulatory fines and penalties"
+      - "Loss of trust"
+    
+    controls:
+      preventive:
+        - id: "CTRL-002-P1"
+          description: "Membership inference attack testing"
+          implementation_phase: "Phase 2"
+          requirement_ref: "BR-3.3"
+        - id: "CTRL-002-P2"
+          description: "Differential privacy budget tracking"
+          implementation_phase: "Phase 2"
+          requirement_ref: "BR-3.3"
+      
+      detective:
+        - id: "CTRL-002-D1"
+          description: "Similarity scanning against real datasets"
+          implementation_phase: "Phase 2"
+          requirement_ref: "BR-3.3"
+        - id: "CTRL-002-D2"
+          description: "Re-identification risk scoring"
+          implementation_phase: "Phase 2"
+          requirement_ref: "BR-3.3"
+      
+      corrective:
+        - id: "CTRL-002-C1"
+          description: "High-risk sample remediation workflow"
+          implementation_phase: "Phase 2"
+          requirement_ref: "BR-3.3"
+        - id: "CTRL-002-C2"
+          description: "Dataset quarantine and review"
+          implementation_phase: "Phase 2"
+          requirement_ref: "BR-3.3"
+    
+    monitoring:
+      metrics:
+        - name: "membership_inference_success_rate"
+          threshold: 0.55  # Baseline is 0.5 (random guess)
+          alert_severity: "critical"
+        - name: "nearest_neighbor_distance"
+          threshold: 0.9  # Cosine similarity
+          alert_severity: "high"
+      frequency: "per_generation"
+    
+    regulatory_alignment:
+      - "IEEE Privacy Risk Quantification"
+      - "GDPR Article 4 (Anonymization)"
+      - "FCA Principle 6 (Security)"
+    
+    owner: "Data Privacy Officer"
+    review_date: "2026-07-21"
+
+  # ---------------------------------------------------------------------------
+  # RISK-003: Quality Drift
+  # ---------------------------------------------------------------------------
+  - id: "RISK-003"
+    name: "Quality Drift"
+    category: "quality"
+    description: |
+      Generated data characteristics may change over time due to reasoning
+      model upgrades, taxonomy modifications, or parameter drift, leading to
+      degraded downstream model performance.
+    
+    likelihood: "medium"
+    impact: "medium"
+    risk_score: 9
+    
+    causes:
+      - "Reasoning model version upgrades"
+      - "Taxonomy evolution without regeneration"
+      - "Configuration parameter changes"
+      - "Underlying data distribution shifts"
+    
+    consequences:
+      - "Downstream model performance degradation"
+      - "Training-production mismatch"
+      - "Wasted training compute"
+      - "Delayed model deployments"
+    
+    controls:
+      preventive:
+        - id: "CTRL-003-P1"
+          description: "Model version pinning and documentation"
+          implementation_phase: "Phase 1"
+          requirement_ref: "BR-2.4"
+        - id: "CTRL-003-P2"
+          description: "Taxonomy version control"
+          implementation_phase: "Phase 1"
+          requirement_ref: "BR-2.1"
+      
+      detective:
+        - id: "CTRL-003-D1"
+          description: "Scheduled quality sampling"
+          implementation_phase: "Phase 3"
+          requirement_ref: "BR-3.5"
+        - id: "CTRL-003-D2"
+          description: "Statistical drift detection"
+          implementation_phase: "Phase 3"
+          requirement_ref: "BR-3.5"
+      
+      corrective:
+        - id: "CTRL-003-C1"
+          description: "Automated regeneration triggers"
+          implementation_phase: "Phase 3"
+          requirement_ref: "BR-3.5"
+        - id: "CTRL-003-C2"
+          description: "Rollback to previous dataset version"
+          implementation_phase: "Phase 3"
+          requirement_ref: "BR-2.5"
+    
+    monitoring:
+      metrics:
+        - name: "coverage_ratio_delta"
+          threshold: 0.1
+          alert_severity: "medium"
+        - name: "complexity_distribution_kl_divergence"
+          threshold: 0.2
+          alert_severity: "medium"
+        - name: "downstream_accuracy_delta"
+          threshold: 0.05
+          alert_severity: "high"
+      frequency: "weekly"
+    
+    regulatory_alignment:
+      - "FCA Principle 9 (Continuous Monitoring)"
+    
+    owner: "ML Platform Lead"
+    review_date: "2026-07-21"
+
+  # ---------------------------------------------------------------------------
+  # RISK-004: Compliance Uncertainty
+  # ---------------------------------------------------------------------------
+  - id: "RISK-004"
+    name: "Compliance Uncertainty"
+    category: "compliance"
+    description: |
+      Legal status of synthetic data varies across jurisdictions and evolving
+      regulations (GDPR, HIPAA, EU AI Act), creating uncertainty about
+      compliance requirements and potential liability.
+    
+    likelihood: "medium"
+    impact: "high"
+    risk_score: 12
+    
+    causes:
+      - "Evolving regulatory landscape"
+      - "Jurisdiction-specific variations"
+      - "Unclear synthetic data classification"
+      - "Novel technology without established precedent"
+    
+    consequences:
+      - "Regulatory enforcement actions"
+      - "Project delays or cancellation"
+      - "Increased legal costs"
+      - "Cross-border data flow restrictions"
+    
+    controls:
+      preventive:
+        - id: "CTRL-004-P1"
+          description: "Legal review sign-off process"
+          implementation_phase: "Phase 3"
+          requirement_ref: "BR-4.2"
+        - id: "CTRL-004-P2"
+          description: "Jurisdiction-specific policy matrix"
+          implementation_phase: "Phase 3"
+          requirement_ref: "BR-4.2"
+      
+      detective:
+        - id: "CTRL-004-D1"
+          description: "Regulatory change monitoring"
+          implementation_phase: "Phase 3"
+          requirement_ref: "BR-4.2"
+        - id: "CTRL-004-D2"
+          description: "Compliance position documentation"
+          implementation_phase: "Phase 3"
+          requirement_ref: "BR-4.2"
+      
+      corrective:
+        - id: "CTRL-004-C1"
+          description: "Rapid policy update process"
+          implementation_phase: "Phase 3"
+          requirement_ref: "BR-4.2"
+        - id: "CTRL-004-C2"
+          description: "Generation pause capability"
+          implementation_phase: "Phase 2"
+          requirement_ref: "BR-4.1"
+    
+    monitoring:
+      metrics:
+        - name: "regulatory_changes_unaddressed"
+          threshold: 1
+          alert_severity: "high"
+        - name: "compliance_review_overdue_days"
+          threshold: 30
+          alert_severity: "medium"
+      frequency: "monthly"
+    
+    regulatory_alignment:
+      - "GDPR"
+      - "HIPAA"
+      - "EU AI Act"
+      - "FCA Guidelines"
+    
+    owner: "Legal/Compliance Lead"
+    review_date: "2026-07-21"
+
+  # ---------------------------------------------------------------------------
+  # RISK-005: Over-Reliance on Synthetic Data
+  # ---------------------------------------------------------------------------
+  - id: "RISK-005"
+    name: "Over-Reliance on Synthetic Data"
+    category: "operational"
+    description: |
+      Excessive dependence on synthetic data without adequate real-world
+      validation may lead to models that perform well on synthetic benchmarks
+      but fail in production with real data.
+    
+    likelihood: "medium"
+    impact: "high"
+    risk_score: 12
+    
+    causes:
+      - "Cost pressure to minimize real data usage"
+      - "Privacy constraints limiting real data access"
+      - "Insufficient TSTR validation"
+      - "Overconfidence in synthetic data quality"
+    
+    consequences:
+      - "Production model failures"
+      - "Customer-facing errors"
+      - "Wasted development effort"
+      - "Loss of stakeholder confidence"
+    
+    controls:
+      preventive:
+        - id: "CTRL-005-P1"
+          description: "Mandatory TSTR validation protocol"
+          implementation_phase: "Phase 1"
+          requirement_ref: "BR-3.2"
+        - id: "CTRL-005-P2"
+          description: "Synthetic-to-real ratio guidelines"
+          implementation_phase: "Phase 2"
+          requirement_ref: "BR-3.2"
+      
+      detective:
+        - id: "CTRL-005-D1"
+          description: "Synthetic-real performance gap tracking"
+          implementation_phase: "Phase 1"
+          requirement_ref: "BR-3.2"
+        - id: "CTRL-005-D2"
+          description: "Production model monitoring"
+          implementation_phase: "Phase 3"
+          requirement_ref: "BR-3.5"
+      
+      corrective:
+        - id: "CTRL-005-C1"
+          description: "Hybrid training strategy (synthetic pre-train + real fine-tune)"
+          implementation_phase: "Phase 2"
+          requirement_ref: "BR-3.2"
+        - id: "CTRL-005-C2"
+          description: "Real data augmentation requirements"
+          implementation_phase: "Phase 2"
+          requirement_ref: "BR-3.2"
+    
+    monitoring:
+      metrics:
+        - name: "tstr_performance_gap"
+          threshold: 0.1  # 10% gap maximum
+          alert_severity: "high"
+        - name: "synthetic_data_ratio"
+          threshold: 0.9  # Maximum 90% synthetic
+          alert_severity: "medium"
+      frequency: "per_model_training"
+    
+    regulatory_alignment:
+      - "IEEE Fidelity-Utility Tradeoff"
+    
+    owner: "ML Engineering Lead"
+    review_date: "2026-07-21"
+
+  # ---------------------------------------------------------------------------
+  # RISK-006: Taxonomy Quality Deficiency
+  # ---------------------------------------------------------------------------
+  - id: "RISK-006"
+    name: "Taxonomy Quality Deficiency"
+    category: "quality"
+    description: |
+      LLM-generated taxonomies may miss critical domain concepts, include
+      irrelevant categories, or have incorrect hierarchical relationships,
+      leading to incomplete or misdirected data generation.
+    
+    likelihood: "medium"
+    impact: "medium"
+    risk_score: 9
+    
+    causes:
+      - "LLM domain knowledge limitations"
+      - "Insufficient expert review"
+      - "Taxonomy evolution not tracked"
+      - "Missing coverage gap detection"
+    
+    consequences:
+      - "Incomplete scenario coverage"
+      - "Irrelevant training examples"
+      - "Model blind spots"
+      - "Wasted generation resources"
+    
+    controls:
+      preventive:
+        - id: "CTRL-006-P1"
+          description: "Domain expert validation gates"
+          implementation_phase: "Phase 1"
+          requirement_ref: "BR-2.1"
+        - id: "CTRL-006-P2"
+          description: "Domain knowledge anchor injection"
+          implementation_phase: "Phase 1"
+          requirement_ref: "BR-2.1"
+      
+      detective:
+        - id: "CTRL-006-D1"
+          description: "Coverage gap analysis reports"
+          implementation_phase: "Phase 1"
+          requirement_ref: "BR-3.1"
+        - id: "CTRL-006-D2"
+          description: "Taxonomy completeness scoring"
+          implementation_phase: "Phase 1"
+          requirement_ref: "BR-2.1"
+      
+      corrective:
+        - id: "CTRL-006-C1"
+          description: "Iterative taxonomy refinement"
+          implementation_phase: "Phase 1"
+          requirement_ref: "BR-2.1"
+        - id: "CTRL-006-C2"
+          description: "Expert-driven node injection"
+          implementation_phase: "Phase 1"
+          requirement_ref: "BR-2.1"
+    
+    monitoring:
+      metrics:
+        - name: "taxonomy_completeness_score"
+          threshold: 0.7  # 70% minimum
+          alert_severity: "medium"
+        - name: "expert_rejection_rate"
+          threshold: 0.3  # 30% maximum
+          alert_severity: "high"
+      frequency: "per_taxonomy_build"
+    
+    regulatory_alignment: []
+    
+    owner: "Domain Expert Lead"
+    review_date: "2026-07-21"
+
+# =============================================================================
+# Risk Summary
+# =============================================================================
+
+summary:
+  total_risks: 6
+  by_category:
+    quality: 3
+    privacy: 1
+    compliance: 1
+    operational: 1
+  by_likelihood:
+    low: 1
+    medium: 5
+    high: 0
+    critical: 0
+  by_impact:
+    low: 0
+    medium: 2
+    high: 3
+    critical: 1
+  average_risk_score: 11.0
+  high_priority_risks:  # risk_score >= 12
+    - "RISK-001"
+    - "RISK-002"
+    - "RISK-004"
+    - "RISK-005"
+
+# =============================================================================
+# Review Schedule
+# =============================================================================
+
+review_schedule:
+  next_review: "2026-07-21"
+  review_frequency: "quarterly"
+  review_participants:
+    - "Controls Architecture Team"
+    - "AI Ethics Lead"
+    - "Data Privacy Officer"
+    - "Legal/Compliance Lead"
+    - "ML Platform Lead"
+  escalation_path:
+    - level: 1
+      role: "Risk Owner"
+      criteria: "Risk score increase or new risk identified"
+    - level: 2
+      role: "Controls Architecture Team"
+      criteria: "High priority risk (score >= 12)"
+    - level: 3
+      role: "Executive Sponsor"
+      criteria: "Critical impact risk or regulatory escalation"

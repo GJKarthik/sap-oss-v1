@@ -1,0 +1,243 @@
+% =============================================================================
+% Chapter 7 --- Implementation Design
+% =============================================================================
+\chapter{Implementation Design}
+\label{ch:implementation}
+
+\section{Repository structure}
+
+The governance framework is implemented across several repository paths:
+
+\begin{table}[htbp]
+\centering
+\footnotesize
+\caption{Key Implementation Paths}
+\label{tab:implementation-paths}
+\begin{tabularx}{\textwidth}{@{}l X@{}}
+\toprule
+\textbf{Path} & \textbf{Purpose} \\
+\midrule
+\filepath{src/intelligence/ai-core-pal/governance/} & Identity and audit modules \\
+\filepath{src/intelligence/ai-core-pal/agent/governed\_agent.py} & Governance-compliant agent \\
+\filepath{src/intelligence/.clinerules} & Development agent rules \\
+\filepath{src/intelligence/.clinerules.runtime-monitor} & Runtime monitor rules \\
+\filepath{src/generativeUI/gateway/.clinerules.runtime-monitor} & Gateway ingress overlay \\
+\filepath{docs/schema/regulations/} & JSON Schemas for governance contracts \\
+\filepath{docs/latex/specs/regulations/} & Regulations corpus specification \\
+\filepath{docs/latex/specs/singapore-ai-safety/} & This specification \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\section{Governance module architecture}
+
+The governance module in \filepath{src/intelligence/ai-core-pal/governance/}
+consists of three components:
+
+\subsection{Identity module (\filepath{identity.py})}
+
+Implements identity attribution per REG-MGF-2.1.2-002:
+
+\begin{itemize}
+  \item \texttt{AgentIdentity}: Dataclass for agent identity fields, validated
+        against \filepath{agent-identity.schema.json}
+  \item \texttt{RequestIdentity}: Dataclass for request identity fields, validated
+        against \filepath{request-identity.schema.json}
+  \item \texttt{IdentityEnvelope}: Combined envelope for governance tracking
+  \item \texttt{IdentityProvider}: Factory for creating and validating identity
+        envelopes
+\end{itemize}
+
+\subsection{Audit module (\filepath{audit.py})}
+
+Implements durable audit trail per REG-MGF-2.3.3-002:
+
+\begin{itemize}
+  \item \texttt{AuditEvent}: Dataclass for audit events, validated against
+        \filepath{audit-event.schema.json}
+  \item \texttt{AuditReservation}: Reservation-before-action pattern
+  \item \texttt{DurableAuditStore}: SQLite-backed persistent storage
+  \item Support for reservation, completion, orphan detection
+\end{itemize}
+
+\subsection{Governed agent (\filepath{governed\_agent.py})}
+
+Implements the full governance flow:
+
+\begin{enumerate}
+  \item Create identity envelope
+  \item Validate envelope
+  \item Check tool allow-list (deny-by-default)
+  \item Check approval requirements
+  \item Reserve audit BEFORE action
+  \item Execute action
+  \item Complete audit AFTER action
+\end{enumerate}
+
+\section{JSON schemas}
+
+Governance contracts are defined in machine-readable JSON Schema format:
+
+\begin{table}[htbp]
+\centering
+\footnotesize
+\caption{Governance JSON Schemas}
+\begin{tabularx}{\textwidth}{@{}l X@{}}
+\toprule
+\textbf{Schema} & \textbf{Purpose} \\
+\midrule
+\filepath{agent-identity.schema.json} & Agent identity fields and validation \\
+\filepath{request-identity.schema.json} & Request identity fields and validation \\
+\filepath{audit-event.schema.json} & Audit event structure with oneOf variants \\
+\filepath{requirement.schema.json} & Regulatory requirement with status tracking \\
+\filepath{regulation.schema.json} & Source regulation metadata \\
+\filepath{conformance-tool.schema.json} & AI Verify / Moonshot tool references \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\section{Agent rule packs}
+
+Two complementary rule packs govern agent behavior:
+
+\subsection{Development pack (\filepath{.clinerules})}
+
+Guides agent development with:
+
+\begin{itemize}
+  \item Source of truth references
+  \item Definition of done criteria
+  \item Non-negotiable engineering rules
+  \item Known issue registry
+  \item Default thresholds
+\end{itemize}
+
+\subsection{Runtime-monitor pack (\filepath{.clinerules.runtime-monitor})}
+
+Guides runtime monitoring with:
+
+\begin{itemize}
+  \item Condition codes and severities
+  \item Alert thresholds
+  \item Circuit-break triggers
+  \item Evidence sources
+  \item Operator triage checklist
+\end{itemize}
+
+\section{Compliance requirements mapping}
+
+\begin{table}[htbp]
+\centering
+\caption{Implementation Status by Requirement}
+\label{tab:implementation-status}
+\begin{tabularx}{\textwidth}{@{}l l X@{}}
+\toprule
+\textbf{Requirement} & \textbf{Status} & \textbf{Implementation} \\
+\midrule
+REG-MGF-2.1.2-001 & Implemented & \texttt{GovernedGovernanceEngine.ALLOWED\_TOOLS} \\
+REG-MGF-2.1.2-002 & Implemented & \texttt{IdentityProvider}, \texttt{IdentityEnvelope} \\
+REG-MGF-2.1.2-003 & Partial & Sandboxing via container isolation \\
+REG-MGF-2.2.2-001 & Implemented & \texttt{APPROVAL\_REQUIRED\_TOOLS} \\
+REG-MGF-2.3.3-002 & Implemented & \texttt{DurableAuditStore} \\
+Chapter 10 Audit & Implemented & Reservation-before-action pattern \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\section{Integration points}
+
+\subsection{MCP tool allow-list}
+
+The governance engine maintains an explicit allow-list:
+
+\begin{verbatim}
+ALLOWED_TOOLS = frozenset({
+    "pal_classification",
+    "pal_regression",
+    "pal_clustering",
+    "pal_forecast",
+    "pal_anomaly",
+})
+\end{verbatim}
+
+Any tool not in this list is blocked (deny-by-default).
+
+\subsection{Approval-required tools}
+
+High-risk tools require human approval:
+
+\begin{verbatim}
+APPROVAL_REQUIRED_TOOLS = frozenset({
+    "pal_train_model",
+    "pal_delete_model",
+    "hana_write",
+    "model_deploy",
+})
+\end{verbatim}
+
+\subsection{Audit database schema}
+
+The SQLite audit database contains:
+
+\begin{verbatim}
+CREATE TABLE audit_events (
+    event_id TEXT PRIMARY KEY,
+    event_type TEXT NOT NULL,
+    timestamp TEXT NOT NULL,
+    request_id TEXT NOT NULL,
+    correlation_id TEXT NOT NULL,
+    agent_id TEXT NOT NULL,
+    agent_type TEXT NOT NULL,
+    status TEXT NOT NULL,
+    duration_ms INTEGER,
+    tokens_used INTEGER,
+    error_code TEXT,
+    action_json TEXT,
+    approval_chain_json TEXT,
+    request_identity_json TEXT NOT NULL,
+    agent_identity_json TEXT NOT NULL,
+    full_event_json TEXT NOT NULL,
+    is_orphaned INTEGER DEFAULT 0
+);
+\end{verbatim}
+
+\section{Testing and validation}
+
+\subsection{Validation harness}
+
+The validation harness at
+\filepath{src/intelligence/ai-core-pal/tests/test\_clinerules\_contracts.py}
+validates:
+
+\begin{itemize}
+  \item Structural completeness of rule packs
+  \item Safety-critical flag inheritance (no weakening)
+  \item Regulatory alignment requirements
+  \item Cross-pack consistency
+  \item Schema references
+\end{itemize}
+
+\subsection{Running validation}
+
+\begin{verbatim}
+# Run full validation
+python src/intelligence/ai-core-pal/tests/test_clinerules_contracts.py
+
+# Run with pytest
+pytest src/intelligence/ai-core-pal/tests/test_clinerules_contracts.py -v
+\end{verbatim}
+
+\section{Deployment checklist}
+
+Before deploying a governance-compliant agent:
+
+\begin{enumerate}
+  \item Verify all schemas exist and validate
+  \item Verify rule packs pass validation harness
+  \item Verify audit database is accessible
+  \item Verify identity provider is configured
+  \item Verify tool allow-list is correct for use case
+  \item Calculate risk scores and verify production gate criteria
+  \item Run minimum sample size tests per risk tier
+  \item Confirm monitoring and alerting are active
+\end{enumerate}

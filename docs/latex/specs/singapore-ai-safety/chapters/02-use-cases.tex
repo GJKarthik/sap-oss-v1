@@ -1,0 +1,135 @@
+% =============================================================================
+% Chapter 2 --- System Use Cases in Scope
+% =============================================================================
+\chapter{System Use Cases in Scope}
+\label{ch:usecases}
+
+\section{Use-case inventory purpose}
+
+Every AI-enabled capability in the repository must be registered as a use case
+before implementation begins. This chapter defines the operational use-case
+inventory that is subject to governance controls.
+
+\section{Operational use-case inventory}
+
+\begin{longtable}{@{}l p{4cm} l l p{4.5cm}@{}}
+\caption{Use-Case Inventory for Committee Review} \\
+\toprule
+\textbf{ID} & \textbf{Use Case} & \textbf{Action Type} & \textbf{Risk Tier} & \textbf{Core Risk Drivers} \\
+\midrule
+\endfirsthead
+\multicolumn{5}{c}{\tablename\ \thetable{} -- continued} \\
+\toprule
+\textbf{ID} & \textbf{Use Case} & \textbf{Action Type} & \textbf{Risk Tier} & \textbf{Core Risk Drivers} \\
+\midrule
+\endhead
+\midrule
+\multicolumn{5}{r}{Continued on next page} \\
+\endfoot
+\bottomrule
+\endlastfoot
+\usecaseid{UC-01} & Chat and prompt-response synthesis & Read/generate & Medium & Prompt injection, hallucination, confidentiality \\
+\usecaseid{UC-02} & AI-generated UI actions & Assist/approve & High & Automation bias, hidden writes \\
+\usecaseid{UC-03} & HANA query and data-product prompts & Read/query & High & Schema exposure, SQL guardrails \\
+\usecaseid{UC-04} & Retrieval and vector operations & Read/write vectors & High & Sensitive ingestion, retrieval leakage \\
+\usecaseid{UC-05} & Personal knowledge and memory & Read/write knowledge & High & Retention, user boundaries \\
+\usecaseid{UC-06} & OCR document extraction & Read/extract & High & Document sensitivity, interpretation \\
+\usecaseid{UC-07} & Data-cleaning workflows & Recommend/process & Medium & False assurance, traceability \\
+\usecaseid{UC-08} & Training and deployment & Create/deploy & Critical & Provenance, validation sufficiency \\
+\usecaseid{UC-09} & Pipeline orchestration & Automate workflow & High & Process chaining, silent failure \\
+\usecaseid{UC-10} & Agent/tool orchestration (MCP) & Tool use/plan & Critical & Tool misuse, dynamic planning \\
+\usecaseid{UC-11} & Governance and audit & Oversight/evidence & High & Approval integrity, completeness \\
+\usecaseid{UC-12} & Local model serving & Inference runtime & High & Confidential routing, resilience \\
+\end{longtable}
+
+\section{Use-case descriptions}
+
+\subsection{UC-01: Chat and prompt-response synthesis}
+
+\begin{description}
+  \item[Description] Interactive chat interfaces where users submit prompts and
+        receive LLM-generated responses.
+  \item[Action Type] Read/generate --- reads context, generates new content.
+  \item[Risk Tier] Medium
+  \item[Primary Risks] Prompt injection, hallucination, confidentiality leakage.
+  \item[Key Controls] \controlid{SEC-01}, \controlid{EVAL-01}, \controlid{USR-01}
+\end{description}
+
+\subsection{UC-02: AI-generated UI actions}
+
+\begin{description}
+  \item[Description] AI assists users by suggesting or executing UI actions
+        based on context.
+  \item[Action Type] Assist/approve --- proposes actions for human approval.
+  \item[Risk Tier] High
+  \item[Primary Risks] Automation bias, hidden writes to backend systems.
+  \item[Key Controls] \controlid{HUM-01}, \controlid{HUM-02}, \controlid{AGT-01}
+\end{description}
+
+\subsection{UC-03: HANA query and data-product prompts}
+
+\begin{description}
+  \item[Description] Natural language queries translated to SQL against SAP HANA.
+  \item[Action Type] Read/query --- reads data, executes queries.
+  \item[Risk Tier] High
+  \item[Primary Risks] Schema exposure, SQL injection, guardrail bypass.
+  \item[Key Controls] \controlid{DATA-01}, \controlid{SEC-01}, \controlid{AGT-02}
+\end{description}
+
+\subsection{UC-08: Training and deployment}
+
+\begin{description}
+  \item[Description] Model training, fine-tuning, and deployment to production.
+  \item[Action Type] Create/deploy --- creates new model artefacts.
+  \item[Risk Tier] Critical
+  \item[Primary Risks] Training data provenance, validation sufficiency.
+  \item[Key Controls] \controlid{GOV-03}, \controlid{EVAL-01}, \controlid{EVAL-03}
+\end{description}
+
+\subsection{UC-10: Agent/tool orchestration (MCP)}
+
+\begin{description}
+  \item[Description] Multi-step agent planning with tool invocation via MCP.
+  \item[Action Type] Tool use/plan --- invokes external tools and services.
+  \item[Risk Tier] Critical
+  \item[Primary Risks] Tool misuse, dynamic planning errors, unbounded autonomy.
+  \item[Key Controls] \controlid{AGT-01}, \controlid{AGT-02}, \controlid{AGT-03},
+        \controlid{AGT-04}, \controlid{HUM-01}, \controlid{MON-01}
+\end{description}
+
+\section{Risk tier definitions}
+
+\begin{table}[htbp]
+\centering
+\caption{Risk Tier Definitions}
+\begin{tabularx}{\textwidth}{@{}l l X@{}}
+\toprule
+\textbf{Tier} & \textbf{IRS Range} & \textbf{Description} \\
+\midrule
+Low & $0 \leq IRS < 25$ & Minimal risk, standard controls \\
+Medium & $25 \leq IRS < 50$ & Moderate risk, enhanced controls \\
+High & $50 \leq IRS < 75$ & Significant risk, critical controls required \\
+Critical & $75 \leq IRS \leq 100$ & Highest risk, full control suite and review board \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\section{Use-case registration process}
+
+Before implementation, each use case must be registered with:
+
+\begin{enumerate}
+  \item \textbf{Use-case card} --- structured description including ID, name,
+        action type, data classification, autonomy level
+  \item \textbf{Risk assessment} --- calculated Inherent Risk Score (IRS)
+  \item \textbf{Control profile} --- applicable controls identified
+  \item \textbf{Owner assignment} --- named business and technical owners
+  \item \textbf{Ticket reference} --- tracking ticket for governance approval
+\end{enumerate}
+
+Registration is tracked in the use-case section of the regulations
+requirement corpus at
+\filepath{docs/regulations/machine-readable/specification-addendum.yaml}
+(key \texttt{use\_cases}), validated against the schemas under
+\filepath{docs/schema/regulations/} via
+\filepath{docs/schema/validate.py}.

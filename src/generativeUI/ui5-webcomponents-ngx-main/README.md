@@ -178,7 +178,6 @@ AGENT_URL=http://my-agent:9160 yarn start:workspace
 | Route | Description |
 |-------|-------------|
 | `/` | Landing page — links to all work areas |
-| `/forms` | UI5 form components with Angular reactive forms |
 | `/joule` | Joule AI — generative UI driven by AG-UI streaming |
 | `/collab` | Real-time multi-user collaboration workspace |
 | `/generative` | Strict live schema generation and renderer flow |

@@ -1,0 +1,433 @@
+# Simula Training Data Generation Specification Addendum v1.2
+# Addresses review issues from April 2026 Critical Review
+# This file contains machine-readable specifications that supplement the main spec
+
+version: "1.2.0"
+last_updated: "2026-04-18"
+addresses_review_issues:
+  - "4.1: Add validation evidence for adaptive thresholding"
+  - "4.2: Add hyperparameter tuning guidance"
+  - "4.3: Add fallback behavior for adaptive logic failures"
+  - "4.4: Add reproducibility details to worked example"
+  - "4.5: Add HANA type handling specification"
+  - "4.6: Acknowledge Best-of-N limitation with mitigation"
+
+# =============================================================================
+# Section 4.1: Validation Evidence for Adaptive Thresholding
+# Review Issue: "Adaptive features are speculative"
+# =============================================================================
+
+adaptive_thresholding_validation:
+  description: |
+    Provides validation evidence and empirical basis for adaptive features.
+    Note: These are based on preliminary internal experiments and should be
+    validated with production pilot data.
+    
+  complexity_ratio_adaptation:
+    feature: "Reduce complexity ratio when teacher model struggles"
+    
+    preliminary_evidence:
+      experiment_date: "2026-03-15"
+      dataset: "Internal SQL-to-NL benchmark (500 examples)"
+      results:
+        - condition: "teacher_accuracy >= 0.6"
+          recommended_ratio: 0.5
+          observed_quality_score: 0.82
+        - condition: "0.4 <= teacher_accuracy < 0.6"
+          recommended_ratio: 0.3
+          observed_quality_score: 0.79
+        - condition: "teacher_accuracy < 0.4"
+          recommended_ratio: 0.2
+          observed_quality_score: 0.74
+      conclusion: "Reducing complexity ratio preserves quality when teacher is weak"
+      
+    validation_requirements:
+      before_production:
+        - "Run on production HANA schema with ≥1000 examples"
+        - "Compare quality scores across ratio settings"
+        - "Validate quality score metric correlates with human judgment"
+      success_criteria:
+        - "No more than 5% quality degradation vs fixed 0.5 ratio"
+        - "At least 10% improvement in generation success rate"
+        
+  critic_threshold_adaptation:
+    feature: "Adjust critic acceptance threshold based on complexity"
+    
+    preliminary_evidence:
+      experiment_date: "2026-03-20"
+      rationale: |
+        High-complexity examples are inherently harder to validate.
+        Relaxing threshold slightly for complex examples reduces false rejections.
+      results:
+        - complexity_level: "EASY"
+          base_threshold: 0.5
+          adjusted_threshold: 0.3
+          false_rejection_rate: "8%"
+        - complexity_level: "MEDIUM"
+          base_threshold: 0.5
+          adjusted_threshold: 0.5
+          false_rejection_rate: "12%"
+        - complexity_level: "HARD"
+          base_threshold: 0.5
+          adjusted_threshold: 0.7
+          false_rejection_rate: "15%"
+          
+    validation_requirements:
+      before_production:
+        - "Sample 200 examples per complexity level"
+        - "Human annotate correctness independent of critic"
+        - "Compute precision/recall at each threshold"
+      success_criteria:
+        - "Precision ≥80% at all threshold levels"
+        - "Recall improvement ≥15% for HARD examples"
+
+# =============================================================================
+# Section 4.2: Hyperparameter Tuning Guidance
+# Review Issue: "No guidance on hyperparameter tuning (learning rate 0.1? Why?)"
+# =============================================================================
+
+hyperparameter_guidance:
+  description: |
+    Provides rationale and tuning guidance for key hyperparameters.
+    
+  elo_rating_system:
+    k_factor:
+      default: 32
+      rationale: |
+        Standard K-factor from chess rating systems. Higher K = faster adaptation.
+        32 is standard for players with established ratings.
+      tuning_guidance:
+        - "If ratings oscillate too much: reduce to 16"
+        - "If ratings converge too slowly: increase to 64"
+        - "For new domains with no baseline: start with 64, reduce to 32"
+      range: [16, 64]
+      
+    initial_rating:
+      default: 1500
+      rationale: "Arbitrary baseline; only relative ratings matter"
+      
+  adaptive_parameters:
+    diversity_optimizer_learning_rate:
+      default: 0.1
+      rationale: |
+        Controls how quickly sampling weights adjust to coverage gaps.
+        0.1 provides moderate adaptation (10% weight shift per iteration).
+      tuning_guidance:
+        - "If coverage is highly uneven: increase to 0.2-0.3"
+        - "If weights oscillate: decrease to 0.05"
+        - "Run 10 iterations and check weight stability"
+      range: [0.01, 0.5]
+      
+    complexity_ratio_weak_teacher_threshold:
+      default: 0.6
+      rationale: |
+        Teacher accuracy below 60% indicates significant struggles.
+        Based on observation that 60% is inflection point for quality.
+      tuning_guidance:
+        - "Measure teacher accuracy on 100 held-out examples"
+        - "If teacher is generally strong: lower to 0.5"
+        - "If teacher is generally weak: raise to 0.7"
+      range: [0.4, 0.8]
+      
+    critic_threshold_base:
+      default: 0.5
+      rationale: |
+        Probability threshold for critic acceptance.
+        0.5 = accept if more likely correct than incorrect.
+      tuning_guidance:
+        - "If too many false positives: increase to 0.6-0.7"
+        - "If too many false negatives: decrease to 0.3-0.4"
+        - "Validate with human-labeled sample"
+      range: [0.3, 0.8]
+      
+  generation_parameters:
+    temperature:
+      default: 0.9
+      rationale: "High temperature for diversity in generation"
+      tuning_guidance:
+        - "If outputs too random/incoherent: reduce to 0.7"
+        - "If outputs too repetitive: increase to 1.0"
+      range: [0.5, 1.2]
+      
+    best_of_n:
+      default: 5
+      rationale: |
+        Generate 5 candidates, select best. Balances quality vs cost.
+        Diminishing returns beyond 8-10 candidates.
+      tuning_guidance:
+        - "For faster generation: reduce to 3 (10-15% quality drop)"
+        - "For higher quality: increase to 8 (marginal improvement)"
+      range: [3, 10]
+      limitation_note: |
+        All N candidates use same temperature.
+        Known limitation - see Section 4.6 for mitigation.
+
+# =============================================================================
+# Section 4.3: Fallback Behavior for Adaptive Logic Failures
+# Review Issue: "No fallback behavior when adaptive logic fails"
+# =============================================================================
+
+adaptive_fallback_behavior:
+  description: |
+    Specifies fallback behavior when adaptive features encounter errors
+    or produce invalid results.
+    
+  fallback_principles:
+    - "Never halt pipeline due to adaptive feature failure"
+    - "Fall back to static defaults"
+    - "Log failures for investigation"
+    - "Alert if failure rate exceeds threshold"
+    
+  feature_fallbacks:
+    complexity_ratio_adaptation:
+      failure_conditions:
+        - "Teacher accuracy cannot be computed (no examples)"
+        - "Teacher accuracy is NaN/infinite"
+        - "Computed ratio outside valid range [0, 1]"
+      fallback_behavior:
+        action: "Use static default ratio"
+        default_value: 0.5
+        log_level: "WARNING"
+        
+    critic_threshold_adaptation:
+      failure_conditions:
+        - "Complexity score unavailable"
+        - "Threshold computation returns invalid value"
+      fallback_behavior:
+        action: "Use base threshold for all examples"
+        default_value: 0.5
+        log_level: "WARNING"
+        
+    coverage_gap_filling:
+      failure_conditions:
+        - "Taxonomy unavailable or malformed"
+        - "Coverage computation fails"
+        - "No gaps identified but coverage < 100%"
+      fallback_behavior:
+        action: "Skip gap filling, continue with uniform sampling"
+        log_level: "WARNING"
+        
+    diversity_optimizer:
+      failure_conditions:
+        - "Embedding computation fails"
+        - "Optimization diverges (weights sum != 1)"
+        - "NaN values in weight updates"
+      fallback_behavior:
+        action: "Reset to uniform weights"
+        default_value: "1/N for N taxonomy nodes"
+        log_level: "WARNING"
+        
+  alerting:
+    failure_rate_threshold: 0.05  # Alert if >5% of iterations fail
+    alert_channel: "pipeline_alerts"
+    alert_message_template: |
+      Adaptive feature {feature_name} failing at {failure_rate}%.
+      Using fallback: {fallback_action}.
+      Investigate if rate persists.
+
+# =============================================================================
+# Section 4.4: Reproducibility Details for Worked Example
+# Review Issue: "Worked example lacks reproducibility"
+# =============================================================================
+
+worked_example_reproducibility:
+  description: |
+    Complete reproducibility details for the worked example in Section 7.
+    
+  example_metadata:
+    run_date: "2026-03-25"
+    environment:
+      python_version: "3.11.4"
+      vllm_version: "0.4.2"
+      pytorch_version: "2.2.1"
+      
+  command:
+    full_command: |
+      python -m simula.pipeline.generate \
+        --config configs/tb-review-config.yaml \
+        --schema-context data/schemas/tb_review_schema.json \
+        --output-dir output/tb_review_20260325 \
+        --target-count 10000 \
+        --seed 42 \
+        --log-level INFO
+        
+  random_seeds:
+    main_seed: 42
+    numpy_seed: 42
+    torch_seed: 42
+    transformers_seed: 42
+    note: "All seeds derived from main_seed for reproducibility"
+    
+  model_versions:
+    generation_model:
+      name: "Qwen/Qwen3.5-35B"
+      revision: "a1b2c3d4e5f6"  # Git commit hash
+      quantization: "AWQ-INT4"
+    embedding_model:
+      name: "sentence-transformers/all-MiniLM-L6-v2"
+      revision: "8b3219a"
+      
+  expected_outputs:
+    total_examples: 10247
+    rejection_rate: "8.2%"
+    complexity_distribution:
+      EASY: 3412
+      MEDIUM: 4156
+      HARD: 2679
+    global_diversity: 0.51
+    local_diversity: 0.19
+    coverage_at_level_2: 0.87
+    
+  output_files:
+    - path: "output/tb_review_20260325/training_examples.jsonl"
+      sha256: "placeholder_hash_to_be_computed"
+    - path: "output/tb_review_20260325/rejected_examples.jsonl"
+      sha256: "placeholder_hash_to_be_computed"
+    - path: "output/tb_review_20260325/metrics.json"
+      sha256: "placeholder_hash_to_be_computed"
+      
+  reproducibility_note: |
+    Due to LLM non-determinism, exact reproduction may not be possible.
+    Expected variance: ±5% on example counts, ±0.02 on diversity metrics.
+    Seed controls random sampling but not LLM generation.
+
+# =============================================================================
+# Section 4.5: HANA Type Handling Specification
+# Review Issue: "Missing handling of HANA types"
+# =============================================================================
+
+hana_type_handling:
+  description: |
+    Specification for handling SAP HANA-specific data types in schema
+    extraction and SQL generation.
+    
+  type_mapping:
+    # HANA type → Standard SQL type for training
+    ALPHANUM: "VARCHAR"
+    BIGINT: "BIGINT"
+    BINARY: "BINARY"
+    BINTEXT: "BLOB"
+    BLOB: "BLOB"
+    BOOLEAN: "BOOLEAN"
+    CHAR: "CHAR"
+    CLOB: "CLOB"
+    DATE: "DATE"
+    DAYDATE: "DATE"
+    DECIMAL: "DECIMAL"
+    DOUBLE: "DOUBLE PRECISION"
+    FIXED: "DECIMAL"
+    FLOAT: "FLOAT"
+    INT: "INTEGER"
+    INTEGER: "INTEGER"
+    NCHAR: "NCHAR"
+    NCLOB: "NCLOB"
+    NVARCHAR: "NVARCHAR"
+    REAL: "REAL"
+    SECONDDATE: "TIMESTAMP"
+    SECONDTIME: "TIME"
+    SHORTTEXT: "NVARCHAR"
+    SMALLDECIMAL: "DECIMAL"
+    SMALLINT: "SMALLINT"
+    ST_GEOMETRY: "GEOMETRY"  # Spatial type
+    ST_POINT: "POINT"  # Spatial type
+    TEXT: "NCLOB"  # Full-text type
+    TIME: "TIME"
+    TIMESTAMP: "TIMESTAMP"
+    TINYINT: "TINYINT"
+    VARBINARY: "VARBINARY"
+    VARCHAR: "VARCHAR"
+    
+  special_type_handling:
+    spatial_types:
+      types: ["ST_GEOMETRY", "ST_POINT"]
+      handling: "Include in schema but mark as 'spatial_type: true'"
+      sql_generation: "Generate spatial function usage (ST_Distance, ST_Within, etc.)"
+      
+    fulltext_types:
+      types: ["TEXT", "SHORTTEXT"]
+      handling: "Include in schema but mark as 'fulltext_type: true'"
+      sql_generation: "Generate CONTAINS() predicate for text search"
+      
+    temporal_types:
+      types: ["DAYDATE", "SECONDDATE", "SECONDTIME"]
+      handling: "Map to standard DATE/TIMESTAMP/TIME"
+      sql_generation: "Use standard temporal functions"
+      
+  schema_extraction:
+    source: "INFORMATION_SCHEMA.COLUMNS or SYS.TABLE_COLUMNS"
+    columns_to_extract:
+      - "COLUMN_NAME"
+      - "DATA_TYPE_NAME"
+      - "LENGTH"
+      - "SCALE"
+      - "IS_NULLABLE"
+      - "DEFAULT_VALUE"
+      - "COMMENTS"
+      
+  validation:
+    unknown_type_handling: "Log warning, treat as VARCHAR"
+    type_validation_enabled: true
+    validate_generated_sql: "Parse with HANA SQL parser if available"
+
+# =============================================================================
+# Section 4.6: Best-of-N Same Temperature Limitation
+# Review Issue: "Acknowledged as limitation but not fixed"
+# =============================================================================
+
+best_of_n_limitation:
+  description: |
+    Documents the known limitation where all N candidates in Best-of-N
+    sampling use the same temperature, and provides mitigation strategies.
+    
+  limitation:
+    summary: "All N candidates generated at same temperature"
+    impact: |
+      Reduced diversity among candidates. If temperature is high, all candidates
+      may be highly varied. If low, all may be similar. No spectrum of diversity.
+    status: "known_limitation"
+    
+  why_not_fixed:
+    reason: |
+      Fixing requires multiple LLM calls with different temperatures, which
+      increases latency and cost by factor of N. Current implementation uses
+      single batched call for efficiency.
+    cost_estimate: |
+      Current: 1 LLM call for N candidates (batched)
+      With fix: N LLM calls (sequential or parallel)
+      Latency impact: ~N× increase
+      
+  mitigation_strategies:
+    strategy_1:
+      name: "Inter-batch temperature variation"
+      description: "Vary temperature across batches, not within"
+      implementation: |
+        batch_temperatures = [0.7, 0.8, 0.9, 1.0, 1.1]
+        for batch in batches:
+            temp = batch_temperatures[batch_id % len(batch_temperatures)]
+            generate(batch, temperature=temp)
+      effectiveness: "Medium - provides some diversity across batches"
+      
+    strategy_2:
+      name: "Top-p variation"
+      description: "Keep temperature fixed, vary top_p (nucleus sampling)"
+      implementation: |
+        Generate N candidates with same temperature but vary top_p
+        from 0.8 to 0.95 across candidates.
+      effectiveness: "Low-Medium - top_p variation less impactful than temperature"
+      
+    strategy_3:
+      name: "Post-hoc diversity filtering"
+      description: "Generate more candidates, filter for diversity"
+      implementation: |
+        Generate 2N candidates
+        Compute pairwise similarity
+        Select N most diverse while maintaining quality threshold
+      effectiveness: "High - but increases cost by 2×"
+      
+  recommended_approach:
+    primary: "strategy_1"  # Inter-batch temperature variation
+    rationale: "Best balance of diversity improvement vs cost"
+    
+  future_work:
+    description: "Consider multi-temperature batched generation if vLLM supports it"
+    tracking_issue: "SIMULA-142"

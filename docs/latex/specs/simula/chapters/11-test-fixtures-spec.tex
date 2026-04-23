@@ -1,0 +1,346 @@
+\chapter{Test Fixture Specification}\label{ch:test-fixtures}\label{sim:ch:test-fixtures}
+
+This chapter specifies the test fixture requirements for all domains, addressing
+the review finding that ``testing sections lack substance.'' Fixtures provide
+standardised test data for unit, integration, and performance testing.
+
+\section{Overview}
+
+Test fixtures are pre-defined datasets that enable:
+\begin{itemize}
+  \item Deterministic test execution (same input $\rightarrow$ same output)
+  \item Coverage of edge cases and boundary conditions
+  \item Regression testing across releases
+  \item Performance benchmarking with consistent data volumes
+\end{itemize}
+
+All fixtures \textbf{must} be sanitised for PII and checked into version control.
+
+\section{Fixture Count Calculation Methodology}
+\label{sec:fixture-count-methodology}
+
+The fixture counts specified in this chapter are derived systematically, not
+arbitrarily. This section documents the calculation methodology for auditability
+and future extension.
+
+\subsection{Coverage-Based Calculation}
+
+Fixture counts are derived using a \textbf{pairwise coverage} approach (2-way
+combinatorial testing), which ensures that every pair of input parameters is
+tested at least once. For a feature with $k$ parameters, each with $v_i$ values:
+
+\[
+\text{Min Fixtures} = \max\left(\prod_{i=1}^{2} v_{\text{top-}i}\right)
+\]
+
+\noindent
+where $v_{\text{top-}1}$ and $v_{\text{top-}2}$ are the two parameters with the
+most values. This provides a lower bound; actual counts include additional
+edge case and boundary fixtures.
+
+\subsection{Fixture Count Derivation by Domain}
+
+\begin{table}[htbp]
+\centering
+\caption{Fixture count derivation methodology.}
+\label{tab:fixture-derivation}
+\footnotesize
+\begin{tabularx}{\textwidth}{@{}l l X@{}}
+\toprule
+\textbf{Domain} & \textbf{Key Parameters} & \textbf{Derivation} \\
+\midrule
+Arabic AP Invoices & 
+  Country (4), VAT category (5), Invoice type (4) &
+  $4 \times 5 = 20$ standard + 35 edge/invalid \\
+TB Extracts &
+  Entity type (3), Period type (4), Volume (3) &
+  $3 \times 4 = 12$ standard + additional volumes \\
+Simula Training &
+  Complexity (3), SQL type (5), Schema size (3) &
+  $5 \times 3 = 15$ per category, 4.6x for coverage \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\subsection{Edge Case Multiplier}
+
+Beyond combinatorial coverage, fixtures include:
+\begin{description}
+  \item[Boundary values (1.5x):] Min, max, and mid-range values for numeric fields
+  \item[Invalid inputs (0.5x):] Each valid category has corresponding invalid cases
+  \item[Null/empty handling (0.2x):] Optional fields tested with missing values
+\end{description}
+
+\noindent
+\textbf{Example}: Arabic AP standard fixtures (20) $\times$ 2.2 multiplier $\approx$ 44,
+rounded to 55 to ensure coverage gaps are addressed.
+
+\subsection{Extending Fixture Counts}
+
+When new features require additional fixtures:
+\begin{enumerate}
+  \item Identify new parameters introduced by the feature
+  \item Calculate 2-way coverage requirement: $\text{new} = \max(v_{\text{new}} \times v_{\text{existing}})$
+  \item Apply edge case multiplier (typically 2.0--2.5x)
+  \item Document the derivation in the PR adding the fixtures
+\end{enumerate}
+
+\section{Fixture organisation}
+
+\begin{lstlisting}[basicstyle=\ttfamily\small,caption={Test fixture directory structure.}]
+tests/
+  fixtures/
+    arabic/
+      invoices/
+        sample_invoices.json       # Standard test invoices
+        edge_cases.json            # Boundary conditions
+        invalid_invoices.json      # Validation failure cases
+      ocr/
+        ocr_outputs.json           # OCR extraction results
+        confidence_levels.json     # Various confidence scores
+      vat/
+        vat_rules.json             # Rule definitions
+        expected_checklists.json   # Expected outputs
+    tb/
+      extracts/
+        sample_tb_extract.json     # Standard TB data
+        multi_entity.json          # Multi-legal entity
+      variances/
+        sample_variances.json      # Normal variances
+        anomalies.json             # Anomaly test cases
+      commentary/
+        expected_commentary.json   # AI output targets
+    simula/
+      taxonomy/
+        sample_taxonomy.json       # Taxonomy tree
+        complexity_levels.json     # Complexity examples
+      examples/
+        training_examples.json     # Sample training data
+        rejected_examples.json     # Rejection cases
+    common/
+      schemas/                     # Schema copies for offline validation
+      mock_responses/              # Mock LLM responses
+\end{lstlisting}
+
+\section{Arabic AP fixtures}
+
+\subsection{Invoice fixtures}
+
+\begin{table}[htbp]
+\centering
+\caption{Required invoice fixture categories.}
+\label{tab:invoice-fixtures}
+\footnotesize
+\begin{tabularx}{\linewidth}{@{}l l X@{}}
+\toprule
+\textbf{Category} & \textbf{Count} & \textbf{Coverage} \\ \midrule
+Standard invoices & 20 & All four countries (SA, EG, BH, QA) \\
+Edge cases & 15 & Missing fields, unusual formats \\
+Invalid invoices & 10 & Schema violations, invalid TINs \\
+Credit notes & 5 & Negative amounts, adjustments \\
+Multi-currency & 5 & Non-local currency invoices \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\subsubsection{Fixture schema}
+
+Each invoice fixture \textbf{must} include:
+\begin{lstlisting}[basicstyle=\ttfamily\small]
+{
+  "fixture_id": "INV-SA-001",
+  "description": "Standard Saudi invoice with 15% VAT",
+  "input": { /* invoice.schema.json conformant */ },
+  "expected_output": {
+    "vat_category": "FI",
+    "checklist_results": ["Y", "Y", "Y", ...],
+    "verdict": "RELEASE"
+  },
+  "tags": ["saudi", "standard", "vat-15"]
+}
+\end{lstlisting}
+
+\subsection{OCR fixtures}
+
+\begin{table}[htbp]
+\centering
+\caption{OCR fixture confidence levels.}
+\label{tab:ocr-fixtures}
+\footnotesize
+\begin{tabularx}{\linewidth}{@{}l r X@{}}
+\toprule
+\textbf{Category} & \textbf{Confidence} & \textbf{Purpose} \\ \midrule
+High quality & $>$85\% & Happy path testing \\
+Medium quality & 55--85\% & Threshold boundary testing \\
+Low quality & 30--55\% & Manual review trigger \\
+Very low quality & $<$30\% & Rejection testing \\
+Mixed quality & Varies & Field-level confidence variation \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\section{Trial Balance fixtures}
+
+\subsection{TB extract fixtures}
+
+\begin{table}[htbp]
+\centering
+\caption{Required TB extract fixture categories.}
+\label{tab:tb-fixtures}
+\footnotesize
+\begin{tabularx}{\linewidth}{@{}l l X@{}}
+\toprule
+\textbf{Category} & \textbf{Count} & \textbf{Coverage} \\ \midrule
+Standard TB & 10 & Various account types, normal balances \\
+Multi-entity & 5 & Inter-company, consolidation \\
+Period variations & 5 & Month-end, quarter-end, year-end \\
+Large volume & 3 & 10K, 50K, 100K accounts \\
+Anomalous & 10 & Various anomaly types \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\subsection{Variance fixtures}
+
+Each variance fixture \textbf{must} cover:
+\begin{itemize}
+  \item \textbf{Normal variance}: Within materiality threshold
+  \item \textbf{Material variance}: Exceeds threshold, no anomaly
+  \item \textbf{Spike anomaly}: Period-over-period $>3\sigma$
+  \item \textbf{Sign flip}: Balance sign reversal
+  \item \textbf{New account}: Account appearing for first time
+  \item \textbf{Stale balance}: Unchanged for $>$6 months
+\end{itemize}
+
+\section{Simula fixtures}
+
+\subsection{Taxonomy fixtures}
+
+\begin{lstlisting}[basicstyle=\ttfamily\small,caption={Taxonomy fixture structure.}]
+{
+  "fixture_id": "TAX-001",
+  "description": "Complete taxonomy for SQL generation",
+  "taxonomy": {
+    "name": "SQL Operations",
+    "children": [
+      {
+        "name": "Selection",
+        "complexity_base": 1,
+        "children": [
+          {"name": "Simple WHERE", "complexity_base": 1},
+          {"name": "Compound WHERE", "complexity_base": 2}
+        ]
+      }
+    ]
+  },
+  "expected_node_count": 25,
+  "expected_max_depth": 4
+}
+\end{lstlisting}
+
+\subsection{Training example fixtures}
+
+\begin{table}[htbp]
+\centering
+\caption{Training example fixture requirements.}
+\label{tab:training-fixtures}
+\footnotesize
+\begin{tabularx}{\linewidth}{@{}l l X@{}}
+\toprule
+\textbf{Category} & \textbf{Count} & \textbf{Coverage} \\ \midrule
+Easy examples & 20 & Single-table, simple predicates \\
+Medium examples & 20 & Joins, grouping, ordering \\
+Hard examples & 10 & CTEs, window functions, subqueries \\
+Invalid examples & 10 & Should be rejected by critic \\
+Edge cases & 10 & Unusual HANA types, large schemas \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\section{Common fixtures}
+
+\subsection{Mock LLM responses}
+
+For deterministic testing without live LLM:
+
+\begin{lstlisting}[basicstyle=\ttfamily\small,caption={Mock LLM response fixture.}]
+{
+  "fixture_id": "LLM-MOCK-001",
+  "prompt_pattern": "Extract.*invoice.*fields",
+  "response": {
+    "content": "{\"seller\": {...}, \"totals\": {...}}",
+    "usage": {"prompt_tokens": 500, "completion_tokens": 200},
+    "finish_reason": "stop"
+  },
+  "latency_ms": 1500
+}
+\end{lstlisting}
+
+\subsection{Schema copies}
+
+All JSON Schema files \textbf{must} be copied to \texttt{tests/fixtures/common/schemas/}
+to enable offline validation testing. Update procedure:
+
+\begin{enumerate}
+  \item Run \texttt{scripts/sync-test-schemas.sh} after schema changes
+  \item Verify all fixtures still validate against updated schemas
+  \item Commit schema copies alongside schema source
+\end{enumerate}
+
+\section{Data sanitisation requirements}
+
+All fixtures derived from production data \textbf{must} be sanitised:
+
+\begin{table}[htbp]
+\centering
+\caption{Data sanitisation rules.}
+\label{tab:sanitisation}
+\footnotesize
+\begin{tabularx}{\linewidth}{@{}l X@{}}
+\toprule
+\textbf{Field Type} & \textbf{Sanitisation Method} \\ \midrule
+Company names & Replace with ``ACME Corp'', ``Test Vendor'', etc. \\
+Tax IDs & Generate valid-format fake numbers \\
+Amounts & Randomise within same order of magnitude \\
+Dates & Shift by random offset (preserve day-of-week) \\
+Account numbers & Replace with sequential test numbers \\
+Personal names & Replace with ``John Doe'', ``Jane Smith'', etc. \\
+Addresses & Replace with generic test addresses \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\section{Fixture validation}
+
+\subsection{Schema validation}
+
+All fixtures \textbf{must} pass schema validation:
+
+\begin{lstlisting}[basicstyle=\ttfamily\small]
+pytest tests/fixtures/validate_fixtures.py -v
+\end{lstlisting}
+
+\subsection{Coverage verification}
+
+Fixture coverage is measured by:
+\begin{itemize}
+  \item Schema field coverage: Every schema field exercised
+  \item Enum value coverage: Every enum value used at least once
+  \item Edge case coverage: Boundary values for all numeric fields
+  \item Error path coverage: All error codes triggerable
+\end{itemize}
+
+\section{Implementation checklist}
+
+\begin{itemize}
+  \item[\texttt{[ ]}] Arabic invoice fixtures (55 total per Table~\ref{tab:invoice-fixtures})
+  \item[\texttt{[ ]}] Arabic OCR fixtures (all confidence levels)
+  \item[\texttt{[ ]}] TB extract fixtures (33 total per Table~\ref{tab:tb-fixtures})
+  \item[\texttt{[ ]}] TB variance fixtures (all anomaly types)
+  \item[\texttt{[ ]}] Simula taxonomy fixtures (complete tree structure)
+  \item[\texttt{[ ]}] Simula training example fixtures (70 total)
+  \item[\texttt{[ ]}] Mock LLM response fixtures (all major prompt types)
+  \item[\texttt{[ ]}] Schema copies in fixtures directory
+  \item[\texttt{[ ]}] All fixtures pass schema validation
+  \item[\texttt{[ ]}] Data sanitisation verified (no PII)
+\end{itemize}

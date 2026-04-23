@@ -1,0 +1,252 @@
+% =============================================================================
+% APPENDIX A2: CODE REFERENCE GUIDE
+% Guide to codebase locations implementing IP concepts
+% =============================================================================
+
+\chapter{Code Reference Guide}
+\label{chap:code-reference-guide}
+
+This appendix provides a guide to the SAP-OSS codebase locations that implement IP concepts, including directory structure, key files, and navigation guidance for auditors.
+
+\section{Codebase Overview}
+
+The SAP-OSS codebase is organized under the \filepath{src/} directory:
+
+\begin{verbatim}
+src/
+├── intelligence/           # AI core services
+│   ├── ai-core-pal/       # Governance, agents, PAL service
+│   │   ├── governance/    # IP-001, IP-002 implementations
+│   │   └── data_products/ # ODPS compliance registry
+│   ├── analytics/         # IP-004, IP-007 implementations
+│   ├── vllm-turboquant/   # IP-003 inference safety
+│   └── ocr/               # Document processing
+├── training/              # Training pipelines (IP-005)
+├── generativeUI/          # UI components (IP-006)
+└── data/                  # LangChain, OData integration
+\end{verbatim}
+
+\section{Primary Implementation Files}
+
+\subsection{src/intelligence/analytics/anomaly\_detector.py}
+
+\begin{tabularx}{\textwidth}{@{}lX@{}}
+\toprule
+\textbf{Attribute} & \textbf{Value} \\
+\midrule
+Path & \filepath{src/intelligence/analytics/anomaly\_detector.py} \\
+IP Sources & IP-004 (Time Series), IP-007 (Stochastic Surprise) \\
+Line Count & $\sim$500 lines \\
+Primary Purpose & Anomaly detection with Z-score and MAD methods \\
+\bottomrule
+\end{tabularx}
+
+\subsubsection{Key Classes and Functions}
+
+\begin{longtable}{@{}p{4cm}lp{5cm}@{}}
+\toprule
+\textbf{Class/Function} & \textbf{Lines} & \textbf{IP Concept} \\
+\midrule
+\endfirsthead
+\bottomrule
+\endlastfoot
+
+\funcname{AnomalyDetector} & 63--400 & Main detection class \\
+\funcname{\_determine\_method()} & 258--310 & IP-004 Shapiro-Wilk selection \\
+\funcname{\_zscore\_detection()} & 312--332 & IP-004 Z-score detection \\
+\funcname{\_mad\_detection()} & 334--358 & IP-004 MAD detection \\
+\funcname{detect\_single()} & 162--222 & IP-007 single value detection \\
+\funcname{detect\_spike\_drop()} & 224--256 & IP-004 spike/drop detection \\
+\funcname{AnomalyResult} & 26--46 & IP-007 audit trail structure \\
+\funcname{BatchAnomalyResult} & 48--62 & IP-007 batch audit trail \\
+\funcname{VarianceAnalysisResult} & 366--380 & IP-007 confidence calibration \\
+
+\end{longtable}
+
+\subsubsection{Key Constants}
+
+\begin{longtable}{@{}p{5cm}ll@{}}
+\toprule
+\textbf{Constant} & \textbf{Value} & \textbf{IP Reference} \\
+\midrule
+\endfirsthead
+\bottomrule
+\endlastfoot
+
+\texttt{MAD\_CONSISTENCY\_CONSTANT} & 1.4826 & IP-004 Section 7 \\
+\texttt{ZSCORE\_THRESHOLD} & 3.0 & IP-004 Section 16 \\
+\texttt{MAD\_THRESHOLD} & 3.5 & IP-004 Section 16 \\
+\texttt{SHAPIRO\_P\_THRESHOLD} & 0.05 & IP-004 Section 9 \\
+\texttt{SPIKE\_DROP\_THRESHOLD} & 0.25 & IP-004 Section 9 \\
+
+\end{longtable}
+
+\subsection{src/intelligence/ai-core-pal/governance/audit.py}
+
+\begin{tabularx}{\textwidth}{@{}lX@{}}
+\toprule
+\textbf{Attribute} & \textbf{Value} \\
+\midrule
+Path & \filepath{src/intelligence/ai-core-pal/governance/audit.py} \\
+IP Sources & IP-001 (Governance), IP-002 (Fact Store) \\
+Primary Purpose & Audit logging with immutable records \\
+\bottomrule
+\end{tabularx}
+
+\subsubsection{Key Classes}
+
+\begin{longtable}{@{}p{4cm}p{6cm}@{}}
+\toprule
+\textbf{Class/Function} & \textbf{IP Concept} \\
+\midrule
+\endfirsthead
+\bottomrule
+\endlastfoot
+
+\funcname{AuditLogger} & IP-001 Invariant 6 (complete audit) \\
+\funcname{log\_inference()} & IP-001 inference tracking \\
+\funcname{\_write\_audit\_record()} & IP-002 fact immutability \\
+
+\end{longtable}
+
+\subsection{src/intelligence/ai-core-pal/governance/identity.py}
+
+\begin{tabularx}{\textwidth}{@{}lX@{}}
+\toprule
+\textbf{Attribute} & \textbf{Value} \\
+\midrule
+Path & \filepath{src/intelligence/ai-core-pal/governance/identity.py} \\
+IP Sources & IP-001 (Safety Gates) \\
+Primary Purpose & Model identity and safety validation \\
+\bottomrule
+\end{tabularx}
+
+\subsection{src/intelligence/ai-core-pal/data\_products/registry.yaml}
+
+\begin{tabularx}{\textwidth}{@{}lX@{}}
+\toprule
+\textbf{Attribute} & \textbf{Value} \\
+\midrule
+Path & \filepath{src/intelligence/ai-core-pal/data\_products/registry.yaml} \\
+IP Sources & IP-001 (ODPS Compliance) \\
+Primary Purpose & Data product compliance registry \\
+\bottomrule
+\end{tabularx}
+
+\subsubsection{ODPS Fields}
+
+\begin{longtable}{@{}lll@{}}
+\toprule
+\textbf{YAML Field} & \textbf{IP Predicate} & \textbf{IP-001 Reference} \\
+\midrule
+\endfirsthead
+\bottomrule
+\endlastfoot
+
+\texttt{odps.rules} & \texttt{missing\_rules} & Section 5 \\
+\texttt{odps.controls} & \texttt{missing\_controls} & Section 5 \\
+\texttt{odps.thresholds} & \texttt{missing\_thresholds} & Section 5 \\
+\texttt{odps.implementation} & \texttt{missing\_impl} & Section 5 \\
+\texttt{odps.service} & \texttt{missing\_service} & Section 5 \\
+\texttt{odps.schema} & \texttt{missing\_schema} & Section 5 \\
+\texttt{odps.documentation} & \texttt{missing\_docs} & Section 5 \\
+\texttt{odps.tests} & \texttt{missing\_tests} & Section 5 \\
+\texttt{odps.ui} & \texttt{missing\_ui} & Section 5 \\
+
+\end{longtable}
+
+\section{Directory by IP Source}
+
+\begin{table}[H]
+\centering
+\caption{IP Source to Directory Mapping}
+\label{tab:ip-directory-map}
+\begin{tabularx}{\textwidth}{@{}llX@{}}
+\toprule
+\textbf{IP ID} & \textbf{Primary Directory} & \textbf{Contents} \\
+\midrule
+IP-001 & \filepath{src/intelligence/ai-core-pal/governance/} & Blanket control, safety gates, audit \\
+IP-002 & \filepath{src/intelligence/ai-core-pal/governance/} & Fact integrity, immutable records \\
+IP-003 & \filepath{src/intelligence/vllm-turboquant/} & LLM inference configuration \\
+IP-004 & \filepath{src/intelligence/analytics/} & Anomaly detection, MAD, Z-score \\
+IP-005 & \filepath{src/training/} & Mathematical foundations \\
+IP-006 & \filepath{src/generativeUI/} & UI patterns, analytics display \\
+IP-007 & \filepath{src/intelligence/analytics/} & Surprise detection, audit trails \\
+IP-008 & \filepath{src/intelligence/analytics/} & Adaptive calibration concepts \\
+IP-009 & \filepath{src/intelligence/ai-core-pal/} & Stability patterns, governance \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\section{Code Navigation for Auditors}
+
+\subsection{Finding IP Concept Implementations}
+
+To locate implementations of specific IP concepts:
+
+\begin{enumerate}[nosep]
+    \item \textbf{Search for IP references in comments}: Many implementations include IP document references in docstrings:
+    \begin{verbatim}
+    grep -r "IP-004" src/
+    grep -r "Section 7" src/intelligence/analytics/
+    \end{verbatim}
+    
+    \item \textbf{Search for specific constants}:
+    \begin{verbatim}
+    grep -r "1.4826" src/   # MAD constant
+    grep -r "ZSCORE_THRESHOLD" src/
+    \end{verbatim}
+    
+    \item \textbf{Search for function names}:
+    \begin{verbatim}
+    grep -r "_mad_detection" src/
+    grep -r "detect_spike_drop" src/
+    \end{verbatim}
+\end{enumerate}
+
+\subsection{Verification Checklist}
+
+For each IP concept implementation, auditors should verify:
+
+\begin{itemize}[nosep]
+    \item[$\square$] Code file exists at documented location
+    \item[$\square$] Function/class name matches documentation
+    \item[$\square$] Constants match IP specification values
+    \item[$\square$] Algorithm logic matches IP description
+    \item[$\square$] Docstrings reference IP source (where applicable)
+\end{itemize}
+
+\section{External Dependencies}
+
+Some IP concepts are implemented through external libraries:
+
+\begin{table}[H]
+\centering
+\caption{External Library Dependencies}
+\begin{tabularx}{\textwidth}{@{}lllX@{}}
+\toprule
+\textbf{IP ID} & \textbf{Library} & \textbf{Version} & \textbf{Concept} \\
+\midrule
+IP-003 & vLLM & $\geq$ 0.4.0 & Softmax, RoPE, quantization \\
+IP-004 & scipy & $\geq$ 1.10 & Shapiro-Wilk test \\
+IP-004 & numpy & $\geq$ 1.24 & Array operations, median \\
+IP-005 & numpy & $\geq$ 1.24 & Mathematical primitives \\
+IP-005 & scipy & $\geq$ 1.10 & Statistical functions \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\section{Test Coverage}
+
+IP concept implementations are covered by tests in:
+
+\begin{itemize}[nosep]
+    \item \filepath{tests/intelligence/analytics/} -- Anomaly detection tests
+    \item \filepath{tests/intelligence/ai-core-pal/} -- Governance tests
+\end{itemize}
+
+Key test files:
+\begin{itemize}[nosep]
+    \item \filepath{test\_anomaly\_detector.py} -- Tests for IP-004, IP-007 concepts
+    \item \filepath{test\_governance.py} -- Tests for IP-001, IP-002 concepts
+\end{itemize}

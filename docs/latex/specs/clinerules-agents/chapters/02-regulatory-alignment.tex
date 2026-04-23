@@ -1,0 +1,142 @@
+\chapter{Regulatory Alignment}
+\label{ch:reg-alignment}
+
+\section{Principle}
+
+Every \artifact{.clinerules} pack in this repository must inherit the
+governance obligations defined by
+\filepath{docs/pdf/specs/regulations-spec.pdf}. Alignment is not
+optional for domain packs. It is the precondition for claiming that an
+agent is suitable for development, deployment, or runtime supervision.
+
+\section{Minimum mapping from regulations to rule packs}
+
+\begin{table}[htbp]
+\centering
+\footnotesize
+\caption{Required mapping from regulations obligations to rule-pack behaviour.}
+\label{tab:reg-map}
+\begin{tabularx}{\textwidth}{@{}L{3.2cm}L{3.0cm}X@{}}
+\toprule
+\textbf{Regulations requirement} & \textbf{Source in regulations spec} & \textbf{Rule-pack implication} \\
+\midrule
+\reqid{REG-MGF-2.1.2-001} explicit tool allow-list, deny-by-default & Chapter 3, Pillar 1 & Development agents must cite the allow-list source; runtime agents must alert on undeclared tool use or path bypass. \\
+\reqid{REG-MGF-2.1.2-002} per-action identity attribution & Chapter 3, Pillar 1 and Chapter 10 & Development agents must require identity envelope propagation and audit-event schema alignment; runtime agents must fail closed on missing identity evidence. \\
+\reqid{REG-MGF-2.1.2-003} impact-limiting boundaries & Chapter 3, Pillar 1 & Development agents must preserve read-only defaults, environment segregation, and explicit escalation for higher-risk actions. \\
+\reqid{REG-MGF-2.2.1-001} named lifecycle responsibilities & Chapter 3, Pillar 2 & Every rule pack must name its owning domain and the responsibilities of the agent. \\
+\reqid{REG-MGF-2.2.2-001} human approval checkpoints & Chapter 3, Pillar 2 & Runtime agents must know when to escalate, block, or require human acknowledgement. \\
+\reqid{REG-MGF-2.3.1-001} technical controls on planning, tools, protocols & Chapter 3, Pillar 3 & Development packs must encode source of truth, read-first files, non-negotiable engineering rules, and completion blockers. \\
+\reqid{REG-MGF-2.3.2-001} pre-deployment evaluation & Chapter 3, Pillar 3 and Chapter 6 & Development packs must define runnable validation steps and conformance expectations. \\
+\reqid{REG-MGF-2.3.3-001} staged rollout and rollback & Chapter 3, Pillar 3 and Chapter 8 & Runtime packs must recognize degradation ladders, rollback triggers, and canary-style alerting. \\
+\reqid{REG-MGF-2.3.3-002} continuous monitoring & Chapter 3, Pillar 3 and Chapter 8 & Runtime packs must define metrics, thresholds, severities, response rules, and circuit-break conditions. \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\section{Identity and audit obligations}
+
+Rule packs that touch live execution must align to the identity and
+audit schemas under \filepath{docs/schema/regulations/}:
+\begin{itemize}
+  \item \filepath{agent-identity.schema.json}
+  \item \filepath{request-identity.schema.json}
+  \item \filepath{audit-event.schema.json}
+\end{itemize}
+
+This means:
+\begin{itemize}
+  \item no agent action without a request identity;
+  \item no action without an attributable agent identity;
+  \item no irreversible side effect unless the audit path is in a
+    valid pre-action state;
+  \item no runtime monitor may declare a run healthy if the evidence
+    chain is partial.
+\end{itemize}
+
+\section{Monitoring obligations}
+
+Runtime-monitor packs must inherit the monitoring model from Chapter 8
+of the regulations book:
+\begin{itemize}
+  \item explicit metrics;
+  \item explicit detection triggers;
+  \item explicit severity levels;
+  \item explicit routing and escalation;
+  \item explicit graceful degradation and circuit-break behaviour.
+\end{itemize}
+
+The minimum thresholds that runtime packs must encode include:
+\begin{itemize}
+  \item schema-violation surge above 5\% of requests;
+  \item refusal rate above 3x baseline;
+  \item topic similarity below 0.7;
+  \item latency p95 above 1.5x baseline;
+  \item circuit-break escalation after 3 consecutive critical alerts in
+    15 minutes.
+\end{itemize}
+
+\section{Baseline warm-up period}
+\label{sec:baseline-warmup}
+
+For newly deployed agents or after major model/rule-pack changes, the
+runtime-monitor SHOULD enter a \texttt{LEARNING} state for a defined
+period before enforcing baseline-dependent thresholds. This prevents
+false-positive alert storms during cold-start conditions.
+
+\subsection{Warm-up parameters}
+
+\begin{table}[htbp]
+\centering
+\footnotesize
+\caption{Baseline warm-up configuration.}
+\label{tab:warmup-config}
+\begin{tabularx}{\textwidth}{@{}l l X@{}}
+\toprule
+\textbf{Parameter} & \textbf{Default} & \textbf{Description} \\
+\midrule
+\texttt{warmup\_duration} & 24 hours & Minimum time before transitioning to \texttt{ENFORCING}. \\
+\texttt{warmup\_requests} & 1{,}000 & Minimum request count before transitioning. \\
+\texttt{warmup\_trigger} & Both & Transition occurs when \emph{both} duration and request count are satisfied. \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\subsection{Behaviour during warm-up}
+
+During the \texttt{LEARNING} state:
+\begin{itemize}
+  \item Alerts SHALL be logged to the audit trail but SHALL NOT be
+    routed to on-call escalation channels.
+  \item The system MUST automatically establish rolling baselines
+    (P50/P95) for latency, refusal rate, and topic distribution.
+  \item Absolute thresholds (e.g., schema-violation surge above 5\%)
+    remain enforced; only baseline-relative thresholds (e.g., 3x
+    baseline) are suspended.
+  \item The warm-up state MUST be visible in the monitoring dashboard
+    with a countdown indicator.
+\end{itemize}
+
+\subsection{Transition to enforcing state}
+
+After the warm-up period completes:
+\begin{itemize}
+  \item The monitor transitions to \texttt{ENFORCING} state
+    automatically.
+  \item An informational alert is logged recording the established
+    baselines (P50, P95, mean for each metric).
+  \item All baseline-relative thresholds become active.
+  \item Manual override to extend warm-up requires explicit operator
+    approval with audit justification.
+\end{itemize}
+
+\subsection{Warm-up reset triggers}
+
+The warm-up period MUST reset when any of the following occur:
+\begin{itemize}
+  \item Major model version change (detected via
+    \filepath{src/intelligence/model-registry.yaml});
+  \item Rule-pack version increment in the governing
+    \filepath{.clinerules} file;
+  \item Explicit operator command with audit justification;
+  \item Infrastructure migration affecting the monitored endpoint.
+\end{itemize}

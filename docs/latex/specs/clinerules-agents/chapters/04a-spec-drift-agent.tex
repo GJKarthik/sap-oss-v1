@@ -1,0 +1,314 @@
+\chapter{Spec-Drift Audit Agent}
+\label{ch:spec-drift-agent}
+
+\section{Purpose and scope}
+
+The Spec-Drift Audit Agent is a specialized governance agent that monitors
+synchronization between three artifact types:
+
+\begin{enumerate}
+  \item \textbf{LaTeX specifications} in \filepath{docs/latex/specs/}
+  \item \textbf{JSON/YAML schemas} in \filepath{docs/schema/}
+  \item \textbf{Implementation code} in \filepath{src/}
+\end{enumerate}
+
+When any of these artifacts change, the agent ensures related artifacts are
+also updated to maintain consistency. This prevents \emph{specification drift}
+where documentation diverges from implementation.
+
+\section{Agent configuration files}
+
+\subsection{Primary configuration}
+
+\begin{table}[htbp]
+\centering
+\footnotesize
+\caption{Spec-drift agent configuration files.}
+\label{tab:spec-drift-files}
+\begin{tabularx}{\textwidth}{@{}l X@{}}
+\toprule
+\textbf{File} & \textbf{Purpose} \\
+\midrule
+\filepath{.clinerules.spec-drift-auditor} & Agent behavior rules and drift type definitions \\
+\filepath{docs/schema/spec-code-mapping.yaml} & Traceability registry mapping artifacts \\
+\filepath{docs/schema/drift-exceptions.yaml} & Approved exceptions with expiration \\
+\filepath{scripts/spec-drift/audit.py} & Drift detection engine implementation \\
+\filepath{scripts/spec-drift/pre-commit-hook.sh} & Git pre-commit hook \\
+\filepath{.github/workflows/spec-drift-audit.yml} & CI/CD workflow \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\subsection{Domain-specific rule packs}
+
+Each specification directory contains a \filepath{.clinerules} file that
+defines domain-specific synchronization rules:
+
+\begin{table}[htbp]
+\centering
+\footnotesize
+\caption{Domain-specific .clinerules locations.}
+\label{tab:domain-clinerules}
+\begin{tabularx}{\textwidth}{@{}l X@{}}
+\toprule
+\textbf{Location} & \textbf{Domain} \\
+\midrule
+\filepath{docs/schema/.clinerules} & Schema governance and data contracts \\
+\filepath{docs/latex/specs/.clinerules} & Specification directory standards \\
+\filepath{docs/latex/specs/simula/.clinerules} & Training data framework \\
+\filepath{docs/latex/specs/regulations/.clinerules} & AI regulatory compliance \\
+\filepath{docs/latex/specs/arabic/.clinerules} & Arabic AP Invoice processing \\
+\filepath{docs/latex/specs/tb/.clinerules} & Trial Balance review \\
+\filepath{docs/latex/specs/tb-hitl/.clinerules} & TB business requirements \\
+\filepath{docs/latex/specs/arabic-hitl/.clinerules} & Arabic business requirements \\
+\filepath{docs/latex/specs/clinerules-agents/.clinerules} & This specification \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\section{Drift types detected}
+\label{sec:drift-types}
+
+The audit agent detects eight categories of specification drift:
+
+\begin{table}[htbp]
+\centering
+\footnotesize
+\caption{Drift type classification.}
+\label{tab:drift-types}
+\begin{tabularx}{\textwidth}{@{}l l X@{}}
+\toprule
+\textbf{Code} & \textbf{Severity} & \textbf{Description} \\
+\midrule
+DRIFT-001 & HIGH/MEDIUM & Schema-Spec Drift: Schema field changed without spec update \\
+DRIFT-002 & CRITICAL/HIGH & Code-Schema Drift: Code references non-existent schema fields \\
+DRIFT-003 & CRITICAL/HIGH & Code-Spec Drift: Code behavior contradicts spec requirement \\
+DRIFT-004 & HIGH/MEDIUM & Version Drift: Version numbers out of sync \\
+DRIFT-005 & CRITICAL/HIGH & Cross-Domain Drift: Shared enum changed without updating consumers \\
+DRIFT-006 & HIGH/MEDIUM & Threshold Drift: Code uses different threshold than spec \\
+DRIFT-007 & CRITICAL/HIGH & State Machine Drift: Workflow states differ between code and spec \\
+DRIFT-008 & CRITICAL/HIGH & API Contract Drift: API differs from spec documentation \\
+DRIFT-009 & CRITICAL/HIGH & Text-to-SQL Schema Drift: HANA schema changed without training data update \\
+DRIFT-010 & HIGH/MEDIUM & Text-to-SQL Semantic Drift: Prompt intent no longer aligns with SQL output \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\subsection{Text-to-SQL Drift Types (DRIFT-009, DRIFT-010)}
+
+Text-to-SQL pipelines require specialized drift detection due to the three-way
+relationship between HANA schemas, natural language prompts, and generated SQL.
+See Chapter~18 of the Simula specification for complete details.
+
+\begin{description}
+  \item[DRIFT-009: Text-to-SQL Schema Drift] Triggered when HANA Cloud schema
+    changes (column additions, removals, type changes) are not reflected in
+    training data within the staleness threshold (default: 7 days). This drift
+    type maps to TTS-DRIFT-001 in the Simula specification.
+    
+  \item[DRIFT-010: Text-to-SQL Semantic Drift] Triggered when the semantic
+    alignment between user prompts and generated SQL degrades below threshold
+    (SAS $< 0.80$). This includes terminology drift where user vocabulary
+    diverges from schema terminology. Maps to TTS-DRIFT-003 and TTS-DRIFT-004.
+\end{description}
+
+The TTS drift detection framework includes 12 metrics (TTS-M01 to TTS-M12) and
+a composite TTS-EVAL score. For full metric definitions, thresholds, and
+calculation formulas, see:
+
+\begin{itemize}
+  \item \filepath{docs/latex/specs/simula/chapters/18-text-to-sql-drift.tex}
+  \item \filepath{docs/schema/simula/tts-drift-metrics.schema.json}
+  \item \filepath{docs/schema/simula/tts-drift-alert.schema.json}
+  \item \filepath{docs/hana-cloud/TTS\_DRIFT\_TABLES\_DDL.sql}
+\end{itemize}
+
+\section{Enforcement mechanisms}
+\label{sec:enforcement}
+
+\textbf{CRITICAL: To guarantee spec-drift checks always run, multiple
+enforcement layers are required.} No single mechanism is sufficient.
+
+\subsection{Layer 1: CI/CD enforcement (Mandatory)}
+
+The GitHub Actions workflow at \filepath{.github/workflows/spec-drift-audit.yml}
+provides server-side enforcement that \textbf{cannot be bypassed} by developers:
+
+\begin{lstlisting}[language=yamlx,caption=CI/CD enforcement configuration]
+on:
+  pull_request:
+    branches: [main, develop]
+  push:
+    branches: [main]
+
+jobs:
+  spec-drift-audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run spec-drift audit
+        run: make audit-spec-drift-ci
+      # Fails PR if CRITICAL or HIGH drift detected
+\end{lstlisting}
+
+This layer is \textbf{mandatory} because:
+\begin{itemize}
+  \item It runs on the server, not developer machines
+  \item Branch protection rules can require it to pass
+  \item Developers cannot skip or disable it locally
+  \item All PRs are audited regardless of local setup
+\end{itemize}
+
+\subsection{Layer 2: Local pre-commit hook (Recommended)}
+
+The pre-commit hook provides early feedback during development:
+
+\begin{lstlisting}[language=bash,caption=Pre-commit hook installation]
+# One-time setup per developer
+make audit-install-hook
+\end{lstlisting}
+
+This layer is \textbf{recommended} but not mandatory because:
+\begin{itemize}
+  \item Developers must opt-in by running the install command
+  \item Hooks can be bypassed with \texttt{git commit --no-verify}
+  \item It improves developer experience but doesn't guarantee compliance
+\end{itemize}
+
+\subsection{Layer 3: Manual audit commands (On-demand)}
+
+Developers can run audits manually at any time:
+
+\begin{lstlisting}[language=bash,caption=Manual audit commands]
+# Full audit
+make audit-spec-drift
+
+# Domain-specific audit
+make audit-spec-drift-domain DOMAIN=simula
+
+# Quick check on local changes
+make audit-spec-drift-quick
+\end{lstlisting}
+
+\section{Developer onboarding}
+\label{sec:onboarding}
+
+New developers MUST complete the following setup:
+
+\begin{enumerate}
+  \item \textbf{Clone repository}: Standard git clone
+  \item \textbf{Install Python dependencies}: \texttt{pip install pyyaml}
+  \item \textbf{Install pre-commit hook}: \texttt{make audit-install-hook}
+  \item \textbf{Verify installation}: \texttt{make audit-spec-drift}
+\end{enumerate}
+
+The onboarding checklist is documented in \filepath{scripts/spec-drift/README.md}.
+
+\textbf{Note}: Even if a developer skips step 3, the CI/CD enforcement
+(Layer 1) will catch any drift when they create a pull request.
+
+\section{Traceability registry}
+\label{sec:traceability}
+
+The \filepath{docs/schema/spec-code-mapping.yaml} file defines relationships
+between artifacts:
+
+\begin{lstlisting}[language=yamlx,caption=Example traceability mapping]
+domains:
+  simula:
+    spec_root: docs/latex/specs/simula
+    schema_root: docs/schema/simula
+    code_root: src/training
+    
+    artifacts:
+      - id: simula-taxonomy
+        type: chapter
+        spec_path: docs/latex/specs/simula/chapters/05-taxonomy-engine.tex
+        related_schemas:
+          - docs/schema/simula/taxonomy.schema.json
+        related_code:
+          - src/training/pipeline/simula_taxonomy_builder.py
+        sync_rules:
+          - "Taxonomy node structure changes require spec+schema+code update"
+\end{lstlisting}
+
+When any file in a relationship changes, the audit agent flags all related
+files as potentially requiring updates.
+
+\section{Drift exceptions}
+\label{sec:exceptions}
+
+Temporary exceptions can be granted via \filepath{docs/schema/drift-exceptions.yaml}:
+
+\begin{lstlisting}[language=yamlx,caption=Drift exception format]
+exceptions:
+  - id: "EXC-001"
+    created: "2026-04-21"
+    expires: "2026-06-21"      # REQUIRED: Max 90 days
+    owner: "team-lead@example.com"
+    drift_type: "DRIFT-003"
+    file_pattern: "src/training/experiments/.*"
+    rationale: |
+      Experimental code is not yet production-ready.
+    resolution_plan: |
+      Formalize or remove before GA release.
+    tracking_issue: "https://github.com/org/repo/issues/123"
+\end{lstlisting}
+
+\textbf{Exception governance rules:}
+\begin{itemize}
+  \item All exceptions MUST have an expiration date (max 90 days)
+  \item Exceptions MUST have an owner and tracking issue
+  \item Expired exceptions are flagged in audit reports
+  \item Permanent exceptions require Architecture Review Board approval
+\end{itemize}
+
+\section{Minimum acceptance criteria}
+
+The spec-drift agent MUST satisfy:
+
+\begin{enumerate}
+  \item \textbf{CI/CD workflow exists} and is configured as a required status check
+  \item \textbf{Traceability registry covers} all domain specifications
+  \item \textbf{CRITICAL/HIGH drift} blocks PR merges
+  \item \textbf{Audit reports} are archived for 90 days
+  \item \textbf{Documentation} includes onboarding and troubleshooting guides
+  \item \textbf{All .clinerules files} reference the traceability registry
+\end{enumerate}
+
+\section{Guaranteeing enforcement}
+\label{sec:guarantee}
+
+To \textbf{guarantee} spec-drift checks always run:
+
+\begin{enumerate}
+  \item \textbf{Enable branch protection} on \texttt{main} and \texttt{develop}:
+    \begin{itemize}
+      \item Require status checks to pass before merging
+      \item Add \texttt{spec-drift-audit} as a required status check
+      \item Disable force pushes and branch deletion
+    \end{itemize}
+  
+  \item \textbf{Configure repository settings}:
+    \begin{itemize}
+      \item Disable direct commits to protected branches
+      \item Require pull request reviews
+      \item Require signed commits (optional but recommended)
+    \end{itemize}
+  
+  \item \textbf{Monitor compliance} via audit logs:
+    \begin{itemize}
+      \item GitHub Actions logs all audit runs
+      \item Failed audits are visible in PR status
+      \item Administrators can review bypass attempts
+    \end{itemize}
+\end{enumerate}
+
+\begin{tcolorbox}[colback=yellow!5,colframe=yellow!70,title=\faIcon{exclamation-triangle} Enforcement Configuration Required]
+The GitHub repository MUST have branch protection rules configured with
+\texttt{spec-drift-audit} as a required status check. Without this
+configuration, developers can merge PRs that bypass drift detection.
+
+\textbf{Action required}: Repository administrators must configure branch
+protection rules in GitHub settings $\rightarrow$ Branches $\rightarrow$ Add rule.
+\end{tcolorbox}

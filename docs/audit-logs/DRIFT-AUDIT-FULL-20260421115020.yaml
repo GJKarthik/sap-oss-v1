@@ -1,0 +1,14 @@
+report_id: DRIFT-AUDIT-FULL-20260421115020
+trigger: full
+commit_sha: d07852629a0f5c525c2071632855b2e8840f2ead
+branch: main
+timestamp: '2026-04-21T11:50:20.578331'
+changed_files: []
+findings: []
+summary:
+  critical_count: 0
+  high_count: 0
+  medium_count: 0
+  low_count: 0
+  total_findings: 0
+  blocking: false

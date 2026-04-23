@@ -1,0 +1,48 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://sap-oss.github.io/schema/regulations/conformance-tool.schema.json",
+  "title": "Conformance Tool Record",
+  "description": "Schema for conformance testing tools (AI Verify, Moonshot)",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["tool_id", "name", "tool_type"],
+  "properties": {
+    "tool_id": {
+      "type": "string",
+      "description": "Unique identifier"
+    },
+    "name": {
+      "type": "string",
+      "description": "Tool name"
+    },
+    "tool_type": {
+      "type": "string",
+      "enum": ["aiverify_plugin", "moonshot_benchmark", "moonshot_attack", "custom_validator"],
+      "description": "Type of tool"
+    },
+    "version": {
+      "type": "string"
+    },
+    "repository_path": {
+      "type": "string",
+      "description": "Path within vendor repo"
+    },
+    "requirements_covered": {
+      "type": "array",
+      "items": {"type": "string"},
+      "description": "Requirement IDs this tool helps verify"
+    },
+    "execution_metadata": {
+      "type": "object",
+      "properties": {
+        "last_run": {"type": "string", "format": "date-time"},
+        "result": {"type": "string", "enum": ["pass", "fail", "skipped", "error"]},
+        "result_path": {"type": "string"},
+        "is_automated": {"type": "boolean", "default": false}
+      }
+    },
+    "metadata": {
+      "$ref": "https://sap-oss.github.io/schema/common/base-types.schema.json#/definitions/Metadata"
+    }
+  }
+}

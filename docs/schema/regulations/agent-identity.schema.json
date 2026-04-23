@@ -1,0 +1,69 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://sap-oss.github.io/schema/regulations/agent-identity.schema.json",
+  "title": "Agent Identity",
+  "description": "Schema for AI agent identity records used in per-request attribution (Chapter 10 §10.2.1)",
+  "type": "object",
+  "required": [
+    "agent_id",
+    "agent_type",
+    "model_version",
+    "pipeline_version",
+    "deployment_environment",
+    "capabilities",
+    "permissions"
+  ],
+  "properties": {
+    "agent_id": {
+      "type": "string",
+      "pattern": "^agent-[a-z0-9-]+$",
+      "description": "Unique agent identifier (e.g., agent-tb-variance-001)"
+    },
+    "agent_type": {
+      "type": "string",
+      "description": "Agent role/type (e.g., variance_analyzer)"
+    },
+    "model_version": {
+      "type": "string",
+      "description": "Backing model version (e.g., qwen2.5-72b-instruct-v1.2)"
+    },
+    "pipeline_version": {
+      "type": "string",
+      "description": "Pipeline version (semver-ish, e.g., tb-review-2.1.0)"
+    },
+    "deployment_environment": {
+      "type": "string",
+      "enum": ["development", "staging", "production"],
+      "description": "Deployment environment"
+    },
+    "capabilities": {
+      "type": "array",
+      "items": {"type": "string"},
+      "description": "Capabilities the agent is permitted to perform"
+    },
+    "permissions": {
+      "type": "object",
+      "required": [
+        "can_modify_data",
+        "can_trigger_downstream",
+        "requires_human_approval"
+      ],
+      "properties": {
+        "can_modify_data": {
+          "type": "boolean",
+          "description": "Whether the agent is permitted to modify persistent data"
+        },
+        "can_trigger_downstream": {
+          "type": "boolean",
+          "description": "Whether the agent is permitted to invoke downstream systems"
+        },
+        "requires_human_approval": {
+          "type": "array",
+          "items": {"type": "string"},
+          "description": "Capabilities that require human approval before execution"
+        }
+      },
+      "description": "Permission envelope applied to the agent"
+    }
+  }
+}

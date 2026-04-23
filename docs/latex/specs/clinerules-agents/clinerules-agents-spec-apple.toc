@@ -1,0 +1,90 @@
+\contentsline {chapter}{\numberline {1}Frontmatter}{9}{chapter.1}%
+\contentsline {section}{\numberline {1.1}Purpose}{12}{section.1.1}%
+\contentsline {section}{\numberline {1.2}Normative relationship to the regulations specification}{12}{section.1.2}%
+\contentsline {section}{\numberline {1.3}Scope}{12}{section.1.3}%
+\contentsline {section}{\numberline {1.4}Deliverables required by this specification}{13}{section.1.4}%
+\contentsline {section}{\numberline {1.5}Current repository examples}{13}{section.1.5}%
+\contentsline {chapter}{\numberline {2}Overview}{15}{chapter.2}%
+\contentsline {section}{\numberline {2.1}What a .clinerules agent is}{15}{section.2.1}%
+\contentsline {section}{\numberline {2.2}Two mandatory agent types}{15}{section.2.2}%
+\contentsline {section}{\numberline {2.3}Why the split is required}{16}{section.2.3}%
+\contentsline {section}{\numberline {2.4}Why a swarm is needed}{16}{section.2.4}%
+\contentsline {section}{\numberline {2.5}Rule-pack lifecycle states}{16}{section.2.5}%
+\contentsline {subsection}{\numberline {2.5.1}Lifecycle invariants}{17}{subsection.2.5.1}%
+\contentsline {chapter}{\numberline {3}Regulatory Alignment}{19}{chapter.3}%
+\contentsline {section}{\numberline {3.1}Principle}{19}{section.3.1}%
+\contentsline {section}{\numberline {3.2}Minimum mapping from regulations to rule packs}{19}{section.3.2}%
+\contentsline {section}{\numberline {3.3}Identity and audit obligations}{19}{section.3.3}%
+\contentsline {section}{\numberline {3.4}Monitoring obligations}{21}{section.3.4}%
+\contentsline {section}{\numberline {3.5}Baseline warm-up period}{21}{section.3.5}%
+\contentsline {subsection}{\numberline {3.5.1}Warm-up parameters}{22}{subsection.3.5.1}%
+\contentsline {subsection}{\numberline {3.5.2}Behaviour during warm-up}{22}{subsection.3.5.2}%
+\contentsline {subsection}{\numberline {3.5.3}Transition to enforcing state}{22}{subsection.3.5.3}%
+\contentsline {subsection}{\numberline {3.5.4}Warm-up reset triggers}{23}{subsection.3.5.4}%
+\contentsline {chapter}{\numberline {4}Agent Rule-Pack Architecture}{25}{chapter.4}%
+\contentsline {section}{\numberline {4.1}Repository path convention}{25}{section.4.1}%
+\contentsline {section}{\numberline {4.2}Frontmatter format definition}{26}{section.4.2}%
+\contentsline {section}{\numberline {4.3}Minimum contents of a development pack}{26}{section.4.3}%
+\contentsline {section}{\numberline {4.4}Minimum contents of a runtime-monitor pack}{26}{section.4.4}%
+\contentsline {section}{\numberline {4.5}Cross-domain inventory required by this specification}{27}{section.4.5}%
+\contentsline {section}{\numberline {4.6}Rule-pack inheritance conflict detection}{28}{section.4.6}%
+\contentsline {subsection}{\numberline {4.6.1}Inheritance hierarchy}{28}{subsection.4.6.1}%
+\contentsline {subsection}{\numberline {4.6.2}Critical safety flags}{28}{subsection.4.6.2}%
+\contentsline {subsection}{\numberline {4.6.3}Automated conflict detection}{28}{subsection.4.6.3}%
+\contentsline {subsection}{\numberline {4.6.4}Conflict resolution workflow}{29}{subsection.4.6.4}%
+\contentsline {chapter}{\numberline {5}Regulatory Agents}{31}{chapter.5}%
+\contentsline {section}{\numberline {5.1}Why the regulations agents live in \texttt {src/intelligence}}{31}{section.5.1}%
+\contentsline {section}{\numberline {5.2}Required regulatory development agent}{31}{section.5.2}%
+\contentsline {section}{\numberline {5.3}Required regulatory runtime-monitor agent}{32}{section.5.3}%
+\contentsline {section}{\numberline {5.4}Minimum acceptance criteria for the regulations agent pair}{33}{section.5.4}%
+\contentsline {section}{\numberline {5.5}Ingress overlay requirements}{33}{section.5.5}%
+\contentsline {subsection}{\numberline {5.5.1}Mandatory ingress enforcement}{33}{subsection.5.5.1}%
+\contentsline {subsection}{\numberline {5.5.2}Ingress overlay minimum contents}{34}{subsection.5.5.2}%
+\contentsline {subsection}{\numberline {5.5.3}Inheritance from primary regulatory pair}{34}{subsection.5.5.3}%
+\contentsline {subsection}{\numberline {5.5.4}Exception for non-external gateways}{34}{subsection.5.5.4}%
+\contentsline {chapter}{\numberline {6}Spec-Drift Audit Agent}{37}{chapter.6}%
+\contentsline {section}{\numberline {6.1}Purpose and scope}{37}{section.6.1}%
+\contentsline {section}{\numberline {6.2}Agent configuration files}{37}{section.6.2}%
+\contentsline {subsection}{\numberline {6.2.1}Primary configuration}{37}{subsection.6.2.1}%
+\contentsline {subsection}{\numberline {6.2.2}Domain-specific rule packs}{38}{subsection.6.2.2}%
+\contentsline {section}{\numberline {6.3}Drift types detected}{38}{section.6.3}%
+\contentsline {section}{\numberline {6.4}Enforcement mechanisms}{39}{section.6.4}%
+\contentsline {subsection}{\numberline {6.4.1}Layer 1: CI/CD enforcement (Mandatory)}{39}{subsection.6.4.1}%
+\contentsline {subsection}{\numberline {6.4.2}Layer 2: Local pre-commit hook (Recommended)}{40}{subsection.6.4.2}%
+\contentsline {subsection}{\numberline {6.4.3}Layer 3: Manual audit commands (On-demand)}{40}{subsection.6.4.3}%
+\contentsline {section}{\numberline {6.5}Developer onboarding}{41}{section.6.5}%
+\contentsline {section}{\numberline {6.6}Traceability registry}{41}{section.6.6}%
+\contentsline {section}{\numberline {6.7}Drift exceptions}{42}{section.6.7}%
+\contentsline {section}{\numberline {6.8}Minimum acceptance criteria}{42}{section.6.8}%
+\contentsline {section}{\numberline {6.9}Guaranteeing enforcement}{43}{section.6.9}%
+\contentsline {chapter}{\numberline {7}Swarm Delivery Model}{45}{chapter.7}%
+\contentsline {section}{\numberline {7.1}Objective}{45}{section.7.1}%
+\contentsline {section}{\numberline {7.2}Swarm roles}{45}{section.7.2}%
+\contentsline {section}{\numberline {7.3}Interaction model}{45}{section.7.3}%
+\contentsline {section}{\numberline {7.4}Inter-agent signaling}{45}{section.7.4}%
+\contentsline {subsection}{\numberline {7.4.1}Signal types}{47}{subsection.7.4.1}%
+\contentsline {subsection}{\numberline {7.4.2}Blocking signals}{47}{subsection.7.4.2}%
+\contentsline {subsection}{\numberline {7.4.3}State validation signals}{47}{subsection.7.4.3}%
+\contentsline {subsection}{\numberline {7.4.4}Completion signals}{48}{subsection.7.4.4}%
+\contentsline {subsection}{\numberline {7.4.5}Signal consumption rules}{48}{subsection.7.4.5}%
+\contentsline {section}{\numberline {7.5}Swarm sequencing}{48}{section.7.5}%
+\contentsline {section}{\numberline {7.6}Non-negotiable swarm rules}{49}{section.7.6}%
+\contentsline {chapter}{\numberline {8}Validation and Acceptance}{51}{chapter.8}%
+\contentsline {section}{\numberline {8.1}Rule-pack validation}{51}{section.8.1}%
+\contentsline {section}{\numberline {8.2}Recommended benchmark baseline}{51}{section.8.2}%
+\contentsline {section}{\numberline {8.3}Quantified benchmark scorecard}{52}{section.8.3}%
+\contentsline {subsection}{\numberline {8.3.1}Scorecard metrics}{52}{subsection.8.3.1}%
+\contentsline {subsection}{\numberline {8.3.2}Scoring algorithm}{52}{subsection.8.3.2}%
+\contentsline {section}{\numberline {8.4}The .baseline-clinerules-pointer}{53}{section.8.4}%
+\contentsline {subsection}{\numberline {8.4.1}Scorecard output format}{53}{subsection.8.4.1}%
+\contentsline {subsection}{\numberline {8.4.2}Scorecard integration}{54}{subsection.8.4.2}%
+\contentsline {section}{\numberline {8.5}Acceptance commands}{54}{section.8.5}%
+\contentsline {section}{\numberline {8.6}Publication criteria}{54}{section.8.6}%
+\contentsline {section}{\numberline {8.7}Failure conditions}{55}{section.8.7}%
+\contentsline {chapter}{\numberline {9}References}{57}{chapter.9}%
+\contentsline {section}{\numberline {9.1}Normative references}{57}{section.9.1}%
+\contentsline {section}{\numberline {9.2}Schema references}{57}{section.9.2}%
+\contentsline {section}{\numberline {9.3}Repository rule-pack references}{58}{section.9.3}%
+\contentsline {section}{\numberline {9.4}Version history}{58}{section.9.4}%
+\contentsline {section}{\numberline {9.5}Cross-references to other specifications}{59}{section.9.5}%
+\contentsfinish 

@@ -1,0 +1,345 @@
+\chapter{Implementation Instructions}
+\label{ch:implementation-instructions}
+
+This chapter provides practical guidance for implementing and maintaining
+the HITL Requirements Traceability framework, including tooling setup,
+validation procedures, and maintenance workflows.
+
+% =============================================================================
+\section{Document Compilation}
+\label{sec:document-compilation}
+
+\subsection{Prerequisites}
+
+\begin{itemize}[noitemsep]
+  \item \textbf{TeX Distribution:} TeX Live 2024+ or MiKTeX 24+
+  \item \textbf{Engine:} XeLaTeX (required for fontspec)
+  \item \textbf{Packages:} Standard LaTeX packages (included in full distributions)
+\end{itemize}
+
+\subsection{Compilation Command}
+
+\begin{lstlisting}[language=bash,basicstyle=\ttfamily\small]
+cd docs/latex/specs/tb-hitl
+xelatex -interaction=nonstopmode tb-hitl-traceability-spec.tex
+xelatex -interaction=nonstopmode tb-hitl-traceability-spec.tex
+\end{lstlisting}
+
+\paragraph{Note:} Two passes are required for cross-references and
+table of contents generation.
+
+\subsection{Build Integration}
+
+Add to the project Makefile:
+
+\begin{lstlisting}[language=make,basicstyle=\ttfamily\small]
+tb-hitl-spec:
+	cd docs/latex/specs/tb-hitl && \
+	xelatex -interaction=nonstopmode tb-hitl-traceability-spec.tex && \
+	xelatex -interaction=nonstopmode tb-hitl-traceability-spec.tex
+
+tb-hitl-pdf: tb-hitl-spec
+	cp docs/latex/specs/tb-hitl/tb-hitl-traceability-spec.pdf \
+	   docs/pdf/specs/tb-hitl-traceability-spec.pdf
+\end{lstlisting}
+
+% =============================================================================
+\section{Traceability Link Validation}
+\label{sec:link-validation}
+
+\subsection{Manual Validation}
+
+For each traceability link, verify:
+
+\begin{enumerate}
+  \item \textbf{Source exists:} The referenced source document is present
+        at the specified path
+  \item \textbf{Target exists:} The link target (requirement, spec, schema)
+        is defined in its respective chapter
+  \item \textbf{Bidirectional:} The reverse link is also documented
+  \item \textbf{Consistent:} Link metadata matches between forward and
+        backward traces
+\end{enumerate}
+
+\subsection{Automated Validation Script}
+
+Create a Python validation script at \texttt{scripts/validate-hitl-links.py}:
+
+\begin{lstlisting}[language=python,basicstyle=\ttfamily\small]
+#!/usr/bin/env python3
+"""Validate HITL traceability links."""
+
+import yaml
+import json
+from pathlib import Path
+
+def load_manifest():
+    """Load the HITL traceability manifest."""
+    manifest_path = Path("docs/tb/machine-readable/hitl-traceability-manifest.yaml")
+    with open(manifest_path) as f:
+        return yaml.safe_load(f)
+
+def validate_source_exists(manifest):
+    """Check all source documents exist."""
+    errors = []
+    for source in manifest.get("source_documents", []):
+        path = Path(source["filepath"])
+        if not path.exists():
+            errors.append(f"Source not found: {source['source_ref']}")
+    return errors
+
+def validate_forward_links(manifest):
+    """Validate forward traceability links."""
+    errors = []
+    requirements = {r["requirement_id"] for r in manifest.get("requirements", [])}
+    
+    for link in manifest.get("forward_traceability", []):
+        if link["requirement_id"] not in requirements:
+            errors.append(f"Unknown requirement: {link['requirement_id']}")
+    return errors
+
+if __name__ == "__main__":
+    manifest = load_manifest()
+    
+    errors = []
+    errors.extend(validate_source_exists(manifest))
+    errors.extend(validate_forward_links(manifest))
+    
+    if errors:
+        print("Validation FAILED:")
+        for e in errors:
+            print(f"  - {e}")
+        exit(1)
+    else:
+        print("Validation PASSED")
+        exit(0)
+\end{lstlisting}
+
+% =============================================================================
+\section{Adding New Source Documents}
+\label{sec:adding-sources}
+
+When a new source document is added to the TB corpus:
+
+\begin{enumerate}
+  \item \textbf{Catalogue the document:}
+        \begin{itemize}[noitemsep]
+          \item Assign a source reference ID (e.g., \srcref{TB-NEW-001})
+          \item Add entry to \cref{ch:source-documents}
+          \item Update \texttt{hitl-traceability-manifest.yaml}
+        \end{itemize}
+        
+  \item \textbf{Extract to machine-readable format:}
+        \begin{itemize}[noitemsep]
+          \item Run appropriate extraction script
+          \item Store output in \texttt{docs/tb/machine-readable/extracted/}
+          \item Add YAML frontmatter with source reference
+        \end{itemize}
+        
+  \item \textbf{Derive requirements:}
+        \begin{itemize}[noitemsep]
+          \item Review extracted content for requirement statements
+          \item Assign requirement IDs following naming convention
+          \item Document derivation evidence in \cref{ch:business-requirements}
+        \end{itemize}
+        
+  \item \textbf{Update traceability matrices:}
+        \begin{itemize}[noitemsep]
+          \item Add forward links in \cref{ch:bidirectional-traceability}
+          \item Add backward links from affected specifications
+          \item Run validation script to verify links
+        \end{itemize}
+        
+  \item \textbf{Update gap analysis:}
+        \begin{itemize}[noitemsep]
+          \item Check for new gaps introduced
+          \item Update orphan analysis tables
+          \item Document any new gaps in \cref{ch:gap-analysis}
+        \end{itemize}
+\end{enumerate}
+
+% =============================================================================
+\section{Adding New Requirements}
+\label{sec:adding-requirements}
+
+\subsection{Requirement ID Convention}
+
+\begin{table}[h]
+\centering
+\caption{Requirement ID Naming Convention}
+\begin{tabularx}{\textwidth}{@{}L{3.5cm}L{4cm}L{6cm}@{}}
+\toprule
+\textbf{Pattern} & \textbf{Category} & \textbf{Example} \\
+\midrule
+TB-REQ-ES\textit{nn} & Executive Summary & TB-REQ-ES01 \\
+TB-REQ-SC\textit{nn} & Scope & TB-REQ-SC01 \\
+TB-REQ-PS\textit{nn} & Process Steps & TB-REQ-PS01 \\
+TB-REQ-AI\textit{nn} & AI Augmentation & TB-REQ-AI01 \\
+BSS-REQ-\textit{nn} & BSS Risk Assessment & BSS-REQ-01 \\
+TB-REQ-FI\textit{nn} & Financial (future) & TB-REQ-FI01 \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\subsection{Requirement Documentation Template}
+
+\begin{lstlisting}[language=tex,basicstyle=\ttfamily\small]
+\subsection{\reqref{TB-REQ-XX01}: Requirement Title}
+\label{sec:req-xx01}
+
+\begin{table}[h]
+\centering
+\caption{\reqref{TB-REQ-XX01} Derivation Evidence}
+\begin{tabularx}{\textwidth}{@{}L{3.5cm}L{10.5cm}@{}}
+\toprule
+\textbf{Attribute} & \textbf{Value} \\
+\midrule
+Requirement ID & TB-REQ-XX01 \\
+Requirement Text & The system shall... \\
+Source Document & \srcref{TB-XXX-001}: Document name \\
+Source Location & Section X, Paragraph Y \\
+Derivation Method & Direct extraction / Synthesis \\
+Confidence & High / Medium / Low \\
+Status & Draft / Approved \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\paragraph{Source Quote:}
+\begin{quote}
+\textit{``Quoted text from source document...''}
+\end{quote}
+\end{lstlisting}
+
+% =============================================================================
+\section{Schema Evolution}
+\label{sec:schema-evolution}
+
+When schemas are modified:
+
+\begin{enumerate}
+  \item \textbf{Document the change:}
+        \begin{itemize}[noitemsep]
+          \item Update schema file with new/modified fields
+          \item Increment schema version
+          \item Add changelog entry
+        \end{itemize}
+        
+  \item \textbf{Update traceability:}
+        \begin{itemize}[noitemsep]
+          \item Add new fields to \cref{ch:schema-mapping}
+          \item Link fields to specifications and requirements
+          \item Verify no orphan fields remain
+        \end{itemize}
+        
+  \item \textbf{Assess impact:}
+        \begin{itemize}[noitemsep]
+          \item Identify affected downstream consumers
+          \item Document migration requirements
+          \item Update validation scripts
+        \end{itemize}
+\end{enumerate}
+
+% =============================================================================
+\section{HITL Review Execution}
+\label{sec:review-execution}
+
+\subsection{Pre-Review Checklist}
+
+Before initiating HITL review:
+
+\begin{itemize}
+  \item[$\square$] Document compiled successfully with no LaTeX errors
+  \item[$\square$] All chapter files present and included
+  \item[$\square$] Validation script passes
+  \item[$\square$] Machine-readable manifest is current
+  \item[$\square$] Reviewers identified and available
+\end{itemize}
+
+\subsection{Review Meeting Agenda}
+
+\begin{enumerate}
+  \item \textbf{Introduction (5 min):} Review objectives and scope
+  \item \textbf{Source Review (15 min):} Checkpoint H1 --- verify source completeness
+  \item \textbf{Extraction Review (15 min):} Checkpoint H2 --- sample extraction accuracy
+  \item \textbf{Requirements Review (20 min):} Checkpoint H3 --- verify derivations
+  \item \textbf{Traceability Review (15 min):} Checkpoint H4 --- validate links
+  \item \textbf{Schema Review (15 min):} Checkpoint H5 --- verify alignment
+  \item \textbf{Gap Review (10 min):} Checkpoint H6 --- accept gap plans
+  \item \textbf{Sign-Off (5 min):} Complete sign-off register
+\end{enumerate}
+
+\subsection{Post-Review Actions}
+
+\begin{enumerate}
+  \item Document review findings in sign-off register
+  \item Create issues for any identified defects
+  \item Update gap register if new gaps identified
+  \item Publish approved version to document repository
+  \item Notify stakeholders of approval status
+\end{enumerate}
+
+% =============================================================================
+\section{Continuous Integration}
+\label{sec:ci-integration}
+
+\subsection{CI Pipeline Configuration}
+
+Add to \texttt{.github/workflows/docs.yml}:
+
+\begin{lstlisting}[language=yamlx,basicstyle=\ttfamily\small]
+name: HITL Documentation
+
+on:
+  push:
+    paths:
+      - 'docs/latex/specs/tb-hitl/**'
+      - 'docs/tb/machine-readable/**'
+
+jobs:
+  build-and-validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Install TeX Live
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y texlive-xetex texlive-latex-extra
+      
+      - name: Validate traceability links
+        run: python scripts/validate-hitl-links.py
+      
+      - name: Compile specification
+        run: |
+          cd docs/latex/specs/tb-hitl
+          xelatex -interaction=nonstopmode tb-hitl-traceability-spec.tex
+          xelatex -interaction=nonstopmode tb-hitl-traceability-spec.tex
+      
+      - name: Upload PDF artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: tb-hitl-spec
+          path: docs/latex/specs/tb-hitl/tb-hitl-traceability-spec.pdf
+\end{lstlisting}
+
+% =============================================================================
+\section{Troubleshooting}
+\label{sec:troubleshooting}
+
+\begin{table}[h]
+\centering
+\caption{Common Issues and Solutions}
+\begin{tabularx}{\textwidth}{@{}L{5cm}L{8.5cm}@{}}
+\toprule
+\textbf{Issue} & \textbf{Solution} \\
+\midrule
+LaTeX compilation error & Check for missing packages; verify fontspec compatibility \\
+Undefined cross-reference & Run xelatex twice; check label spelling \\
+Missing source document & Verify file path in manifest; check for renamed files \\
+Broken traceability link & Run validation script; check ID spelling \\
+Table overflow & Reduce column widths; use longtable for long tables \\
+TikZ positioning error & Verify tikzlibrary imports; check node distance \\
+\bottomrule
+\end{tabularx}
+\end{table}

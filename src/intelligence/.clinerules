@@ -1,0 +1,289 @@
+# =============================================================================
+# Regulations Development And Maintenance Agent Rules
+# Path: src/intelligence/.clinerules
+# =============================================================================
+
+Purpose
+- Make `src/intelligence` the authoritative implementation surface for the Regulations domain.
+- Treat Regulations as a horizontal governance runtime, not a standalone side project.
+- Turn the regulations specification into enforceable implementation behavior across PAL, monitoring, gateway ingress, governance APIs, and compliance UI paths.
+
+Mission
+- Implement the Regulations specification end to end across deny-by-default tool governance, identity attribution, audit reservation/completion, conformance tooling, monitoring, and live integration paths.
+- Keep the repo operationally honest: no mock compliance, no health claims without evidence, no runtime behavior that bypasses governance while still presenting as governed.
+- Force every domain-facing agent path to inherit the Regulations control model before the platform is called compliant.
+
+Source Of Truth
+- Normative product spec:
+  - `docs/pdf/specs/regulations-spec.pdf`
+  - `docs/latex/specs/regulations/chapters/02-data-schema.tex`
+  - `docs/latex/specs/regulations/chapters/03-mgf-framework.tex`
+  - `docs/latex/specs/regulations/chapters/06-conformance-tooling.tex`
+  - `docs/latex/specs/regulations/chapters/08-monitoring-spec.tex`
+  - `docs/latex/specs/regulations/chapters/09-testing.tex`
+  - `docs/latex/specs/regulations/chapters/10-identity-attribution.tex`
+  - `docs/latex/specs/regulations/chapters/12-implementation-instructions.tex`
+- Normative data contracts:
+  - `docs/schema/regulations/requirement.schema.json`
+  - `docs/schema/regulations/regulation.schema.json`
+  - `docs/schema/regulations/conformance-tool.schema.json`
+  - `docs/schema/regulations/corpus.schema.json`
+  - `docs/schema/regulations/agent-identity.schema.json`
+  - `docs/schema/regulations/request-identity.schema.json`
+  - `docs/schema/regulations/audit-event.schema.json`
+  - `docs/schema/regulations/capability-monitoring-metrics.schema.json`
+- Registry and live implementation reality:
+  - `src/intelligence/ai-core-pal/data_products/registry.yaml`
+  - `src/intelligence/ai-core-pal/agent/aicore_pal_agent.py`
+  - `src/intelligence/ai-core-pal/mcp_server/btp_pal_mcp_server.py`
+  - `src/intelligence/analytics/anomaly_detector.py`
+  - `src/intelligence/monitoring/kill_switch_monitor.py`
+  - `src/intelligence/ai-core-pal/tests/test_hana_connection.py`
+  - `src/intelligence/ai-core-pal/tests/test_pal_algorithms.py`
+  - `src/intelligence/ai-core-pal/tests/test_mcp_server.py`
+- Operational integration points outside `src/intelligence` that must be considered for end-to-end compliance:
+  - `src/generativeUI/gateway/nginx.conf.template`
+  - `src/generativeUI/gateway/health/main.py`
+  - `src/generativeUI/gateway/README.md`
+  - `src/generativeUI/training-webcomponents-ngx/packages/api-server/src/main.py`
+  - `src/generativeUI/training-webcomponents-ngx/apps/angular-shell/src/app/services/training-governance.service.ts`
+  - `src/generativeUI/training-webcomponents-ngx/apps/angular-shell/src/app/services/team-governance.service.ts`
+  - `src/generativeUI/training-webcomponents-ngx/apps/angular-shell/src/app/pages/governance/governance.component.ts`
+  - `src/generativeUI/training-webcomponents-ngx/packages/api-server/tests/test_main.py`
+  - `src/generativeUI/training-webcomponents-ngx/apps/angular-shell/src/app/services/team-governance.service.spec.ts`
+  - `src/generativeUI/training-webcomponents-ngx/apps/angular-shell/src/app/pages/governance/governance.component.spec.ts`
+
+Read First On Every Regulations Task
+1. Read the governing spec chapter before changing code.
+2. Read the governing JSON schema before changing any identity, audit, monitoring, requirement, or conformance payload.
+3. Read the live runtime path in `src/intelligence` and the adjacent gateway/API/UI path before assuming a behavior is already enforced end to end.
+4. Identify whether the task is:
+   - allow-list and tool-governance
+   - identity attribution
+   - audit reservation and completion
+   - monitoring and alerting
+   - conformance tooling
+   - gateway ingress and health
+   - governance API/UI wiring
+   - registry or schema alignment
+5. Only then edit code.
+
+Current Repo Reality You Must Assume
+- Regulations is a horizontal runtime wrapper, not a standalone application service.
+- The live governance surface is split across:
+  - `src/intelligence/ai-core-pal`
+  - `src/intelligence/monitoring`
+  - `src/intelligence/analytics`
+  - `src/generativeUI/gateway`
+  - `src/generativeUI/training-webcomponents-ngx/packages/api-server`
+  - `src/generativeUI/training-webcomponents-ngx/apps/angular-shell`
+- `GovernanceEngine` in `aicore_pal_agent.py` currently uses in-process facts and an in-memory audit log; that is not full spec compliance.
+- `kill_switch_monitor.py` and `anomaly_detector.py` contain threshold logic, but they are still partially TB-HITL-shaped and are not sufficient proof of regulations runtime compliance by themselves.
+- The current governance API and UI are operationally useful, but they are still largely training-branded surfaces that carry Regulations behavior indirectly.
+- Passing PAL tests or gateway smoke checks does not prove Regulations compliance.
+
+Known Issue Registry
+- `REG-KI-001` allow-list enforcement is incomplete or bypassable:
+  - symptom: tool policy lives only in local code paths, undeclared tools can be exposed, or the gateway path can reach runtime surfaces without a deny-by-default gate
+  - impact: direct violation of `REG-MGF-2.1.2-001`
+  - prevention: one canonical allow-list contract, enforced at ingress and runtime surfaces
+- `REG-KI-002` identity and audit evidence are incomplete:
+  - symptom: request identity missing, agent identity missing, audit event written only after action, or audit state retained only in memory
+  - impact: direct violation of `REG-MGF-2.1.2-002` and Chapter 10 invariants
+  - prevention: schema-first identity payloads, reserve-before-action audit, complete-after-action audit, durable evidence storage
+- `REG-KI-003` monitoring implementation drift:
+  - symptom: thresholds exist only in comments, required metrics are not emitted, or runtime monitors are still tied to unrelated TB-HITL assumptions
+  - impact: continuous monitoring claims are not operationally defensible
+  - prevention: Chapter 8 thresholds, routing, degradation, and circuit-break behavior must be wired to real runtime evidence
+- `REG-KI-004` governance surface fragmentation:
+  - symptom: PAL, gateway, API, and UI each tell different stories about policy, approval, or health
+  - impact: operators and auditors cannot tell whether the live platform is actually governed
+  - prevention: shared contracts, shared condition codes, and evidence correlation across surfaces
+- `REG-KI-005` schema and registry drift:
+  - symptom: regulations schemas exist in `docs/schema/regulations` but are not consistently reflected in registry, API payloads, or reports
+  - impact: conformance tooling and downstream consumers disagree on what the Regulations domain actually means
+  - prevention: schema-first updates and same-change producer/consumer alignment
+
+Primary Goal State
+- Every governed request passes through a deny-by-default Regulations control surface.
+- Every action carries request identity, agent identity, and audit evidence before irreversible execution.
+- Monitoring metrics and thresholds from Chapter 8 are emitted and enforced at runtime.
+- Conformance tools produce schema-valid reports tied to the Regulations requirement set.
+- Gateway, PAL, API, and UI surfaces all tell the same truth about compliance state.
+
+10/10 Definition Of Done
+- The Regulations control model is enforced as the live default, not a sidecar.
+- The persona id `compliance-officer` and the MCP allow-list from Chapter 12 are implemented and discoverable:
+  - `gov.requirement.register`
+  - `gov.policy.publish`
+  - `gov.conformance.run`
+  - `gov.conformance.report`
+  - `gov.monitor.query`
+  - `gov.audit.query`
+  - `gov.identity.attest`
+- Deny-by-default behavior exists for undeclared tools and route bypasses.
+- Request identity, agent identity, and audit-event contracts validate against the Regulations schemas.
+- Audit reservation happens before action execution, and completion happens after execution with orphan detection.
+- Monitoring emits the required capability metrics and enforces the Chapter 8 thresholds:
+  - schema violations `> 5%`
+  - refusal rate `> 3x` baseline
+  - topic similarity `< 0.7`
+  - latency p95 `> 1.5x` baseline
+  - circuit-break escalation after `3 consecutive` critical alerts in `15 minutes`
+- Conformance tooling is runnable and emits reports that validate against `docs/schema/regulations/conformance-tool.schema.json`.
+- `src/intelligence/ai-core-pal/data_products/registry.yaml` keeps the Regulations schemas registered and distinct.
+- Gateway health, PAL health, API governance state, and UI governance views agree on the live control state.
+- No production-governed request is reported healthy when identity, audit, allow-list, or required monitoring evidence is missing.
+
+Non-Negotiable Engineering Rules
+1. Prefer the Regulations spec over local convenience behavior when they conflict.
+2. Treat Regulations as horizontal governance; do not implement it as if it affects only `ai-core-pal`.
+3. Deny by default for tools, routes, and high-impact actions.
+4. No irreversible action without request identity, agent identity, and a successful pre-action audit reservation.
+5. No post-action success state without an attempt to complete the audit record.
+6. If you add, remove, or rename a regulated payload field, update schemas, producers, consumers, tests, and reports in the same change.
+7. Do not rely on in-memory logs or hard-coded lists as the final durable governance evidence model.
+8. Do not declare monitoring complete if required Chapter 8 metrics are absent or simulated.
+9. Do not mark the platform compliant just because a governance dashboard exists.
+
+Canonical Contract Rules
+- Requirement and regulation records must validate against:
+  - `docs/schema/regulations/requirement.schema.json`
+  - `docs/schema/regulations/regulation.schema.json`
+  - `docs/schema/regulations/corpus.schema.json`
+- Conformance results and tool descriptors must validate against:
+  - `docs/schema/regulations/conformance-tool.schema.json`
+- Identity and audit contracts must validate against:
+  - `docs/schema/regulations/agent-identity.schema.json`
+  - `docs/schema/regulations/request-identity.schema.json`
+  - `docs/schema/regulations/audit-event.schema.json`
+- Monitoring payloads must validate against:
+  - `docs/schema/regulations/capability-monitoring-metrics.schema.json`
+- The runtime contract must preserve the key identity and audit fields needed for traceability, including:
+  - `agent_id`
+  - `agent_type`
+  - `request_id`
+  - `correlation_id`
+  - `event_id`
+  - `event_type`
+  - `approval_chain`
+  - `status`
+  - `duration_ms`
+  - `input_hash`
+  - `output_hash`
+- If code and schema disagree, assume the code is wrong unless the spec has been explicitly revised.
+
+Required Runtime Behavior
+- The live ingress path must enforce explicit allow-list and deny-by-default semantics.
+- The authoritative runtime path must reject action execution when:
+  - request identity is missing
+  - agent identity is missing
+  - audit reservation fails
+  - requested tool is not allow-listed
+- The runtime must record enough metadata for governance and audit:
+  - identity envelope
+  - tool or action requested
+  - approval status
+  - timestamps
+  - outcome
+  - error state when unsuccessful
+- Monitoring and conformance paths must fail loudly when required evidence is missing.
+
+Monitoring And Conformance Gates
+- Capability monitoring must cover the metrics in Chapter 8:
+  - `output_token_count`
+  - `response_latency_ms`
+  - `confidence_score`
+  - `refusal_rate`
+  - `tool_call_frequency`
+  - `output_format_violations`
+  - `hallucination_flags`
+  - `unexpected_topic_detections`
+  - `novel_capability_indicators`
+- Conformance tooling must be able to verify the Chapter 3, Chapter 8, and Chapter 10 requirements with runnable checks or explicit waivers.
+- Testing requirements from Chapter 9 are not optional follow-up work.
+
+Default Threshold Expectations
+- Schema-violation surge: `> 0.05`
+- Refusal-rate escalation: `> 3x` baseline
+- Topic-similarity degradation: `< 0.7`
+- Latency degradation: `p95 > 1.5x` baseline
+- Circuit-break trigger: `3 consecutive` critical alerts within `15 minutes`
+
+Required Integration Rules
+- If you change policy or tool governance, update:
+  - `src/intelligence/ai-core-pal/agent/aicore_pal_agent.py`
+  - `src/intelligence/ai-core-pal/mcp_server/btp_pal_mcp_server.py`
+  - `src/generativeUI/gateway/nginx.conf.template`
+- If you change identity or audit contracts, update:
+  - `src/generativeUI/training-webcomponents-ngx/packages/api-server/src/main.py`
+  - any affected governance service or UI consumer under `apps/angular-shell/src/app/services/` and `apps/angular-shell/src/app/pages/governance/`
+- If you change monitoring thresholds or alert semantics, update:
+  - `src/intelligence/analytics/anomaly_detector.py`
+  - `src/intelligence/monitoring/kill_switch_monitor.py`
+  - any governance metrics consumers in the API and UI
+- If you change schema registration, update:
+  - `src/intelligence/ai-core-pal/data_products/registry.yaml`
+- Do not leave gateway, PAL, API, and UI on different governance contracts after a backend change.
+
+Priority Order For Bringing The System To 10/10
+1. Enforce deny-by-default allow-list and identity gating on the live ingress/runtime path.
+2. Implement durable audit reservation-before-action and completion-after-action semantics.
+3. Normalize Regulations schemas, registry entries, and runtime payloads.
+4. Wire the Chapter 8 monitoring thresholds to real runtime evidence and alerting.
+5. Integrate conformance tooling and Chapter 9 testing into the operational path.
+6. Only then remove or quarantine remaining partial, in-memory, or training-branded governance assumptions.
+
+Pre-Change Checklist
+- Confirm which regulations chapter governs the task.
+- Confirm which Regulations schemas are affected.
+- Confirm whether the change touches only `src/intelligence` or also requires gateway/API/UI updates.
+- Check whether current code still relies on:
+  - hard-coded `agent_can_use`
+  - hard-coded `agent_requires_approval`
+  - in-memory `audit_log`
+  - unimplemented `HANAConnector.execute()`
+  - training-only governance naming for shared Regulations behavior
+- If any of those remain in the impacted path, treat migration work as part of the task, not optional follow-up.
+
+Task Checklist For Any Non-Trivial Change
+- Confirm which spec chapter governs the task.
+- Confirm which schema-backed contracts are touched.
+- Confirm whether gateway, API, and UI consumers are affected.
+- Add or update tests before declaring completion.
+- Run the narrowest meaningful test set plus at least one integration smoke path for the changed contract.
+- Report any remaining regulations gaps explicitly.
+
+Minimum Verification Before Closing Work
+- If schema-backed payloads changed:
+  - validate against the relevant files in `docs/schema/regulations/`
+- If PAL or gateway wiring changed:
+  - run `cd src/intelligence/ai-core-pal && make test`
+  - run `cd src/intelligence/ai-core-pal && make test-mcp` when the server is available
+  - verify `/health` and `/health/details` through the gateway when relevant
+- If governance API or UI integration changed:
+  - run the affected API or Angular test slice
+  - verify that policy, approval, audit, and metrics payloads still align end to end
+- If monitoring logic changed:
+  - prove the thresholds and condition codes match Chapter 8
+  - prove alerts are based on evidence rather than placeholder values
+
+Post-Change Smoke Tests
+- Registry and allow-list smoke:
+  - `rg -n "regulations\.(requirement|regulation|conformance-tool|corpus|agent-identity|request-identity|audit-event|capability-monitoring-metrics)" src/intelligence/ai-core-pal/data_products/registry.yaml`
+  - `rg -n "gov\.requirement\.register|gov\.policy\.publish|gov\.conformance\.run|gov\.conformance\.report|gov\.monitor\.query|gov\.audit\.query|gov\.identity\.attest" docs/latex/specs/regulations/chapters/12-implementation-instructions.tex src/intelligence/.clinerules`
+- Runtime contract smoke:
+  - `rg -n "audit_log|rules_paths|agent_can_use|agent_requires_approval|pending_approval|blocked" src/intelligence/ai-core-pal/agent/aicore_pal_agent.py`
+  - `rg -n "output_format_violations|refusal_rate|topic_similarity|response_latency_ms|3 consecutive" src/intelligence/.clinerules.runtime-monitor docs/latex/specs/regulations/chapters/08-monitoring-spec.tex`
+- Gateway and governance surface smoke:
+  - `rg -n "/health|/health/details|/api/v1/ui5/pal/" src/generativeUI/gateway/nginx.conf.template src/generativeUI/gateway/health/main.py src/generativeUI/gateway/README.md`
+  - `rg -n "/governance/approvals|/governance/policies|/governance/metrics|audit" src/generativeUI/training-webcomponents-ngx/packages/api-server/src/main.py`
+- Validation harness smoke:
+  - `python3 -m pytest src/intelligence/ai-core-pal/tests/test_clinerules_contracts.py -v --tb=short`
+  - `cd src/intelligence/ai-core-pal && make test-clinerules`
+
+Completion Standard
+- The changed path is aligned to the governing regulations chapter and schema set.
+- All affected producers and consumers agree on the regulated contracts.
+- The validation harness passes.
+- Remaining gaps, if any, are stated explicitly and are not hidden behind a green status claim.

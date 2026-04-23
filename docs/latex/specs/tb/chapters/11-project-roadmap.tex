@@ -1,0 +1,249 @@
+\chapter{Project Roadmap}\label{ch:tb-roadmap}
+
+\section*{Scope of this chapter}
+\addcontentsline{toc}{section}{Scope of this chapter}
+
+This chapter is the roadmap for the \textbf{Trial Balance review and AI
+augmentation} project. It is a project-level artefact, not a programme
+plan. Other SAP OSS Finance projects (Simula, Arabic AP, Regulations)
+run on the same platform, workspaces, and backends, but each owns its
+own roadmap, business case, and go/no-go decision. This chapter adopts
+the MoSCoW prioritisation and sequence-based critical path that the
+four projects share so that artefacts can be compared at a glance; it
+does not assert coupling between their go-live moments.
+
+\paragraph{Sequence, not dates.}
+The milestones and dependency graph below express \emph{order} and
+\emph{prerequisite} relationships, not calendar dates. This is
+deliberate. Implementation teams must know what depends on what, and
+where the schedule can absorb slippage (the Should/Could items); a
+date column would harden targets into commitments they were never
+meant to be. Dates, when set, live in the project steering packet and
+the ticketing system, not in this specification.
+
+\section{MoSCoW classification}\label{sec:tb-moscow}
+
+Every milestone below carries one of four priorities. The mapping is
+contractual: a milestone's priority determines what happens when it is
+dropped, de-scoped, or slips.
+
+\begin{table}[htbp]
+\centering
+\caption{MoSCoW prioritisation (shared across the four SAP OSS Finance
+projects).}
+\label{tab:tb-moscow}
+\footnotesize
+\begin{tabularx}{\linewidth}{@{}l l X@{}}
+\toprule
+\textbf{Priority} & \textbf{Meaning} & \textbf{Allowance} \\ \midrule
+\textbf{Must} (\textbf{M}) & Non-negotiable for v1.0. Without this milestone, the release does not ship. & None. Missing a Must halts the release; see the kill-switch in \cref{sec:tb-kill-switch}. \\
+\textbf{Should} (\textbf{S}) & Important but not vital. Ship without it only with sponsor sign-off; document the deviation in the business-case refresh. & May slip by one rollout wave; two consecutive slips escalate to GFAIC. \\
+\textbf{Could} (\textbf{C}) & Desirable enhancement. Included if Must and Should items are on track. & May be dropped to v1.1 at project steering's discretion. \\
+\textbf{Won't} (\textbf{W}) & Explicitly out of v1.0 scope. Listed so the boundary is legible. & Not eligible for v1.0 planning at all. \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\noindent
+The critical path of this project is the chain of Must items in
+\cref{tab:tb-milestones}; the Should and Could items are where the
+schedule and scope can absorb delivery risk without a release slip.
+
+\section{Dependency graph}\label{sec:tb-dependency-graph}
+
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}[
+  node distance=5mm and 10mm,
+  must/.style={draw,rounded corners=2pt,align=center,font=\scriptsize,
+               fill=tbamber!20,draw=tbamber!70,
+               minimum height=7mm,minimum width=30mm},
+  should/.style={draw,rounded corners=2pt,align=center,font=\scriptsize,
+               fill=tbblue!12,draw=tbblue!50,
+               minimum height=7mm,minimum width=30mm},
+  could/.style={draw,rounded corners=2pt,align=center,font=\scriptsize,
+               fill=tbgreen!12,draw=tbgreen!50,dotted,
+               minimum height=7mm,minimum width=30mm},
+  dep/.style={-{Latex[length=2mm]},thick},
+  soft/.style={-{Latex[length=2mm]},thick,dashed}
+]
+  \node[must] (m01) {M01 TB-ENG-001 \\ \scriptsize dashboard shell};
+  \node[must,below=of m01] (m02) {M02 TB-ENG-002 \\ \scriptsize anomaly engine};
+  \node[must,below=of m02] (m03) {M03 TB-ENG-003 \\ \scriptsize OAuth scopes};
+  \node[must,right=14mm of m02] (m04) {M04 REG-INTG-TB-001 \\ \scriptsize identity wiring};
+  \node[must,right=14mm of m04] (m05) {M05 TB-BETA-001 \\ \scriptsize HK beta};
+  \node[must,below=of m05] (m06) {M06 TB-PARALLEL-001 \\ \scriptsize parallel-run gate};
+  \node[must,below=of m06] (m07) {M07 TB-GA-001 \\ \scriptsize GA sign-off};
+  \node[should,right=14mm of m07] (s01) {S01 TB-WAVE-002 \\ \scriptsize wave 2 (3 LEs)};
+  \node[should,above=of s01] (s02) {S02 TB-WAVE-003 \\ \scriptsize wave 3 (12 LEs)};
+  \node[could,above=of s02] (c01) {C01 TB-V2-KICKOFF \\ \scriptsize v2.0 ML kickoff};
+
+  \draw[dep] (m01) -- (m02);
+  \draw[dep] (m01) -- (m03);
+  \draw[dep] (m02) -- (m04);
+  \draw[dep] (m03) -- (m04);
+  \draw[dep] (m04) -- (m05);
+  \draw[dep] (m05) -- (m06);
+  \draw[dep] (m06) -- (m07);
+  \draw[dep] (m07) -- (s01);
+  \draw[dep] (s01) -- (s02);
+  \draw[soft] (m07) -- (c01);
+\end{tikzpicture}
+\caption{Trial Balance dependency graph. Amber nodes are Must
+(critical path); blue are Should (allowance); dotted green are Could
+(discretionary). Solid arrows are hard prerequisites; dashed arrows
+indicate conditional starts (the target is unlocked when the upstream
+completes \emph{and} the v2.0 trigger fires).}
+\label{fig:tb-dependency-graph}
+\end{figure}
+
+\section{Project milestones}\label{sec:tb-milestones}
+
+\begin{table}[htbp]
+\centering
+\caption{Trial Balance v1.0 project milestones in dependency order.
+Priority: M=Must (critical path), S=Should, C=Could, W=Won't.}
+\label{tab:tb-milestones}
+\footnotesize
+\begin{tabularx}{\linewidth}{@{}l l l l X@{}}
+\toprule
+\textbf{ID} & \textbf{Prereq} & \textbf{Pri.} & \textbf{Ticket} & \textbf{Milestone} \\ \midrule
+M01 & ---       & M & TB-ENG-001         & Dashboard shell in UAT; all 28 workflow states reachable on the HK fixture. \\
+M02 & M01       & M & TB-ENG-002         & Statistical anomaly engine passes the fixtures in \cref{ch:controls-engine}. \\
+M03 & M01       & M & TB-ENG-003         & OAuth 2.0 scopes enforced end-to-end (\cref{sec:dashboard-api-auth}). \\
+M04 & M02, M03  & M & REG-INTG-TB-001    & Identity-attribution wiring (reserve/complete) live in UAT. \\
+M05 & M04       & M & TB-BETA-001        & Beta cycle: HK LE only, AI parallel to manual, no business users yet. \\
+M06 & M05       & M & TB-PARALLEL-001    & Beta parallel-run gate passes. \\
+M07 & M06       & M & TB-GA-001          & GA sign-off by Head of Africa GFS; HK goes live. \\
+M08 & M07       & M & TB-BC-REFRESH      & Business-case refresh and compliance attestation (first cycle after GA; then annual). \\
+S01 & M07       & S & TB-WAVE-002        & Rollout wave 2: three further LEs onboarded via entity-params (\cref{sec:params-234}). \\
+S02 & S01       & S & TB-WAVE-003        & Rollout wave 3: cumulative 12 LEs live. \\
+S03 & S02       & S & TB-WAVE-N          & Subsequent waves through full 234-LE coverage (repeated application of the onboarding runbook). \\
+C01 & M07 + v2.0 trigger & C & TB-V2-KICKOFF & v2.0 ML anomaly programme kickoff (Chapter~\ref{ch:future-ml}). \\
+C02 & M07       & C & TB-COMMENTARY-TUNE & Quarterly commentary-prompt retraining from accept/edit telemetry. \\
+W01 & ---       & W & TB-V1-ML           & ML-based anomaly detection is \emph{not} in v1.0 scope (see \cref{ch:future-ml}). \\
+W02 & ---       & W & TB-V1-FULL-234     & Full 234-LE rollout is \emph{not} in v1.0 scope; scope for v1.0 ends at wave 3. \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\noindent
+The Must chain (M01 $\to$ M02/M03 $\to$ M04 $\to$ M05 $\to$ M06 $\to$
+M07 $\to$ M08) is the critical path. The Should items (S01--S03) are
+the primary \emph{schedule allowance}: if Must items run hot, rollout
+waves can slip without affecting v1.0 sign-off. The Could items are
+the \emph{scope allowance}: they may be cut to v1.1 without renegotiation.
+
+\section{Launch tiers and exit gates}\label{sec:tb-launch-tiers}
+
+The project walks the four-tier ladder shared across SAP OSS Finance
+projects. A tier is exited only when the named exit gate is satisfied;
+slippage requires sponsor sign-off.
+
+\begin{table}[htbp]
+\centering
+\caption{Trial Balance launch tiers. The exit gate defines the MoSCoW
+items that must be closed to exit the tier.}
+\label{tab:tb-launch-tiers}
+\footnotesize
+\begin{tabularx}{\linewidth}{@{}l l X@{}}
+\toprule
+\textbf{Tier} & \textbf{Scope} & \textbf{Exit gate (references MoSCoW IDs)} \\ \midrule
+Alpha & Engineering only, DEV + UAT environments, no business users. & M01, M02, M03 closed; all acceptance criteria in \cref{ch:controls} pass on the HK golden fixture; reproducibility of the variance engine confirmed on two consecutive runs. \\
+Beta  & One LE (Hong Kong), parallel to the manual process. & M04, M05, M06 closed; parallel-run comparison meets thresholds for one full cycle; no open SEV1/SEV2; audit coverage $=$ 100\,\% of in-scope actions. \\
+GA (limited) & Three LEs (HK plus wave 2). & M07 closed; Beta gate sustained for two consecutive cycles; S01 closed; entity-params onboarding runbook exercised end-to-end; kill-switch green. \\
+Full rollout & All LEs in scope for v1.0 (through wave 3). & S02 closed; two quarterly reviews sustained; M08 complete; business-case refresh complete; EUC retirement plan (\cref{sec:euc-retirement-plan}) at ``dashboard authoritative'' for all three EUCs. \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\section{Kill-switch conditions}\label{sec:tb-kill-switch}
+
+The kill-switch is a pre-committed rulebook: a tripped condition enters
+the action column without further debate. GFAIC and sponsor are
+notified within 24 hours. The conditions are evaluated continuously
+(on every cycle) and do not carry dates.
+
+\begin{table}[htbp]
+\centering
+\caption{Trial Balance kill-switch.}
+\label{tab:tb-kill-switch}
+\footnotesize
+\begin{tabularx}{\linewidth}{@{}l l X@{}}
+\toprule
+\textbf{Condition} & \textbf{Evaluation} & \textbf{Action} \\ \midrule
+Parallel-run disagreement rate $>$\,10\,\% on three consecutive cycles & per cycle & \textbf{Abandon v1.0}; fall back to manual; re-scope v1.1. \\
+Cycle time from \stateid{EXTRACT\_TB} to \stateid{SEND\_FORTM} $>$\,manual baseline for two cycles & per cycle & \textbf{Redesign}: halt rollout, fix latency, re-enter Beta. \\
+Accept-without-edit rate of AI commentary $<$\,40\,\% for two cycles & per cycle & \textbf{Redesign prompt layer}; commentary drafts gated behind a feature flag. \\
+Audit-coverage gap (missed \texttt{reserve/complete} pair) detected in production & continuous & \textbf{Pause GA onboarding}; incident-review before next wave. \\
+Any MAS MGF finding attributable to TB specifically & continuous & \textbf{Halt rollout}; remediate before next wave. \\
+Shared-platform dependency in \cref{tab:tb-shared-deps} declared red by its owner project & continuous & \textbf{Pause downstream Must}; re-plan at next steering. \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\section{Shared-platform dependencies}\label{sec:tb-shared-deps}
+
+This project depends on four shared-platform components. Each is owned
+by a sibling project (Regulations) or by shared infra, and is tracked
+here only as a dependency, not a commitment this project can
+unilaterally adjust. Sequence is expressed in terms of the Must item
+that first consumes the dependency, not in calendar time.
+
+\begin{table}[htbp]
+\centering
+\caption{Shared-platform dependencies.}
+\label{tab:tb-shared-deps}
+\footnotesize
+\begin{tabularx}{\linewidth}{@{}l l l X@{}}
+\toprule
+\textbf{Component} & \textbf{Owner} & \textbf{First consumed by} & \textbf{Impact if late} \\ \midrule
+Audit service (reserve/complete, immutable storage) & Regulations project & M04 (REG-INTG-TB-001) & No Beta gate possible without this; TB GA slips in lockstep with the audit service. \\
+Unified schema registry (\path{docs/schema/}) & Shared infra & M01 & Already \texttt{migration.status=complete}; no remaining risk. \\
+vLLM hosting (\texttt{vllm-only} policy) & Shared platform & M02 & Graceful-degradation ladder defined in the Regulations spec provides fallback; slip tolerable. \\
+Review dashboard infra (SAPUI5 + BTP destination) & Shared platform & M01 & Degrade to read-only evidence mirror on Shared Drive; EUC retirement timeline reopens. \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\noindent
+Shared-platform dependencies are surfaced at monthly steering. If any
+upstream owner declares \textbf{amber} or \textbf{red} on a component
+in \cref{tab:tb-shared-deps}, the affected downstream Must milestone
+is re-planned at the following steering.
+
+\section{Governance and business-case cadence}\label{sec:tb-governance}
+
+\paragraph{Project governance.}
+The Trial Balance project reports monthly to a project steering
+(Process Owner, Head of Africa GFS, AI Engineer) and quarterly to the
+cross-project GFAIC (\cref{ch:controls}). Monthly steering accepts or
+rejects amber/red signals on Must items; GFAIC reviews compliance
+posture and any cross-project dependencies.
+
+\paragraph{Business-case refresh (M08).}
+The 2025-12-14 business case that authorises this project is refreshed
+on the following rhythm:
+
+\begin{itemize}
+  \item \textbf{Mandatory refresh}: at the first cycle after GA, and
+        annually thereafter (ticket TB-BC-REFRESH, priority M in
+        \cref{tab:tb-milestones}). Refresh packet includes volume
+        assumptions, unit economics,
+        FTE leverage realised vs.\ forecast, and a deviation statement
+        against the 2025-12-14 baseline.
+  \item \textbf{Trigger-based refresh}: any of
+        \begin{itemize}
+          \item LE count in scope changes by $\ge\,20$\,\% from forecast
+                (either direction);
+          \item per-cycle run cost changes by $\ge\,30$\,\% (vLLM
+                licensing, GPU price, variance-engine throughput);
+          \item new regulatory obligation materially affecting scope
+                (e.g.\ new MAS MGF pillar, additional jurisdiction);
+          \item any kill-switch in \cref{tab:tb-kill-switch} is tripped.
+        \end{itemize}
+  \item \textbf{Owner}: business sponsor (TB-REQ-001 author,
+        S.~Badrinath, or delegate). Approval routed through the
+        project steering and filed at
+        \path{docs/tb/business-case/refresh-history.yaml}.
+\end{itemize}

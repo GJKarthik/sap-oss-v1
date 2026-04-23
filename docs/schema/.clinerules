@@ -1,0 +1,182 @@
+# =============================================================================
+# .clinerules - Schema Directory Standards
+# JSON Schema & Data Contract Governance
+# =============================================================================
+# This file defines rules for maintaining JSON schemas and data contracts
+# to ensure consistency with LaTeX specifications and implementation code.
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# DIRECTORY OVERVIEW
+# -----------------------------------------------------------------------------
+
+## Purpose
+This directory contains all JSON schemas and YAML data contracts for the 
+enterprise AI platform. Schemas serve as:
+- **Data Contracts**: Define the structure of data exchanged between services
+- **Validation Rules**: Enforce data integrity at runtime
+- **Documentation**: Machine-readable specification of data structures
+
+## Directory Structure
+
+| Subdirectory | Description | Related Spec |
+|--------------|-------------|--------------|
+| `arabic/` | Arabic AP Invoice Processing schemas | docs/latex/specs/arabic/ |
+| `common/` | Shared enums, types, and base schemas | All specs |
+| `regulations/` | AI governance and compliance schemas | docs/latex/specs/regulations/ |
+| `simula/` | Training data framework schemas | docs/latex/specs/simula/ |
+| `tb/` | Trial Balance review schemas | docs/latex/specs/tb/ |
+
+# -----------------------------------------------------------------------------
+# SCHEMA STANDARDS
+# -----------------------------------------------------------------------------
+
+## Required Schema Metadata
+
+Every JSON schema MUST include:
+
+```json
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://sap-oss.example.com/schemas/<domain>/<name>.schema.json",
+  "title": "Human-Readable Title",
+  "description": "What this schema defines and its purpose",
+  "type": "object",
+  "required": ["field1", "field2"],
+  "additionalProperties": false
+}
+```
+
+## Field Naming Conventions
+
+| Type | Convention | Example |
+|------|------------|---------|
+| Identifiers | Suffix with `_id` | `persona_id`, `resource_id` |
+| Timestamps | Suffix with `_at` or `_timestamp` | `created_at`, `audit_timestamp` |
+| Flags | Prefix with `is_` or `has_` | `is_active`, `has_attachment` |
+| Counts | Suffix with `_count` | `line_item_count` |
+| Audit fields | Prefix with `audit_` | `audit_id`, `audit_trail` |
+
+## Schema File Naming
+
+| Type | Pattern | Example |
+|------|---------|---------|
+| Entity schema | `<entity>.schema.json` | `variance-record.schema.json` |
+| Entry schema | `<entity>-entry.schema.json` | `audit-trail-entry.schema.json` |
+| Extract schema | `<entity>-extract.schema.json` | `tb-extract.schema.json` |
+| Params schema | `<entity>-params.schema.json` | `entity-params.schema.json` |
+| YAML configs | `<name>.yaml` | `risk-register.yaml` |
+
+# -----------------------------------------------------------------------------
+# SPEC-DRIFT PREVENTION
+# -----------------------------------------------------------------------------
+
+## Schema-Spec Synchronization Rules
+
+1. **Schema changes require spec updates**
+   - Adding/removing fields → Update corresponding LaTeX chapter
+   - Changing field types → Update data model documentation
+   - Modifying enums → Update enum tables in spec
+
+2. **Spec changes require schema updates**
+   - New data structures in spec → Create corresponding schema
+   - Modified field descriptions → Update schema description
+   - Changed validation rules → Update schema constraints
+
+## Related Files
+
+When modifying schemas, check these related files:
+- `docs/schema/spec-code-mapping.yaml` - Update artifact mappings
+- `docs/schema/registry.json` - Update schema registry
+- `docs/latex/specs/<domain>/` - Update corresponding spec chapters
+
+## Drift Detection Commands
+
+```bash
+# Check for drift in this directory
+make audit-spec-drift-domain DOMAIN=<domain>
+
+# Validate all schemas are valid JSON/YAML
+make audit-check-mapping
+
+# View current drift exceptions
+make audit-exceptions-review
+```
+
+# -----------------------------------------------------------------------------
+# SHARED ENUMS GOVERNANCE
+# -----------------------------------------------------------------------------
+
+## Shared Enums (common/enums.yaml)
+
+The following enums are shared across multiple specs and MUST be referenced
+from `common/enums.yaml` rather than redefined locally:
+
+| Enum | Consumers | RFC Required for Changes |
+|------|-----------|--------------------------|
+| `risk_status` | TB, BSS | Yes |
+| `decision_outcome` | TB, Arabic, Regulations | Yes |
+| `variance_type` | TB | Yes |
+| `workflow_state_type` | TB, BSS | Yes |
+| `audit_action` | TB, BSS, Arabic | Yes |
+| `source_system` | TB, Arabic | Yes |
+
+## Adding/Modifying Shared Enums
+
+1. Submit RFC to Controls Architecture Team
+2. 5-day review period required
+3. All consuming spec owners must approve
+4. One-release deprecation window for breaking changes
+5. Update all related specs in same PR
+
+# -----------------------------------------------------------------------------
+# VALIDATION REQUIREMENTS
+# -----------------------------------------------------------------------------
+
+## Schema Validation
+
+All schemas must pass:
+1. **JSON Schema validity** - Valid JSON Schema Draft 2020-12
+2. **YAML validity** - Valid YAML 1.2 (for YAML files)
+3. **Reference resolution** - All $ref pointers resolve
+4. **Example validation** - All examples validate against schema
+
+## Running Validation
+
+```bash
+# Validate all schemas
+python3 docs/schema/validate.py
+
+# Validate specific schema
+python3 docs/schema/validate.py --schema simula/taxonomy.schema.json
+```
+
+# -----------------------------------------------------------------------------
+# CHANGE WORKFLOW
+# -----------------------------------------------------------------------------
+
+## Before Making Changes
+
+1. Check spec-code mapping: `make audit-check-mapping`
+2. Identify related specs: See `spec-code-mapping.yaml`
+3. Run drift audit: `make audit-spec-drift-domain DOMAIN=<domain>`
+
+## After Making Changes
+
+1. Update related LaTeX spec chapters
+2. Update schema registry (`registry.json`)
+3. Run validation: `python3 docs/schema/validate.py`
+4. Run drift audit: `make audit-spec-drift`
+5. Update CHANGELOG.md with changes
+
+# -----------------------------------------------------------------------------
+# VERSION HISTORY
+# -----------------------------------------------------------------------------
+
+| Version | Date | Changes |
+|---------|------|---------|
+| 1.0.0 | 2026-04-21 | Initial .clinerules for schema directory |
+
+# =============================================================================
+# END OF .clinerules
+# =============================================================================

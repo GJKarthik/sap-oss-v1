@@ -1,0 +1,96 @@
+% !TEX program = xelatex
+\documentclass[11pt,a4paper,twoside]{report}
+
+% --- Shared SAP-OSS Style Packages ------------------------------------------
+\usepackage{sap-oss-colors}
+\usepackage{sap-oss-boxes}
+\usepackage{sap-oss-listings}
+
+\usepackage[a4paper,margin=28mm]{geometry}
+\usepackage{graphicx}
+\usepackage{microtype}
+\usepackage{setspace}
+\usepackage{parskip}
+\usepackage{booktabs}
+\usepackage{tabularx}
+\usepackage{longtable}
+\usepackage{array}
+\usepackage{multirow}
+\usepackage{enumitem}
+\usepackage{amssymb}
+\usepackage{pifont}
+\usepackage{fontawesome5}
+\usepackage[hyphens]{url}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta,positioning,shapes.geometric,fit,calc,chains,
+                decorations.pathmorphing,backgrounds}
+
+% --- Semantic Hyperlinking --------------------------------------------------
+\usepackage{xr-hyper}
+\usepackage[hidelinks]{hyperref}
+
+% External references to peer specifications
+\externaldocument[reg:]{regulations-spec}
+\externaldocument[ar:]{arabic-ap-spec}
+\externaldocument[sim:]{simula-training-spec}
+
+\usepackage{fontspec}
+\usepackage[capitalize,noabbrev]{cleveref}
+
+% --- Domain-Specific Colors (Supplementing shared palette) ------------------
+\definecolor{tbred}{HTML}{B71C1C}
+\definecolor{tbblue}{HTML}{1565C0}
+\definecolor{tbgreen}{HTML}{2E7D32}
+\definecolor{tbgrey}{HTML}{546E7A}
+\definecolor{tbamber}{HTML}{F0AB00}
+
+\onehalfspacing
+\setlist{topsep=2pt,itemsep=1pt,parsep=0pt}
+\setlength{\emergencystretch}{3em}
+\tolerance=1000
+\hbadness=10000
+
+% --- Global Command Overrides -----------------------------------------------
+\newcommand{\corpus}{}
+\newcommand{\tool}{}
+\newcommand{\stateid}[1]{\textsc{\lowercase{#1}}}
+
+% --- Glossary Helper Commands -----------------------------------------------
+\definecolor{pathcolor}{HTML}{004D40}
+\newcommand{\schemapath}[1]{\texttt{\textcolor{pathcolor}{#1}}}
+\newcommand{\enumval}[1]{\texttt{\textcolor{sapgreen}{#1}}}
+\newcommand{\fieldref}[1]{\texttt{\textcolor{sapblue}{#1}}}
+
+\begin{document}
+
+\title{\vspace{-2em}\Large Trial Balance Review \\
+       \textbf{and AI Augmentation} \\
+       \large Implementation Specification \\
+       \small Ref: \texttt{TB-REVIEW-2026-v1.2}}
+\author{SAP-OSS Financial Review Team}
+\date{April 2026}
+
+\maketitle
+
+% --- Incorporated Executive Summary ---
+\input{../fragment-executive-summary}
+
+\input{chapters/00-frontmatter}
+\input{chapters/01-overview}
+\input{chapters/02-data-schema}
+\input{chapters/03-ai-pipeline}
+\input{chapters/04-controls-engine}
+\input{chapters/05-workflow}
+\input{chapters/06-controls-and-testing}
+\input{chapters/07-references}
+\input{chapters/08-review-dashboard-spec}
+\input{chapters/09-testing}
+\input{chapters/10-future-work}
+\input{chapters/11-project-roadmap}
+\input{chapters/12-implementation-instructions}
+
+% --- Incorporated Universal Chapters ---
+\input{../fragment-cross-spec-dependencies}
+\input{../fragment-master-glossary}
+
+\end{document}

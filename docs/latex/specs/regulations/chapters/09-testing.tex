@@ -1,0 +1,276 @@
+\chapter{Testing Specification}\label{ch:testing}
+
+This chapter specifies the testing requirements for the Regulations compliance
+corpus, including validation tests, coverage verification, and CI/CD integration.
+
+\section{Test coverage requirements}
+
+\begin{table}[htbp]
+\centering
+\caption{Regulations test coverage targets.}
+\label{tab:reg-coverage}
+\footnotesize
+\begin{tabularx}{\linewidth}{@{}l r r X@{}}
+\toprule
+\textbf{Component} & \textbf{Line \%} & \textbf{Branch \%} & \textbf{Notes} \\ \midrule
+Schema validator & 95 & 90 & Core infrastructure \\
+Requirement parser & 90 & 85 & \\
+Coverage calculator & 90 & 85 & \\
+Status tracker & 85 & 75 & \\
+Conformance checker & 85 & 75 & \\
+\textbf{Overall minimum} & \textbf{90} & \textbf{80} & Enforced in CI \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\section{Test fixtures}
+
+Fixtures are located in \texttt{tests/fixtures/regulations/}.
+
+\subsection{Regulation fixtures}
+
+\begin{itemize}
+  \item Complete IMDA MGF corpus (20 requirements)
+  \item Ju \& Aral paper requirements (5 requirements)
+  \item AI Verify requirements (10 requirements)
+  \item Edge case: Empty corpus
+  \item Edge case: Malformed requirement
+\end{itemize}
+
+\subsection{Conformance tool fixtures}
+
+\begin{itemize}
+  \item Mock AIVerify plugin responses
+  \item Mock Moonshot test results
+  \item Invalid tool output for error handling
+\end{itemize}
+
+\section{Unit test cases}
+
+\subsection{Requirement parsing}
+
+\begin{tabularx}{\linewidth}{@{}l l X@{}}
+\toprule
+\textbf{ID} & \textbf{Priority} & \textbf{Description} \\ \midrule
+REG-PAR-001 & P1 & Parse requirement from IMDA MGF \\
+REG-PAR-002 & P1 & Parse requirement from academic paper \\
+REG-PAR-003 & P1 & Extract obligation level (must/should/may) \\
+REG-PAR-004 & P2 & Handle missing optional fields \\
+REG-PAR-005 & P2 & Validate against requirement schema \\
+\bottomrule
+\end{tabularx}
+
+\subsection{Status tracking}
+
+\begin{tabularx}{\linewidth}{@{}l l X@{}}
+\toprule
+\textbf{ID} & \textbf{Priority} & \textbf{Description} \\ \midrule
+REG-STS-001 & P1 & Track implemented status correctly \\
+REG-STS-002 & P1 & Track partial status with evidence \\
+REG-STS-003 & P1 & Track gap status with remediation plan \\
+REG-STS-004 & P1 & Identify downgraded status (asterisk marker) \\
+REG-STS-005 & P2 & Generate status summary report \\
+\bottomrule
+\end{tabularx}
+
+\subsection{Coverage calculation}
+
+\begin{tabularx}{\linewidth}{@{}l l X@{}}
+\toprule
+\textbf{ID} & \textbf{Priority} & \textbf{Description} \\ \midrule
+REG-COV-001 & P1 & Calculate coverage percentage \\
+REG-COV-002 & P1 & Generate coverage heat map \\
+REG-COV-003 & P1 & Identify uncovered sections \\
+REG-COV-004 & P2 & Handle not-applicable sections \\
+REG-COV-005 & P2 & Calculate partial coverage (0.5 weight) \\
+\bottomrule
+\end{tabularx}
+
+\subsection{Implementation pointer validation}
+
+\begin{tabularx}{\linewidth}{@{}l l X@{}}
+\toprule
+\textbf{ID} & \textbf{Priority} & \textbf{Description} \\ \midrule
+REG-PTR-001 & P1 & Validate code file references exist \\
+REG-PTR-002 & P1 & Validate spec section references \\
+REG-PTR-003 & P2 & Flag circular references \\
+REG-PTR-004 & P2 & Validate concrete vs abstract pointers \\
+\bottomrule
+\end{tabularx}
+
+\subsection{Conformance tool integration}
+
+\begin{tabularx}{\linewidth}{@{}l l X@{}}
+\toprule
+\textbf{ID} & \textbf{Priority} & \textbf{Description} \\ \midrule
+REG-TOOL-001 & P1 & Parse AIVerify plugin output \\
+REG-TOOL-002 & P1 & Parse Moonshot benchmark output \\
+REG-TOOL-003 & P2 & Handle tool execution failure \\
+REG-TOOL-004 & P2 & Aggregate results across tools \\
+\bottomrule
+\end{tabularx}
+
+\section{Integration test suite}
+
+\begin{lstlisting}[basicstyle=\ttfamily\small]
+pytest tests/integration/regulations/ -v --tb=short
+\end{lstlisting}
+
+Expected duration: 5 minutes.
+
+\subsection{End-to-end scenarios}
+
+\begin{enumerate}
+  \item \textbf{Full corpus validation}: Load and validate entire corpus
+  \item \textbf{Coverage report}: Generate coverage heat map
+  \item \textbf{Status audit}: Verify all status markers
+  \item \textbf{Pointer verification}: Check all implementation pointers
+  \item \textbf{Tool integration}: Run conformance tools and aggregate
+\end{enumerate}
+
+\section{Schema validation tests}
+
+\begin{tabularx}{\linewidth}{@{}l X@{}}
+\toprule
+\textbf{Test} & \textbf{Description} \\ \midrule
+REG-SCH-001 & All regulations validate against regulation.schema.json \\
+REG-SCH-002 & All requirements validate against requirement.schema.json \\
+REG-SCH-003 & All tools validate against conformance-tool.schema.json \\
+REG-SCH-004 & Corpus index validates against corpus.schema.json \\
+\bottomrule
+\end{tabularx}
+
+\section{Compliance verification tests}
+
+\begin{tabularx}{\linewidth}{@{}l X@{}}
+\toprule
+\textbf{Test} & \textbf{Description} \\ \midrule
+REG-CMP-001 & No requirement has status ``missing'' without remediation \\
+REG-CMP-002 & All ``must'' requirements have status $\neq$ gap \\
+REG-CMP-003 & All downgraded (*) statuses have explanation \\
+REG-CMP-004 & Coverage $\geq$ 75\% for all source documents \\
+\bottomrule
+\end{tabularx}
+
+\section{CI/CD integration}
+
+\begin{lstlisting}[basicstyle=\ttfamily\small,caption={GitHub Actions workflow excerpt.}]
+regulations-tests:
+  runs-on: ubuntu-latest
+  steps:
+    - uses: actions/checkout@v4
+    - name: Validate schemas
+      run: |
+        python docs/schema/validate.py --domain regulations
+    - name: Run regulations tests
+      run: |
+        pytest tests/unit/regulations/ -v --cov=src/regulations
+        pytest tests/integration/regulations/ -v
+    - name: Check coverage
+      run: |
+        coverage report --fail-under=90
+    - name: Generate compliance report
+      run: |
+        python scripts/generate_compliance_report.py
+\end{lstlisting}
+
+\section{Quarterly audit tests}\label{sec:quarterly-audit}
+
+For IMDA MGF compliance, run extended tests quarterly:
+
+\begin{enumerate}
+  \item Execute the \emph{applicable} AIVerify plugin subset
+        (see Section~\ref{sec:aiverify-subset}) and verify pass
+  \item Execute Moonshot benchmarks and verify scores
+  \item Verify GFAIC charter alignment (attestation, see
+        Section~\ref{sec:gfaic-attestation})
+  \item Generate full compliance report for auditors
+  \item Archive report with timestamp and attestation
+\end{enumerate}
+
+\subsection{Applicable AIVerify plugin subset}\label{sec:aiverify-subset}
+
+The AIVerify stock plugin set (v2.x) ships 11 plugins. Not all are
+applicable to this deployment, which is a text-only enterprise
+finance / governance system (no images, no speech, no predictive
+classifiers on tabular data). The quarterly audit is scoped to the
+subset that is meaningful for the deployed agents; applying
+plugins outside this subset produces ``N/A'' results that dilute
+the audit trail without adding assurance.
+
+\begin{table}[htbp]
+\centering
+\caption{AIVerify plugin applicability for this deployment.}
+\label{tab:aiverify-subset}
+\footnotesize
+\begin{tabularx}{\linewidth}{@{}l l X@{}}
+\toprule
+\textbf{Plugin} & \textbf{Applicable} & \textbf{Rationale} \\ \midrule
+Robustness -- text adversarial & Yes & Deployed agents consume text inputs; adversarial tests exercise prompt-injection surface. \\
+Robustness -- image adversarial & No & No image inputs in scope. \\
+Fairness -- tabular classifier & No & No classifier with protected-attribute inputs; the TB commentary model does not classify. \\
+Fairness -- text & Yes & Applied to Arabic-language outputs to detect language-based quality disparity. \\
+Explainability -- SHAP tabular & No & Not applicable (no tabular classifier). \\
+Explainability -- LIME text & Yes & Applied to TB commentary: used to validate that cited variance drivers match commentary. \\
+Performance -- accuracy & Yes & Generic accuracy/benchmark against golden corpus. \\
+Performance -- confusion matrix & No & No multi-class classifier. \\
+Hallucination / groundedness & Yes & Core test for RAG-backed commentary. \\
+PII leakage & Yes & Critical for Arabic AP (invoices) and TB (entity data). \\
+Toxicity / safety & Yes & Required by IMDA MGF regardless of domain; low expected firing rate but must be part of the audit. \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\noindent
+\textbf{Applicable subset}: 7 of 11 (Robustness-text, Fairness-text,
+Explainability-LIME, Performance-accuracy, Hallucination, PII
+leakage, Toxicity). The other 4 plugins are documented as
+\texttt{not\_applicable} with the rationale above; the quarterly
+compliance report records the applicability decision explicitly so
+that auditors can challenge the scoping if the deployment changes
+(e.g.\ if tabular classifiers are added in v2.0, the fairness and
+explainability tabular plugins become applicable).
+
+\subsection{GFAIC charter attestation}\label{sec:gfaic-attestation}
+
+The full GFAIC (Group Financial AI Committee) charter is
+maintained in the internal governance repository for
+confidentiality. For external auditors, this specification
+provides two verifiable deliverables:
+
+\begin{description}
+  \item[Redacted summary.]
+        \path{docs/governance/gfaic-charter-redacted.md} --- a
+        public-facing summary with sensitive member names, routing
+        escalations, and budget figures redacted. Covers:
+        charter scope, standing members (by role, not name), meeting
+        cadence, decision rights, escalation to the Board.
+  \item[Signed attestation.]
+        \path{docs/governance/gfaic-attestation.pdf} ---
+        a one-page document signed quarterly by the GFAIC
+        chairperson attesting that: (a) the full charter on
+        the internal repository has not changed materially
+        since the previous attestation, (b) the AI systems
+        described in this specification are within GFAIC scope,
+        (c) GFAIC reviewed the last quarterly compliance
+        report. The attestation's SHA-256 is recorded in the
+        registry and in this specification's build metadata.
+\end{description}
+
+\noindent
+External auditors requiring the full charter can request it via
+the Audit \& Risk Committee under NDA; the attestation plus
+redacted summary is sufficient for routine regulatory review.
+
+\section{Acceptance criteria}
+
+Tests pass when:
+\begin{enumerate}
+  \item All P1 test cases pass (100\%)
+  \item P2 test cases pass ($\geq$95\%)
+  \item Line coverage $\geq$90\%
+  \item All schemas validate
+  \item Coverage $\geq$75\% for all source documents
+  \item No ``must'' requirements in gap status
+  \item All implementation pointers resolve
+\end{enumerate}

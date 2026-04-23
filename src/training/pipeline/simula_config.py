@@ -213,6 +213,13 @@ class GenerationConfig:
         default_factory=lambda: float(os.getenv("SIMULA_COMPLEXITY_RATIO", "0.5"))
     )
     
+    # Enable adaptive complexity ratio based on teacher strength (Figure 7)
+    adaptive_complexity: bool = field(
+        default_factory=lambda: os.getenv(
+            "SIMULA_ADAPTIVE_COMPLEXITY", "true"
+        ).lower() == "true"
+    )
+    
     # Number of meta-prompts per taxonomy mix (local diversity)
     meta_prompts_per_mix: int = field(
         default_factory=lambda: int(os.getenv("SIMULA_META_PROMPTS_PER_MIX", "3"))
@@ -223,6 +230,18 @@ class GenerationConfig:
         default_factory=lambda: os.getenv(
             "SIMULA_ENABLE_GEN_CRITIC", "true"
         ).lower() == "true"
+    )
+    
+    # Enable adaptive critic thresholding (adjusts based on complexity)
+    adaptive_critic_threshold: bool = field(
+        default_factory=lambda: os.getenv(
+            "SIMULA_CRITIC_ADAPTIVE_THRESHOLD", "true"
+        ).lower() == "true"
+    )
+    
+    # Base critic threshold (probability threshold for acceptance)
+    critic_threshold: float = field(
+        default_factory=lambda: float(os.getenv("SIMULA_CRITIC_THRESHOLD", "0.5"))
     )
     
     # Maximum retries for critic rejection
@@ -246,6 +265,65 @@ class GenerationConfig:
     seed: int = field(
         default_factory=lambda: int(os.getenv("SIMULA_SEED", "42"))
     )
+    
+    def get_adaptive_complexity_ratio(
+        self, teacher_accuracy: float | None
+    ) -> float:
+        """
+        Get adaptive complexity ratio based on teacher model strength.
+        
+        From Figure 7: "complex data can be detrimental when the teacher
+        model is weak (LEXam case)."
+        
+        Args:
+            teacher_accuracy: Teacher model accuracy (0-1), None if unknown
+            
+        Returns:
+            Adjusted complexity ratio
+        """
+        if not self.adaptive_complexity or teacher_accuracy is None:
+            return self.complexity_ratio
+        
+        if teacher_accuracy < 0.6:
+            # Weak teacher: significantly reduce complexity
+            import logging
+            logging.getLogger(__name__).warning(
+                f"Teacher accuracy {teacher_accuracy:.1%} < 60%, "
+                f"reducing complexity ratio from {self.complexity_ratio} to 0.2"
+            )
+            return 0.2
+        elif teacher_accuracy < 0.7:
+            # Moderate teacher: slightly reduce complexity
+            return min(self.complexity_ratio, 0.35)
+        else:
+            return self.complexity_ratio
+    
+    def get_adaptive_critic_threshold(
+        self, complexity_score: float | None
+    ) -> float:
+        """
+        Get adaptive critic threshold based on example complexity.
+        
+        From Figure 3b: "maintaining [accuracy] lift requires a higher 'cost'
+        in rejection rate" as complexity increases.
+        
+        Args:
+            complexity_score: Example complexity (0-1), None if unknown
+            
+        Returns:
+            Adjusted critic threshold
+        """
+        if not self.adaptive_critic_threshold or complexity_score is None:
+            return self.critic_threshold
+        
+        if complexity_score > 0.7:
+            # High complexity: more conservative threshold
+            return min(0.7, self.critic_threshold + 0.2)
+        elif complexity_score < 0.3:
+            # Low complexity: more permissive
+            return max(0.3, self.critic_threshold - 0.2)
+        else:
+            return self.critic_threshold
 
 
 @dataclass

@@ -1,0 +1,184 @@
+% =============================================================================
+% Chapter 1 --- Overview and corpus layout
+% =============================================================================
+\chapter{Overview and corpus layout}
+\label{ch:overview}
+
+\section{Why this corpus exists}
+
+Agentic AI systems --- LLM-driven agents that plan across multiple steps,
+call tools, and act on external systems --- are governed by a rapidly
+evolving mix of regulatory frameworks, empirical research, and conformance
+tooling. None of these sources alone tells an organisation whether a
+specific deployment is defensible. The \corpus{} corpus brings the three
+source classes together, adds a machine-checkable link to the code
+implementing each requirement, and exposes the result as both structured
+JSON and this human-readable PDF.
+
+Three concrete failure modes motivated the corpus:
+
+\begin{itemize}
+  \item \textbf{Requirements drift.} Regulatory text is updated faster than
+        organisational policies. A machine-readable copy with a hash lets
+        governance teams detect a published update and re-run the
+        downstream validators.
+  \item \textbf{Evidence lives everywhere.} A single requirement such as
+        \emph{``bound the agent's tool access''} touches an MCP server, a
+        data-product registry, a CI job, a runbook, and a review checklist.
+        Without a central mapping, audit evidence walks are painful and
+        inconsistent.
+  \item \textbf{Conformance tools don't speak the same vocabulary.} AI
+        Verify uses plugin IDs, Moonshot uses benchmark IDs, internal
+        controls use EUC reference numbers, and product teams use file
+        paths. The requirement schema defined here is the translation
+        table.
+\end{itemize}
+
+\section{Three source classes}
+
+\begin{description}
+  \item[Framework --- IMDA MGF for Agentic AI.] A 29-page recommended
+    framework organised into four pillars: assess and bound risks upfront;
+    make humans meaningfully accountable; implement technical controls and
+    processes; enable end-user responsibility. It is the highest-normativity
+    document in the corpus.
+  \item[Index --- 2025 AI Agent Index.] A descriptive inventory of 30
+    deployed agentic systems scored on legal, technical, autonomy,
+    ecosystem, evaluation, and safety documentation. It supplies
+    transparency requirements rather than normative obligations.
+  \item[Research --- Ju \& Aral (2026).] A 2{,}234-participant field
+    experiment that produced empirical claims about delegation rates, task
+    orientation, and diversity collapse. We treat these as observational
+    requirements that inform which metrics a deployment should measure.
+\end{description}
+
+\section{Two conformance tools}
+
+\begin{description}
+  \item[\tool{aiverify} (v2.0).] A plugin-based testing framework. Eleven
+    stock plugins implement fairness, robustness, explainability,
+    financial-sector (Veritas), reporting, and process-checklist
+    algorithms. Plugins are referenced from requirement records via the
+    \texttt{verification[].plugin} field.
+  \item[\tool{moonshot-cicd} (v1.1.0).] A CI/CD-focused safety evaluation
+    tool exposing four benchmark categories --- hallucination, undesirable
+    content, data disclosure, adversarial --- behind a single
+    \texttt{moonshot run} command. Referenced via
+    \texttt{verification[].testId}.
+\end{description}
+
+\section{Corpus layout}
+
+\begin{figure}[h]
+\centering
+\begin{tikzpicture}[
+  node distance=6mm and 8mm,
+  every node/.style={font=\small},
+  box/.style={draw=reggrey,thick,rounded corners=1pt,inner sep=5pt,
+              align=center,minimum height=8mm,fill=white},
+  dir/.style={box,fill=reggrey!10},
+  gen/.style={box,fill=reggreen!10},
+  struct/.style={box,fill=regblue!10},
+  outp/.style={box,fill=regamber!10},
+  arr/.style={-Latex,thick,draw=reggrey!60}
+]
+\node[dir] (src)      {\textbf{source/}\\ PDFs (untouched)};
+\node[gen,right=of src] (text) {\textbf{extracted-text/}\\ page-by-page TXT};
+\node[gen,right=of text] (rag) {\textbf{rag/}\\ chunks + embeddings};
+\node[struct,below=of text] (struct) {\textbf{docs/schema/}\\ JSON records + schemas \\ + \tool{validate.py}};
+\node[outp,below=of struct] (spec) {\textbf{docs/latex/specs/}\\ this PDF (XeLaTeX)};
+
+\draw[arr] (src) -- (text) node[midway,above,font=\tiny] {pdftotext};
+\draw[arr] (text) -- (rag)  node[midway,above,font=\tiny] {chunker};
+\draw[arr] (text.south) |- (struct.west);
+\draw[arr] (struct) -- (spec);
+\end{tikzpicture}
+\caption{Pipeline from source PDFs through to the printable specification.}
+\label{fig:layout}
+\end{figure}
+
+\begin{table}[h]
+\centering
+\small
+\begin{tabularx}{\textwidth}{lX}
+\toprule
+\textbf{Directory} & \textbf{Purpose} \\
+\midrule
+\path{docs/regulations/} (source PDFs)    & Binary source documents. Never edited; content hashes tracked in \path{docs/schema/registry.json}. \\
+\path{docs/regulations/machine-readable/} & Per-source extracted text, RAG chunks, and embedding records (re-upsertable into Qdrant via \path{machine-readable/scripts/upsert\_qdrant.py}). \\
+\path{docs/regulations/machine-readable/specification-addendum.yaml} & Requirement records (20 requirements) with \texttt{implementation[]} and \texttt{verification[]} pointers. \\
+\path{docs/schema/regulations/}           & JSON Schemas (Draft-07): regulation, requirement, conformance-tool, corpus. \\
+\path{docs/schema/registry.json}, \path{docs/schema/validate.py} & Master schema index + unified offline validator. \\
+\path{docs/latex/specs/regulations/}      & This human-readable PDF (XeLaTeX). \\
+\path{docs/regulations/aiverify-main/}    & Vendored AI Verify 2.0 monorepo (Apache-2.0). \\
+\path{docs/regulations/moonshot-cicd-main/} & Vendored Moonshot 1.1.0 monorepo (Apache-2.0). \\
+\bottomrule
+\end{tabularx}
+\caption{Top-level directory layout.}
+\label{tab:layout}
+\end{table}
+
+\section{End-to-end traceability path}
+
+Figure~\ref{fig:traceability} shows the five-step chain that the validator
+enforces: from the hashed source PDF, through the extracted text, a
+structured regulation record, a normative requirement record with
+cross-references, down to the code or test actually implementing it.
+
+\begin{figure}[h]
+\centering
+\resizebox{\textwidth}{!}{%
+\begin{tikzpicture}[
+  node distance=4mm and 4mm,
+  every node/.style={font=\small},
+  stage/.style={draw=reggrey,thick,rounded corners=1pt,inner sep=5pt,
+                minimum width=28mm,minimum height=9mm,align=center,fill=white},
+  s1/.style={stage,fill=reggrey!10},
+  s2/.style={stage,fill=reggreen!10},
+  s3/.style={stage,fill=regblue!10},
+  s4/.style={stage,fill=regblue!20},
+  s5/.style={stage,fill=regamber!15},
+  arr/.style={-Latex,thick,draw=reggrey!60}
+]
+\node[s1] (pdf)   {PDF\\ \tiny hash pinned};
+\node[s2,right=of pdf]   (txt)   {Extracted text\\ \tiny re-generatable};
+\node[s3,right=of txt]   (reg)   {Regulation record\\ \tiny sections + scope};
+\node[s4,right=of reg]   (req)   {Requirement record\\ \tiny impl[] + verify[]};
+\node[s5,right=of req]   (code)  {Code / test / tool\\ \tiny repo path};
+
+\draw[arr] (pdf) -- (txt);
+\draw[arr] (txt) -- (reg);
+\draw[arr] (reg) -- (req);
+\draw[arr] (req) -- (code);
+\end{tikzpicture}}
+\caption{End-to-end traceability chain verified by \path{docs/schema/validate.py}.}
+\label{fig:traceability}
+\end{figure}
+
+\section{What the validator enforces}
+
+\begin{enumerate}
+  \item \textbf{Schema conformance.} Every record under
+        \path{docs/schema/regulations/}
+        (\texttt{regulation.schema.json}, \texttt{requirement.schema.json},
+        \texttt{conformance-tool.schema.json},
+        \texttt{corpus.schema.json}) validates against its Draft-07 JSON
+        Schema using an offline \texttt{referencing} registry.
+  \item \textbf{Corpus integrity.} Every entry in
+        \path{docs/schema/registry.json} resolves to a schema or record on
+        disk, and every record on disk is listed in the registry.
+  \item \textbf{Implementation link existence.} For each
+        \texttt{implementation[].path}, the validator resolves the path
+        against the repository root and fails if it is missing (unless the
+        entry is explicitly recorded as \texttt{kind: "none"} marking a
+        known gap).
+  \item \textbf{Verification link coherence.} Each
+        \texttt{verification[].plugin} must be declared in the
+        \tool{aiverify} record; each \texttt{verification[].testId} in the
+        \tool{moonshot-cicd} record; each \texttt{verification[].path}
+        referencing a test must exist on disk.
+\end{enumerate}
+
+The validator is the contract: CI, internal audit, and external reviewers
+run the same script and see the same results.
+\clearpage

@@ -36,7 +36,7 @@ interface PortfolioCard {
   path: string;
 }
 
-const EXPLORE_PATHS = ['/forms', '/components', '/mcp'];
+const EXPLORE_PATHS = ['/components', '/mcp', '/readiness'];
 const WORK_PATHS = ['/joule', '/generative', '/ocr'];
 const SUPPORTED_LANGUAGE_COUNT = 7;
 const LIVE_SERVICE_COUNT = 3;

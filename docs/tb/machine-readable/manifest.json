@@ -152,11 +152,22 @@
     "process": "Formal workflow specification, decision points, control matrix (YAML)",
     "training-data": "Workbook schemas, sample data, validation rules (YAML/CSV)",
     "rag": "Embedding-ready chunks for vector store ingestion (JSONL/CSV)",
-    "data-product": "ODPS 4.1 Data Product definition for app integration (YAML)"
+    "data-product": "ODPS 4.1 Data Product definition for app integration (YAML)",
+    "hitl-traceability": "Human-in-the-loop requirements traceability and validation (YAML)"
   },
   "statistics": {
     "sourceFileCount": 6,
-    "outputFileCount": 28,
-    "totalOutputSizeBytes": 522793
+    "outputFileCount": 29,
+    "totalOutputSizeBytes": 545000
+  },
+  "hitlTraceability": {
+    "manifestFile": "hitl-traceability-manifest.yaml",
+    "latexReport": "docs/latex/technical-reports/05-tb-hitl-requirements-traceability.tex",
+    "description": "Human-in-the-loop requirements traceability document mapping source documents to requirements, specifications, and schemas",
+    "checkpoints": 6,
+    "requirements": 27,
+    "specifications": 21,
+    "schemas": 6,
+    "coverageStatus": "100% forward and backward traceability"
   }
 }

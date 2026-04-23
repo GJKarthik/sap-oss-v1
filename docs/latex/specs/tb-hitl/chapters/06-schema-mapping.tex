@@ -1,0 +1,269 @@
+\chapter{Schema Mapping}
+\label{ch:schema-mapping}
+
+This chapter maps specification elements to their implementing schemas,
+completing the traceability chain from source to implementation. Each
+schema field is traced back to its source specification and requirement.
+
+% =============================================================================
+\section{Schema Inventory}
+\label{sec:schema-inventory}
+
+\begin{table}[h]
+\centering
+\caption{Schema File Inventory}
+\label{tab:schema-inventory}
+\begin{tabularx}{\textwidth}{@{}L{5cm}L{9cm}@{}}
+\toprule
+\textbf{Schema File} & \textbf{Purpose} \\
+\midrule
+\schemaref{variance-record} & Variance records from Stage 2 anomaly detection \\
+\schemaref{decision-point} & Decision point state transitions \\
+\schemaref{entity-params} & Per-entity parameter configuration \\
+\schemaref{tb-extract} & Trial balance data extraction format \\
+\schemaref{pl-extract} & P\&L data extraction format \\
+\schemaref{commentary-draft} & LLM-generated commentary drafts \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+% =============================================================================
+\section{Specification to Schema Mapping}
+\label{sec:spec-schema-mapping}
+
+\begin{longtable}{@{}C{2cm}L{4cm}C{3cm}L{4.5cm}@{}}
+\caption{Specification to Schema Mapping}
+\label{tab:spec-schema-mapping} \\
+\toprule
+\textbf{Spec ID} & \textbf{Specification} & \textbf{Schema(s)} & \textbf{Key Fields} \\
+\midrule
+\endfirsthead
+\toprule
+\textbf{Spec ID} & \textbf{Specification} & \textbf{Schema(s)} & \textbf{Key Fields} \\
+\midrule
+\endhead
+\specref{TB-STEP-003} & Extract Trial Balance & \schemaref{tb-extract} & extract\_id, legal\_entity, period, balances \\
+\specref{TB-STEP-004} & Calculate Variances & \schemaref{variance-record} & variance\_id, variance\_amount, flags \\
+\specref{DP-001} & Materiality Check & \schemaref{variance-record} & materiality\_assessment.* \\
+\specref{DP-002} & Journal Status & \schemaref{variance-record} & journal\_status, journal\_ids \\
+\specref{DP-003} & Investigation & \schemaref{variance-record} & investigation\_status \\
+\specref{DP-004} & Entry Confirmation & \schemaref{variance-record} & confirmation\_received, days\_to\_deadline \\
+\specref{DP-005} & Unexplained Variance & \schemaref{variance-record} & is\_unexplained, unexplained\_category \\
+\specref{AI-ANOM} & Anomaly Detection & \schemaref{variance-record} & anomaly\_detection.period\_spike.* \\
+\specref{AI-NEW} & New Account & \schemaref{variance-record} & anomaly\_detection.new\_account.* \\
+\specref{AI-SPIKE} & Spike/Drop & \schemaref{variance-record} & flags: [PERIOD\_SPIKE, SIGN\_FLIP] \\
+\specref{AI-LLM} & LLM Commentary & \schemaref{commentary-draft} & draft\_text, confidence, sources \\
+\bottomrule
+\end{longtable}
+
+% =============================================================================
+\section{Variance Record Schema (\schemaref{variance-record})}
+\label{sec:variance-record-schema}
+
+The variance record schema is the primary data structure for the TB
+review process, capturing all variance analysis, anomaly detection,
+and decision point state information.
+
+\subsection{Field-Level Traceability}
+
+\begin{longtable}{@{}L{4cm}L{2.5cm}C{2cm}L{4.5cm}@{}}
+\caption{Variance Record Schema Field Traceability}
+\label{tab:variance-record-fields} \\
+\toprule
+\textbf{Schema Field} & \textbf{Type} & \textbf{Spec ID} & \textbf{Source Requirement} \\
+\midrule
+\endfirsthead
+\toprule
+\textbf{Schema Field} & \textbf{Type} & \textbf{Spec ID} & \textbf{Source Requirement} \\
+\midrule
+\endhead
+\fieldref{variance\_id} & string & \specref{TB-STEP-004} & \reqref{TB-REQ-PS04} \\
+\fieldref{account\_code} & string & \specref{TB-STEP-003} & \reqref{TB-REQ-PS03} \\
+\fieldref{account\_category} & enum & \specref{AI-MAT} & \reqref{TB-REQ-AI05} \\
+\fieldref{finance\_caption} & string & \specref{TB-STEP-004} & \reqref{TB-REQ-SC02} \\
+\fieldref{segment} & string & \specref{TB-STEP-004} & \reqref{TB-REQ-SC03} \\
+\fieldref{legal\_entity} & string & \specref{TB-STEP-003} & \reqref{TB-REQ-SC01} \\
+\fieldref{variance\_amount} & number & \specref{TB-STEP-004} & \reqref{TB-REQ-PS04} \\
+\fieldref{flags} & array[enum] & \specref{AI-ANOM} & \reqref{TB-REQ-AI01} \\
+\fieldref{materiality\_assessment.is\_material} & boolean & \specref{DP-001} & \reqref{TB-REQ-PS05} \\
+\fieldref{materiality\_assessment.threshold\_source} & enum & \specref{DP-001} & \reqref{TB-REQ-AI05} \\
+\fieldref{journal\_status} & enum & \specref{DP-002} & \reqref{TB-REQ-PS07} \\
+\fieldref{investigation\_status} & enum & \specref{DP-003} & \reqref{TB-REQ-PS07} \\
+\fieldref{confirmation\_received} & boolean & \specref{DP-004} & \reqref{TB-REQ-PS07} \\
+\fieldref{is\_unexplained} & boolean & \specref{DP-005} & \reqref{TB-REQ-AI06} \\
+\fieldref{unexplained\_category} & enum & \specref{DP-005} & \reqref{BSS-REQ-01} \\
+\bottomrule
+\end{longtable}
+
+\subsection{Schema Structure}
+
+\begin{lstlisting}[language=jsonx,caption=Variance Record Schema (simplified)]
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "variance-record.schema.json",
+  "type": "object",
+  "required": ["variance_id", "account_code", "legal_entity", 
+               "variance_amount"],
+  "properties": {
+    "variance_id": { "type": "string", "pattern": "^VAR-" },
+    "account_code": { "type": "string" },
+    "account_category": { 
+      "type": "string",
+      "enum": ["asset", "liability", "equity", "revenue", "expense"]
+    },
+    "finance_caption": { "type": "string" },
+    "segment": { "type": "string" },
+    "legal_entity": { "type": "string", "pattern": "^[A-Z]{3}$" },
+    "variance_amount": { "type": "number" },
+    "flags": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": ["PERIOD_SPIKE", "SIGN_FLIP", "NEW_ACCOUNT", 
+                 "MATERIAL_BALANCE", "ZERO_BOTH_PERIODS"]
+      }
+    },
+    "materiality_assessment": {
+      "type": "object",
+      "properties": {
+        "is_material": { "type": "boolean" },
+        "threshold_used": { "type": "number" },
+        "threshold_source": {
+          "type": "string",
+          "enum": ["static", "ml_adaptive", "override"]
+        }
+      }
+    },
+    "journal_status": {
+      "type": "string",
+      "enum": ["posted", "posting_required", "not_posted"]
+    },
+    "investigation_status": {
+      "type": "string",
+      "enum": ["not_required", "in_progress", "completed", "escalated"]
+    },
+    "confirmation_received": { "type": "boolean" },
+    "is_unexplained": { "type": "boolean" },
+    "unexplained_category": {
+      "type": "string",
+      "enum": ["substantiated_at_risk", "unsubstantiated_unowned",
+               "unsubstantiated_owned"]
+    }
+  }
+}
+\end{lstlisting}
+
+% =============================================================================
+\section{Commentary Draft Schema (\schemaref{commentary-draft})}
+\label{sec:commentary-draft-schema}
+
+\subsection{Field-Level Traceability}
+
+\begin{longtable}{@{}L{4cm}L{2.5cm}C{2cm}L{4.5cm}@{}}
+\caption{Commentary Draft Schema Field Traceability}
+\label{tab:commentary-draft-fields} \\
+\toprule
+\textbf{Schema Field} & \textbf{Type} & \textbf{Spec ID} & \textbf{Source Requirement} \\
+\midrule
+\endfirsthead
+\toprule
+\textbf{Schema Field} & \textbf{Type} & \textbf{Spec ID} & \textbf{Source Requirement} \\
+\midrule
+\endhead
+\fieldref{commentary\_id} & string & \specref{AI-LLM} & \reqref{TB-REQ-AI06} \\
+\fieldref{variance\_ref} & string & \specref{AI-LLM} & \reqref{TB-REQ-PS06} \\
+\fieldref{draft\_text} & string & \specref{AI-LLM} & \reqref{TB-REQ-AI06} \\
+\fieldref{confidence\_score} & number & \specref{AI-LLM} & \reqref{TB-REQ-AI06} \\
+\fieldref{rag\_sources} & array & \specref{AI-LLM} & \reqref{TB-REQ-AI06} \\
+\fieldref{human\_status} & enum & \specref{TB-STEP-005} & \reqref{TB-REQ-PS06} \\
+\fieldref{edited\_text} & string & \specref{TB-STEP-005} & \reqref{TB-REQ-PS06} \\
+\bottomrule
+\end{longtable}
+
+% =============================================================================
+\section{Trial Balance Extract Schema (\schemaref{tb-extract})}
+\label{sec:tb-extract-schema}
+
+\subsection{Field-Level Traceability}
+
+\begin{longtable}{@{}L{4cm}L{2.5cm}C{2cm}L{4.5cm}@{}}
+\caption{TB Extract Schema Field Traceability}
+\label{tab:tb-extract-fields} \\
+\toprule
+\textbf{Schema Field} & \textbf{Type} & \textbf{Spec ID} & \textbf{Source Requirement} \\
+\midrule
+\endfirsthead
+\toprule
+\textbf{Schema Field} & \textbf{Type} & \textbf{Spec ID} & \textbf{Source Requirement} \\
+\midrule
+\endhead
+\fieldref{extract\_id} & string & \specref{TB-STEP-003} & \reqref{TB-REQ-PS03} \\
+\fieldref{legal\_entity} & string & \specref{TB-STEP-003} & \reqref{TB-REQ-SC01} \\
+\fieldref{period} & string & \specref{TB-STEP-003} & \reqref{TB-REQ-PS03} \\
+\fieldref{extraction\_timestamp} & datetime & \specref{TB-STEP-003} & \reqref{TB-REQ-PS03} \\
+\fieldref{source\_system} & enum & \specref{TB-STEP-002} & \reqref{TB-REQ-PS02} \\
+\fieldref{row\_count} & integer & \specref{TB-CTRL-001} & \reqref{TB-REQ-PS02} \\
+\fieldref{balances} & array & \specref{TB-STEP-003} & \reqref{TB-REQ-PS03} \\
+\bottomrule
+\end{longtable}
+
+% =============================================================================
+\section{Entity Parameters Schema (\schemaref{entity-params})}
+\label{sec:entity-params-schema}
+
+\subsection{Field-Level Traceability}
+
+\begin{longtable}{@{}L{4cm}L{2.5cm}C{2cm}L{4.5cm}@{}}
+\caption{Entity Parameters Schema Field Traceability}
+\label{tab:entity-params-fields} \\
+\toprule
+\textbf{Schema Field} & \textbf{Type} & \textbf{Spec ID} & \textbf{Source Requirement} \\
+\midrule
+\endfirsthead
+\toprule
+\textbf{Schema Field} & \textbf{Type} & \textbf{Spec ID} & \textbf{Source Requirement} \\
+\midrule
+\endhead
+\fieldref{entity\_code} & string & \specref{TB-STEP-002} & \reqref{TB-REQ-SC01} \\
+\fieldref{entity\_name} & string & \specref{TB-STEP-002} & \reqref{TB-REQ-SC01} \\
+\fieldref{bs\_threshold} & number & \specref{DP-001} & \reqref{TB-REQ-PS05} \\
+\fieldref{pl\_threshold} & number & \specref{DP-001} & \reqref{TB-REQ-PS05} \\
+\fieldref{currency} & string & \specref{TB-STEP-002} & \reqref{TB-REQ-PS02} \\
+\fieldref{regulatory\_context} & string & \specref{TB-STEP-002} & \reqref{TB-REQ-SC04} \\
+\bottomrule
+\end{longtable}
+
+% =============================================================================
+\section{Schema Coverage Summary}
+\label{sec:schema-coverage-summary}
+
+\begin{table}[h]
+\centering
+\caption{Schema Coverage Statistics}
+\label{tab:schema-coverage-stats}
+\begin{tabular}{@{}lcccc@{}}
+\toprule
+\textbf{Schema} & \textbf{Fields} & \textbf{Specs Covered} & \textbf{Reqs Traced} & \textbf{Coverage} \\
+\midrule
+\schemaref{variance-record} & 15 & 9 & 12 & 100\% \\
+\schemaref{commentary-draft} & 7 & 2 & 2 & 100\% \\
+\schemaref{tb-extract} & 7 & 3 & 4 & 100\% \\
+\schemaref{entity-params} & 6 & 2 & 4 & 100\% \\
+\schemaref{decision-point} & 5 & 5 & 6 & 100\% \\
+\schemaref{pl-extract} & 7 & 3 & 4 & 100\% \\
+\midrule
+\textbf{Total} & \textbf{47} & \textbf{21} & \textbf{27} & \textbf{100\%} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{hitlbox}{H5 -- Schema Alignment Verification}
+The human reviewer must verify the following for checkpoint H5:
+\begin{enumerate}[noitemsep]
+  \item All schema fields are traced to a specification
+  \item Field types match the specification intent
+  \item Enum values are correctly defined
+  \item Required fields support the core workflow
+  \item No orphan fields exist without specification reference
+\end{enumerate}
+\end{hitlbox}

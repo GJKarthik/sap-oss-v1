@@ -1,0 +1,169 @@
+\chapter{Validation and Acceptance}
+\label{ch:validation}
+
+\section{Rule-pack validation}
+
+Every rule-pack pair must be backed by an executable validation harness.
+The harness must prove at least:
+\begin{itemize}
+  \item the files exist at the intended paths;
+  \item required sections are present;
+  \item referenced source files and schema files exist;
+  \item threshold values and condition codes are explicit;
+  \item the pair benchmarks at least as strongly as the established
+    operational baseline.
+\end{itemize}
+
+\section{Recommended benchmark baseline}
+
+The current repository baseline for operational specificity is the
+Generative UI deployment rule pack at
+\filepath{src/generativeUI/.clinerules}. Any new domain pack should be
+benchmarked against that file for:
+\begin{itemize}
+  \item incident memory;
+  \item concrete verification steps;
+  \item threshold explicitness;
+  \item checklist quality;
+  \item operational specificity.
+\end{itemize}
+
+\section{Quantified benchmark scorecard}
+\label{sec:benchmark-scorecard}
+
+To enable objective, reproducible comparison against the baseline, the
+validation harness SHOULD compute a numeric score based on the following
+metrics. This scorecard allows new domain packs to self-assess whether
+they meet the ``at least as strong'' requirement.
+
+\subsection{Scorecard metrics}
+
+\begin{table}[htbp]
+\centering
+\footnotesize
+\caption{Operational specificity scorecard.}
+\label{tab:scorecard}
+\begin{tabularx}{\textwidth}{@{}L{4.5cm} l X@{}}
+\toprule
+\textbf{Metric} & \textbf{Pass threshold} & \textbf{Calculation method} \\
+\midrule
+Explicit numeric thresholds & 100\% & All monitoring rules must specify numeric values (e.g., ``> 5\%''), not vague terms (e.g., ``high rate''). \\
+Verification path density & $\ge 5$ paths per 100 lines & Count of explicit file paths referenced divided by rule pack line count, normalized to 100 lines. \emph{Note: Shorter files (< 60 lines) must contain at least 3 unique paths to avoid penalty.} \\
+Known issue registry entries & $\ge 3$ entries & Count of documented previous incidents, workarounds, or known edge cases. \\
+Checklist completeness & 100\% & All 11 development pack sections (or 9 runtime pack sections) must be present and non-empty. \\
+Schema reference coverage & 100\% & All payload types mentioned must reference a schema file in \filepath{docs/schema/}. \\
+Test entry point count & $\ge 2$ per pack & Count of explicit test file paths or commands referenced. \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\subsection{Scoring algorithm}
+
+The validation harness SHALL compute scores as follows:
+
+\begin{enumerate}
+  \item \textbf{Parse the rule pack} into sections using header markers.
+  \item \textbf{Extract metrics}:
+    \begin{itemize}
+      \item Count threshold expressions matching pattern
+        \verb|[><=]+\s*\d+(\.\d+)?[%]?|.
+      \item Count file path references matching pattern
+        \verb|src/|, \verb|docs/|, or \verb|tests/|.
+      \item Count known issue entries in the ``Known Issues'' or
+        ``Current Repo Reality'' section.
+      \item Count schema references matching pattern
+        \verb|\.schema\.(json|yaml)|.
+      \item Count test references matching pattern
+        \verb|test_.*\.py| or \verb|make test|.
+    \end{itemize}
+  \item \textbf{Compare against baseline}: Read the
+    \filepath{.baseline-clinerules-pointer} file in the repository root
+    to identify the current gold-standard pack (e.g.,
+    \filepath{src/generativeUI/.clinerules}). Load that pack and compute
+    the same metrics.
+  \item \textbf{Pass/fail determination}: A pack passes if all metrics
+    meet or exceed the thresholds in \cref{tab:scorecard} AND are not
+    worse than the baseline values.
+\end{enumerate}
+
+\section{The .baseline-clinerules-pointer}
+
+To ensure the benchmark evolves as engineering standards mature, the
+validation harness SHALL NOT hardcode the baseline pack path. This
+pointer file allows the platform team to rotate the baseline without
+requiring a specification update or code change to the harness.
+
+\subsection{Scorecard output format}
+
+The harness SHALL produce a JSON report:
+
+\begin{verbatim}
+{
+  "pack_path": "src/training/.clinerules",
+  "baseline_path": "src/generativeUI/.clinerules",
+  "timestamp": "2026-04-21T09:00:00Z",
+  "metrics": {
+    "threshold_explicitness": {"value": 100, "pass": true},
+    "path_density": {"value": 7.2, "pass": true},
+    "known_issues": {"value": 5, "pass": true},
+    "checklist_completeness": {"value": 100, "pass": true},
+    "schema_coverage": {"value": 100, "pass": true},
+    "test_entry_points": {"value": 3, "pass": true}
+  },
+  "overall_pass": true,
+  "baseline_comparison": "EQUAL_OR_STRONGER"
+}
+\end{verbatim}
+
+\subsection{Scorecard integration}
+
+\begin{itemize}
+  \item The scorecard MUST be computed as part of the CI/CD validation
+    gate for any PR that modifies a \filepath{.clinerules} file.
+  \item Scorecard results MUST be attached to the PR as a comment or
+    status check.
+  \item A pack that fails the scorecard MUST NOT be merged without
+    explicit exception approval (see \cref{sec:conflict-detection}).
+\end{itemize}
+
+\section{Acceptance commands}
+
+\begin{table}[htbp]
+\centering
+\footnotesize
+\caption{Minimum acceptance commands.}
+\label{tab:acceptance}
+\begin{tabularx}{\textwidth}{@{}l X@{}}
+\toprule
+\textbf{Area} & \textbf{Command or gate} \\
+\midrule
+Training rule packs & \texttt{cd src/training \&\& make test-clinerules} \\
+Regulations rule packs & \texttt{cd src/intelligence/ai-core-pal \&\& make test-clinerules} \\
+Regulations MCP surface & \texttt{cd src/intelligence/ai-core-pal \&\& make test} \\
+Agent supplement PDF & \texttt{make spec-clinerules-agents} \\
+PDF publication & \texttt{make spec-<name>} for each published book \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\section{Publication criteria}
+
+The swarm may claim a spec is delivered only when:
+\begin{enumerate}
+  \item the relevant rule packs exist;
+  \item the harnesses pass;
+  \item the LaTeX source is committed and reference-clean;
+  \item the build target exists for the corresponding PDF output;
+  \item the runtime-monitor contract is present for any domain that is
+    expected to run live.
+\end{enumerate}
+
+\section{Failure conditions}
+
+\begin{itemize}
+  \item Missing runtime-monitor pack for a governed live domain.
+  \item Rule pack cites non-existent source of truth or non-existent
+    verification paths.
+  \item Domain pack conflicts with regulations obligations.
+  \item PDF build succeeds but the supporting rule-pack harness fails.
+\end{itemize}

@@ -1,0 +1,1315 @@
+\documentclass[11pt,a4paper]{article}
+
+% ---------------------------------------------------------------------------
+% Packages
+% ---------------------------------------------------------------------------
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage[margin=2.3cm]{geometry}
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs}
+\usepackage{longtable}
+\usepackage{tabularx}
+\usepackage{array}
+\usepackage{multirow}
+\usepackage{enumitem}
+\usepackage{hyperref}
+\usepackage{xurl}
+\usepackage{xcolor}
+\usepackage{float}
+\usepackage{fancyhdr}
+\usepackage{titlesec}
+
+% ---------------------------------------------------------------------------
+% Styling
+% ---------------------------------------------------------------------------
+\definecolor{sapblue}{HTML}{0A6ED1}
+\definecolor{sapdark}{HTML}{354A5F}
+\definecolor{saplight}{HTML}{F5F6F7}
+\definecolor{sapgreen}{HTML}{107E3E}
+\definecolor{saporange}{HTML}{E9730C}
+\definecolor{sapred}{HTML}{BB0000}
+
+\hypersetup{
+    colorlinks=true,
+    linkcolor=sapblue,
+    urlcolor=sapblue,
+    citecolor=sapblue
+}
+\urlstyle{same}
+\emergencystretch=2em
+
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\small\color{sapdark}Singapore AI Safety Framework Specification}
+\fancyhead[R]{\small\color{sapdark}SAP OSS}
+\fancyfoot[C]{\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+
+\titleformat{\section}{\Large\bfseries\color{sapdark}}{\thesection}{0.75em}{}
+\titleformat{\subsection}{\large\bfseries\color{sapdark}}{\thesubsection}{0.75em}{}
+\titleformat{\subsubsection}{\normalsize\bfseries\color{sapdark}}{\thesubsubsection}{0.75em}{}
+
+\newcolumntype{Y}{>{\raggedright\arraybackslash}X}
+\newcolumntype{P}[1]{>{\raggedright\arraybackslash}p{#1}}
+
+\title{
+    \vspace{-1cm}
+    {\LARGE\bfseries Singapore-Aligned AI Safety Framework, Metrics, and Monitoring Specification}\\[0.35cm]
+    {\Large For SAP OSS Agentic, LLM, Retrieval, Training, and AI-Assisted Workflows}\\[0.5cm]
+    \rule{\textwidth}{1pt}
+}
+\author{
+    SAP OSS Technical Specification\\
+    \small Submission Draft for AI Safety Review, Architecture Review, Risk, Security, and Data Governance Committees
+}
+\date{14 April 2026 \quad$\mid$\quad Version 1.0 Draft}
+
+\begin{document}
+\maketitle
+\thispagestyle{empty}
+
+\begin{abstract}
+\noindent
+This document specifies a submission-grade AI safety, governance, metrics, and monitoring framework for the SAP OSS system surfaces located under \path{/Users/user/Documents/sap-oss/src}. The specification is designed for committee review before implementation. It maps current Singapore guidance and assurance materials into an operational control system for agentic AI, LLM applications, retrieval-augmented generation, AI-supported analytics, OCR, training pipelines, model deployment, and governance workflows in this repository.
+
+The specification covers five artefacts required for a defensible review package. First, it defines the normative source hierarchy and the exact regulatory and policy documents used as the basis for the framework. Second, it inventories the system surfaces and operational use cases in scope, including the FastAPI orchestration layer, UI governance surfaces, LangChain HANA agents, MCP integrations, local model serving, OCR, and training subsystems. Third, it defines the mandatory control catalogue, quantitative metrics, mathematical scoring models, statistical testing methodology, rollout gates, audit schema, and incident-response rules that should govern all AI-enabled use cases. Fourth, it defines a lifecycle process from intake and risk assessment through deployment, continuous monitoring, and periodic re-certification. Fifth, it details the planned repository implementation approach, including backend modules, persistence extensions, audit sinks, metrics endpoints, dashboards, and evidence packs.
+
+This document is a technical and governance design specification. It is not a legal opinion and does not by itself certify compliance. Instead, it provides the control logic, thresholds, evidence structure, and implementation plan necessary for the organisation to demonstrate that its AI-enabled systems can be reviewed, governed, monitored, and improved in a disciplined manner.
+\end{abstract}
+
+\tableofcontents
+\newpage
+
+% ============================================================================
+\section{Executive Summary}
+% ============================================================================
+
+This specification establishes a single governance baseline across all AI-enabled system surfaces in this repository. The baseline is intentionally broader than model safety alone. It covers:
+
+\begin{itemize}[nosep]
+    \item agentic decision-making and tool use;
+    \item prompt and response flows for LLM-backed features;
+    \item data access, retention, and personal-data handling;
+    \item human accountability, approval checkpoints, and escalation;
+    \item testing, benchmarking, and red-teaming;
+    \item production monitoring, incident detection, and audit evidence; and
+    \item phased deployment and re-certification.
+\end{itemize}
+
+The design principle is straightforward: every in-scope use case must be registered, risk-scored, assigned a control profile, tested to a defined threshold, monitored in production, and supported by a complete evidence trail. No AI-assisted workflow should bypass this chain merely because it is ``only a chatbot'', ``only retrieval'', or ``only internal''.
+
+For committee review purposes, this specification makes four hard assertions:
+
+\begin{enumerate}[nosep]
+    \item Singapore's latest public guidance on agentic AI, LLM testing, AI governance, privacy, and AI security can be translated into concrete control requirements for this repository.
+    \item The repository already contains enough architectural anchor points to implement the framework without creating a separate platform.
+    \item The framework can be enforced through measurable gates, not narrative intent alone.
+    \item Committee approval should be attached to explicit metrics and evidence thresholds, not a binary ``policy exists'' test.
+\end{enumerate}
+
+% ============================================================================
+\section{Purpose, Scope, and Review Objectives}
+% ============================================================================
+
+\subsection{Purpose}
+
+The purpose of this specification is to define, before implementation, the exact:
+
+\begin{itemize}[nosep]
+    \item governance structure,
+    \item control catalogue,
+    \item metrics and mathematical scoring methods,
+    \item testing and monitoring obligations,
+    \item implementation design, and
+    \item evidence pack
+\end{itemize}
+
+required to submit the SAP OSS system for AI safety, security, privacy, architecture, and risk review.
+
+\subsection{In-Scope Repository Surfaces}
+
+The following repository areas are in scope because they expose AI behaviour, govern AI-assisted actions, store or process AI-related artefacts, or route AI requests:
+
+\begin{longtable}{P{0.25\textwidth}P{0.31\textwidth}P{0.34\textwidth}}
+\caption{System Surfaces in Scope} \\
+\toprule
+\textbf{Repository Surface} & \textbf{Primary Runtime Role} & \textbf{Why It Is In Scope} \\
+\midrule
+\endfirsthead
+\toprule
+\textbf{Repository Surface} & \textbf{Primary Runtime Role} & \textbf{Why It Is In Scope} \\
+\midrule
+\endhead
+\path{src/generativeUI/training-webcomponents-ngx/packages/api-server/src/main.py} & FastAPI orchestration layer and OpenAI-compatible interface & Central execution plane for chat completions, deployments, governance endpoints, jobs, pipeline, HANA query, OCR, collaboration, and production metrics. \\
+\path{src/generativeUI/training-webcomponents-ngx/packages/api-server/src/audit_sink_api.py} & Audit ingestion endpoint & Receives durable governance audit batches and must become part of the formal evidence trail. \\
+\path{src/generativeUI/training-webcomponents-ngx/packages/api-server/src/store.py} & Persistent state store & Holds jobs, notifications, users, audit logs, and is the correct persistence point for safety evaluations and incidents. \\
+\path{src/generativeUI/training-webcomponents-ngx/packages/api-server/src/rag.py} & Retrieval and vector-store APIs & Handles document ingestion, embeddings, retrieval, translation-memory vectorisation, and AI-assisted extraction. \\
+\path{src/generativeUI/training-webcomponents-ngx/packages/api-server/src/personal_knowledge.py} & Personal memory / knowledge base & Stores user-scoped knowledge, embeddings, wiki summaries, and query flows; directly relevant for data governance, retention, and retrieval risk. \\
+\path{src/generativeUI/training-webcomponents-ngx/packages/api-server/src/data_products.py} & Data product metadata and prompt composition & Governs product-level access, prompting policies, and effective prompt previews across teams and countries. \\
+\path{src/generativeUI/ui5-webcomponents-ngx-main/libs/genui-governance} & Client governance library & Already implements policy enforcement, confirmation workflows, and audit logging for AI-generated UI actions. \\
+\path{src/generativeUI/training-webcomponents-ngx/apps/angular-shell/src/app/pages/governance} & Governance UI & Natural presentation layer for committee-facing dashboards and review evidence summaries. \\
+\path{src/data/langchain-integration-for-sap-hana-cloud-main/agent/langchain_hana_agent.py} & Governance-aware HANA agent & Already includes routing, tool policies, human review checks, and audit logging for HANA interactions. \\
+\path{src/data/langchain-integration-for-sap-hana-cloud-main/mcp_server/server.py} & MCP server and tool boundary & Governs tool exposure, HANA access, request limits, identifier sanitisation, and remote endpoint constraints. \\
+\path{src/intelligence/vllm-turboquant} & Local model serving plane & Executes local/private model inference and therefore sits on the critical path for privacy, resilience, and rollout gates. \\
+\path{src/intelligence/ocr} & OCR service & Processes potentially sensitive document content and therefore requires input governance, model logging, and data-handling controls. \\
+\path{src/training} & Training and data-generation workflows & Supports model or training artefact generation and therefore requires pre-deployment safety, provenance, and recertification gates. \\
+\bottomrule
+\end{longtable}
+
+\subsection{Out of Scope}
+
+The following are out of scope for this specific report:
+
+\begin{itemize}[nosep]
+    \item independent legal interpretation of the PDPA or other legislation;
+    \item certification claims on behalf of a regulator;
+    \item detailed cryptographic or infrastructure hardening standards beyond AI-relevant security overlays;
+    \item business-case valuation or staffing approval; and
+    \item complete line-by-line implementation of the described controls.
+\end{itemize}
+
+\subsection{Committee Review Objectives}
+
+This specification is intended to answer five committee questions:
+
+\begin{enumerate}[nosep]
+    \item What regulatory and policy baseline is this framework built on?
+    \item What use cases and system surfaces are covered?
+    \item What controls and thresholds must each use case satisfy?
+    \item How will the organisation measure, monitor, and evidence conformance?
+    \item How exactly will the repository be changed to implement the design?
+\end{enumerate}
+
+% ============================================================================
+\section{Normative Source Hierarchy}
+% ============================================================================
+
+\subsection{Source Precedence}
+
+For this specification, sources are applied in the following order:
+
+\begin{enumerate}[nosep]
+    \item \textbf{Normative Singapore governance baseline:} official IMDA and PDPC guidance on AI governance, agentic AI, LLM testing, and personal data use in AI.
+    \item \textbf{Normative operational assurance baseline:} official IMDA/AI Verify materials on LLM testing and AI assurance, used to operationalise measurement and evidence.
+    \item \textbf{Supplementary security baseline:} official CSA secure-AI guidance and agentic-AI addendum material, with explicit notation where guidance is draft or consultation-stage.
+    \item \textbf{Supporting reference material:} AI Verify open-source artefacts, academic and ecosystem references, and repository-local regulation extracts used to shape metrics and documentation structure.
+\end{enumerate}
+
+\subsection{Normative Singapore Sources}
+
+\begin{longtable}{P{0.10\textwidth}P{0.28\textwidth}P{0.11\textwidth}P{0.16\textwidth}P{0.27\textwidth}}
+\caption{Normative and Supplementary Source Set} \\
+\toprule
+\textbf{ID} & \textbf{Source} & \textbf{Date} & \textbf{Status} & \textbf{Role in This Specification} \\
+\midrule
+\endfirsthead
+\toprule
+\textbf{ID} & \textbf{Source} & \textbf{Date} & \textbf{Status} & \textbf{Role in This Specification} \\
+\midrule
+\endhead
+SG-01 & IMDA, \emph{Model AI Governance Framework for Agentic AI} & 22 Jan 2026 & Current official framework & Primary normative baseline for agentic use-case selection, bounded autonomy, human accountability, agent controls, monitoring, and end-user responsibility. \\
+SG-02 & IMDA, \emph{Starter Kit for Testing LLM-Based Applications for Safety and Reliability} & Jan 2026 reference point & Current official testing guidance & Primary normative baseline for pre-deployment testing structure, risk-specific benchmarks, baseline thresholds, and test governance for LLM applications. \\
+SG-03 & PDPC, \emph{Second Edition Model AI Governance Framework} & 21 Jan 2020 & Current official framework & Baseline governance structure for internal governance, human involvement, operations management, and stakeholder communication. \\
+SG-04 & PDPC, \emph{Advisory Guidelines on Use of Personal Data in AI Recommendation and Decision Systems} & Last updated 01 Apr 2024 & Current official privacy guidance & Governs lawful use of personal data in AI development, transparency, consent, and PDPA-aligned data handling. \\
+SG-05 & IMDA, \emph{Project Moonshot, powered by AI Verify, and AI Collaborations} & 31 May 2024 & Current official assurance initiative & Supports operationalisation of benchmarking, red-teaming, 5-tier scoring, and AI assurance evidence for GenAI applications. \\
+SG-06 & IMDA/PDPC, \emph{Singapore's Approach to AI Governance} and AI Verify materials & Continuously maintained page; consulted April 2026 & Current official reference & Used to align with AI Verify principles and Singapore's broader practical risk-based governance position. \\
+SG-07 & CSA, \emph{Guidelines and Companion Guide on Securing AI Systems} & 15 Oct 2024 & Current official security guidance & Supplementary secure-by-design baseline across the AI lifecycle. \\
+SG-08 & CSA, \emph{Public Consultation on Securing Agentic AI - Addendum to the Guidelines and Companion Guide on Securing AI Systems} & 22 Oct 2025 & Supplementary; consultation-stage, not final binding guidance & Used as a supplementary security control input for agentic tool use, workflow mapping, and threat-driven controls. \\
+\bottomrule
+\end{longtable}
+
+\subsection{Important Clarification on ``Latest'' Singapore Guidance}
+
+As of \textbf{14 April 2026}, the latest official Singapore government agentic-AI governance framework located during this review is the IMDA \emph{Model AI Governance Framework for Agentic AI}, published on \textbf{22 January 2026}. The latest official PDPC AI governance framework remains the second edition of the Model AI Governance Framework released on \textbf{21 January 2020}, and the relevant PDPC personal-data guidance for AI was last updated on \textbf{1 April 2024}. The CSA addendum on securing agentic AI identified during this review is a \textbf{public consultation document released on 22 October 2025}; it is treated in this specification as supplementary security guidance rather than a final binding standard.
+
+\subsection{Repository-Local Regulatory Assets}
+
+The repository already contains machine-readable or vendored assets that support this specification:
+
+\begin{itemize}[nosep]
+    \item \path{docs/regulations/machine-readable/mgf-for-agentic-ai.txt}
+    \item \path{docs/regulations/mgf-for-agentic-ai.pdf}
+    \item \path{docs/regulations/aiverify-main}
+    \item \path{docs/regulations/moonshot-cicd-main}
+    \item \path{docs/regulations/machine-readable/2025-AI-Agent-Index.txt}
+\end{itemize}
+
+These assets are useful for drafting, benchmarking, and future evidence automation, but official committee submission should cite the original public URLs listed in Section~\ref{sec:references}.
+
+% ============================================================================
+\section{System Use Cases in Scope}
+% ============================================================================
+
+\subsection{Operational Use-Case Inventory}
+
+The repository exposes several distinct AI use-case families. Each family must be registered as a governed use case even if multiple HTTP endpoints or UI screens map to the same control profile.
+
+\begin{longtable}{P{0.08\textwidth}P{0.23\textwidth}P{0.14\textwidth}P{0.10\textwidth}P{0.12\textwidth}P{0.23\textwidth}}
+\caption{Use-Case Inventory for Committee Review} \\
+\toprule
+\textbf{ID} & \textbf{Use Case} & \textbf{Primary Surface} & \textbf{Action Type} & \textbf{Default Risk Tier} & \textbf{Core Risk Drivers} \\
+\midrule
+\endfirsthead
+\toprule
+\textbf{ID} & \textbf{Use Case} & \textbf{Primary Surface} & \textbf{Action Type} & \textbf{Default Risk Tier} & \textbf{Core Risk Drivers} \\
+\midrule
+\endhead
+UC-01 & OpenAI-compatible chat and prompt-response synthesis & \texttt{/v1/chat/completions} & Read/generate & Medium & Prompt injection, hallucination, confidentiality routing, content safety, auditability. \\
+UC-02 & AI-generated UI actions and approval workflows & GenUI governance library + governance UI & Assist/propose/approve & High & Automation bias, hidden write operations, role-based confirmation, durable audit evidence. \\
+UC-03 & HANA query exploration and data-product prompt composition & \texttt{/hana/query}, \texttt{data\_products.py} & Read/query & High & Enterprise data sensitivity, prompt leakage, schema exposure, role-based access, SQL guardrails. \\
+UC-04 & Retrieval, embeddings, and vector-store operations & \texttt{rag.py} & Read/write vectors & High & Sensitive document ingestion, retrieval leakage, embedding provenance, write paths to vector stores. \\
+UC-05 & Personal knowledge and durable memory & \texttt{personal\_knowledge.py} & Read/write knowledge memory & High & Personal/user-scoped data, retention, retrieval leakage, summarisation drift, user ownership boundaries. \\
+UC-06 & OCR document extraction and translation & \texttt{/openai/v1/ocr/documents}, OCR services & Read/extract & High & Sensitive document content, inaccurate extraction, downstream financial interpretation, retention. \\
+UC-07 & Data-cleaning workflow generation & \texttt{/data-cleaning/*} & Recommend/process & Medium & Generated remediation logic, false assurance, implicit execution trust, workflow traceability. \\
+UC-08 & Training generation, fine-tuning, and model deployment & \texttt{/jobs/training}, \texttt{/jobs/\{id\}/deploy} & Create/deploy model artefacts & Critical & Model provenance, unsafe training data, deployment to inference, rollback, validation sufficiency. \\
+UC-09 & Pipeline orchestration and batch generation & \texttt{/pipeline/*} & Automate workflow & High & Long-running execution, process chaining, silent failure, inadequate production controls. \\
+UC-10 & Agent/tool orchestration via MCP and LangChain HANA agent & MCP server, LangChain agent & Tool use / multi-step plan & Critical & Tool misuse, dynamic planning, agent identity, whitelisting, multi-step execution, human checkpoints. \\
+UC-11 & Governance, approvals, notifications, and audit ingestion & \texttt{/governance/*}, \texttt{/audit/*} & Oversight / evidence & High & Approval integrity, audit completeness, incident traceability, committee evidence sufficiency. \\
+UC-12 & Model serving via local/private inference stacks & \texttt{vllm-turboquant}, local model routes & Inference runtime & High & Confidential routing, resilience, model version drift, monitoring coverage, fallback governance. \\
+\bottomrule
+\end{longtable}
+
+\subsection{Universal Policy Position}
+
+All use cases above are subject to the same universal governance policy:
+
+\begin{quote}
+\textbf{No AI-enabled use case may enter production, or remain in production, unless it has:}
+(i) a registered owner, (ii) a bounded use-case profile, (iii) a quantitative risk score, (iv) an applicable control profile, (v) documented test results against thresholds, (vi) production monitoring and incident handling, and (vii) a complete audit and evidence trail.
+\end{quote}
+
+% ============================================================================
+\section{Control Framework}
+% ============================================================================
+
+\subsection{Control Design Principles}
+
+The control framework is built around five non-negotiable principles drawn from the source set:
+
+\begin{enumerate}[nosep]
+    \item \textbf{Bound the use case before building or deploying it.}
+    \item \textbf{Make a human unambiguously accountable.}
+    \item \textbf{Treat tools, memory, and data access as first-class risk surfaces.}
+    \item \textbf{Require evidence-driven go/no-go decisions.}
+    \item \textbf{Monitor after deployment because pre-deployment testing is necessary but insufficient.}
+\end{enumerate}
+
+\subsection{Mandatory Control Catalogue}
+
+\begin{longtable}{P{0.10\textwidth}P{0.21\textwidth}P{0.23\textwidth}P{0.18\textwidth}P{0.18\textwidth}}
+\caption{Mandatory Control Catalogue} \\
+\toprule
+\textbf{Control ID} & \textbf{Control} & \textbf{Requirement} & \textbf{Primary Evidence} & \textbf{Main Sources} \\
+\midrule
+\endfirsthead
+\toprule
+\textbf{Control ID} & \textbf{Control} & \textbf{Requirement} & \textbf{Primary Evidence} & \textbf{Main Sources} \\
+\midrule
+\endhead
+GOV-01 & Named accountable owner & Every use case must have a business owner, technical owner, security reviewer, and approval authority. & Use-case registry, RACI, approval record & SG-01, SG-03 \\
+GOV-02 & Use-case registration and approval & Every in-scope use case must be registered before implementation or rollout. & Use-case card, committee ticket, risk acceptance & SG-01, SG-03 \\
+GOV-03 & Model and dependency inventory & Every model, prompt policy, vector store, external tool, and MCP dependency must be inventoried and versioned. & Inventory table, version manifest, SBOM link & SG-01, SG-05, SG-07 \\
+DATA-01 & Data classification & Each use case must classify accessed data as public, internal, confidential, personal, or restricted. & Data map, access matrix & SG-01, SG-03, SG-04 \\
+DATA-02 & Data minimisation and lawful basis & Personal-data use must be necessary, documented, and PDPA-aligned. & DPIA/LIA, consent or other lawful basis record, privacy notice & SG-04 \\
+DATA-03 & Retention and deletion & Retrieved, embedded, or generated data must have retention and purge rules. & Retention schedule, deletion job evidence & SG-04, SG-07 \\
+AGT-01 & Bounded autonomy & Each use case must declare the maximum autonomy level it is allowed to exercise. & Autonomy classification, SOP, policy config & SG-01 \\
+AGT-02 & Least-privilege tool access & Agents may only use explicitly allowed tools with least privilege. & Tool allowlist, permissions matrix & SG-01, SG-08 \\
+AGT-03 & Agent identity and delegation & Each agentic actor must have a unique identity and recorded delegated authority. & Agent ID, user linkage, approval and delegation logs & SG-01, SG-08 \\
+AGT-04 & Sandboxing and environmental isolation & High-risk tool execution, code execution, or browser/computer use must be sandboxed unless explicitly exempted. & Sandbox config, exception record & SG-01, SG-07, SG-08 \\
+HUM-01 & Significant checkpoint design & High-stakes, irreversible, atypical, or out-of-policy actions must require human approval. & Approval policies, boundary definitions & SG-01, SG-03 \\
+HUM-02 & Effective approval UX & Approval requests must be contextual, concise, and auditable. & Approval payload schema, reviewer interface screenshots & SG-01 \\
+HUM-03 & Oversight quality audit & Human approvals must be sampled and audited for reviewer effectiveness and automation bias. & QA sample pack, oversight audit results & SG-01 \\
+SEC-01 & Prompt-injection and tool-misuse resilience & LLM and agentic paths must defend against prompt injection, indirect injection, malformed tool calls, and exfiltration. & Red-team results, guardrail tests, policy decisions & SG-02, SG-07, SG-08 \\
+SEC-02 & Trusted protocol and external service boundary & Only approved MCP servers, APIs, and external services may be used in governed workflows. & Allowlist, trust review, contract/security review & SG-01, SG-08 \\
+EVAL-01 & Baseline safety evaluation set & Applicable use cases must be tested for hallucination, bias, undesirable content, data leakage, adversarial prompts, and where relevant task execution and tool use. & Test plan, benchmark outputs, evaluator definitions & SG-02, SG-05 \\
+EVAL-02 & Statistical sufficiency and repetition & Stochastic systems must be tested repeatedly with defined sample sizes and confidence methods. & Sample design, confidence interval calculations & SG-02 \\
+EVAL-03 & Stage-gate deployment threshold & Promotion to production must satisfy numeric readiness and residual-risk gates. & Gate decision memo, scorecard & SG-01, SG-02, SG-03 \\
+MON-01 & Full audit trace & Every governed execution must record required audit fields end-to-end. & Audit logs, audit sink records, completeness reports & SG-01, SG-05 \\
+MON-02 & Real-time anomaly monitoring & High-risk anomalies must trigger defined alerts and interventions. & Alert definitions, runbooks, alert history & SG-01, SG-07, SG-08 \\
+MON-03 & Incident response and rollback & AI incidents must be triaged, escalated, contained, and subject to rollback criteria. & Incident tickets, containment logs, postmortems & SG-01, SG-07 \\
+USR-01 & User transparency & Users must be informed that AI is involved, what it can do, what data it uses, and where to escalate concerns. & UI notice, user documentation, escalation contact & SG-01, SG-03, SG-04 \\
+USR-02 & User and reviewer training & Internal users and reviewers must be trained on failure modes, escalation, and safe usage. & Training records, refresher schedule & SG-01, SG-03 \\
+\bottomrule
+\end{longtable}
+
+\subsection{Critical Controls}
+
+The following controls are \textbf{critical controls}. They must pass with no exception for any high-risk or critical use case:
+
+\begin{itemize}[nosep]
+    \item GOV-01, GOV-02
+    \item DATA-01
+    \item AGT-02, AGT-03
+    \item HUM-01
+    \item SEC-01
+    \item EVAL-01, EVAL-03
+    \item MON-01, MON-02, MON-03
+\end{itemize}
+
+A use case that fails any critical control cannot be approved for production.
+
+% ============================================================================
+\section{Risk Scoring Model}
+% ============================================================================
+
+\subsection{Purpose}
+
+The risk model is used to classify each use case before implementation and whenever a material change occurs. The model is deliberately simple enough for governance review yet quantitative enough to support automated gating.
+
+\subsection{Normalized Risk Factors}
+
+For each use case \(u\), assign the following normalized factors in the interval \([0, 1]\):
+
+\begin{longtable}{P{0.10\textwidth}P{0.19\textwidth}P{0.12\textwidth}P{0.46\textwidth}}
+\caption{Normalized Risk Factors} \\
+\toprule
+\textbf{Factor} & \textbf{Name} & \textbf{Weight} & \textbf{Normalisation Rule} \\
+\midrule
+\endfirsthead
+\toprule
+\textbf{Factor} & \textbf{Name} & \textbf{Weight} & \textbf{Normalisation Rule} \\
+\midrule
+\endhead
+\(DS_u\) & Data sensitivity & 0.20 & Public \(=0.10\), internal \(=0.35\), confidential \(=0.70\), personal data \(=0.90\), restricted \(=1.00\). \\
+\(AA_u\) & Action authority & 0.20 & Read-only \(=0.10\), internal write non-financial \(=0.50\), external write \(=0.80\), payment/delete/deploy \(=1.00\). \\
+\(AU_u\) & Autonomy level & 0.15 & Human operates \(=0.10\), collaborate \(=0.40\), human approves critical steps \(=0.70\), human observes only \(=1.00\). \\
+\(EC_u\) & Environmental connectivity & 0.15 & None \(=0.10\), internal services only \(=0.40\), third-party APIs \(=0.70\), browser/open MCP/computer use \(=1.00\). \\
+\(RV_u\) & Irreversibility & 0.10 & Fully reversible \(=0.10\), partially reversible \(=0.60\), irreversible \(=1.00\). \\
+\(UI_u\) & User, customer, or legal impact & 0.10 & Low \(=0.20\), medium \(=0.50\), high \(=0.80\), critical \(=1.00\). \\
+\(MU_u\) & Model uncertainty & 0.05 & Deterministic/rule-based \(=0.20\), narrow model \(=0.50\), general LLM \(=0.80\), multi-agent stochastic \(=1.00\). \\
+\(TD_u\) & Third-party dependency exposure & 0.05 & None \(=0.10\), controlled vendor \(=0.50\), unverified or open external dependency \(=1.00\). \\
+\bottomrule
+\end{longtable}
+
+\subsection{Inherent Risk Score}
+
+The \textbf{Inherent Risk Score} for use case \(u\) is:
+
+\begin{equation}
+IRS_u = 100 \times \left(
+0.20DS_u + 0.20AA_u + 0.15AU_u + 0.15EC_u + 0.10RV_u + 0.10UI_u + 0.05MU_u + 0.05TD_u
+\right)
+\end{equation}
+
+The interpretation bands are:
+
+\begin{center}
+\begin{tabular}{ll}
+\toprule
+\textbf{Score Band} & \textbf{Tier} \\
+\midrule
+\(0 \le IRS < 25\) & Low \\
+\(25 \le IRS < 50\) & Medium \\
+\(50 \le IRS < 75\) & High \\
+\(75 \le IRS \le 100\) & Critical \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\subsection{Applicability-Weighted Control Coverage}
+
+Let \(a_{u,j} \in \{0,1\}\) indicate whether control \(j\) applies to use case \(u\). Let \(p_{u,j}\) be the control outcome score:
+
+\[
+p_{u,j} =
+\begin{cases}
+1.0 & \text{control passes} \\
+0.5 & \text{partial or compensating pass} \\
+0.0 & \text{control fails}
+\end{cases}
+\]
+
+The \textbf{Applicability-Weighted Control Coverage} is:
+
+\begin{equation}
+AWCC_u = \frac{\sum_j a_{u,j}p_{u,j}}{\sum_j a_{u,j}}
+\end{equation}
+
+\subsection{Penalty Terms}
+
+To avoid low residual-risk scores caused by averaging away critical failures, define:
+
+\begin{equation}
+Penalty_u = 15N^{audit}_u + 15N^{checkpoint}_u + 10N^{external}_u + 20N^{privacy}_u
+\end{equation}
+
+where:
+
+\begin{itemize}[nosep]
+    \item \(N^{audit}_u = 1\) if full audit trace is missing, else \(0\);
+    \item \(N^{checkpoint}_u = 1\) if a required human checkpoint is missing, else \(0\);
+    \item \(N^{external}_u = 1\) if untrusted external tools/services are used, else \(0\);
+    \item \(N^{privacy}_u = 1\) if personal-data handling lacks lawful basis, notice, or retention rules, else \(0\).
+\end{itemize}
+
+\subsection{Residual Risk Score}
+
+The \textbf{Residual Risk Score} is:
+
+\begin{equation}
+RRS_u = \min\left(100,\ IRS_u \times \left(1 - 0.55AWCC_u\right) + Penalty_u\right)
+\end{equation}
+
+Residual-risk interpretation:
+
+\begin{center}
+\begin{tabular}{ll}
+\toprule
+\textbf{Score Band} & \textbf{Interpretation} \\
+\midrule
+\(0 \le RRS \le 20\) & Acceptable for defined control context \\
+\(20 < RRS \le 30\) & Acceptable with enhanced monitoring \\
+\(30 < RRS \le 45\) & Review-board approval required \\
+\(RRS > 45\) & Not production-ready \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\subsection{Illustrative Risk Position by Use Case}
+
+\begin{table}[H]
+\centering
+\caption{Illustrative Baseline Risk Position}
+\begin{tabularx}{\textwidth}{P{0.08\textwidth}Y P{0.14\textwidth}P{0.14\textwidth}}
+\toprule
+\textbf{ID} & \textbf{Use Case} & \textbf{Indicative \(IRS\)} & \textbf{Expected Governance Position} \\
+\midrule
+UC-01 & Chat and prompt-response & 35--55 & Medium-to-high depending on data class and model route \\
+UC-03 & HANA query and prompt composition & 60--80 & High; production requires strong access and audit controls \\
+UC-04 & Retrieval and vector operations & 55--80 & High; sensitive ingestion and retrieval must be tightly governed \\
+UC-08 & Training and deployment & 75--95 & Critical; only allowed through formal gate and rollback plan \\
+UC-10 & MCP and agentic tool orchestration & 80--100 & Critical; requires strongest boundary controls and human checkpoints \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+% ============================================================================
+\section{Metrics and Mathematical Gate Model}
+% ============================================================================
+
+\subsection{Metric Design Principles}
+
+All mandatory metrics satisfy four properties:
+
+\begin{enumerate}[nosep]
+    \item They are tied to a control or deployment gate.
+    \item They can be computed from logs, tests, or evidence records.
+    \item They have explicit numerators, denominators, and thresholds.
+    \item They can be reported per release, per use case, and over time.
+\end{enumerate}
+
+\subsection{Mandatory Metric Set}
+
+\begin{longtable}{P{0.12\textwidth}P{0.23\textwidth}P{0.31\textwidth}P{0.18\textwidth}}
+\caption{Mandatory Quantitative Metrics} \\
+\toprule
+\textbf{Metric ID} & \textbf{Name} & \textbf{Definition} & \textbf{Primary Control Link} \\
+\midrule
+\endfirsthead
+\toprule
+\textbf{Metric ID} & \textbf{Name} & \textbf{Definition} & \textbf{Primary Control Link} \\
+\midrule
+\endhead
+M-01 & Policy Adherence Rate (PAR) & Fraction of governed executions that stay within approved tool, data, and process policies. & AGT-02, HUM-01, SEC-01 \\
+M-02 & Tool Call Accuracy (TCA) & Fraction of tool invocations that are correct, authorised, well-formed, and in-policy. & AGT-02, SEC-01, EVAL-01 \\
+M-03 & High-Stakes Checkpoint Coverage (HCC) & Fraction of high-stakes or irreversible actions that pass through a required approval checkpoint. & HUM-01, HUM-02 \\
+M-04 & Audit Trace Completeness (ATC) & Fraction of governed events with all required audit fields populated. & MON-01 \\
+M-05 & Adversarial Defense Rate (ADR) & Fraction of adversarial prompts/tests blocked or safely handled. & SEC-01, EVAL-01 \\
+M-06 & Data Leakage Rate (DLR) & Fraction of leakage tests or monitored outputs that expose protected data. Lower is better. & DATA-02, SEC-01, EVAL-01 \\
+M-07 & Hallucination/Error Rate (HER) & Fraction of tested factual outputs or extracted claims judged unsupported. Lower is better. & EVAL-01 \\
+M-08 & Unauthorized Access Attempt Rate (UAR) & Count of unauthorized access attempts per 1,000 governed runs. Lower is better. & AGT-02, MON-02 \\
+M-09 & Sandbox Enforcement Ratio (SER) & Fraction of high-risk executions that occur in an approved sandbox. & AGT-04, SEC-02 \\
+M-10 & Mean Time to Escalation (MTTE) & Mean time from alert creation to human ownership. Lower is better. & MON-02, MON-03 \\
+M-11 & Mean Time to Containment (MTTC) & Mean time from incident declaration to system containment or rollback. Lower is better. & MON-03 \\
+M-12 & Oversight Effectiveness Failure Rate (OFR) & Fraction of approvals later overturned due to reviewer miss or automation bias. Lower is better. & HUM-03 \\
+\bottomrule
+\end{longtable}
+
+\subsection{Formal Definitions}
+
+\subsubsection{Policy Adherence Rate}
+
+\begin{equation}
+PAR = \frac{N_{\text{policy-compliant executions}}}{N_{\text{governed executions}}}
+\end{equation}
+
+\subsubsection{Tool Call Accuracy}
+
+\begin{equation}
+TCA = \frac{N_{\text{correct \& authorised tool calls}}}{N_{\text{total tool calls}}}
+\end{equation}
+
+A tool call counts as correct only if it is:
+
+\begin{itemize}[nosep]
+    \item syntactically valid,
+    \item called with the correct tool identity,
+    \item invoked with permitted arguments,
+    \item executed in an approved order when sequence matters, and
+    \item consistent with the declared use-case authority.
+\end{itemize}
+
+\subsubsection{High-Stakes Checkpoint Coverage}
+
+\begin{equation}
+HCC = \frac{N_{\text{high-stakes events with valid approval}}}{N_{\text{high-stakes events}}}
+\end{equation}
+
+Where high-stakes events include at least:
+
+\begin{itemize}[nosep]
+    \item data modification in sensitive systems,
+    \item external communications,
+    \item financial transactions,
+    \item model deployment,
+    \item destructive operations, and
+    \item outlier or atypical actions crossing a threshold.
+\end{itemize}
+
+\subsubsection{Audit Trace Completeness}
+
+\begin{equation}
+ATC = \frac{N_{\text{events with complete audit payload}}}{N_{\text{governed events}}}
+\end{equation}
+
+Required audit fields are defined in Section~\ref{sec:audit-schema}.
+
+\subsubsection{Adversarial Defense Rate}
+
+\begin{equation}
+ADR = \frac{N_{\text{adversarial tests safely handled}}}{N_{\text{adversarial tests executed}}}
+\end{equation}
+
+\subsubsection{Data Leakage Rate}
+
+\begin{equation}
+DLR = \frac{N_{\text{positive leakage cases}}}{N_{\text{leakage tests or monitored samples}}}
+\end{equation}
+
+\subsubsection{Hallucination/Error Rate}
+
+\begin{equation}
+HER = \frac{N_{\text{unsupported claims or extraction errors}}}{N_{\text{sampled claims or outputs}}}
+\end{equation}
+
+\subsubsection{Unauthorized Access Attempt Rate}
+
+\begin{equation}
+UAR = 1000 \times \frac{N_{\text{unauthorised attempts}}}{N_{\text{governed runs}}}
+\end{equation}
+
+\subsubsection{Sandbox Enforcement Ratio}
+
+\begin{equation}
+SER = \frac{N_{\text{high-risk runs executed in sandbox}}}{N_{\text{high-risk runs requiring sandbox}}}
+\end{equation}
+
+\subsubsection{Time-to-Response Metrics}
+
+\begin{equation}
+MTTE = \frac{1}{n}\sum_{i=1}^{n}(t^{owner}_i - t^{alert}_i)
+\end{equation}
+
+\begin{equation}
+MTTC = \frac{1}{n}\sum_{i=1}^{n}(t^{contain}_i - t^{incident}_i)
+\end{equation}
+
+\subsubsection{Oversight Effectiveness Failure Rate}
+
+\begin{equation}
+OFR = \frac{N_{\text{approved actions later judged incorrect}}}{N_{\text{approved high-stakes actions}}}
+\end{equation}
+
+\subsection{Statistical Evaluation Rules}
+
+To avoid false confidence from small samples, release gates must use statistical confidence rules, not only point estimates.
+
+\subsubsection{Wilson Lower Confidence Bound}
+
+For metrics where ``higher is better'' (e.g. \(PAR\), \(TCA\), \(ADR\), \(HCC\), \(ATC\), \(SER\)), use the 95\% Wilson lower confidence bound:
+
+\begin{equation}
+LCB_{95} =
+\frac{
+\hat p + \frac{z^2}{2n} - z\sqrt{\frac{\hat p(1-\hat p)}{n} + \frac{z^2}{4n^2}}
+}{
+1 + \frac{z^2}{n}
+}
+\quad \text{where } z = 1.96
+\end{equation}
+
+Production gate rule:
+
+\begin{quote}
+A metric passes only if \(LCB_{95}\) is greater than or equal to the required threshold.
+\end{quote}
+
+\subsubsection{Upper Bound for ``Lower is Better'' Metrics}
+
+For metrics such as \(DLR\), \(HER\), \(UAR\), and \(OFR\), the release decision should use the 95\% upper confidence bound or an equivalent conservative estimate. For committee purposes:
+
+\begin{quote}
+A metric passes only if the 95\% upper bound is below the maximum permitted threshold.
+\end{quote}
+
+\subsubsection{Repetition Requirement for Stochastic Systems}
+
+For stochastic LLM or agentic systems, each critical scenario must be run at least \(k=5\) times per release candidate. Low-risk scenarios may use \(k=3\). High-risk or critical scenarios involving tool use, financial processes, or sensitive data must use \(k \ge 5\) and may require \(k \ge 10\) if variance is high.
+
+\subsection{Minimum Sample Sizes}
+
+\begin{center}
+\begin{tabular}{llll}
+\toprule
+\textbf{Risk Tier} & \textbf{Min Scenarios} & \textbf{Repetitions per Scenario} & \textbf{Minimum Total Runs} \\
+\midrule
+Low & 25 & 3 & 75 \\
+Medium & 50 & 3 & 150 \\
+High & 75 & 5 & 375 \\
+Critical & 100 & 5 & 500 \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\subsection{Composite Scores}
+
+\subsubsection{Evaluation Score}
+
+\begin{equation}
+EVAL_u = 100 \times \left(
+0.20PAR_u + 0.15TCA_u + 0.15ADR_u + 0.15ATC_u + 0.10HCC_u + 0.10SER_u
+\right)
+ - 100 \times \left(0.10DLR_u + 0.10HER_u + 0.05\widetilde{OFR}_u\right)
+\end{equation}
+
+where \(\widetilde{OFR}_u\) is OFR capped to \([0,1]\).
+
+\subsubsection{Deployment Readiness Score}
+
+\begin{equation}
+DRS_u = 0.30EVAL_u + 0.25CTRL_u + 0.20MON_u + 0.15HUM_u + 0.10DATA_u
+\end{equation}
+
+with:
+
+\begin{itemize}[nosep]
+    \item \(CTRL_u = 100 \times AWCC_u\)
+    \item \(MON_u = 100 \times \frac{ATC_u + SER_u + (1-\widetilde{UAR}_u)}{3}\)
+    \item \(HUM_u = 100 \times \frac{HCC_u + (1-\widetilde{OFR}_u)}{2}\)
+    \item \(DATA_u = 100 \times (1-DLR_u)\), adjusted downward if DATA controls fail.
+\end{itemize}
+
+\subsection{Production Gate}
+
+Promotion to production requires all of the following:
+
+\begin{enumerate}[nosep]
+    \item all critical controls pass;
+    \item \(DRS_u \ge 85\);
+    \item \(RRS_u \le 30\);
+    \item \(ATC \ge 0.99\) and \(HCC = 1.00\) whenever high-stakes checkpoints apply;
+    \item \(DLR = 0\) for critical and high-risk use cases;
+    \item incident runbooks and rollback plan approved; and
+    \item named owner signs residual-risk acceptance.
+\end{enumerate}
+
+\subsection{Target Thresholds by Risk Tier}
+
+\begin{longtable}{P{0.14\textwidth}P{0.14\textwidth}P{0.14\textwidth}P{0.14\textwidth}P{0.14\textwidth}}
+\caption{Minimum Thresholds by Risk Tier} \\
+\toprule
+\textbf{Metric} & \textbf{Low} & \textbf{Medium} & \textbf{High} & \textbf{Critical} \\
+\midrule
+\endfirsthead
+\toprule
+\textbf{Metric} & \textbf{Low} & \textbf{Medium} & \textbf{High} & \textbf{Critical} \\
+\midrule
+\endhead
+\(PAR\) & \(\ge 0.95\) & \(\ge 0.97\) & \(\ge 0.99\) & \(\ge 0.995\) \\
+\(TCA\) & \(\ge 0.94\) & \(\ge 0.96\) & \(\ge 0.98\) & \(\ge 0.99\) \\
+\(HCC\) & N/A or \(1.00\) if applicable & \(1.00\) if applicable & \(1.00\) & \(1.00\) \\
+\(ATC\) & \(\ge 0.97\) & \(\ge 0.98\) & \(\ge 0.99\) & \(1.00\) \\
+\(ADR\) & \(\ge 0.90\) & \(\ge 0.93\) & \(\ge 0.96\) & \(\ge 0.98\) \\
+\(DLR\) & \(\le 0.02\) & \(\le 0.01\) & \(0\) & \(0\) \\
+\(HER\) & \(\le 0.10\) & \(\le 0.07\) & \(\le 0.03\) & \(\le 0.02\) \\
+\(UAR\) per 1000 & \(\le 5\) & \(\le 3\) & \(\le 1\) & \(0\) \\
+\(SER\) & \(\ge 0.90\) if required & \(\ge 0.95\) if required & \(1.00\) if required & \(1.00\) if required \\
+\(MTTE\) & \(\le 4h\) & \(\le 2h\) & \(\le 30m\) & \(\le 15m\) \\
+\(MTTC\) & \(\le 1d\) & \(\le 8h\) & \(\le 2h\) & \(\le 1h\) \\
+\bottomrule
+\end{longtable}
+
+% ============================================================================
+\section{Testing and Assurance Method}
+% ============================================================================
+
+\subsection{Pre-Deployment Test Layers}
+
+Each governed use case must be tested across the following layers:
+
+\begin{enumerate}[nosep]
+    \item \textbf{Unit and component layer:} validators, tool schemas, filters, permissions, and policy evaluators.
+    \item \textbf{Workflow layer:} full prompt-to-tool-to-result path, including failure handling and audit generation.
+    \item \textbf{System layer:} realistic runtime environment, external dependencies, access boundaries, and fallback behaviour.
+    \item \textbf{Adversarial layer:} prompt injection, indirect injection, tool misuse, leakage, and anomalous chain execution.
+\end{enumerate}
+
+\subsection{Mandatory Test Families}
+
+\begin{longtable}{P{0.18\textwidth}P{0.32\textwidth}P{0.25\textwidth}P{0.15\textwidth}}
+\caption{Mandatory Test Families} \\
+\toprule
+\textbf{Test Family} & \textbf{Question Answered} & \textbf{Typical Methods} & \textbf{Applies To} \\
+\midrule
+\endfirsthead
+\toprule
+\textbf{Test Family} & \textbf{Question Answered} & \textbf{Typical Methods} & \textbf{Applies To} \\
+\midrule
+\endhead
+Hallucination / inaccuracy & Does the system produce unsupported claims, extraction errors, or fabricated answers? & Golden sets, human review, claim extraction and verification & UC-01, UC-03, UC-04, UC-05, UC-06 \\
+Bias / fairness & Does the system behave inconsistently across protected or sensitive groups where relevant? & Counterfactual sets, curated demographic tests & Any use case affecting people or decisions \\
+Undesirable content & Does the system generate content that violates safety expectations? & Safety prompts, policy benchmarks, moderation labels & UC-01, UC-05, UC-06 \\
+Data leakage & Does the system expose secrets, personal data, or unauthorized enterprise content? & Canary strings, leakage corpora, red-team prompts & UC-01, UC-03, UC-04, UC-05, UC-06, UC-10 \\
+Adversarial prompts & Can the system be manipulated via jailbreaks, indirect injections, or instruction conflicts? & Prompt-injection suites, tool-specific adversarial cases & UC-01, UC-03, UC-04, UC-05, UC-10 \\
+Task execution & Can the system complete the intended task accurately end-to-end? & Workflow scenarios, replay harnesses & UC-07, UC-08, UC-09, UC-10 \\
+Tool use accuracy & Does the system call the right tools with the right permissions and arguments? & Structured evaluator traces, tool-call diffing & UC-03, UC-04, UC-08, UC-10 \\
+Robustness and failure handling & Does the system fail safely on malformed inputs, unavailable tools, and retries? & Chaos scenarios, timeout and retry tests & All runtime use cases \\
+Monitoring and auditability & Does the system emit complete audit, alert, and decision records? & Synthetic runs, schema validation, field completeness tests & All governed use cases \\
+\bottomrule
+\end{longtable}
+
+\subsection{Five-Tier Committee Scoring}
+
+Inspired by the Project Moonshot assurance posture, committee review should use a 5-tier operational grade:
+
+\begin{center}
+\begin{tabular}{ll}
+\toprule
+\textbf{Grade} & \textbf{Meaning} \\
+\midrule
+Tier 5 & Production-approved with routine monitoring \\
+Tier 4 & Conditionally approved with enhanced monitoring and explicit owner sign-off \\
+Tier 3 & Pilot-only; not for general production \\
+Tier 2 & Development/staging only; remediation required \\
+Tier 1 & Do not deploy \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+Recommended mapping:
+
+\[
+\text{Tier} =
+\begin{cases}
+5 & DRS \ge 90,\ RRS \le 20 \\
+4 & 85 \le DRS < 90,\ RRS \le 30 \\
+3 & 70 \le DRS < 85 \\
+2 & 50 \le DRS < 70 \\
+1 & DRS < 50 \text{ or critical control failure}
+\end{cases}
+\]
+
+% ============================================================================
+\section{Lifecycle Process}
+% ============================================================================
+
+\subsection{Process Overview}
+
+Every governed use case follows the same lifecycle:
+
+\begin{enumerate}[nosep]
+    \item Intake and registration
+    \item Risk assessment and control applicability
+    \item Design review and architecture checkpoint
+    \item Build and local validation
+    \item Pre-deployment testing and scoring
+    \item Approval gate
+    \item Staged rollout
+    \item Continuous monitoring and incident handling
+    \item Periodic re-certification
+\end{enumerate}
+
+\subsection{Stage 1: Intake and Registration}
+
+Before implementation starts, the owner must create a use-case registration record containing:
+
+\begin{itemize}[nosep]
+    \item use-case ID and description;
+    \item business objective and success criteria;
+    \item systems touched;
+    \item data categories used;
+    \item model families and vendors;
+    \item tools, APIs, MCP servers, or browser/computer capabilities;
+    \item expected autonomy level;
+    \item write paths and irreversible actions;
+    \item human checkpoint plan; and
+    \item named owners and escalation contacts.
+\end{itemize}
+
+\subsection{Stage 2: Risk Assessment}
+
+The use case is scored using the \(IRS\) model. The output of this stage is:
+
+\begin{itemize}[nosep]
+    \item risk tier;
+    \item required controls;
+    \item required test families;
+    \item minimum sample size;
+    \item committee approval path; and
+    \item whether a DPIA, threat model, or security review is mandatory.
+\end{itemize}
+
+\subsection{Stage 3: Design Review}
+
+Design review confirms:
+
+\begin{itemize}[nosep]
+    \item tool and data boundaries are explicit;
+    \item identity and delegated authority are defined;
+    \item audit fields will be emitted;
+    \item approval checkpoints exist where required;
+    \item external dependencies are trusted and documented; and
+    \item rollback and containment approaches are feasible.
+\end{itemize}
+
+\subsection{Stage 4: Pre-Deployment Testing}
+
+Release candidates must be tested against the mandatory test families and thresholds applicable to the risk tier. Test evidence must include:
+
+\begin{itemize}[nosep]
+    \item scenario catalogue;
+    \item sample sizes and repetitions;
+    \item benchmark datasets and provenance;
+    \item evaluator definitions;
+    \item raw result files;
+    \item statistical calculations; and
+    \item remediation notes for failed scenarios.
+\end{itemize}
+
+\subsection{Stage 5: Approval Gate}
+
+The approval package must show:
+
+\begin{itemize}[nosep]
+    \item \(IRS\), \(AWCC\), \(RRS\), and \(DRS\);
+    \item all critical-control outcomes;
+    \item metric thresholds and confidence bounds;
+    \item unresolved risks, if any;
+    \item owner sign-off;
+    \item security/privacy sign-off where applicable; and
+    \item requested deployment tier.
+\end{itemize}
+
+\subsection{Stage 6: Staged Rollout}
+
+Rollout must proceed incrementally:
+
+\begin{enumerate}[nosep]
+    \item development;
+    \item staging;
+    \item pilot to limited users or low-risk data;
+    \item production for limited scope;
+    \item broad production after stability evidence.
+\end{enumerate}
+
+High-risk or critical agentic use cases must not jump directly from development to broad production.
+
+\subsection{Stage 7: Continuous Monitoring}
+
+Production monitoring must support three outcomes:
+
+\begin{enumerate}[nosep]
+    \item \textbf{Immediate intervention:} stop or pause risky flows.
+    \item \textbf{Diagnosis:} reconstruct the chain of events.
+    \item \textbf{Governance evidence:} prove that controls are functioning.
+\end{enumerate}
+
+\subsection{Stage 8: Incident Management}
+
+An AI incident is any event where:
+
+\begin{itemize}[nosep]
+    \item the system acts outside policy or authority;
+    \item personal or enterprise data may have leaked;
+    \item a high-stakes action occurs without valid approval;
+    \item the model or agent produces materially misleading output with business impact;
+    \item the system exhibits anomalous or unbounded tool behaviour; or
+    \item monitoring, audit, or alerting fails for a high-risk event.
+\end{itemize}
+
+\subsection{Stage 9: Re-Certification}
+
+Re-certification is required:
+
+\begin{itemize}[nosep]
+    \item quarterly for critical use cases;
+    \item every six months for high-risk use cases;
+    \item on any material model, prompt, data, tool, or dependency change;
+    \item after any high-severity incident; and
+    \item when regulations or internal policies materially change.
+\end{itemize}
+
+% ============================================================================
+\section{Monitoring, Alerting, and Audit Schema}
+% ============================================================================
+
+\subsection{Monitoring Objectives}
+
+The monitoring system must answer:
+
+\begin{enumerate}[nosep]
+    \item What did the AI system do?
+    \item Under whose authority did it do it?
+    \item Which tools, models, prompts, and data sources were involved?
+    \item Was the action within policy?
+    \item If something went wrong, when was it detected and who took ownership?
+\end{enumerate}
+
+\subsection{Logging Priorities}
+
+The system must prioritise logging for:
+
+\begin{itemize}[nosep]
+    \item database queries or write attempts;
+    \item vector-store ingestion;
+    \item personal-knowledge writes and wiki generation;
+    \item OCR of potentially sensitive documents;
+    \item model deployment and job promotion;
+    \item tool execution through MCP or LangChain agents;
+    \item approval requests and approval outcomes; and
+    \item failed, blocked, or anomalous operations.
+\end{itemize}
+
+\subsection{Required Audit Schema}
+\label{sec:audit-schema}
+
+Each governed event must record at least the following fields:
+
+\begin{longtable}{P{0.22\textwidth}P{0.62\textwidth}}
+\caption{Required Audit Fields} \\
+\toprule
+\textbf{Field} & \textbf{Meaning} \\
+\midrule
+\endfirsthead
+\toprule
+\textbf{Field} & \textbf{Meaning} \\
+\midrule
+\endhead
+\texttt{event\_id} & Globally unique event identifier. \\
+\texttt{timestamp\_utc} & Event timestamp in UTC. \\
+\texttt{request\_id} & Correlation or trace identifier for the HTTP or workflow request. \\
+\texttt{session\_id} & User or application session identifier if applicable. \\
+\texttt{user\_id} & Human user identity, or explicit fallback identity if unauthenticated. \\
+\texttt{agent\_id} & Agent identity or durable run identity for agentic execution. \\
+\texttt{owner\_id} & Business or system owner responsible for the use case. \\
+\texttt{use\_case\_id} & Registered use-case identifier. \\
+\texttt{route\_or\_workflow} & API route, job type, or workflow name. \\
+\texttt{model\_id} & Model name and version actually used. \\
+\texttt{backend} & Execution backend, e.g. local vLLM, AI Core, OCR service, or native fallback. \\
+\texttt{prompt\_hash} & Stable hash of the user or system prompt content, where applicable. \\
+\texttt{policy\_profile} & Governance or policy profile applied. \\
+\texttt{risk\_tier} & Risk classification at execution time. \\
+\texttt{tool\_name} & Tool invoked, if any. \\
+\texttt{tool\_arguments\_hash} & Stable hash of tool arguments when tool use occurs. \\
+\texttt{data\_class} & Data classification of the content or system touched. \\
+\texttt{action\_type} & Read, write, deploy, approval, generation, retrieval, or other controlled action. \\
+\texttt{approval\_required} & Boolean. \\
+\texttt{approval\_id} & Approval linkage where applicable. \\
+\texttt{outcome} & Success, failure, blocked, rejected, expired, or fallback. \\
+\texttt{error\_code} & Structured error or block code, if applicable. \\
+\texttt{latency\_ms} & Execution latency. \\
+\texttt{source\_services} & Services, stores, or tools touched by the action. \\
+\texttt{retention\_class} & How long the record and its payload may be retained. \\
+\bottomrule
+\end{longtable}
+
+\subsection{Alert Classes}
+
+\begin{center}
+\begin{tabularx}{\textwidth}{P{0.14\textwidth}Y Y}
+\toprule
+\textbf{Alert Class} & \textbf{Examples} & \textbf{Expected Response} \\
+\midrule
+Informational & Low-risk drift, latency trend, non-critical retry spike & Review during scheduled governance cadence \\
+Warning & Repeated failed tool calls, increased hallucination rate, partial audit gaps & Owner review within business day \\
+High & Unauthorised access attempt, missing approval on gated action, production safety threshold breach & Human ownership within 30 minutes; consider pause \\
+Critical & Confirmed leakage, unsafe external write, unbounded agent execution, broken audit path on critical flow & Immediate containment, rollback or kill switch, incident declaration \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+\subsection{Drift and Anomaly Detection}
+
+Two mathematically defined detectors are recommended:
+
+\subsubsection{Population Stability Index}
+
+For any monitored categorical distribution:
+
+\begin{equation}
+PSI = \sum_{i}(p_i - q_i)\ln\left(\frac{p_i}{q_i}\right)
+\end{equation}
+
+where \(p_i\) is the baseline share and \(q_i\) is the current share. Trigger levels:
+
+\begin{itemize}[nosep]
+    \item \(PSI < 0.10\): stable
+    \item \(0.10 \le PSI < 0.20\): investigate
+    \item \(PSI \ge 0.20\): alert
+\end{itemize}
+
+\subsubsection{Robust Z-Score}
+
+For continuous signals:
+
+\begin{equation}
+z^\ast = \frac{x - \text{median}(X)}{1.4826 \times MAD(X)}
+\end{equation}
+
+Alert if \(|z^\ast| > 3.5\), especially for tool-call counts, approval bypass attempts, or latency spikes on critical paths.
+
+% ============================================================================
+\section{Use-Case Control Mapping}
+% ============================================================================
+
+\begin{longtable}{P{0.08\textwidth}P{0.22\textwidth}P{0.18\textwidth}P{0.20\textwidth}P{0.20\textwidth}}
+\caption{Use-Case-to-Control Mapping Summary} \\
+\toprule
+\textbf{ID} & \textbf{Use Case} & \textbf{Mandatory Extra Controls} & \textbf{Mandatory Gate Metrics} & \textbf{Required Committee Notes} \\
+\midrule
+\endfirsthead
+\toprule
+\textbf{ID} & \textbf{Use Case} & \textbf{Mandatory Extra Controls} & \textbf{Mandatory Gate Metrics} & \textbf{Required Committee Notes} \\
+\midrule
+\endhead
+UC-01 & Chat and prompt-response & SEC-01, DATA-01, MON-01 & PAR, ADR, DLR, HER, ATC & Must document confidentiality routing and fallback behaviour. \\
+UC-03 & HANA query and prompt composition & DATA-01, DATA-02, AGT-02, MON-01 & PAR, ATC, DLR, UAR & Requires enterprise data-access justification and read-only guarantees. \\
+UC-04 & Retrieval and vector operations & DATA-03, AGT-02, EVAL-01 & TCA, DLR, ATC, SER & Requires retention, deletion, and vector-provenance evidence. \\
+UC-05 & Personal knowledge and memory & DATA-02, DATA-03, USR-01 & DLR, HER, ATC, MTTE & Requires owner-bound scope and retention schedule. \\
+UC-06 & OCR document extraction & DATA-01, DATA-02, EVAL-01 & HER, DLR, ATC & Requires document sensitivity classification and sample QA. \\
+UC-07 & Data-cleaning workflows & HUM-01, MON-01 & PAR, ATC, HER & Must distinguish recommendation from execution authority. \\
+UC-08 & Training and deployment & GOV-03, HUM-01, MON-03 & ATC, SER, MTTC, DRS & Requires rollback, provenance, model version, and sign-off. \\
+UC-09 & Pipeline orchestration & MON-02, MON-03 & ATC, MTTE, MTTC & Requires pause/rollback plan and failure alerting. \\
+UC-10 & MCP and agentic tools & AGT-03, AGT-04, HUM-01, SEC-02 & TCA, HCC, UAR, SER, ATC & Highest-risk surface; only whitelisted servers and explicit delegated authority. \\
+UC-11 & Governance and audit ingestion & MON-01, HUM-03 & ATC, OFR, MTTE & Governance plane failure is itself a reportable incident. \\
+\bottomrule
+\end{longtable}
+
+% ============================================================================
+\section{Implementation Design for This Repository}
+% ============================================================================
+
+\subsection{Implementation Philosophy}
+
+The design should be implemented by extending the existing control plane in the FastAPI API server and the existing governance UI, rather than by adding a separate compliance service. This minimises architectural sprawl and ensures that the framework governs actual runtime flows.
+
+\subsection{Planned Repository Changes}
+
+\begin{longtable}{P{0.28\textwidth}P{0.30\textwidth}P{0.32\textwidth}}
+\caption{Planned Repository Implementation Map} \\
+\toprule
+\textbf{Planned File / Module} & \textbf{Planned Change} & \textbf{Purpose} \\
+\midrule
+\endfirsthead
+\toprule
+\textbf{Planned File / Module} & \textbf{Planned Change} & \textbf{Purpose} \\
+\midrule
+\endhead
+\path{src/generativeUI/training-webcomponents-ngx/packages/api-server/src/ai_safety.py} & New module & Houses policy profile, use-case scoring, control evaluation, metric emission, and committee summary generation. \\
+\path{src/generativeUI/training-webcomponents-ngx/packages/api-server/src/store.py} & Extend with AI safety tables & Persist safety evaluations, incidents, gate decisions, and summary views. \\
+\path{src/generativeUI/training-webcomponents-ngx/packages/api-server/src/main.py} & Add governance endpoints and runtime hooks & Evaluate governed use cases, emit metrics, attach governance metadata, expose committee summary APIs. \\
+\path{src/generativeUI/training-webcomponents-ngx/packages/api-server/src/audit_sink_api.py} & Extend ingestion logic & Validate and count governed audit fields, connect audit sink to AI safety metrics. \\
+\path{src/generativeUI/training-webcomponents-ngx/packages/api-server/tests/test_main.py} & Add backend tests & Verify profile endpoints, gate calculations, persistence, and monitoring outputs. \\
+\path{src/generativeUI/training-webcomponents-ngx/apps/angular-shell/src/app/pages/governance/governance.component.ts} & Add committee-visible summary cards & Show framework version, readiness summary, incidents, and control health in the UI. \\
+\path{src/generativeUI/training-webcomponents-ngx/apps/angular-shell/src/app/services/diagnostics.service.ts} & Optional extension & Expose route-level governance telemetry to the UI. \\
+\path{src/data/langchain-integration-for-sap-hana-cloud-main/agent/langchain_hana_agent.py} & Align policy output with framework IDs & Make agent-side governance evidence structurally consistent with committee controls. \\
+\path{src/data/langchain-integration-for-sap-hana-cloud-main/mcp_server/server.py} & Align tool-server policies with allowlist and audit requirements & Enforce trusted protocol and tool boundary rules. \\
+\bottomrule
+\end{longtable}
+
+\subsection{Planned Backend API Surface}
+
+The implementation should expose, at minimum:
+
+\begin{center}
+\begin{tabularx}{\textwidth}{P{0.20\textwidth}P{0.22\textwidth}Y}
+\toprule
+\textbf{Method} & \textbf{Endpoint} & \textbf{Purpose} \\
+\midrule
+GET & \path{/governance/ai-safety/profile} & Return framework version, source set, control catalogue, and gate thresholds. \\
+GET & \path{/governance/ai-safety/summary} & Return committee summary of evaluations, incidents, readiness, and metric posture. \\
+GET & \path{/governance/ai-safety/evaluations} & Return recent evaluation records. \\
+POST & \path{/governance/ai-safety/evaluate} & Evaluate a registered use case or specific execution context against the framework. \\
+GET & \path{/governance/ai-safety/incidents} & Return AI safety incidents and statuses. \\
+POST & \path{/governance/ai-safety/incidents} & Create or escalate incidents manually when required. \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+\subsection{Planned Runtime Hooks}
+
+The following runtime hooks should be added:
+
+\begin{enumerate}[nosep]
+    \item \textbf{OpenAI-compatible chat path:} evaluate request risk, record route, backend, data class, prompt hash, and runtime outcome.
+    \item \textbf{Audit sink:} validate completeness and emit audit-trace metrics.
+    \item \textbf{Governance approvals:} link approvals to use-case IDs, risk class, and control gates.
+    \item \textbf{Training and deployment:} require release-gate records before promotion.
+    \item \textbf{MCP or LangChain tool paths:} enforce allowlists, record tool arguments hash, and record delegated authority.
+\end{enumerate}
+
+\subsection{Planned Persistence Model}
+
+At minimum, the system should persist:
+
+\begin{itemize}[nosep]
+    \item \textbf{AI safety evaluation records:} use-case ID, route, owner, risk tier, control results, readiness score, timestamps, raw evaluation payload.
+    \item \textbf{AI safety incidents:} incident type, severity, linked use case, linked event/evaluation, status, timestamps, resolution notes.
+    \item \textbf{Approval evidence:} approval required, approval ID, approver, decision, decision context.
+    \item \textbf{Metric snapshots or queryable raw logs:} to compute trend views by release and by use case.
+\end{itemize}
+
+\subsection{Planned Dashboards}
+
+The governance UI and monitoring dashboards should show:
+
+\begin{itemize}[nosep]
+    \item total governed runs by use case and risk tier;
+    \item current \(DRS\) and \(RRS\) by use case;
+    \item critical-control failures;
+    \item open incidents by severity;
+    \item \(ATC\), \(HCC\), \(PAR\), \(TCA\), \(ADR\), \(DLR\), \(HER\), \(SER\), \(MTTE\), and \(MTTC\);
+    \item trend lines for high-risk anomalies;
+    \item release-gate history; and
+    \item evidence completeness status.
+\end{itemize}
+
+\subsection{Planned Test Strategy for the Implementation}
+
+The implementation itself should be verified with:
+
+\begin{itemize}[nosep]
+    \item unit tests for risk scoring and gate formulas;
+    \item endpoint tests for governance profile and summary APIs;
+    \item persistence tests for evaluations and incidents;
+    \item contract tests for audit schema completeness;
+    \item integration tests for chat-path governance metadata; and
+    \item regression tests for approval gating and committee summary generation.
+\end{itemize}
+
+% ============================================================================
+\section{Committee Submission Pack}
+% ============================================================================
+
+\subsection{Required Submission Artefacts}
+
+\begin{longtable}{P{0.20\textwidth}P{0.55\textwidth}P{0.15\textwidth}}
+\caption{Committee Submission Evidence Pack} \\
+\toprule
+\textbf{Artefact} & \textbf{Contents} & \textbf{Mandatory} \\
+\midrule
+\endfirsthead
+\toprule
+\textbf{Artefact} & \textbf{Contents} & \textbf{Mandatory} \\
+\midrule
+\endhead
+This specification & Formal control, metric, lifecycle, and implementation design & Yes \\
+Use-case register & One card per use case, owner, data class, autonomy, tools, risk tier & Yes \\
+Risk assessment pack & \(IRS\), control applicability, DPIA/security flags, residual-risk summary & Yes \\
+Test evidence pack & Datasets, scenario list, raw outputs, confidence calculations, pass/fail summary & Yes \\
+Architecture evidence & System diagrams, control points, audit paths, rollback design & Yes \\
+Monitoring evidence & Alert definitions, dashboards, retention policy, on-call ownership & Yes \\
+Approval pack & Gate decision memo, residual-risk acceptance, production tier requested & Yes \\
+Training and transparency evidence & Reviewer training, user notices, escalation contacts & For high-risk and critical use cases \\
+Incident readiness pack & Runbooks, containment actions, escalation tree, rollback steps & For high-risk and critical use cases \\
+\bottomrule
+\end{longtable}
+
+\subsection{Decision Template}
+
+For each use case, committees should record:
+
+\begin{enumerate}[nosep]
+    \item \textbf{Decision:} Approved / Conditionally approved / Pilot only / Rework / Reject
+    \item \textbf{Approved tier:} 1 to 5
+    \item \textbf{Residual-risk owner:} named individual
+    \item \textbf{Conditions:} what must happen before next stage
+    \item \textbf{Monitoring enhancement:} if conditional approval is granted
+    \item \textbf{Recertification date:} next mandatory review date
+\end{enumerate}
+
+% ============================================================================
+\section{Recommended First Implementation Wave}
+% ============================================================================
+
+To reduce execution risk, implementation should proceed in this order:
+
+\begin{enumerate}[nosep]
+    \item Establish the use-case register and risk-scoring logic.
+    \item Implement evaluation and incident persistence.
+    \item Add governance profile and summary APIs.
+    \item Instrument the chat path, audit sink, and approval plane.
+    \item Add the governance dashboard summary cards.
+    \item Extend governance to MCP and LangChain agent tool flows.
+    \item Add release gates for training and deployment workflows.
+\end{enumerate}
+
+This sequence creates measurable value early while keeping the most complex agentic boundaries for later hardening.
+
+% ============================================================================
+\section{Conclusion}
+% ============================================================================
+
+This specification translates Singapore's current AI governance and assurance direction into a concrete operating model for this repository. The design does not assume that compliance is achieved by having a policy document. Instead, it requires that every AI-enabled use case be:
+
+\begin{itemize}[nosep]
+    \item explicitly registered,
+    \item quantitatively risk-scored,
+    \item bound by mandatory controls,
+    \item tested to statistically defensible thresholds,
+    \item monitored in production,
+    \item linked to an accountable human owner, and
+    \item supported by a complete evidence trail.
+\end{itemize}
+
+That is the standard required for a meaningful AI safety submission. The next step after committee review is implementation of the described control plane and evidence model in the existing FastAPI server, persistence layer, governance UI, and agent/tool boundaries already present in the codebase.
+
+% ============================================================================
+\section{References}
+\label{sec:references}
+% ============================================================================
+
+\begin{enumerate}[leftmargin=1.2cm]
+    \item IMDA, \emph{Model AI Governance Framework for Agentic AI}, 22 January 2026.\\
+    \url{https://www.imda.gov.sg/-/media/imda/files/about/emerging-tech-and-research/artificial-intelligence/mgf-for-agentic-ai.pdf}
+
+    \item IMDA, \emph{Singapore launches new Model AI Governance Framework for Agentic AI}, 22 January 2026.\\
+    \url{https://www.imda.gov.sg/resources/press-releases-factsheets-and-speeches/press-releases/2026/new-model-ai-governance-framework-for-agentic-ai}
+
+    \item IMDA, \emph{Starter Kit for Testing LLM-Based Applications for Safety and Reliability}. Accessed April 2026.\\
+    \url{https://www.imda.gov.sg/-/media/imda/files/about/emerging-tech-and-research/artificial-intelligence/starter-kit-for-testing-llm-based-applications-for-safety-and-reliability.pdf}
+
+    \item PDPC, \emph{Singapore's Approach to AI Governance}, including the second edition of the Model AI Governance Framework released on 21 January 2020. Accessed April 2026.\\
+    \url{https://www.pdpc.gov.sg/help-and-resources/2020/01/model-ai-governance-framework}
+
+    \item PDPC, \emph{Advisory Guidelines on Use of Personal Data in AI Recommendation and Decision Systems}, last updated 1 April 2024.\\
+    \url{https://www.pdpc.gov.sg/guidelines-and-consultation/2024/02/advisory-guidelines-on-use-of-personal-data-in-ai-recommendation-and-decision-systems}
+
+    \item IMDA, \emph{Project Moonshot, powered by AI Verify, and AI Collaborations}, 31 May 2024.\\
+    \url{https://www.imda.gov.sg/resources/press-releases-factsheets-and-speeches/factsheets/2024/project-moonshot}
+
+    \item IMDA, \emph{Artificial Intelligence in Singapore / AI Verify}. Accessed April 2026.\\
+    \url{https://www.imda.gov.sg/how-we-can-help/ai-verify}
+
+    \item CSA, \emph{Launch of Guidelines and Companion Guide on Securing Artificial Intelligence Systems}, 15 October 2024.\\
+    \url{https://www.csa.gov.sg/news-events/press-releases/launch-of-guidelines-and-companion-guide-on-securing-artificial-intelligence-systems}
+
+    \item CSA, \emph{Public Consultation on Securing Agentic AI - An Addendum to the Guidelines and Companion Guide on Securing AI Systems}, 22 October 2025.\\
+    \url{https://www.csa.gov.sg/resources/publications/addendum-on-securing-ai-systems/}
+
+    \item Repository-local machine-readable extract: \path{docs/regulations/machine-readable/mgf-for-agentic-ai.txt}. Accessed in-repo on 14 April 2026.
+\end{enumerate}
+
+\end{document}

@@ -17,11 +17,11 @@ describe('TRAINING_ROUTE_LINKS modeRelevance', () => {
     expect(paths).toContain('/chat');
   });
 
-  it('training mode suggests /pipeline and /data-explorer', () => {
+  it('training mode suggests /pipeline and /data-products', () => {
     const trainingRoutes = TRAINING_ROUTE_LINKS.filter(r => r.modeRelevance.includes('training'));
     const paths = trainingRoutes.map(r => r.path);
     expect(paths).toContain('/pipeline');
-    expect(paths).toContain('/data-explorer');
+    expect(paths).toContain('/data-products');
   });
 
   it('modeRelevance only contains valid AppMode values', () => {

@@ -1,0 +1,816 @@
+\chapter{Business Requirements Specification}
+\label{chap:business-requirements}
+
+\section*{Integration with existing chapters}
+\addcontentsline{toc}{section}{Integration with existing chapters}
+
+This chapter provides the business governance layer around the technical
+specifications in earlier chapters:
+
+\begin{itemize}
+  \item \textbf{Chapter~\ref{sec:sim-roadmap}} (Project Roadmap): BR-1.x strategic 
+    requirements align with the MoSCoW classification in \cref{tab:sim-moscow}. 
+    High-priority BRs map to Must milestones (M01--M07); Medium-priority BRs map 
+    to Should (S01--S02); Low-priority BRs map to Could (C01).
+  \item \textbf{Chapter~\ref{ch:agent-impl}} (Agent Instructions): BR-2.x generation 
+    requirements provide acceptance criteria for Tasks S1--S4 (schema extraction, 
+    taxonomy building, generation, evaluation).
+  \item \textbf{Chapter~\ref{chap:implementation-roadmap}} (Implementation Roadmap):
+    BR-3.x quality requirements are addressed by the closed-loop validation
+    capabilities in Phase~2; BR-4.x governance requirements by the workflow
+    engine capabilities in Phase~3.
+  \item \textbf{Table~\ref{tab:simula-fmea}} (FMEA): BR-3.3 (Privacy) and BR-3.4 
+    (Bias) address the ``Critic Collusion'' and ``Schema Contraction'' failure modes.
+\end{itemize}
+
+\noindent
+The traceability matrix at the end of this chapter maps each BR to the enhancement 
+and regulatory framework that governs it.
+
+\section*{Scope of this chapter}
+\addcontentsline{toc}{section}{Scope of this chapter}
+
+This chapter defines the complete business requirements for enterprise deployment
+of the Simula synthetic data framework. Requirements are organized across five
+categories: strategic preparation, generation phase, quality assurance, governance
+and compliance, and integration infrastructure. Each requirement includes regulatory
+citations where applicable.
+
+\section{Requirements Overview}
+
+\subsection{Requirement Identification Convention}
+
+Requirements follow the identification pattern \texttt{BR-<category>.<sequence>}:
+
+\begin{table}[htbp]
+\centering
+\caption{Business requirement categories.}
+\label{tab:br-categories}
+\footnotesize
+\begin{tabularx}{\textwidth}{@{}l l X l@{}}
+\toprule
+\textbf{Category} & \textbf{Prefix} & \textbf{Scope} & \textbf{Count} \\
+\midrule
+Strategic \& Preparation & BR-1.x & Use case definition, governance integration & 5 \\
+Generation Phase & BR-2.x & Taxonomy, configuration, metadata & 5 \\
+Quality Assurance & BR-3.x & Validation, privacy, bias detection & 5 \\
+Governance \& Compliance & BR-4.x & Access control, audit, transparency & 5 \\
+Integration \& Infrastructure & BR-5.x & ML pipelines, storage, deployment & 5 \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\subsection{Priority Classification}
+
+Requirements are classified using MoSCoW prioritization:
+\begin{itemize}
+  \item \textbf{High}: Must have for initial deployment
+  \item \textbf{Medium}: Should have for production maturity
+  \item \textbf{Low}: Could have for optimization
+\end{itemize}
+
+
+\section{BR-1: Strategic and Preparation Phase}
+
+\subsection{BR-1.1: Use Case Definition}
+
+\begin{tcolorbox}[colback=blue!5,colframe=blue!70,title=BR-1.1: Clear Use Case Definition]
+\textbf{Priority}: High
+
+\textbf{Description}: Organizations must clearly define synthetic data use cases
+and objectives before initiating generation projects. The synthetic data market
+is projected to reach \$3.4 billion by 2031\footnote{Market Research Future,
+``Synthetic Data Generation Market Report,'' 2024}, but success depends on
+starting with high-value, well-scoped use cases.
+
+\textbf{Typical Use Cases}:
+\begin{itemize}
+  \item Privacy-sensitive domain data substitution
+  \item Long-tail scenario coverage augmentation
+  \item Adversarial testing data generation
+  \item Training data augmentation for rare events
+  \item Model validation in regulated environments
+\end{itemize}
+
+\textbf{Acceptance Criteria}:
+\begin{enumerate}
+  \item Documented use case with clear business objective
+  \item Identified target domain and data modality
+  \item Defined success metrics and measurement approach
+  \item Stakeholder sign-off on scope and expectations
+\end{enumerate}
+
+\textbf{SAP Integration}: Align use cases with SAP AI Core deployment scenarios
+(Text-to-SQL, document extraction, financial analytics).
+\end{tcolorbox}
+
+\subsection{BR-1.2: Value-Risk Assessment}
+
+\begin{tcolorbox}[colback=blue!5,colframe=blue!70,title=BR-1.2: Structured Value-Risk Assessment]
+\textbf{Priority}: High
+
+\textbf{Description}: Before initiating synthetic data projects, organizations
+must conduct structured value-risk assessments. The UK FCA Synthetic Data Expert
+Group explicitly identifies clear objective definition and value-risk analysis
+as foundational to project success\footnote{FCA, ``Synthetic Data Expert Group
+Report,'' Section 3.2, 2024}.
+
+\textbf{Assessment Dimensions}:
+\begin{itemize}
+  \item \textbf{Value}: Cost savings, time-to-market, compliance enablement
+  \item \textbf{Risk}: Privacy leakage, bias amplification, quality degradation
+  \item \textbf{Feasibility}: Technical capability, resource availability
+  \item \textbf{Regulatory}: Jurisdiction-specific compliance requirements
+\end{itemize}
+
+\textbf{Acceptance Criteria}:
+\begin{enumerate}
+  \item Completed value-risk assessment matrix
+  \item Identified risk mitigation strategies
+  \item Documented go/no-go decision criteria
+  \item Executive sponsor approval
+\end{enumerate}
+\end{tcolorbox}
+
+\subsection{BR-1.3: Governance Framework Integration}
+
+\begin{tcolorbox}[colback=blue!5,colframe=blue!70,title=BR-1.3: Existing Governance Framework Integration]
+\textbf{Priority}: High
+
+\textbf{Description}: In the absence of dedicated synthetic data governance
+frameworks, organizations should integrate synthetic data management into existing
+model risk management, data governance, and AI ethics frameworks rather than
+building from scratch.
+
+\textbf{Integration Points}:
+\begin{itemize}
+  \item Model Risk Management (MRM) --- treat synthetic data as model input
+  \item Data Governance --- apply data quality and lineage standards
+  \item AI Ethics Framework --- extend bias and fairness requirements
+  \item Information Security --- apply data classification policies
+\end{itemize}
+
+\textbf{Acceptance Criteria}:
+\begin{enumerate}
+  \item Synthetic data policies integrated into existing governance documentation
+  \item Roles and responsibilities defined within existing RACI matrices
+  \item Approval workflows configured in existing governance tools
+  \item Training materials updated for affected stakeholders
+\end{enumerate}
+
+\textbf{SAP Integration}: Leverage SAP GRC (Governance, Risk, Compliance) for
+policy management and workflow orchestration.
+\end{tcolorbox}
+
+\subsection{BR-1.4: Cross-Functional Team Formation}
+
+\begin{tcolorbox}[colback=blue!5,colframe=blue!70,title=BR-1.4: Cross-Functional Team Organization]
+\textbf{Priority}: Medium
+
+\textbf{Description}: Synthetic data generation and usage requires multi-stakeholder
+collaboration. The World Economic Forum notes that synthetic data governance is
+typically constructed by multiple distinct teams working together\footnote{WEF,
+``Synthetic Data for Financial Services,'' p.~18, 2024}.
+
+\textbf{Required Roles}:
+\begin{itemize}
+  \item \textbf{Data Science Team}: Technical implementation, model training
+  \item \textbf{Domain Experts}: Taxonomy validation, complexity calibration
+  \item \textbf{Legal/Compliance}: Privacy risk assessment, regulatory alignment
+  \item \textbf{IT/Platform}: Infrastructure provisioning, security controls
+  \item \textbf{Business Stakeholders}: Use case definition, acceptance criteria
+\end{itemize}
+
+\textbf{Acceptance Criteria}:
+\begin{enumerate}
+  \item Documented team structure with named individuals
+  \item Defined communication and escalation paths
+  \item Regular sync cadence established
+  \item Clear decision-making authority matrix
+\end{enumerate}
+\end{tcolorbox}
+
+\subsection{BR-1.5: ROI Baseline Establishment}
+
+\begin{tcolorbox}[colback=blue!5,colframe=blue!70,title=BR-1.5: Investment Return Baseline]
+\textbf{Priority}: Medium
+
+\textbf{Description}: Organizations should establish clear ROI measurement
+baselines. Industry data indicates typical benefits include: AI model development
+speed improvements up to 40\%, compliance and data processing cost reductions
+of 50--60\%\footnote{Gartner, ``Synthetic Data Adoption Trends,'' 2025}.
+
+\textbf{Measurement Dimensions}:
+\begin{itemize}
+  \item Time-to-data: Days from request to available training data
+  \item Data acquisition cost: Cost per training example
+  \item Model performance: Accuracy, F1, or domain-specific metrics
+  \item Compliance cost: Audit preparation, privacy review cycles
+\end{itemize}
+
+\textbf{Acceptance Criteria}:
+\begin{enumerate}
+  \item Baseline metrics captured before synthetic data adoption
+  \item Target improvement thresholds defined
+  \item Measurement methodology documented
+  \item Reporting cadence established
+\end{enumerate}
+\end{tcolorbox}
+
+
+\section{BR-2: Generation Phase}
+
+\subsection{BR-2.1: Domain Taxonomy Construction and Validation}
+
+\begin{tcolorbox}[colback=green!5,colframe=green!70,title=BR-2.1: Taxonomy Construction and Validation]
+\textbf{Priority}: High
+
+\textbf{Description}: Simula's global diversification step requires constructing
+deep hierarchical taxonomies for target domains. Business requirements include
+domain expert participation in taxonomy review and version management as domain
+knowledge evolves.
+
+\textbf{Requirements}:
+\begin{itemize}
+  \item Expert review interface for taxonomy inspection and correction
+  \item Version control for taxonomy artifacts
+  \item Coverage gap identification and reporting
+  \item Domain vocabulary injection mechanism
+\end{itemize}
+
+\textbf{Acceptance Criteria}:
+\begin{enumerate}
+  \item Taxonomy review workflow with expert approval gates
+  \item Taxonomy versioning with diff visualization
+  \item Coverage reports showing sampling breadth and depth
+  \item Domain-specific node validation rules
+\end{enumerate}
+
+\textbf{SAP Integration}: Store taxonomy versions in SAP HANA Cloud with metadata
+tracking. Integrate with SAP Signavio for process-aware taxonomy construction.
+\end{tcolorbox}
+
+\subsection{BR-2.2: Controllable Parameter Configuration}
+
+\begin{tcolorbox}[colback=green!5,colframe=green!70,title=BR-2.2: Parameter Configuration Interface]
+\textbf{Priority}: High
+
+\textbf{Description}: Provide business user-friendly interfaces for independent
+control of generation parameters without requiring technical expertise.
+
+\textbf{Controllable Parameters}:
+\begin{itemize}
+  \item \textbf{Global Coverage}: Taxonomy sampling breadth and depth
+  \item \textbf{Local Diversity}: Variants per concept node
+  \item \textbf{Complexity Distribution}: Easy/medium/hard ratio curve
+  \item \textbf{Quality Thresholds}: Critic pass rate, diversity minimums
+\end{itemize}
+
+\textbf{Acceptance Criteria}:
+\begin{enumerate}
+  \item Visual configuration interface with parameter sliders
+  \item Preview mode showing expected distribution
+  \item Parameter validation with constraint warnings
+  \item Configuration templates for common scenarios
+\end{enumerate}
+
+\textbf{SAP Integration}: Expose configuration via SAP Build Apps for low-code
+workflow construction. Store configurations in SAP HANA Cloud.
+\end{tcolorbox}
+
+\subsection{BR-2.3: Cost and Resource Budget Control}
+
+\begin{tcolorbox}[colback=green!5,colframe=green!70,title=BR-2.3: Budget Control Mechanism]
+\textbf{Priority}: Medium
+
+\textbf{Description}: Synthetic data generation involves inference model API
+costs. Organizations require budget control mechanisms to manage expenses.
+
+\textbf{Requirements}:
+\begin{itemize}
+  \item Per-project and per-department generation quotas
+  \item Single-task cost ceiling configuration
+  \item Resource consumption estimation before execution
+  \item Low-cost ``draft mode'' for taxonomy design validation
+\end{itemize}
+
+\textbf{Acceptance Criteria}:
+\begin{enumerate}
+  \item Budget allocation interface by cost center
+  \item Real-time cost tracking during generation
+  \item Alerts when approaching budget limits
+  \item Cost-per-example reporting
+\end{enumerate}
+
+\textbf{SAP Integration}: Integrate with SAP AI Core resource quotas and
+SAP Analytics Cloud for cost visualization.
+\end{tcolorbox}
+
+\subsection{BR-2.4: Metadata and Provenance Recording}
+
+\begin{tcolorbox}[colback=green!5,colframe=green!70,title=BR-2.4: Complete Metadata Capture]
+\textbf{Priority}: High
+
+\textbf{Description}: Each generation task must automatically record complete
+metadata for audit compliance and reproducibility.
+
+\textbf{Required Metadata}:
+\begin{itemize}
+  \item Reasoning model version and configuration
+  \item Taxonomy structure snapshot
+  \item Sampling strategy parameters
+  \item Generation timestamp and executor identity
+  \item Random seeds for reproducibility
+\end{itemize}
+
+\textbf{Acceptance Criteria}:
+\begin{enumerate}
+  \item Automatic metadata capture on every generation run
+  \item Metadata stored with tamper-evident integrity
+  \item Query interface for metadata retrieval
+  \item Export capability for audit packages
+\end{enumerate}
+
+\textbf{SAP Integration}: Store provenance in SAP HANA Cloud with blockchain-style
+hash chaining. Integrate with SAP Data Intelligence for lineage visualization.
+\end{tcolorbox}
+
+\subsection{BR-2.5: Incremental Generation and Dataset Evolution}
+
+\begin{tcolorbox}[colback=green!5,colframe=green!70,title=BR-2.5: Incremental Generation Support]
+\textbf{Priority}: Low
+
+\textbf{Description}: Support incremental generation on existing datasets when
+taxonomies evolve, avoiding redundant regeneration.
+
+\textbf{Requirements}:
+\begin{itemize}
+  \item Detect new/modified taxonomy nodes
+  \item Generate only for changed coverage regions
+  \item Merge incremental examples with existing dataset
+  \item Version-to-version diff analysis
+\end{itemize}
+
+\textbf{Acceptance Criteria}:
+\begin{enumerate}
+  \item Taxonomy diff computation between versions
+  \item Targeted generation for changed nodes only
+  \item Dataset merge with deduplication
+  \item Generation efficiency metrics (examples saved)
+\end{enumerate}
+\end{tcolorbox}
+
+
+\section{BR-3: Quality Assurance and Validation}
+
+\subsection{BR-3.1: Intrinsic Quality Assessment}
+
+\begin{tcolorbox}[colback=yellow!5,colframe=yellow!70,title=BR-3.1: Standardized Quality Reporting]
+\textbf{Priority}: High
+
+\textbf{Description}: Simula's built-in quality assessment capabilities must be
+productized into standardized reports for business consumption.
+
+\textbf{Required Reports}:
+\begin{itemize}
+  \item \textbf{Coverage Report}: Taxonomy branches sampled vs.\ omitted
+  \item \textbf{Complexity Distribution}: Generated data complexity vs.\ target
+  \item \textbf{Diversity Metrics}: Intra-concept sample similarity analysis
+  \item \textbf{Critic Pass Rates}: Acceptance rates by taxonomy region
+\end{itemize}
+
+\textbf{Acceptance Criteria}:
+\begin{enumerate}
+  \item Automated report generation on every dataset
+  \item Visual dashboards with drill-down capability
+  \item Threshold alerts for quality degradation
+  \item Historical trend analysis
+\end{enumerate}
+
+\textbf{SAP Integration}: Publish reports to SAP Analytics Cloud. Configure
+alerts via SAP Alert Notification Service.
+\end{tcolorbox}
+
+\subsection{BR-3.2: Downstream Task Validation}
+
+\begin{tcolorbox}[colback=yellow!5,colframe=yellow!70,title=BR-3.2: Downstream Model Validation]
+\textbf{Priority}: High
+
+\textbf{Description}: Generated datasets must be validated on downstream models
+to verify practical utility. Recommended approach: ``Train-Synthetic-Test-Real''
+(TSTR) methodology.
+
+\textbf{Validation Protocol}:
+\begin{enumerate}
+  \item Train model on synthetic data
+  \item Evaluate on held-out real data
+  \item Compute synthetic-to-real performance gap
+  \item Identify systematic failure patterns
+\end{enumerate}
+
+\textbf{Acceptance Criteria}:
+\begin{enumerate}
+  \item Automated TSTR pipeline integration
+  \item Performance gap quantification by taxonomy region
+  \item Failure pattern analysis reports
+  \item Threshold-based quality gates
+\end{enumerate}
+
+\textbf{SAP Integration}: Execute validation via SAP AI Core training pipelines.
+Store results in SAP HANA Cloud for trend analysis.
+\end{tcolorbox}
+
+\subsection{BR-3.3: Privacy Risk Assessment}
+
+\begin{tcolorbox}[colback=yellow!5,colframe=yellow!70,title=BR-3.3: Privacy Risk Evaluation]
+\textbf{Priority}: High
+
+\textbf{Description}: Even in Simula's seedless mode, generated data may exhibit
+unintended similarity to real data seen during reasoning model training. Privacy
+risk assessment mechanisms are essential. IEEE emphasizes that privacy risk
+metrics and mitigation techniques are core governance components\footnote{IEEE,
+``Synthetic Data: Generation, Validation, and Governance,'' Section 4.3, 2025}.
+
+\textbf{Assessment Mechanisms}:
+\begin{itemize}
+  \item Membership inference attack testing
+  \item Similarity scanning against known real datasets
+  \item Differential privacy budget tracking
+  \item Re-identification risk scoring
+\end{itemize}
+
+\textbf{Acceptance Criteria}:
+\begin{enumerate}
+  \item Automated privacy risk scoring on generated datasets
+  \item Configurable risk thresholds with blocking gates
+  \item Audit-ready privacy assessment reports
+  \item Remediation workflow for high-risk samples
+\end{enumerate}
+
+\textbf{SAP Integration}: Integrate with SAP Data Privacy Integration service
+for sensitive data detection.
+\end{tcolorbox}
+
+\subsection{BR-3.4: Bias Detection and Mitigation}
+
+\begin{tcolorbox}[colback=yellow!5,colframe=yellow!70,title=BR-3.4: Systematic Bias Detection]
+\textbf{Priority}: Medium
+
+\textbf{Description}: Establish systematic bias detection processes to identify
+and mitigate inherited biases from reasoning models.
+
+\textbf{Detection Approaches}:
+\begin{itemize}
+  \item Distribution analysis on sensitive attributes
+  \item Reasoning model bias inheritance detection
+  \item Over/under-sampling recommendations
+  \item Fairness metric computation
+\end{itemize}
+
+\textbf{Acceptance Criteria}:
+\begin{enumerate}
+  \item Automated bias scanning on generation
+  \item Fairness metric dashboards
+  \item Bias mitigation tool integration
+  \item Bias audit trail for compliance
+\end{enumerate}
+\end{tcolorbox}
+
+\subsection{BR-3.5: Continuous Monitoring and Drift Detection}
+
+\begin{tcolorbox}[colback=yellow!5,colframe=yellow!70,title=BR-3.5: Quality Drift Monitoring]
+\textbf{Priority}: Medium
+
+\textbf{Description}: Establish continuous monitoring to detect quality changes
+due to reasoning model upgrades or taxonomy drift. FCA includes ``continuous
+monitoring and improvement'' as one of nine governance principles\footnote{FCA,
+``Synthetic Data Expert Group Report,'' Principle 9, 2024}.
+
+\textbf{Monitoring Capabilities}:
+\begin{itemize}
+  \item Periodic quality sampling and assessment
+  \item Version-to-version quality drift detection
+  \item Model upgrade impact analysis
+  \item Automated regeneration triggers
+\end{itemize}
+
+\textbf{Acceptance Criteria}:
+\begin{enumerate}
+  \item Scheduled quality monitoring jobs
+  \item Drift detection with statistical significance testing
+  \item Alert configuration for threshold breaches
+  \item Automated remediation workflow triggers
+\end{enumerate}
+
+\textbf{SAP Integration}: Configure monitoring via SAP AI Core MLOps capabilities.
+Route alerts through SAP Alert Notification Service.
+\end{tcolorbox}
+
+
+\section{BR-4: Governance and Compliance}
+
+\subsection{BR-4.1: Access Control and Permission Management}
+
+\begin{tcolorbox}[colback=red!5,colframe=red!70,title=BR-4.1: Role-Based Access Control]
+\textbf{Priority}: High
+
+\textbf{Description}: Although synthetic data does not directly contain real
+personal information, strict access controls remain necessary.
+
+\textbf{Control Requirements}:
+\begin{itemize}
+  \item Role-based access (generator, reviewer, consumer separation)
+  \item Dataset access approval workflows
+  \item Additional restrictions for sensitive domains (healthcare, finance)
+  \item Access logging and audit trails
+\end{itemize}
+
+\textbf{Acceptance Criteria}:
+\begin{enumerate}
+  \item RBAC configuration in identity provider
+  \item Approval workflow for dataset access requests
+  \item Domain-specific access policies
+  \item Comprehensive access audit logs
+\end{enumerate}
+
+\textbf{SAP Integration}: Leverage SAP Cloud Identity Services for authentication.
+Configure authorization via SAP Authorization and Trust Management Service (XSUAA).
+\end{tcolorbox}
+
+\subsection{BR-4.2: Regulatory Framework Alignment}
+
+\begin{tcolorbox}[colback=red!5,colframe=red!70,title=BR-4.2: Compliance Framework Alignment]
+\textbf{Priority}: High
+
+\textbf{Description}: Synthetic data generation and usage must align with
+applicable regulations. FCA emphasizes that generating and using synthetic data
+requires consideration of data protection, non-discrimination, and bias
+regulatory obligations\footnote{FCA, ``Synthetic Data Expert Group Report,''
+Section 5.1, 2024}.
+
+\textbf{Regulatory Considerations}:
+\begin{itemize}
+  \item \textbf{GDPR}: Demonstrate anonymization status of synthetic data
+  \item \textbf{HIPAA}: Comply with protected health information rules
+  \item \textbf{Industry-Specific}: Financial services (FCA), healthcare (FDA)
+  \item \textbf{AI Regulations}: EU AI Act risk categorization
+\end{itemize}
+
+\textbf{Acceptance Criteria}:
+\begin{enumerate}
+  \item Documented compliance position for each applicable regulation
+  \item Legal review sign-off on synthetic data usage
+  \item Regulatory change monitoring process
+  \item Jurisdiction-specific policy variations
+\end{enumerate}
+
+\textbf{SAP Integration}: Integrate with SAP Compliance and GRC solutions for
+regulatory tracking.
+\end{tcolorbox}
+
+\subsection{BR-4.3: Audit Logging and Traceability}
+
+\begin{tcolorbox}[colback=red!5,colframe=red!70,title=BR-4.3: Complete Audit Trail]
+\textbf{Priority}: High
+
+\textbf{Description}: Establish complete audit tracking. WEF emphasizes that
+enterprises must prioritize oversight and compliance, building robust traceability
+and provenance systems\footnote{WEF, ``Synthetic Data for Financial Services,''
+p.~24, 2024}.
+
+\textbf{Audit Requirements}:
+\begin{itemize}
+  \item ``Who, when, why, what'' for every data access
+  \item Complete usage chain (generation $\to$ training $\to$ deployment)
+  \item Compliance review decision records
+  \item Long-term audit log retention
+\end{itemize}
+
+\textbf{Acceptance Criteria}:
+\begin{enumerate}
+  \item Tamper-evident audit log storage
+  \item Query interface for audit investigations
+  \item Retention policy enforcement
+  \item Audit export for regulatory submissions
+\end{enumerate}
+
+\textbf{SAP Integration}: Utilize SAP Audit Log Service for tamper-evident logging.
+Store long-term archives in SAP Object Store with retention policies.
+\end{tcolorbox}
+
+\subsection{BR-4.4: Transparency and Explainability}
+
+\begin{tcolorbox}[colback=red!5,colframe=red!70,title=BR-4.4: External Transparency]
+\textbf{Priority}: Medium
+
+\textbf{Description}: Organizations must be able to explain synthetic data usage
+to external stakeholders (customers, regulators, partners). This addresses FCA
+principles of ``transparency'' and ``explainability''\footnote{FCA, ``Synthetic
+Data Expert Group Report,'' Principles 1--2, 2024}.
+
+\textbf{Transparency Requirements}:
+\begin{itemize}
+  \item Documentation of synthetic nature and generation method
+  \item Explanation of synthetic vs.\ real data differences
+  \item Justification for synthetic data usage
+  \item Model card integration for downstream models
+\end{itemize}
+
+\textbf{Acceptance Criteria}:
+\begin{enumerate}
+  \item Synthetic data documentation templates
+  \item Stakeholder communication guidelines
+  \item Model card integration with synthetic data lineage
+  \item FAQ materials for common inquiries
+\end{enumerate}
+\end{tcolorbox}
+
+\subsection{BR-4.5: Incident Response and Remediation}
+
+\begin{tcolorbox}[colback=red!5,colframe=red!70,title=BR-4.5: Incident Response Process]
+\textbf{Priority}: Medium
+
+\textbf{Description}: Establish incident response processes for synthetic data
+related security events.
+
+\textbf{Incident Scenarios}:
+\begin{itemize}
+  \item Generated data inadvertently contains real information
+  \item Systematic bias causes discriminatory model outputs
+  \item Generated data is misused or leaked
+  \item Quality degradation impacts downstream systems
+\end{itemize}
+
+\textbf{Acceptance Criteria}:
+\begin{enumerate}
+  \item Incident classification and severity matrix
+  \item Responsible party identification
+  \item Escalation and notification paths
+  \item Remediation playbooks
+\end{enumerate}
+
+\textbf{SAP Integration}: Integrate with existing SAP incident management workflows.
+Configure alerts through SAP Alert Notification Service.
+\end{tcolorbox}
+
+
+\section{BR-5: Integration and Infrastructure}
+
+\subsection{BR-5.1: ML Pipeline Integration}
+
+\begin{tcolorbox}[colback=purple!5,colframe=purple!70,title=BR-5.1: MLOps Pipeline Integration]
+\textbf{Priority}: High
+
+\textbf{Description}: Simula must integrate as an orchestratable component within
+existing ML pipelines.
+
+\textbf{Integration Requirements}:
+\begin{itemize}
+  \item API-driven generation task triggering
+  \item Integration with major MLOps platforms
+  \item Automatic dataset push to training storage
+  \item Pipeline status and progress reporting
+\end{itemize}
+
+\textbf{Acceptance Criteria}:
+\begin{enumerate}
+  \item REST/gRPC API for generation tasks
+  \item Pre-built integrations (Kubeflow, MLflow, Vertex AI)
+  \item Webhook notifications for completion events
+  \item Pipeline artifact registration
+\end{enumerate}
+
+\textbf{SAP Integration}: Primary integration with SAP AI Core. Secondary
+integrations with SAP Data Intelligence and SAP BTP Kyma Runtime for
+containerized execution.
+\end{tcolorbox}
+
+\subsection{BR-5.2: Data Storage and Version Management}
+
+\begin{tcolorbox}[colback=purple!5,colframe=purple!70,title=BR-5.2: Unified Data Governance]
+\textbf{Priority}: Medium
+
+\textbf{Description}: Synthetic datasets should follow the same governance
+policies as real datasets within organizational data infrastructure.
+
+\textbf{Storage Requirements}:
+\begin{itemize}
+  \item Version-controlled data lake/warehouse storage
+  \item Dataset labeling, search, and reuse support
+  \item Data catalog integration
+  \item Retention policy enforcement
+\end{itemize}
+
+\textbf{Acceptance Criteria}:
+\begin{enumerate}
+  \item Storage in enterprise data lake with versioning
+  \item Metadata registration in data catalog
+  \item Search and discovery interface
+  \item Automated retention enforcement
+\end{enumerate}
+
+\textbf{SAP Integration}: Store datasets in SAP HANA Cloud or SAP Datasphere.
+Register metadata in SAP Data Intelligence catalog.
+\end{tcolorbox}
+
+\subsection{BR-5.3: Elastic Compute Resource Scheduling}
+
+\begin{tcolorbox}[colback=purple!5,colframe=purple!70,title=BR-5.3: Compute Resource Management]
+\textbf{Priority}: Medium
+
+\textbf{Description}: Synthetic data generation is compute-intensive. Support
+dynamic resource allocation based on workload.
+
+\textbf{Scheduling Requirements}:
+\begin{itemize}
+  \item Dynamic resource allocation by task size
+  \item Batch and real-time generation modes
+  \item Priority queue management
+  \item Cost-optimized resource selection
+\end{itemize}
+
+\textbf{Acceptance Criteria}:
+\begin{enumerate}
+  \item Auto-scaling based on queue depth
+  \item Priority scheduling with preemption
+  \item Resource utilization dashboards
+  \item Cost optimization recommendations
+\end{enumerate}
+
+\textbf{SAP Integration}: Leverage SAP AI Core auto-scaling. Use SAP BTP
+Kubernetes runtime for containerized workloads.
+\end{tcolorbox}
+
+\subsection{BR-5.4: Multi-Environment Deployment Support}
+
+\begin{tcolorbox}[colback=purple!5,colframe=purple!70,title=BR-5.4: Deployment Flexibility]
+\textbf{Priority}: Low
+
+\textbf{Description}: Support multiple deployment models to accommodate varying
+security requirements across organizations.
+
+\textbf{Deployment Models}:
+\begin{itemize}
+  \item \textbf{Public Cloud SaaS}: Standard scenarios
+  \item \textbf{Private Deployment}: High-security requirements
+  \item \textbf{VPC Deployment}: Regulated industry compliance
+  \item \textbf{Hybrid}: Combination of above
+\end{itemize}
+
+\textbf{Acceptance Criteria}:
+\begin{enumerate}
+  \item Documented deployment architectures for each model
+  \item Security certifications per deployment type
+  \item Network isolation configuration guides
+  \item Data residency compliance options
+\end{enumerate}
+
+\textbf{SAP Integration}: Leverage SAP BTP multi-environment support. Configure
+SAP Private Link for secure connectivity.
+\end{tcolorbox}
+
+
+\section{Requirements Traceability Matrix}
+
+\begin{table}[htbp]
+\centering
+\caption{Requirements to enhancement traceability.}
+\label{tab:req-traceability}
+\scriptsize
+\begin{tabularx}{\textwidth}{@{}l l l X@{}}
+\toprule
+\textbf{Requirement} & \textbf{Priority} & \textbf{Enhancement} & \textbf{Regulatory Reference} \\
+\midrule
+BR-1.1 & High & --- & --- \\
+BR-1.2 & High & --- & FCA Principle 3 \\
+BR-1.3 & High & E4 & WEF Governance \\
+BR-1.4 & Medium & --- & WEF Cross-functional \\
+BR-1.5 & Medium & E3 & --- \\
+\midrule
+BR-2.1 & High & E2 & --- \\
+BR-2.2 & High & E4 & --- \\
+BR-2.3 & Medium & E4 & --- \\
+BR-2.4 & High & E4 & FCA Principle 7 \\
+BR-2.5 & Low & E4 & --- \\
+\midrule
+BR-3.1 & High & E3 & --- \\
+BR-3.2 & High & E3 & IEEE Fidelity \\
+BR-3.3 & High & E3 & IEEE Privacy, FCA Principle 6 \\
+BR-3.4 & Medium & E3 & FCA Principle 8 \\
+BR-3.5 & Medium & E3 & FCA Principle 9 \\
+\midrule
+BR-4.1 & High & E4 & FCA Principle 6 \\
+BR-4.2 & High & --- & GDPR, HIPAA, FCA \\
+BR-4.3 & High & E4 & WEF Traceability \\
+BR-4.4 & Medium & E4 & FCA Principles 1--2 \\
+BR-4.5 & Medium & --- & --- \\
+\midrule
+BR-5.1 & High & E3, E4 & --- \\
+BR-5.2 & Medium & E4 & IEEE Provenance \\
+BR-5.3 & Medium & --- & --- \\
+BR-5.4 & Low & --- & --- \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+Legend: E2 = Domain Calibration, E3 = Closed-Loop Validation, E4 = Workflow Engine

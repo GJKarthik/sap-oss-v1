@@ -1,0 +1,5 @@
+[0] Config.pm:328> INFO - This is Biber 2.21
+[0] Config.pm:331> INFO - Logfile is 'simula-training-spec-apple.blg'
+[29] biber-darwin:342> INFO - === Wed Apr 22, 2026, 08:03:33
+[111] Utils.pm:479> ERROR - Cannot find 'simula-training-spec-apple.bcf'!
+[111] Biber.pm:137> INFO - ERRORS: 1

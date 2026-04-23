@@ -9,12 +9,12 @@ export const environment = {
   agUiEndpoint: '/ag-ui/run',
   /** Optional: sent as SSE query param and Bearer on POST; leave empty for local dev. */
   agUiAuthToken: '',
-  openAiBaseUrl: 'http://localhost:8400',
-  trainingApiUrl: 'http://localhost:8000',
+  openAiBaseUrl: '/api/v1/ui5/openai',
+  trainingApiUrl: '/api/v1/training',
   /** Optional: must match training api-server AUDIT_SINK_TOKEN when that env is set. */
   auditSinkToken: '',
   ocrInternalToken: '',
-  mcpBaseUrl: 'http://localhost:9160/mcp',
+  mcpBaseUrl: '/api/v1/ui5/mcp/mcp',
   requireRealBackends: true as const,
   collabWsUrl: '/collab',
   collabUserId: 'sap-ai-user-default',

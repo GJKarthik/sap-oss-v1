@@ -1,0 +1,807 @@
+﻿Requester,Requester,Requester,Requester,Requester,Requester,Requester,Requester,Requester,Data Chapter,Data Chapter / Delivery Squad,Requester / BTP Tech,Requester / BTP Tech,Requester / Upstream Tech,Requester / Upstream Tech,Upstream Tech + BTP Tech,Upstream Tech + BTP Tech,Do Not Use - To be Deleted,Requester + Upstream Tech,Requester,Requester,Requester,Requester,Requester,BTP Tech,BTP Tech,BTP Tech,BTP Tech,Requester,Requester,Requester,Upstream Tech + BTP Tech,Upstream Tech + BTP Tech,Upstream Tech + BTP Tech,,,,,
+Mandatory,Mandatory - must be same as in Data Ingestion Roadmap,Mandatory - must be same as in Data Ingestion Roadmap,Mandatory - must be same as in Data Ingestion Roadmap,Mandatory - must be same as in Data Ingestion Roadmap,Mandatory,Mandatory,Mandatory,Mandatory,Mandatory,Mandatory,Mandatory,Mandatory if Techincal Debt = Yes,Mandatory,Mandatory,Mandatory,"Mandatory - Possible values are remote table, feed (csv, xml, etc.), API etc.",Do Not Use - To be Deleted,Logic to be used to extract the data from source.  Needed so that can understand the size of the feed,"Mandatory
+The moment in time represented by the data.  It's about content inclusion, not pipeline timing.  Even if you load it later, the cut does not change.  E.g. 'Data that falls into prior month categorisation'","Mandatory
+The date and time and time zone by when data should be available for consumption from Pre-Processing Layer","Mandatory
+How frequently and on which days the feed from source to Staging must occur e.g. 'In Apr, Jul, Oct, Jan at 23:59 on Business Days 10, 13, 18, and 20'","Mandatory
+How long to be kept in pre-processing layer","Mandatory
+Justify data retention ask",Mandatory,Mandatory,Mandatory,Mandatory,Mandatory,Mandatory - use case lead,Mandatory,Mandatory,Mandatory,Mandatory,Optional,,,,
+,,,,,,,,,,,,,,,,,,,Data SLA,,,,,,,,,Governance,,,,,,,,,,
+Unique ID,Data Theme,Source System(s),Requirement,Requester,Data Type,Source Schema,"Source Table Name (Structured) / 
+Location (for Unstructured Data)",Table Description,Life Cycle / Status,Delivery Date (If Prioritized),Any Technical Debt?,Technical Debt Description,"Feed Type
+Global (i.e. Single feed for all entities)
+Entity-Wise
+Regional (e.g. APAC, EMEA, AMS)",Feed Volume (no. of records & colums OR file size),"Refresh Mechanism
+(Delta / Full Load / Full Load Intially & Delta thereafter, etc.)",Source Data Format,Source Data - Period Scope,Filter Logic,Data Cut Required by Business,Data Availability Required by Business,Refresh Frequency,Data Retention,Data Retention Justification,Refresh Data Cut (Implemented),"Data Availability Implemented
+(e.g. T+2 1300 GMT)",Refresh Frequency (Implemented),Data Retention (Implemented),Sensitivity,Personal Data,Data Owner / Data SME Agreement Received?,ARF Approval Received?, FTC Approval Received?,ADF Approval Received? ,Tags/Keywords,Notes,,,
+FS_032,Reference,MDG (via S4),"Genesis Master, Mapping",Scott,Structured,,ZFIGENESIS,Genesis product table,Prioritized,,No,,,,Full Load,Technology decision,Life to date versions,,1st business day after month end at one second past midnight UK time,As soon as possible after cut-off,Monthly,5 years,,,,,,Internal,No,,,,,Genesis MDG,,,,
+FS_032,Reference,MDG (via S4),"Genesis Master, Mapping",Scott,Structured,,ZFIGENESIS_MAP,Genesis Mapping Rules Table,Prioritized,,No,,,,Full Load,Technology decision,Life to date versions,,1st business day after month end at one second past midnight UK time,As soon as possible after cut-off,Monthly,5 years,,,,,,Internal,No,,,,,Genesis MDG,,,,
+FS_033,Reference,MDG (via BW),Genesis Hierarchy,Scott,Structured,,Genesis Hierachy table (TBC),Genesis hierachy table,Not Prioritized,,No,,,,Technology decision,Technology decision,Life to date versions,,1st business day after month end at one second past midnight UK time,As soon as possible after cut-off,Monthly,5 years,,,,,,Internal,No,,,,,Genesis MDG,,,,
+FS_071,FM/Treasury,FPSL (Murex),FM Trade Level,"Ang, May Yi",Structured,,1) FPSL Instrument data table (for Capital Issuances ISIN level instrument details and balances),Financial Instruments,Not Prioritized, ,No, ,,,Technology decision,Technology decision, ,,,,Daily,Prior Year + YTD,, ,,Daily,Prior Year + YTD,Internal,No,,,,,Genesis CFM,,,,
+FS_071,FM/Treasury,FPSL (GPTM),FM Trade Level,"Ang, May Yi",Structured,,1) FPSL Instrument data table (for Capital Issuances ISIN level instrument details and balances),Financial Instruments,Not Prioritized, ,No, ,,,Technology decision,Technology decision, ,,,,Daily,Prior Year + YTD,, ,,Daily,Prior Year + YTD,Internal,No,,,,,Genesis CFM,,,,
+FS_071,FM/Treasury,FPSL (Razor),FM Trade Level,"Ang, May Yi",Structured,,1) FPSL Instrument data table (for Capital Issuances ISIN level instrument details and balances),Financial Instruments,Not Prioritized, ,No, ,,,Technology decision,Technology decision, ,,,,Daily,Prior Year + YTD,, ,,Daily,Prior Year + YTD,Internal,No,,,,,Genesis CFM,,,,
+FS_064,Consoldiated Financials,BPC,ADB GNONE,Srinivasan,Structured,,"ZFI_FIN_OVER_AFO_CP_ADB
+Composite Provider : ZFI_REP01",BPC ADB,Not Prioritized, ,No, ,,,Technology decision,Technology decision, ,,,,Daily,Prior Year + YTD,, ,,Daily,Prior Year + YTD,Internal,No, ,,,,Genesis BSS,,,,
+FS_013,Capital,BCRS,RWA and Basel metrics ,Selva,Structured,,T_CDR (Daily RWA),BCRS T_CDR resultant Table ,Live,Dec'25,No,NA,,,Technology decision,Technology decision,,,,,Daily,13 months of monthly data and 8 quarters of data,,,,Daily,13 months of monthly data and 8 quarters of data,Internal,No,,,,,,,,,
+FS_013,Capital,BCRS,RWA and Basel metrics ,"
+Krishnan, Anantha Narayanan/ G4, Karthikeyan",Structured,,T_CDR (SG/ASA Monthly),BCRS T_CDR resultant Table ,Live,Nov'25,No,NA,,,Technology decision,Technology decision,,,,,Monthly,13 months of monthly data and 8 quarters of data,,,,Monthly,13 months of monthly data and 8 quarters of data,Internal,No,,,,,,,,,
+FS_013,Capital,BCRS,RWA and Basel metrics ,"
+Krishnan, Anantha Narayanan/ Jeyakumar, Johnson",Structured,,T_CDR (HK/GCNA Monthly),BCRS T_CDR resultant Table ,Live,Nov'25,No,NA,,,Technology decision,Technology decision,,,,,Monthly,13 months of monthly data and 8 quarters of data,,,,Monthly,13 months of monthly data and 8 quarters of data,,No,,,,,,,,,
+FS_013,Capital,BCRS,RWA and Basel metrics ,"R1, Kannan",Structured,,T_CDR (Large Exposure Daily),BCRS T_LE resultant Table ,Live,Dec'25,No,NA,,,Technology decision,Technology decision,,,,,Daily,"1 Year end, 2 quarter end, 2 month end and 5 daily data",,,,Daily,"1 Year end, 2 quarter end, 2 month end and 5 daily data",,No,,,,,,,,,
+??,Capital,BCRS,RWA and Basel metrics ,"R1, Kannan/Vignesh, Madan",Structured,,T_CDR (Group Monthly),BCRS T_CDR resultant Table ,Prioritized,Apr'26,No,NA,,,Technology decision,Technology decision,,,,,Monthly,13 months of monthly data and 8 quarters of data,,,,Monthly,13 months of monthly data and 8 quarters of data,,No,,,,,,,,,
+FS_071,FM,FPSL (FM & Non FM),FM Trade Level,,Structured,,/BA1/HFSPD,Core accounting table ,Prioritized,9-Feb-26,,,,,,,,,,,Daily,,,T+1,T+2,Daily,,,,,,,,,,,,
+FS_037,FM,FPSL (FM & Non FM),FM Trade Level,,Structured,,SCBANK/GCM_CLSG,Counterparty linked attributes for banking,Prioritized,9-Feb-26,,,,,,,,,,,Daily,,,T+1,T+2,Daily,,,,,,,,,,,,
+FS_037,FM,FPSL (FM & Non FM),FM Trade Level,,Structured,,/BA1/F1_CON_FLAT,Contract static data for FM,Prioritized,9-Feb-26,,,,,,,,,,,Daily,,,T+1,T+2,Daily,,,,,,,,,,,,
+FS_037,FM,FPSL (FM & Non FM),FM Trade Level,,Structured,,SCBANK/ICA,Industry classification and cont mapping,Prioritized,9-Feb-26,,,,,,,,,,,Daily,,,T+1,T+2,Daily,,,,,,,,,,,,
+FS_037,FM,FPSL (FM & Non FM),FM Trade Level,,Structured,,SCBANK/IC,Industry classification for banking,Prioritized,9-Feb-26,,,,,,,,,,,Daily,,,T+1,T+2,Daily,,,,,,,,,,,,
+FS_037,FM,FPSL (FM & Non FM),FM Trade Level,,Structured,,SCBANK/FCON,Contract static data FOR Non FM,Prioritized,9-Feb-26,,,,,,,,,,,Daily,,,T+1,T+2,Daily,,,,,,,,,,,,
+FS_037,FM,FPSL (FM & Non FM),FM Trade Level,,Structured,,GCM_PCVC Mapping,SL Account mapping for PC reporting for banking,Prioritized,9-Feb-26,,,,,,,,,,,Daily,,,T+1,T+2,Daily,,,,,,,,,,,,
+FS_037,FM,FPSL (FM & Non FM),FM Trade Level,,Structured,,SCBANK/BP,Business partner details for non FM,Prioritized,9-Feb-26,,,,,,,,,,,Daily,,,T+1,T+2,Daily,,,,,,,,,,,,
+FS_037,FM,FPSL (FM & Non FM),FM Trade Level,,Structured,,SCBANK/BPFCA,Business partner contract link table ,Prioritized,9-Feb-26,,,,,,,,,,,Daily,,,T+1,T+2,Daily,,,,,,,,,,,,
+FS_037,FM,FPSL (FM & Non FM),FM Trade Level,,Structured,,SCBANK/IR,Interest rate details for banking,Prioritized,9-Feb-26,,,,,,,,,,,Daily,,,T+1,T+2,Daily,,,,,,,,,,,,
+FS_037,FM,FPSL (FM & Non FM),FM Trade Level,,Structured,,/BA1/TBR_SLAT,SL segmentation details ,Prioritized,9-Feb-26,,,,,,,,,,,Daily,,,T+1,T+2,Daily,,,,,,,,,,,,
+FS_037,FM,FPSL (FM & Non FM),FM Trade Level,,Structured,,/BIC/TC_ADJTYPE,Adjustment type list ,Prioritized,9-Feb-26,,,,,,,,,,,Daily,,,T+1,T+2,Daily,,,,,,,,,,,,
+FS_037,FM,FPSL (FM & Non FM),FM Trade Level,,Structured,,/BIC/TC_PSGLAC,PSGL Account ,Prioritized,9-Feb-26,,,,,,,,,,,Daily,,,T+1,T+2,Daily,,,,,,,,,,,,
+FS_037,FM,FPSL (FM & Non FM),FM Trade Level,,Structured,,/SCBANK/TLEVELS,Trade levelling details in Aspire,Prioritized,9-Feb-26,,,,,,,,,,,Daily,,,T+1,T+2,Daily,,,,,,,,,,,,
+FS_067,FM,FPSL (FM & Non FM),FM Trade Level,,Structured,,RFTP,TPACE data ,Prioritized,9-Feb-26,,,,,,,,,,,Daily,,,T+1,T+2,Daily,,,,,,,,,,,,
+FS_037,FM,FPSL (FM & Non FM),FM Trade Level,,Structured,,Portfolio Hirerachy_EXT,Portfolio Hierarchy reference data ,Prioritized,9-Feb-26,,,,,,,,,,,Daily,,,T+1,T+2,Daily,,,,,,,,,,,,
+FS_037,FM,FPSL (FM & Non FM),FM Trade Level,,Structured,,Adjustment Type and Sub-Type,Adj type reference data ,Prioritized,9-Feb-26,,,,,,,,,,,Daily,,,T+1,T+2,Daily,,,,,,,,,,,,
+FS_037,FM,FPSL (FM & Non FM),FM Trade Level,,Structured,,SCBANK_SLAC_MAP,SL Account mapping for PC reporting,Prioritized,9-Feb-26,,,,,,,,,,,Daily,,,T+1,T+2,Daily,,,,,,,,,,,,
+FS_037,FM,FPSL (FM & Non FM),FM Trade Level,,Structured,,Regional Hierarchy_EXT,Country to region mapping in ICON,Prioritized,9-Feb-26,,,,,,,,,,,Daily,,,T+1,T+2,Daily,,,,,,,,,,,,
+FS_037,FM,FPSL (FM & Non FM),FM Trade Level,,Structured,,GCM DPL Hierarchy,Banking DPL Mapping,Prioritized,9-Feb-26,,,,,,,,,,,Daily,,,T+1,T+2,Daily,,,,,,,,,,,,
+FS_037,FM,FPSL (FM & Non FM),FM Trade Level,,Structured,,GCM_BUDGET,Budget reference data ,Prioritized,9-Feb-26,,,,,,,,,,,Daily,,,T+1,T+2,Daily,,,,,,,,,,,,
+FS_037,FM,FPSL (FM & Non FM),FM Trade Level,,Structured,,Accrual,Accrual details for FM systems ,Prioritized,9-Feb-26,,,,,,,,,,,Daily,,,T+1,T+2,Daily,,,,,,,,,,,,
+FS_037,FM,FPSL (FM & Non FM),FM Trade Level,,Structured,,ApplicableInterestRate,Interest rate for FM ,Prioritized,9-Feb-26,,,,,,,,,,,Daily,,,T+1,T+2,Daily,,,,,,,,,,,,
+FS_037,FM,FPSL (FM & Non FM),FM Trade Level,,Structured,,BusinessPartner,Business partner details for FM,Prioritized,9-Feb-26,,,,,,,,,,,Daily,,,T+1,T+2,Daily,,,,,,,,,,,,
+FS_037,FM,FPSL (FM & Non FM),FM Trade Level,,Structured,,BusinessPartnerClassification,Counterparty classification,Prioritized,9-Feb-26,,,,,,,,,,,Daily,,,T+1,T+2,Daily,,,,,,,,,,,,
+FS_037,FM,FPSL (FM & Non FM),FM Trade Level,,Structured,,BusinessPartnerContractAssignment,Business partner contract link table for FM,Prioritized,9-Feb-26,,,,,,,,,,,Daily,,,T+1,T+2,Daily,,,,,,,,,,,,
+FS_037,FM,FPSL (FM & Non FM),FM Trade Level,,Structured,,BusinessPartnerRelation,Business partner relation table for FM,Prioritized,9-Feb-26,,,,,,,,,,,Daily,,,T+1,T+2,Daily,,,,,,,,,,,,
+FS_037,FM,FPSL (FM & Non FM),FM Trade Level,,Structured,,C_GenericFinancialContractExtensions,Contarct static for FM data ,Prioritized,9-Feb-26,,,,,,,,,,,Daily,,,T+1,T+2,Daily,,,,,,,,,,,,
+FS_037,FM,FPSL (FM & Non FM),FM Trade Level,,Structured,,C_GenericTradeExtensions,Trade static for FM data ,Prioritized,9-Feb-26,,,,,,,,,,,Daily,,,T+1,T+2,Daily,,,,,,,,,,,,
+FS_037,FM,FPSL (FM & Non FM),FM Trade Level,,Structured,,Collection_EXT,PCT2 data for Aspire to be used for ICON reporting,Prioritized,9-Feb-26,,,,,,,,,,,Daily,,,T+1,T+2,Daily,,,,,,,,,,,,
+FS_037,FM,FPSL (FM & Non FM),FM Trade Level,,Structured,,ContractStatus,Contract status table ,Prioritized,9-Feb-26,,,,,,,,,,,Daily,,,T+1,T+2,Daily,,,,,,,,,,,,
+FS_037,FM,FPSL (FM & Non FM),FM Trade Level,,Structured,,EndOfDayPriceObservation,Instrument eod Price table for FM ,Prioritized,9-Feb-26,,,,,,,,,,,Daily,,,T+1,T+2,Daily,,,,,,,,,,,,
+FS_037,FM,FPSL (FM & Non FM),FM Trade Level,,Structured,,FinancialContract/Trade,Financial contract and trade details for FM,Prioritized,9-Feb-26,,,,,,,,,,,Daily,,,T+1,T+2,Daily,,,,,,,,,,,,
+FS_037,FM,FPSL (FM & Non FM),FM Trade Level,,Structured,,FinancialContractReferenceID,Contract Ref id linkage for FM,Prioritized,9-Feb-26,,,,,,,,,,,Daily,,,T+1,T+2,Daily,,,,,,,,,,,,
+FS_037,FM,FPSL (FM & Non FM),FM Trade Level,,Structured,,IndustryClassAssignment,Industry classification for FM,Prioritized,9-Feb-26,,,,,,,,,,,Daily,,,T+1,T+2,Daily,,,,,,,,,,,,
+FS_037,FM,FPSL (FM & Non FM),FM Trade Level,,Structured,,ProductCatalogAssignment,Product mapping for FM,Prioritized,9-Feb-26,,,,,,,,,,,Daily,,,T+1,T+2,Daily,,,,,,,,,,,,
+FS_037,FM,FPSL (FM & Non FM),FM Trade Level,,Structured,,ProductClassificationOfFinancialContract,Product to Contract linkage ,Prioritized,9-Feb-26,,,,,,,,,,,Daily,,,T+1,T+2,Daily,,,,,,,,,,,,
+FS_037,FM,FPSL (FM & Non FM),FM Trade Level,,Structured,,/SCBANK/SDBDATA,Sales Data base data ,Prioritized,9-Feb-26,,,,,,,,,,,Daily,,,T+1,T+2,Daily,,,,,,,,,,,,
+??,Climate Monthly,PMI Oracle,Sustainable Finance,Ramakrishnan,Structured,,ESG_SF_FLAT,ESG SF Finance Data,Live,NA,No,NA,,15M+,Full,Remote Table,Current Year,Current Year,,,Fortnightly,5 Years,,"T+11, T+20",T+11/T+25,Fortnightly,5 Years,Internal,No,Yes,Yes,Yes, , ,,,,
+??,Climate Monthly,PAPM,Carbon,Ramakrishnan,Structured,,ZSUS_PAPM_ACTUALS,Carbon Data,Live,NA,No,NA,,3M+,Full,Remote Table,Life to Date Version,Current Year,,,Monthly,5 Years,,T+20,T+11/T+25,Monthly,5 Years,Internal,No,Yes,Yes,Yes, , ,,,,
+??,Climate Monthly,FDP,Deal,Ramakrishnan,Structured,,CRMX_ESG,Deal Data,Live,NA,No,NA,,500K,Full,Remote Table,Life to Date Version,Life to Date,,,Daily,5 Years,, ,T+1,Daily,5 Years,Internal,No,Yes,Yes,Yes, , ,,,,
+??,Climate Monthly,DataIKU,CIB,Ramakrishnan,Structured,,ESG_SF_FULL,CIB Data,Live,NA,No,NA,,13M+,Full,Remote Table,Life to Date Version,Life to Date,,,Fortnightly,5 Years,,"T+11, T+20",T+11/T+25,Fortnightly,5 Years,Internal,No,Yes,Yes,Yes, , ,,,,
+"FS_034, FS_035",Reference,"BPC, MDG, S4",Planning & Actuals Dimensions,Srinivasan,Structured,,"Numerous tables, refer to ADO 11808900",BPC Reference data,Live,,,,,,Full,,,,,,Daily,5 Years,,T+1,,Daily,5 Years,Internal,No,Yes,,,,,,,,
+FS_112,Consoldiated Financials,BPC,Standard Finance Report,Srinivasan,Structured,,"ZFI_FIN_OVER_AFO_CP_FIN
+Composite Provider : ZFI_REP01",Actual SFR data,Live,,,,,,Full,,Life to Date Version,NA,,,Daily,5 Years,,T+1,,Daily,5 Years,Internal,No,Yes,Yes,,,,,,,
+FS_029,BART,BART,Benefits,Martyna,Structured,,Fact Table from Planning platform,,Not Prioritized,,,,,,Full,,Life to Date Version,,,,Daily,5 Years,,,,Daily,5 Years,Internal,No,Yes,Yes,,,,,,,
+FS_030,WFP,WFP,Workforce: Cost and Headcount,Martyna,Structured,,Fact and dimensions from Planning platform,,Prioritized,20-Feb-26,,,,,,,Last 2 years and 5 outer years,,,,Daily,5 Years,,,,Daily,5 Years,Internal,No,Yes,Yes,,,,,,,
+FS_058,CLARITY,CLARITY,Investment data,Martyna,Structured,,manual upload,,Not Prioritized,,,,,,,,Current year,,,,Daily,5 Years,,,,Daily,5 Years,Internal,No,Yes,No,,,,,,,
+FS_073,FM,FSDP (FM),FM Trade Level,Rohan,Structured,,fsdp_mdu.db.Tables::ADJ_SUB_TYPE,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+FS_073,FM,FSDP (FM),FM Trade Level,Rohan,Structured,,sap.fsdm::Accrual,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+FS_073,FM,FSDP (FM),FM Trade Level,Rohan,Structured,,sap.fsdm::ApplicableInterestRate,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+FS_073,FM,FSDP (FM),FM Trade Level,Rohan,Structured,,fsdp_mdu.db.Tables::BATCH_TP_Ref_DATA,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+FS_073,FM,FSDP (FM),FM Trade Level,Rohan,Structured,,sap.fsdm::BusinessPartner,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+FS_073,FM,FSDP (FM),FM Trade Level,Rohan,Structured,,sap.fsdm::BusinessPartnerClassification,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+FS_073,FM,FSDP (FM),FM Trade Level,Rohan,Structured,,sap.fsdm::BusinessPartnerContractAssignment,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+FS_073,FM,FSDP (FM),FM Trade Level,Rohan,Structured,,sap.fsdm::BusinessPartnerRelation,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+FS_073,FM,FSDP (FM),FM Trade Level,Rohan,Structured,,sap.fsdm::BusinessPartnerTradeAssignment,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+FS_073,FM,FSDP (FM),FM Trade Level,Rohan,Structured,,fsdp_mdu.db.Tables::CASCADE_DPL_CC_MAPPING,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+FS_073,FM,FSDP (FM),FM Trade Level,Rohan,Structured,,fsdp_mdu.db.Tables::CASCADE_DPL_MAPPING,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+FS_073,FM,FSDP (FM),FM Trade Level,Rohan,Structured,,fsdp_mdu.db.Tables::CREDIT_GRADE,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+FS_073,FM,FSDP (FM),FM Trade Level,Rohan,Structured,,downstreamextracts.db.CalcViews::CV_FinInstmHybrid,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+FS_073,FM,FSDP (FM),FM Trade Level,Rohan,Structured,,customer.extension::C_GenericFinancialContractExtensions,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+FS_073,FM,FSDP (FM),FM Trade Level,Rohan,Structured,,customer.extension::C_GenericTradeExtensions,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+FS_073,FM,FSDP (FM),FM Trade Level,Rohan,Structured,,customer.extension::C_Party,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+FS_073,FM,FSDP (FM),FM Trade Level,Rohan,Structured,,sap.fsdm::Collection,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+FS_073,FM,FSDP (FM),FM Trade Level,Rohan,Structured,,sap.fsdm::ContractStatus,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+FS_073,FM,FSDP (FM),FM Trade Level,Rohan,Structured,,fsdp_mdu.db.Tables::DQ_THEME,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+FS_073,FM,FSDP (FM),FM Trade Level,Rohan,Structured,,sap.fsdm::EndOfDayPriceObservation,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+FS_073,FM,FSDP (FM),FM Trade Level,Rohan,Structured,,fsdp_mdu.db.Tables::ExceptionGCM,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+FS_073,FM,FSDP (FM),FM Trade Level,Rohan,Structured,,sap.fsdm::FinancialContract,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+FS_073,FM,FSDP (FM),FM Trade Level,Rohan,Structured,,sap.fsdm::FinancialContractReferenceID,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+FS_073,FM,FSDP (FM),FM Trade Level,Rohan,Structured,,sap.fsdm::FinancialInstrument,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+FS_073,FM,FSDP (FM),FM Trade Level,Rohan,Structured,,fsdp_mdu.db.Tables::GCM_Budget,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+FS_073,FM,FSDP (FM),FM Trade Level,Rohan,Structured,,fsdp_mdu.db.Tables::GCM_DPL_Mapping,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+FS_073,FM,FSDP (FM),FM Trade Level,Rohan,Structured,,fsdp_mdu.db.Tables::GCM_FTP_Balances,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+FS_073,FM,FSDP (FM),FM Trade Level,Rohan,Structured,,fsdp_mdu.db.Tables::GCM_PCVC_Mapping,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+FS_073,FM,FSDP (FM),FM Trade Level,Rohan,Structured,,fsdp_mdu.db.Tables::IFRS_SCHEDULE_MAPPING,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+FS_073,FM,FSDP (FM),FM Trade Level,Rohan,Structured,,sap.fsdm::IndustryClassAssignment,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+FS_073,FM,FSDP (FM),FM Trade Level,Rohan,Structured,,fsdp_mdu.db.Tables::JV_ALLOCATION_CONFIGURATION,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+FS_073,FM,FSDP (FM),FM Trade Level,Rohan,Structured,,fsdp_mdu.db.Tables::MDU_PORTFOLIO_DELETE,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+FS_073,FM,FSDP (FM),FM Trade Level,Rohan,Structured,,fsdp_mdu.db.Tables::MKT_OPS,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+FS_073,FM,FSDP (FM),FM Trade Level,Rohan,Structured,,fsdp_mdu.db.Tables::OAI_ALLOCATION_CONFIGURATION,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+FS_073,FM,FSDP (FM),FM Trade Level,Rohan,Structured,,fsdp_mdu.db.Tables::PPOMEDETAILS,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+FS_073,FM,FSDP (FM),FM Trade Level,Rohan,Structured,,fsdp_mdu.db.Tables::PPOME_MAINT,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+FS_073,FM,FSDP (FM),FM Trade Level,Rohan,Structured,,fsdp_mdu.db.Tables::PRODUCT_CODE_MAPPING,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+FS_073,FM,FSDP (FM),FM Trade Level,Rohan,Structured,,fsdp_mdu.db.Tables::Portfolio_Controls_Hybrid_Mapping,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+FS_073,FM,FSDP (FM),FM Trade Level,Rohan,Structured,,fsdp_mdu.db.Tables::Portfolio_Controls_PNL_Group,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+FS_073,FM,FSDP (FM),FM Trade Level,Rohan,Structured,,fsdp_mdu.db.Tables::Portfolio_Hierarchy_EXT,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+FS_073,FM,FSDP (FM),FM Trade Level,Rohan,Structured,,sap.fsdm::ProductCatalogAssignment,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+FS_073,FM,FSDP (FM),FM Trade Level,Rohan,Structured,,sap.fsdm::ProductClassificationOfFinancialContract,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+FS_073,FM,FSDP (FM),FM Trade Level,Rohan,Structured,,fsdp_mdu.db.Tables::Regional_Hierarchy_EXT,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+FS_073,FM,FSDP (FM),FM Trade Level,Rohan,Structured,,fsdp_mdu.db.Tables::S4_Tracker_Label,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+FS_073,FM,FSDP (FM),FM Trade Level,Rohan,Structured,,fsdp_mdu.db.Tables::SCBANK_SLAC_MAP,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+FS_073,FM,FSDP (FM),FM Trade Level,Rohan,Structured,,sdb_in_al.db.tables::SDB_SCI_GroupName,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+FS_073,FM,FSDP (FM),FM Trade Level,Rohan,Structured,,fsdp_mdu.db.Tables::SOURCE_SYSTEM_LIST_EXT,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+FS_073,FM,FSDP (FM),FM Trade Level,Rohan,Structured,,sap.fsdm::Trade,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+FS_073,FM,FSDP (FM),FM Trade Level,Rohan,Structured,,fsdp_mdu.db.Tables::Treasury_BS_Category_Ref_Data,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+FS_073,FM,FSDP (FM),FM Trade Level,Rohan,Structured,,fsdp_mdu.db.Tables::Treasury_BS_FX_NONFX_REF,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+FS_073,FM,FSDP (FM),FM Trade Level,Rohan,Structured,,fsdp_mdu.db.Tables::Treasury_BS_SLAC_MAP,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+FS_073,FM,FSDP (FM),FM Trade Level,Rohan,Structured,,fsdp_mdu.db.Tables::Treasury_CAP_GPTM_Ref_DATA,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+FS_073,FM,FSDP (FM),FM Trade Level,Rohan,Structured,,fsdp_mdu.db.Tables::Treasury_CAP_GPTM_Ref_DATA_HSTR,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+FS_073,FM,FSDP (FM),FM Trade Level,Rohan,Structured,,fsdp_mdu.db.Tables::Treasury_CAP_MUREX_Ref_DATA,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+FS_073,FM,FSDP (FM),FM Trade Level,Rohan,Structured,,fsdp_mdu.db.Tables::Treasury_CAP_RAZOR_Ref_DATA,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+FS_073,FM,FSDP (FM),FM Trade Level,Rohan,Structured,,fsdp_mdu.db.Tables::Treasury_Contra_Map,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+FS_073,FM,FSDP (FM),FM Trade Level,Rohan,Structured,,fsdp_mdu.db.Tables::Treasury_Currency_Ref_DATA,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+FS_073,FM,FSDP (FM),FM Trade Level,Rohan,Structured,,fsdp_mdu.db.Tables::Treasury_FTP_BS_Category,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+FS_073,FM,FSDP (FM),FM Trade Level,Rohan,Structured,,fsdp_mdu.db.Tables::Treasury_FTP_Contra_TL,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+FS_073,FM,FSDP (FM),FM Trade Level,Rohan,Structured,,fsdp_mdu.db.Tables::Treasury_FTP_Dept_Exclusion,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+FS_073,FM,FSDP (FM),FM Trade Level,Rohan,Structured,,fsdp_mdu.db.Tables::Treasury_FTP_PNL_COFF,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+FS_073,FM,FSDP (FM),FM Trade Level,Rohan,Structured,,fsdp_mdu.db.Tables::Treasury_FTP_SP_Category_Map,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+FS_073,FM,FSDP (FM),FM Trade Level,Rohan,Structured,,fsdp_mdu.db.Tables::Treasury_GPTM_Ref_DATA,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+FS_073,FM,FSDP (FM),FM Trade Level,Rohan,Structured,,fsdp_mdu.db.Tables::Treasury_GPTM_Ref_DATA_HSTR,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+FS_073,FM,FSDP (FM),FM Trade Level,Rohan,Structured,,fsdp_mdu.db.Tables::Treasury_MUREX_Ref_DATA,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+FS_073,FM,FSDP (FM),FM Trade Level,Rohan,Structured,,fsdp_mdu.db.Tables::Treasury_OPICS_Ref_Data,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+FS_073,FM,FSDP (FM),FM Trade Level,Rohan,Structured,,fsdp_mdu.db.Tables::Treasury_PCVCMapping_Inclusion_Ref_Data,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+FS_073,FM,FSDP (FM),FM Trade Level,Rohan,Structured,,fsdp_mdu.db.Tables::Treasury_POC_Hierarchy,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+FS_073,FM,FSDP (FM),FM Trade Level,Rohan,Structured,,fsdp_mdu.db.Tables::Treasury_PSFTP_Ref_Data,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+FS_073,FM,FSDP (FM),FM Trade Level,Rohan,Structured,,fsdp_mdu.db.Tables::Treasury_RAZOR_FX_Ref_DATA,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+FS_073,FM,FSDP (FM),FM Trade Level,Rohan,Structured,,fsdp_mdu.db.Tables::Treasury_RAZOR_NON_FX_Ref_DATA,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+FS_073,FM,FSDP (FM),FM Trade Level,Rohan,Structured,,fsdp_ou_fpsl_config.db.config.tables::default_parameters,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,Deposit / Lending / Trade Finance,"FDP (ACBS, eBBS, DTP, S2BL)",Non Accounting,Selva,Structured,,ALT_PRTY_CLIENTMI,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,Deposit / Lending / Trade Finance,"FDP (ACBS, eBBS, DTP, S2BL)",Non Accounting,Selva,Structured,,CAE_Customes_sri,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,Deposit / Lending / Trade Finance,"FDP (ACBS, eBBS, DTP, S2BL)",Non Accounting,Selva,Structured,,cae_facilities_sri,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,Deposit / Lending / Trade Finance,"FDP (ACBS, eBBS, DTP, S2BL)",Non Accounting,Selva,Structured,,cae_facility_add_fields_sri,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,Deposit / Lending / Trade Finance,"FDP (ACBS, eBBS, DTP, S2BL)",Non Accounting,Selva,Structured,,cae_fees_sri,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,Deposit / Lending / Trade Finance,"FDP (ACBS, eBBS, DTP, S2BL)",Non Accounting,Selva,Structured,,CAE_Loans_sri,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,Deposit / Lending / Trade Finance,"FDP (ACBS, eBBS, DTP, S2BL)",Non Accounting,Selva,Structured,,cae_transactions_sri,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,Deposit / Lending / Trade Finance,"FDP (ACBS, eBBS, DTP, S2BL)",Non Accounting,Selva,Structured,,DTP_DSA_SLPD_CUSTOM_VW_XX,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,Deposit / Lending / Trade Finance,"FDP (ACBS, eBBS, DTP, S2BL)",Non Accounting,Selva,Structured,,FDP_DTP_FC_EXTRACT,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,Deposit / Lending / Trade Finance,"FDP (ACBS, eBBS, DTP, S2BL)",Non Accounting,Selva,Structured,,FDP_EBBS_FC_EXTRACT,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,Deposit / Lending / Trade Finance,"FDP (ACBS, eBBS, DTP, S2BL)",Non Accounting,Selva,Structured,,GRP_EMP_RLTD_CLIENTMI,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,Deposit / Lending / Trade Finance,"FDP (ACBS, eBBS, DTP, S2BL)",Non Accounting,Selva,Structured,,PRTY_EMP_RLTD_CLIENTMI,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,Deposit / Lending / Trade Finance,"FDP (ACBS, eBBS, DTP, S2BL)",Non Accounting,Selva,Structured,,PRTY_INTG_CLIENTMI,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+FS_018,Controller Metrics,FDP (ACBS),ICON DQ / Control Metrics,Selva,Structured,fdp_df_daas_prd,acbs_business_reconciliation_xx,BR1 report,Live,2/13/26,Yes,Moving all objects from client MI container to newly created iCon Container,Global,40000,Full Load,Remote table,2 Days,N/A,T+1,T+1 5:30 PM IST,Daily,90 Days,,T+1,T+1 5:30 PM IST,Daily,90 Days,Internal,No,Yes,Yes,Yes,,,,,,
+FS_018,Controller Metrics,FDP (DTP),ICON DQ / Control Metrics,Selva,Structured,fdp_df_daas_prd,dtp_br1_matched_unmatched_xx,BR1 report,Live,2/13/26,Yes,Moving all objects from client MI container to newly created iCon Container,Global,100,Full Load,Remote table,2 Days,N/A,T+1,T+1 5:30 PM IST,Daily,90 Days,,T+1,T+1 5:30 PM IST,Daily,90 Days,Internal,No,Yes,Yes,Yes,,,,,,
+FS_018,Controller Metrics,FDP (MILES),ICON DQ / Control Metrics,Selva,Structured,fdp_df_daas_prd,mva_business_reconciliation_xx,BR1 report,Live,2/13/26,Yes,Moving all objects from client MI container to newly created iCon Container,Global,350,Full Load,Remote table,2 Days,N/A,T+1,T+1 5:30 PM IST,Daily,90 Days,,T+1,T+1 5:30 PM IST,Daily,90 Days,Internal,No,Yes,Yes,Yes,,,,,,
+FS_018,Controller Metrics,FDP (UTS),ICON DQ / Control Metrics,Selva,Structured,fdp_df_daas_prd,uts_business_reconciliation_xx,BR1 report,Live,2/13/26,Yes,Moving all objects from client MI container to newly created iCon Container,Global,6500,Full Load,Remote table,2 Days,N/A,T+1,T+1 5:30 PM IST,Daily,90 Days,,T+1,T+1 5:30 PM IST,Daily,90 Days,Internal,No,Yes,Yes,Yes,,,,,,
+FS_018,Controller Metrics,FSDP (LoanIQ),ICON DQ / Control Metrics,Selva,Structured,fdp_df_daas_prd,LNIQ_FPSL_BR1_FULL_REPORT_GB,BR1 report,Live,2/13/26,Yes,Moving all objects from client MI container to newly created iCon Container,Country,9000,Full Load,Remote table,2 Days,N/A,T+1,T+1 5:30 PM IST,Daily,90 Days,,T+1,T+1 5:30 PM IST,Daily,90 Days,Internal,No,Yes,Yes,Yes,,,,,,
+FS_018,Controller Metrics,FSDP (LoanIQ),ICON DQ / Control Metrics,Selva,Structured,fdp_df_daas_prd,LNIQ_FPSL_BR1_FULL_REPORT_HK,BR1 report,Live,2/13/26,Yes,Moving all objects from client MI container to newly created iCon Container,Country,100,Full Load,Remote table,2 Days,N/A,T+1,T+1 5:30 PM IST,Daily,90 Days,,T+1,T+1 5:30 PM IST,Daily,90 Days,Internal,No,Yes,Yes,Yes,,,,,,
+FS_018,Controller Metrics,FSDP (LoanIQ),ICON DQ / Control Metrics,Selva,Structured,fdp_df_daas_prd,LNIQ_FPSL_BR1_FULL_REPORT_SG,BR1 report,Live,2/13/26,Yes,Moving all objects from client MI container to newly created iCon Container,Country,700,Full Load,Remote table,2 Days,N/A,T+1,T+1 5:30 PM IST,Daily,90 Days,,T+1,T+1 5:30 PM IST,Daily,90 Days,Internal,No,Yes,Yes,Yes,,,,,,
+FS_018,Controller Metrics,FDP (eBBS),ICON DQ / Control Metrics,Selva,Structured,fdp_df_daas_prd,ebbs_business_reconciliation_xx,BR1 report,Live,2/13/26,Yes,Moving all objects from client MI container to newly created iCon Container,Global,4000,Full Load,Remote table,2 Days,N/A,T+1,T+1 5:30 PM IST,Daily,90 Days,,T+1,T+1 5:30 PM IST,Daily,90 Days,Internal,No,Yes,Yes,Yes,,,,,,
+FS_018,Controller Metrics,FSDP (S2BL),ICON DQ / Control Metrics,Selva,Structured,fdp_df_daas_prd,s2bl_fpsl_br1_full_report_xx,BR1 report,Live,2/13/26,Yes,Moving all objects from client MI container to newly created iCon Container,Global,20000,Full Load,Remote table,2 Days,N/A,T+1,T+1 5:30 PM IST,Daily,90 Days,,T+1,T+1 5:30 PM IST,Daily,90 Days,Internal,No,Yes,Yes,Yes,,,,,,
+FS_018,Controller Metrics,FDP (OTP),ICON DQ / Control Metrics,Selva,Structured,fdp_df_daas_prd,otp_fpsl_br1_full_report_ae,BR1 report,Live,2/13/26,Yes,Moving all objects from client MI container to newly created iCon Container,Country,20000,Full Load,Remote table,2 Days,N/A,T+1,T+1 5:30 PM IST,Daily,90 Days,,T+1,T+1 5:30 PM IST,Daily,90 Days,Internal,No,Yes,Yes,Yes,,,,,,
+FS_018,Controller Metrics,FDP (OTP),ICON DQ / Control Metrics,Selva,Structured,fdp_df_daas_prd,otp_fpsl_br1_full_report_au,BR1 report,Live,2/13/26,Yes,Moving all objects from client MI container to newly created iCon Container,Country,1000,Full Load,Remote table,2 Days,N/A,T+1,T+1 5:30 PM IST,Daily,90 Days,,T+1,T+1 5:30 PM IST,Daily,90 Days,Internal,No,Yes,Yes,Yes,,,,,,
+FS_018,Controller Metrics,FDP (OTP),ICON DQ / Control Metrics,Selva,Structured,fdp_df_daas_prd,otp_fpsl_br1_full_report_bd,BR1 report,Live,2/13/26,Yes,Moving all objects from client MI container to newly created iCon Container,Country,1000,Full Load,Remote table,2 Days,N/A,T+1,T+1 5:30 PM IST,Daily,90 Days,,T+1,T+1 5:30 PM IST,Daily,90 Days,Internal,No,Yes,Yes,Yes,,,,,,
+FS_018,Controller Metrics,FDP (OTP),ICON DQ / Control Metrics,Selva,Structured,fdp_df_daas_prd,otp_fpsl_br1_full_report_bh,BR1 report,Live,2/13/26,Yes,Moving all objects from client MI container to newly created iCon Container,Country,3000,Full Load,Remote table,2 Days,N/A,T+1,T+1 5:30 PM IST,Daily,90 Days,,T+1,T+1 5:30 PM IST,Daily,90 Days,Internal,No,Yes,Yes,Yes,,,,,,
+FS_018,Controller Metrics,FDP (OTP),ICON DQ / Control Metrics,Selva,Structured,fdp_df_daas_prd,otp_fpsl_br1_full_report_bn,BR1 report,Live,2/13/26,Yes,Moving all objects from client MI container to newly created iCon Container,Country,,Full Load,Remote table,2 Days,N/A,T+1,T+1 5:30 PM IST,Daily,90 Days,,T+1,T+1 5:30 PM IST,Daily,90 Days,Internal,No,Yes,Yes,Yes,,,,,,
+FS_018,Controller Metrics,FDP (OTP),ICON DQ / Control Metrics,Selva,Structured,fdp_df_daas_prd,otp_fpsl_br1_full_report_bw,BR1 report,Live,2/13/26,Yes,Moving all objects from client MI container to newly created iCon Container,Country,300,Full Load,Remote table,2 Days,N/A,T+1,T+1 5:30 PM IST,Daily,90 Days,,T+1,T+1 5:30 PM IST,Daily,90 Days,Internal,No,Yes,Yes,Yes,,,,,,
+FS_018,Controller Metrics,FDP (OTP),ICON DQ / Control Metrics,Selva,Structured,fdp_df_daas_prd,otp_fpsl_br1_full_report_ci,BR1 report,Live,2/13/26,Yes,Moving all objects from client MI container to newly created iCon Container,Country,100,Full Load,Remote table,2 Days,N/A,T+1,T+1 5:30 PM IST,Daily,90 Days,,T+1,T+1 5:30 PM IST,Daily,90 Days,Internal,No,Yes,Yes,Yes,,,,,,
+FS_018,Controller Metrics,FDP (OTP),ICON DQ / Control Metrics,Selva,Structured,fdp_df_daas_prd,otp_fpsl_br1_full_report_cn,BR1 report,Live,2/13/26,Yes,Moving all objects from client MI container to newly created iCon Container,Country,30000,Full Load,Remote table,2 Days,N/A,T+1,T+1 5:30 PM IST,Daily,90 Days,,T+1,T+1 5:30 PM IST,Daily,90 Days,Internal,No,Yes,Yes,Yes,,,,,,
+FS_018,Controller Metrics,FDP (OTP),ICON DQ / Control Metrics,Selva,Structured,fdp_df_daas_prd,otp_fpsl_br1_full_report_de,BR1 report,Live,2/13/26,Yes,Moving all objects from client MI container to newly created iCon Container,Country,2000,Full Load,Remote table,2 Days,N/A,T+1,T+1 5:30 PM IST,Daily,90 Days,,T+1,T+1 5:30 PM IST,Daily,90 Days,Internal,No,Yes,Yes,Yes,,,,,,
+FS_018,Controller Metrics,FDP (OTP),ICON DQ / Control Metrics,Selva,Structured,fdp_df_daas_prd,otp_fpsl_br1_full_report_eg,BR1 report,Live,2/13/26,Yes,Moving all objects from client MI container to newly created iCon Container,Country,200,Full Load,Remote table,2 Days,N/A,T+1,T+1 5:30 PM IST,Daily,90 Days,,T+1,T+1 5:30 PM IST,Daily,90 Days,Internal,No,Yes,Yes,Yes,,,,,,
+FS_018,Controller Metrics,FDP (OTP),ICON DQ / Control Metrics,Selva,Structured,fdp_df_daas_prd,otp_fpsl_br1_full_report_gb,BR1 report,Live,2/13/26,Yes,Moving all objects from client MI container to newly created iCon Container,Country,60000,Full Load,Remote table,2 Days,N/A,T+1,T+1 5:30 PM IST,Daily,90 Days,,T+1,T+1 5:30 PM IST,Daily,90 Days,Internal,No,Yes,Yes,Yes,,,,,,
+FS_018,Controller Metrics,FDP (OTP),ICON DQ / Control Metrics,Selva,Structured,fdp_df_daas_prd,otp_fpsl_br1_full_report_gh,BR1 report,Live,2/13/26,Yes,Moving all objects from client MI container to newly created iCon Container,Country,2000,Full Load,Remote table,2 Days,N/A,T+1,T+1 5:30 PM IST,Daily,90 Days,,T+1,T+1 5:30 PM IST,Daily,90 Days,Internal,No,Yes,Yes,Yes,,,,,,
+FS_018,Controller Metrics,FDP (OTP),ICON DQ / Control Metrics,Selva,Structured,fdp_df_daas_prd,otp_fpsl_br1_full_report_hk,BR1 report,Live,2/13/26,Yes,Moving all objects from client MI container to newly created iCon Container,Country,100000,Full Load,Remote table,2 Days,N/A,T+1,T+1 5:30 PM IST,Daily,90 Days,,T+1,T+1 5:30 PM IST,Daily,90 Days,Internal,No,Yes,Yes,Yes,,,,,,
+FS_018,Controller Metrics,FDP (OTP),ICON DQ / Control Metrics,Selva,Structured,fdp_df_daas_prd,otp_fpsl_br1_full_report_id,BR1 report,Live,2/13/26,Yes,Moving all objects from client MI container to newly created iCon Container,Country,20000,Full Load,Remote table,2 Days,N/A,T+1,T+1 5:30 PM IST,Daily,90 Days,,T+1,T+1 5:30 PM IST,Daily,90 Days,Internal,No,Yes,Yes,Yes,,,,,,
+FS_018,Controller Metrics,FDP (OTP),ICON DQ / Control Metrics,Selva,Structured,fdp_df_daas_prd,otp_fpsl_br1_full_report_in,BR1 report,Live,2/13/26,Yes,Moving all objects from client MI container to newly created iCon Container,Country,125000,Full Load,Remote table,2 Days,N/A,T+1,T+1 5:30 PM IST,Daily,90 Days,,T+1,T+1 5:30 PM IST,Daily,90 Days,Internal,No,Yes,Yes,Yes,,,,,,
+FS_018,Controller Metrics,FDP (OTP),ICON DQ / Control Metrics,Selva,Structured,fdp_df_daas_prd,otp_fpsl_br1_full_report_iq,BR1 report,Live,2/13/26,Yes,Moving all objects from client MI container to newly created iCon Container,Country,,Full Load,Remote table,2 Days,N/A,T+1,T+1 5:30 PM IST,Daily,90 Days,,T+1,T+1 5:30 PM IST,Daily,90 Days,Internal,No,Yes,Yes,Yes,,,,,,
+FS_018,Controller Metrics,FDP (OTP),ICON DQ / Control Metrics,Selva,Structured,fdp_df_daas_prd,otp_fpsl_br1_full_report_jp,BR1 report,Live,2/13/26,Yes,Moving all objects from client MI container to newly created iCon Container,Country,300,Full Load,Remote table,2 Days,N/A,T+1,T+1 5:30 PM IST,Daily,90 Days,,T+1,T+1 5:30 PM IST,Daily,90 Days,Internal,No,Yes,Yes,Yes,,,,,,
+FS_018,Controller Metrics,FDP (OTP),ICON DQ / Control Metrics,Selva,Structured,fdp_df_daas_prd,otp_fpsl_br1_full_report_ke,BR1 report,Live,2/13/26,Yes,Moving all objects from client MI container to newly created iCon Container,Country,2000,Full Load,Remote table,2 Days,N/A,T+1,T+1 5:30 PM IST,Daily,90 Days,,T+1,T+1 5:30 PM IST,Daily,90 Days,Internal,No,Yes,Yes,Yes,,,,,,
+FS_018,Controller Metrics,FDP (OTP),ICON DQ / Control Metrics,Selva,Structured,fdp_df_daas_prd,otp_fpsl_br1_full_report_lk,BR1 report,Live,2/13/26,Yes,Moving all objects from client MI container to newly created iCon Container,Country,75000,Full Load,Remote table,2 Days,N/A,T+1,T+1 5:30 PM IST,Daily,90 Days,,T+1,T+1 5:30 PM IST,Daily,90 Days,Internal,No,Yes,Yes,Yes,,,,,,
+FS_018,Controller Metrics,FDP (OTP),ICON DQ / Control Metrics,Selva,Structured,fdp_df_daas_prd,otp_fpsl_br1_full_report_mu,BR1 report,Live,2/13/26,Yes,Moving all objects from client MI container to newly created iCon Container,Country,300,Full Load,Remote table,2 Days,N/A,T+1,T+1 5:30 PM IST,Daily,90 Days,,T+1,T+1 5:30 PM IST,Daily,90 Days,Internal,No,Yes,Yes,Yes,,,,,,
+FS_018,Controller Metrics,FDP (OTP),ICON DQ / Control Metrics,Selva,Structured,fdp_df_daas_prd,otp_fpsl_br1_full_report_my,BR1 report,Live,2/13/26,Yes,Moving all objects from client MI container to newly created iCon Container,Country,8000,Full Load,Remote table,2 Days,N/A,T+1,T+1 5:30 PM IST,Daily,90 Days,,T+1,T+1 5:30 PM IST,Daily,90 Days,Internal,No,Yes,Yes,Yes,,,,,,
+FS_018,Controller Metrics,FDP (OTP),ICON DQ / Control Metrics,Selva,Structured,fdp_df_daas_prd,otp_fpsl_br1_full_report_ng,BR1 report,Live,2/13/26,Yes,Moving all objects from client MI container to newly created iCon Container,Country,1000,Full Load,Remote table,2 Days,N/A,T+1,T+1 5:30 PM IST,Daily,90 Days,,T+1,T+1 5:30 PM IST,Daily,90 Days,Internal,No,Yes,Yes,Yes,,,,,,
+FS_018,Controller Metrics,FDP (OTP),ICON DQ / Control Metrics,Selva,Structured,fdp_df_daas_prd,otp_fpsl_br1_full_report_np,BR1 report,Live,2/13/26,Yes,Moving all objects from client MI container to newly created iCon Container,Country,100,Full Load,Remote table,2 Days,N/A,T+1,T+1 5:30 PM IST,Daily,90 Days,,T+1,T+1 5:30 PM IST,Daily,90 Days,Internal,No,Yes,Yes,Yes,,,,,,
+FS_018,Controller Metrics,FDP (OTP),ICON DQ / Control Metrics,Selva,Structured,fdp_df_daas_prd,otp_fpsl_br1_full_report_om,BR1 report,Live,2/13/26,Yes,Moving all objects from client MI container to newly created iCon Container,Country,1500,Full Load,Remote table,2 Days,N/A,T+1,T+1 5:30 PM IST,Daily,90 Days,,T+1,T+1 5:30 PM IST,Daily,90 Days,Internal,No,Yes,Yes,Yes,,,,,,
+FS_018,Controller Metrics,FDP (OTP),ICON DQ / Control Metrics,Selva,Structured,fdp_df_daas_prd,otp_fpsl_br1_full_report_ph,BR1 report,Live,2/13/26,Yes,Moving all objects from client MI container to newly created iCon Container,Country,30000,Full Load,Remote table,2 Days,N/A,T+1,T+1 5:30 PM IST,Daily,90 Days,,T+1,T+1 5:30 PM IST,Daily,90 Days,Internal,No,Yes,Yes,Yes,,,,,,
+FS_018,Controller Metrics,FDP (OTP),ICON DQ / Control Metrics,Selva,Structured,fdp_df_daas_prd,otp_fpsl_br1_full_report_pk,BR1 report,Live,2/13/26,Yes,Moving all objects from client MI container to newly created iCon Container,Country,2000,Full Load,Remote table,2 Days,N/A,T+1,T+1 5:30 PM IST,Daily,90 Days,,T+1,T+1 5:30 PM IST,Daily,90 Days,Internal,No,Yes,Yes,Yes,,,,,,
+FS_018,Controller Metrics,FDP (OTP),ICON DQ / Control Metrics,Selva,Structured,fdp_df_daas_prd,otp_fpsl_br1_full_report_qa,BR1 report,Live,2/13/26,Yes,Moving all objects from client MI container to newly created iCon Container,Country,200,Full Load,Remote table,2 Days,N/A,T+1,T+1 5:30 PM IST,Daily,90 Days,,T+1,T+1 5:30 PM IST,Daily,90 Days,Internal,No,Yes,Yes,Yes,,,,,,
+FS_018,Controller Metrics,FDP (OTP),ICON DQ / Control Metrics,Selva,Structured,fdp_df_daas_prd,otp_fpsl_br1_full_report_sa,BR1 report,Live,2/13/26,Yes,Moving all objects from client MI container to newly created iCon Container,Country,4000,Full Load,Remote table,2 Days,N/A,T+1,T+1 5:30 PM IST,Daily,90 Days,,T+1,T+1 5:30 PM IST,Daily,90 Days,Internal,No,Yes,Yes,Yes,,,,,,
+FS_018,Controller Metrics,FDP (OTP),ICON DQ / Control Metrics,Selva,Structured,fdp_df_daas_prd,otp_fpsl_br1_full_report_sg,BR1 report,Live,2/13/26,Yes,Moving all objects from client MI container to newly created iCon Container,Country,,Full Load,Remote table,2 Days,N/A,T+1,T+1 5:30 PM IST,Daily,90 Days,,T+1,T+1 5:30 PM IST,Daily,90 Days,Internal,No,Yes,Yes,Yes,,,,,,
+FS_018,Controller Metrics,FDP (OTP),ICON DQ / Control Metrics,Selva,Structured,fdp_df_daas_prd,otp_fpsl_br1_full_report_sl,BR1 report,Live,2/13/26,Yes,Moving all objects from client MI container to newly created iCon Container,Country,,Full Load,Remote table,2 Days,N/A,T+1,T+1 5:30 PM IST,Daily,90 Days,,T+1,T+1 5:30 PM IST,Daily,90 Days,Internal,No,Yes,Yes,Yes,,,,,,
+FS_018,Controller Metrics,FDP (OTP),ICON DQ / Control Metrics,Selva,Structured,fdp_df_daas_prd,otp_fpsl_br1_full_report_sp,BR1 report,Live,2/13/26,Yes,Moving all objects from client MI container to newly created iCon Container,Country,30000,Full Load,Remote table,2 Days,N/A,T+1,T+1 5:30 PM IST,Daily,90 Days,,T+1,T+1 5:30 PM IST,Daily,90 Days,Internal,No,Yes,Yes,Yes,,,,,,
+FS_018,Controller Metrics,FDP (OTP),ICON DQ / Control Metrics,Selva,Structured,fdp_df_daas_prd,otp_fpsl_br1_full_report_th,BR1 report,Live,2/13/26,Yes,Moving all objects from client MI container to newly created iCon Container,Country,42000,Full Load,Remote table,2 Days,N/A,T+1,T+1 5:30 PM IST,Daily,90 Days,,T+1,T+1 5:30 PM IST,Daily,90 Days,Internal,No,Yes,Yes,Yes,,,,,,
+FS_018,Controller Metrics,FDP (OTP),ICON DQ / Control Metrics,Selva,Structured,fdp_df_daas_prd,otp_fpsl_br1_full_report_tw,BR1 report,Live,2/13/26,Yes,Moving all objects from client MI container to newly created iCon Container,Country,2000,Full Load,Remote table,2 Days,N/A,T+1,T+1 5:30 PM IST,Daily,90 Days,,T+1,T+1 5:30 PM IST,Daily,90 Days,Internal,No,Yes,Yes,Yes,,,,,,
+FS_018,Controller Metrics,FDP (OTP),ICON DQ / Control Metrics,Selva,Structured,fdp_df_daas_prd,otp_fpsl_br1_full_report_tz,BR1 report,Live,2/13/26,Yes,Moving all objects from client MI container to newly created iCon Container,Country,1000,Full Load,Remote table,2 Days,N/A,T+1,T+1 5:30 PM IST,Daily,90 Days,,T+1,T+1 5:30 PM IST,Daily,90 Days,Internal,No,Yes,Yes,Yes,,,,,,
+FS_018,Controller Metrics,FDP (OTP),ICON DQ / Control Metrics,Selva,Structured,fdp_df_daas_prd,otp_fpsl_br1_full_report_ug,BR1 report,Live,2/13/26,Yes,Moving all objects from client MI container to newly created iCon Container,Country,500,Full Load,Remote table,2 Days,N/A,T+1,T+1 5:30 PM IST,Daily,90 Days,,T+1,T+1 5:30 PM IST,Daily,90 Days,Internal,No,Yes,Yes,Yes,,,,,,
+FS_018,Controller Metrics,FDP (OTP),ICON DQ / Control Metrics,Selva,Structured,fdp_df_daas_prd,otp_fpsl_br1_full_report_us,BR1 report,Live,2/13/26,Yes,Moving all objects from client MI container to newly created iCon Container,Country,110000,Full Load,Remote table,2 Days,N/A,T+1,T+1 5:30 PM IST,Daily,90 Days,,T+1,T+1 5:30 PM IST,Daily,90 Days,Internal,No,Yes,Yes,Yes,,,,,,
+FS_018,Controller Metrics,FDP (OTP),ICON DQ / Control Metrics,Selva,Structured,fdp_df_daas_prd,otp_fpsl_br1_full_report_vn,BR1 report,Live,2/13/26,Yes,Moving all objects from client MI container to newly created iCon Container,Country,6000,Full Load,Remote table,2 Days,N/A,T+1,T+1 5:30 PM IST,Daily,90 Days,,T+1,T+1 5:30 PM IST,Daily,90 Days,Internal,No,Yes,Yes,Yes,,,,,,
+FS_018,Controller Metrics,FDP (OTP),ICON DQ / Control Metrics,Selva,Structured,fdp_df_daas_prd,otp_fpsl_br1_full_report_za,BR1 report,Live,2/13/26,Yes,Moving all objects from client MI container to newly created iCon Container,Country,5000,Full Load,Remote table,2 Days,N/A,T+1,T+1 5:30 PM IST,Daily,90 Days,,T+1,T+1 5:30 PM IST,Daily,90 Days,Internal,No,Yes,Yes,Yes,,,,,,
+FS_018,Controller Metrics,FDP (OTP),ICON DQ / Control Metrics,Selva,Structured,fdp_df_daas_prd,otp_fpsl_br1_full_report_zm,BR1 report,Live,2/13/26,Yes,Moving all objects from client MI container to newly created iCon Container,Country,1000,Full Load,Remote table,2 Days,N/A,T+1,T+1 5:30 PM IST,Daily,90 Days,,T+1,T+1 5:30 PM IST,Daily,90 Days,Internal,No,Yes,Yes,Yes,,,,,,
+FS_018,Controller Metrics,FDP (ACBS),ICON DQ / Control Metrics,Selva,Structured,fdp_df_idq_exceptions_prd,acbs_ic1c1,DQ report,Live,2/13/26,Yes,Moving all objects from client MI container to newly created iCon Container,Global,50000,Full Load,Remote table,2 Days,N/A,T+1,T+1 5:30 PM IST,Daily,15 Days,,T+1,T+1 5:30 PM IST,Daily,15 Days,Internal,No,Yes,Yes,Yes,,,,,,
+FS_018,Controller Metrics,FDP (DTP),ICON DQ / Control Metrics,Selva,Structured,fdp_df_idq_exceptions_prd,dtp_ic1c1,DQ report,Live,2/13/26,Yes,Moving all objects from client MI container to newly created iCon Container,Global,600000,Full Load,Remote table,2 Days,N/A,T+1,T+1 5:30 PM IST,Daily,15 Days,,T+1,T+1 5:30 PM IST,Daily,15 Days,Internal,No,Yes,Yes,Yes,,,,,,
+FS_018,Controller Metrics,FDP (eBBS),ICON DQ / Control Metrics,Selva,Structured,fdp_df_idq_exceptions_prd,ebbs_ic1c1,DQ report,Live,2/13/26,Yes,Moving all objects from client MI container to newly created iCon Container,Global,2000000,Full Load,Remote table,2 Days,N/A,T+1,T+1 5:30 PM IST,Daily,15 Days,,T+1,T+1 5:30 PM IST,Daily,15 Days,Internal,No,Yes,Yes,Yes,,,,,,
+FS_018,Controller Metrics,FDP (MILES),ICON DQ / Control Metrics,Selva,Structured,fdp_df_idq_exceptions_prd,miles_ic1c1,DQ report,Live,2/13/26,Yes,Moving all objects from client MI container to newly created iCon Container,Global,3000,Full Load,Remote table,2 Days,N/A,T+1,T+1 5:30 PM IST,Daily,15 Days,,T+1,T+1 5:30 PM IST,Daily,15 Days,Internal,No,Yes,Yes,Yes,,,,,,
+FS_018,Controller Metrics,FDP (OTP),ICON DQ / Control Metrics,Selva,Structured,fdp_df_idq_exceptions_prd,otp_ic1c1,DQ report,Live,2/13/26,Yes,Moving all objects from client MI container to newly created iCon Container,Global,530000,Full Load,Remote table,2 Days,N/A,T+1,T+1 5:30 PM IST,Daily,15 Days,,T+1,T+1 5:30 PM IST,Daily,15 Days,Internal,No,Yes,Yes,Yes,,,,,,
+FS_018,Controller Metrics,FSDP (S2BL),ICON DQ / Control Metrics,Selva,Structured,fdp_df_idq_exceptions_prd,s2bl_ic1c1,DQ report,Live,2/13/26,Yes,Moving all objects from client MI container to newly created iCon Container,Global,12000,Full Load,Remote table,2 Days,N/A,T+1,T+1 5:30 PM IST,Daily,15 Days,,T+1,T+1 5:30 PM IST,Daily,15 Days,Internal,No,Yes,Yes,Yes,,,,,,
+FS_018,Controller Metrics,FDP (UTS),ICON DQ / Control Metrics,Selva,Structured,fdp_df_idq_exceptions_prd,uts_ic1c1,DQ report,Live,2/13/26,Yes,Moving all objects from client MI container to newly created iCon Container,Global,250000,Full Load,Remote table,2 Days,N/A,T+1,T+1 5:30 PM IST,Daily,15 Days,,T+1,T+1 5:30 PM IST,Daily,15 Days,Internal,No,Yes,Yes,Yes,,,,,,
+FS_018,Controller Metrics,FDP (EBBS),ICON DQ / Control Metrics,Selva,Structured,fdp_df_idq_exceptions_prd,error_tbl,DQ report,Live,2/13/26,Yes,Moving all objects from client MI container to newly created iCon Container,Global,200000,Full Load,Remote table,2 Days,N/A,T+1,T+1 5:30 PM IST,Daily,15 Days,,T+1,T+1 5:30 PM IST,Daily,15 Days,Internal,No,Yes,Yes,Yes,,,,,,
+FS_018,Controller Metrics,FPSL (FM),ICON DQ / Control Metrics,Selva,Structured,SAPHANADB,/SCBANK/ISD_RECR,FPSL,Live,2/13/26,Yes,Moving all objects from client MI container to newly created iCon Container,Global,20000000,Full Load,Remote table,2 Days,N/A,T+1,T+1 5:30 PM IST,Daily,15 Days,,T+1,T+1 5:30 PM IST,Daily,15 Days,Internal,No,Yes,Yes,Yes,,,,,,
+FS_018,Controller Metrics,FPSL (FM),ICON DQ / Control Metrics,Selva,Structured,SAPHANADB,/BA1/HFSPD,FPSL,Live,2/13/26,Yes,Moving all objects from client MI container to newly created iCon Container,Global,200000,Full Load,Remote table,2 Days,N/A,T+1,T+1 5:30 PM IST,Daily,15 Days,,T+1,T+1 5:30 PM IST,Daily,15 Days,Internal,No,Yes,Yes,Yes,,,,,,
+FS_018,Controller Metrics,S4 GL,ICON DQ / Control Metrics,Selva,Structured,SAPABAP1,/FCB/OPASGNGRID,S4 BSS,Live,2/13/26,Yes,Moving all objects from client MI container to newly created iCon Container,Global,3000000,Full Load,Remote table,2 Days,N/A,M+12,T+1 5:30 PM IST,Monthly,280 Days,,T+1,T+1 5:30 PM IST,Monthly,280 Days,Internal,No,Yes,Yes,Yes,,,,,,
+FS_018,Controller Metrics,S4 GL,ICON DQ / Control Metrics,Selva,Structured,SAPABAP1,/FCB/SUBSTNGRID,S4 BSS,Live,2/13/26,Yes,Moving all objects from client MI container to newly created iCon Container,Global,6000000,Full Load,Remote table,2 Days,N/A,M+12,T+1 5:30 PM IST,Monthly,280 Days,,T+1,T+1 5:30 PM IST,Monthly,280 Days,Internal,No,Yes,Yes,Yes,,,,,,
+FS_018,Controller Metrics,S4 GL,ICON DQ / Control Metrics,Selva,Structured,SAPABAP1,ZFCBT_TLMBLKSTG,S4 BSS,Live,2/13/26,Yes,Moving all objects from client MI container to newly created iCon Container,Global,8000000,Full Load,Remote table,2 Days,N/A,M+12,T+1 5:30 PM IST,Monthly,280 Days,,T+1,T+1 5:30 PM IST,Monthly,280 Days,Internal,No,Yes,Yes,Yes,,,,,,
+FS_018,Controller Metrics,POSTGRES,ICON DQ / Control Metrics,Selva,Structured,fdp_df_sre_reports_prd,fdp_df_auditentries,Postgres Tables,Live,31-Mar,Yes,Moving all objects from client MI container to newly created iCon Container,Global,20000,Full Load,Remote table,2 Days,N/A,T+1,T+1 5:30 PM IST,Daily,15 Days,,T+1,T+1 5:30 PM IST,Daily,15 Days,Internal,No,Yes,Yes,Yes,,,,,,
+FS_018,Controller Metrics,POSTGRES,ICON DQ / Control Metrics,Selva,Structured,fdp_df_sre_reports_prd,df_frmwrk_tp_audit_transaction,Postgres Tables,Live,31-Mar,Yes,Moving all objects from client MI container to newly created iCon Container,Global,20000,Full Load,Remote table,2 Days,N/A,T+1,T+1 5:30 PM IST,Daily,15 Days,,T+1,T+1 5:30 PM IST,Daily,15 Days,Internal,No,Yes,Yes,Yes,,,,,,
+FS_018,Controller Metrics,POSTGRES,ICON DQ / Control Metrics,Selva,Structured,fdp_df_sre_reports_prd,df_frmwrk_country_master,Postgres Tables,Live,31-Mar,Yes,Moving all objects from client MI container to newly created iCon Container,Global,60,Full Load,Remote table,2 Days,N/A,T+1,T+1 5:30 PM IST,Daily,15 Days,,T+1,T+1 5:30 PM IST,Daily,15 Days,Internal,No,Yes,Yes,Yes,,,,,,
+FS_067,FTP,TPACE,FTP & COL,Kalaiselvan / Selva,Structured,,/SCBANK/FTPMI_FTP_RFTP,TPACE data ,Not Prioritized,Mar-26,No,,,,Delta,,,,,,Daily,60-90 days,,T+1,,Daily,60-90 days,Internal,No,,Yes,Yes,,,,,,
+FS_066,IRRBB,RCO IRRBB (via STARS),ALM Buckets with COA Linkage (aka Treasury Actuals),Srinivasan,Structured,stars_irrbb,irrbb_t_alm_buckets_stg,IRRBB Results,Not Prioritized,,,,Global,"24 columns, 960K rows",,,N/A,N/A,Data that falls into the prior month e.g. FinPeriod = prior month,tba,Monthly,12 months,Analysis of up to 12 months' data,,,,,Internal,No,tba,,,,,,,,
+FS_066,IRRBB,RCO IRRBB (via STARS),ALM Buckets with COA Linkage (aka Treasury Actuals),Srinivasan,Structured,stars_irrbb,irrbb_v_coa_flat_links_stg ,Chart of Accounts,Not Prioritized,,,,Global,"3 columns, rows tba",,,N/A,N/A,,,Monthly,12 months,Analysis of up to 12 months' data,,,,,Internal,No,tba,,,,,,,,
+"FS_034, FS_035",Reference,"BPC, MDG, S4",Planning & Actuals Dimensions,Srinivasan,Structured,,/B631/PAUDIT,BPC Reference data,Prioritized,,,,,,Full,,,,,,Daily,5 Years,,T+1,,Daily,5 Years,Internal,No,Yes,,,,,,,,
+"FS_034, FS_035",Reference,"BPC, MDG, S4",Planning & Actuals Dimensions,Srinivasan,Structured,,/B631/TAUDIT,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+"FS_034, FS_035",Reference,"BPC, MDG, S4",Planning & Actuals Dimensions,Srinivasan,Structured,,"/B631/HAUDIT, RSHIEDIR, RSHIEDIRT, RSTHIERNODE",,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+"FS_034, FS_035",Reference,"BPC, MDG, S4",Planning & Actuals Dimensions,Srinivasan,Structured,,FCOMC_CATEGORY,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+"FS_034, FS_035",Reference,"BPC, MDG, S4",Planning & Actuals Dimensions,Srinivasan,Structured,,FCOMC_CATEGORY_T,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+"FS_034, FS_035",Reference,"BPC, MDG, S4",Planning & Actuals Dimensions,Srinivasan,Structured,,RTC_ENTITY_M,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+"FS_034, FS_035",Reference,"BPC, MDG, S4",Planning & Actuals Dimensions,Srinivasan,Structured,,RTC_ENTITY_T,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+"FS_034, FS_035",Reference,"BPC, MDG, S4",Planning & Actuals Dimensions,Srinivasan,Structured,,"/B631/HENTITY, RSHIEDIR, RSHIEDIRT",,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+"FS_034, FS_035",Reference,"BPC, MDG, S4",Planning & Actuals Dimensions,Srinivasan,Structured,,"T856, RTC_EXT_T856",,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+"FS_034, FS_035",Reference,"BPC, MDG, S4",Planning & Actuals Dimensions,Srinivasan,Structured,,T856T,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+"FS_034, FS_035",Reference,"BPC, MDG, S4",Planning & Actuals Dimensions,Srinivasan,Structured,,"/B631/HFLOW, RSHIEDIR, RSHIEDIRT",,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+"FS_034, FS_035",Reference,"BPC, MDG, S4",Planning & Actuals Dimensions,Srinivasan,Structured,,SKA1,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+"FS_034, FS_035",Reference,"BPC, MDG, S4",Planning & Actuals Dimensions,Srinivasan,Structured,,SKAT,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+"FS_034, FS_035",Reference,"BPC, MDG, S4",Planning & Actuals Dimensions,Srinivasan,Structured,,"HRRP_DIRECTORY, HRRP_NODE, HRRP_NODE_T",,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+"FS_034, FS_035",Reference,"BPC, MDG, S4",Planning & Actuals Dimensions,Srinivasan,Structured,,/B631/PRGROUP,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+"FS_034, FS_035",Reference,"BPC, MDG, S4",Planning & Actuals Dimensions,Srinivasan,Structured,,/B631/TRGROUP,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+"FS_034, FS_035",Reference,"BPC, MDG, S4",Planning & Actuals Dimensions,Srinivasan,Structured,,"/B631/HRGROUP, RSHIEDIR, RSHIEDIRT,RSTHIERNODE",,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+"FS_034, FS_035",Reference,"BPC, MDG, S4",Planning & Actuals Dimensions,Srinivasan,Structured,,/B631/PRTCCURR,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+"FS_034, FS_035",Reference,"BPC, MDG, S4",Planning & Actuals Dimensions,Srinivasan,Structured,,/B631/TRTCCURR,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+"FS_034, FS_035",Reference,"BPC, MDG, S4",Planning & Actuals Dimensions,Srinivasan,Structured,,"/B631/HRTCCURR, RSHIEDIR, RSHIEDIRT",,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+"FS_034, FS_035",Reference,"BPC, MDG, S4",Planning & Actuals Dimensions,Srinivasan,Structured,,FAGL_SEGM,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+"FS_034, FS_035",Reference,"BPC, MDG, S4",Planning & Actuals Dimensions,Srinivasan,Structured,,FAGL_SEGMT,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+"FS_034, FS_035",Reference,"BPC, MDG, S4",Planning & Actuals Dimensions,Srinivasan,Structured,,ZTFI_DATAIKU_FIN,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+"FS_034, FS_035",Reference,"BPC, MDG, S4",Planning & Actuals Dimensions,Srinivasan,Structured,,ZFIPRODUCT,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+"FS_034, FS_035",Reference,"BPC, MDG, S4",Planning & Actuals Dimensions,Srinivasan,Structured,,ZFIPRODUCTT,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+"FS_034, FS_035",Reference,"BPC, MDG, S4",Planning & Actuals Dimensions,Srinivasan,Structured,,ZTFI_DATAIKU_FIN with Filter on IOBJNM = ZZPROD,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+"FS_034, FS_035",Reference,"BPC, MDG, S4",Planning & Actuals Dimensions,Srinivasan,Structured,,/BI0/PFISCPER,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+"FS_034, FS_035",Reference,"BPC, MDG, S4",Planning & Actuals Dimensions,Srinivasan,Structured,,T009C,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+"FS_034, FS_035",Reference,"BPC, MDG, S4",Planning & Actuals Dimensions,Srinivasan,Structured,,T009,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+"FS_034, FS_035",Reference,"BPC, MDG, S4",Planning & Actuals Dimensions,Srinivasan,Structured,,T009T,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+"FS_034, FS_035",Reference,"BPC, MDG, S4",Planning & Actuals Dimensions,Srinivasan,Structured,,/BIC/PZCUSTOM1,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+"FS_034, FS_035",Reference,"BPC, MDG, S4",Planning & Actuals Dimensions,Srinivasan,Structured,,/BIC/TZCUSTOM1,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+"FS_034, FS_035",Reference,"BPC, MDG, S4",Planning & Actuals Dimensions,Srinivasan,Structured,,"/BIC/HZCUSTOM1, RSHIEDIR, RSHIEDIRT",,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+"FS_034, FS_035",Reference,"BPC, MDG, S4",Planning & Actuals Dimensions,Srinivasan,Structured,,/BIC/PZCUSTOM2,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+"FS_034, FS_035",Reference,"BPC, MDG, S4",Planning & Actuals Dimensions,Srinivasan,Structured,,/BIC/TZCUSTOM2,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+"FS_034, FS_035",Reference,"BPC, MDG, S4",Planning & Actuals Dimensions,Srinivasan,Structured,,"/BIC/HZCUSTOM2, RSHIEDIR, RSHIEDIRT",,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+"FS_034, FS_035",Reference,"BPC, MDG, S4",Planning & Actuals Dimensions,Srinivasan,Structured,,/BIC/PZCUSTOM3,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+"FS_034, FS_035",Reference,"BPC, MDG, S4",Planning & Actuals Dimensions,Srinivasan,Structured,,/BIC/TZCUSTOM3,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+"FS_034, FS_035",Reference,"BPC, MDG, S4",Planning & Actuals Dimensions,Srinivasan,Structured,,"/BIC/HZCUSTOM3, RSHIEDIR, RSHIEDIRT",,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+"FS_034, FS_035",Reference,"BPC, MDG, S4",Planning & Actuals Dimensions,Srinivasan,Structured,,/BIC/PZCUSTOM4,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+"FS_034, FS_035",Reference,"BPC, MDG, S4",Planning & Actuals Dimensions,Srinivasan,Structured,,/BIC/TZCUSTOM4,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+"FS_034, FS_035",Reference,"BPC, MDG, S4",Planning & Actuals Dimensions,Srinivasan,Structured,,"/BIC/HZCUSTOM4, RSHIEDIR, RSHIEDIRT",,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+"FS_034, FS_035",Reference,"BPC, MDG, S4",Planning & Actuals Dimensions,Srinivasan,Structured,,/BIC/PZCUSTOM5,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+"FS_034, FS_035",Reference,"BPC, MDG, S4",Planning & Actuals Dimensions,Srinivasan,Structured,,/BIC/TZCUSTOM5,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+"FS_034, FS_035",Reference,"BPC, MDG, S4",Planning & Actuals Dimensions,Srinivasan,Structured,,"/BIC/HZCUSTOM5, RSHIEDIR, RSHIEDIRT",,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+"FS_034, FS_035",Reference,"BPC, MDG, S4",Planning & Actuals Dimensions,Srinivasan,Structured,,/BIC/PZCUSTOM6,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+"FS_034, FS_035",Reference,"BPC, MDG, S4",Planning & Actuals Dimensions,Srinivasan,Structured,,/BIC/TZCUSTOM6,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+"FS_034, FS_035",Reference,"BPC, MDG, S4",Planning & Actuals Dimensions,Srinivasan,Structured,,"/BIC/HZCUSTOM6, RSHIEDIR, RSHIEDIRT",,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+"FS_034, FS_035",Reference,"BPC, MDG, S4",Planning & Actuals Dimensions,Srinivasan,Structured,,/BIC/PZCUSTOM7,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+"FS_034, FS_035",Reference,"BPC, MDG, S4",Planning & Actuals Dimensions,Srinivasan,Structured,,/BIC/TZCUSTOM7,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+"FS_034, FS_035",Reference,"BPC, MDG, S4",Planning & Actuals Dimensions,Srinivasan,Structured,,"/BIC/HZCUSTOM7, RSHIEDIR, RSHIEDIRT",,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+"FS_034, FS_035",Reference,"BPC, MDG, S4",Planning & Actuals Dimensions,Srinivasan,Structured,,/BIC/PZCUSTOM8,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+"FS_034, FS_035",Reference,"BPC, MDG, S4",Planning & Actuals Dimensions,Srinivasan,Structured,,/BIC/TZCUSTOM8,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+"FS_034, FS_035",Reference,"BPC, MDG, S4",Planning & Actuals Dimensions,Srinivasan,Structured,,"/BIC/HZCUSTOM8, RSHIEDIR, RSHIEDIRT",,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+"FS_034, FS_035",Reference,"BPC, MDG, S4",Planning & Actuals Dimensions,Srinivasan,Structured,,/BIC/PZCUSTOM9,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+"FS_034, FS_035",Reference,"BPC, MDG, S4",Planning & Actuals Dimensions,Srinivasan,Structured,,/BIC/TZCUSTOM9,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+"FS_034, FS_035",Reference,"BPC, MDG, S4",Planning & Actuals Dimensions,Srinivasan,Structured,,/BIC/PZCUSTOM10,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+"FS_034, FS_035",Reference,"BPC, MDG, S4",Planning & Actuals Dimensions,Srinivasan,Structured,,/BIC/TZCUSTOM10,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+"FS_034, FS_035",Reference,"BPC, MDG, S4",Planning & Actuals Dimensions,Srinivasan,Structured,,RTC_MODEL,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+"FS_034, FS_035",Reference,"BPC, MDG, S4",Planning & Actuals Dimensions,Srinivasan,Structured,,RTC_MODEL_T,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+"FS_034, FS_035",Reference,"BPC, MDG, S4",Planning & Actuals Dimensions,Srinivasan,Structured,,FINSC_LEDGER,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+"FS_034, FS_035",Reference,"BPC, MDG, S4",Planning & Actuals Dimensions,Srinivasan,Structured,,FINSC_LEDGER_T,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+"FS_034, FS_035",Reference,"BPC, MDG, S4",Planning & Actuals Dimensions,Srinivasan,Structured,,/B631/PTCURR,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+"FS_034, FS_035",Reference,"BPC, MDG, S4",Planning & Actuals Dimensions,Srinivasan,Structured,,/B631/TTCURR,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+"FS_034, FS_035",Reference,"BPC, MDG, S4",Planning & Actuals Dimensions,Srinivasan,Structured,,/B631/PRTCURR,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+"FS_034, FS_035",Reference,"BPC, MDG, S4",Planning & Actuals Dimensions,Srinivasan,Structured,,/B631/TRTCURR,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+"FS_034, FS_035",Reference,"BPC, MDG, S4",Planning & Actuals Dimensions,Srinivasan,Structured,,ZFIOPERLOC,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+"FS_034, FS_035",Reference,"BPC, MDG, S4",Planning & Actuals Dimensions,Srinivasan,Structured,,ZFIOPERLOCT,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+"FS_034, FS_035",Reference,"BPC, MDG, S4",Planning & Actuals Dimensions,Srinivasan,Structured,,"/BIC/HZOPLOC, RSHIEDIR, RSHIEDIRT",,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+"FS_034, FS_035",Reference,"BPC, MDG, S4",Planning & Actuals Dimensions,Srinivasan,Structured,,/BIC/PZVIEW,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+"FS_034, FS_035",Reference,"BPC, MDG, S4",Planning & Actuals Dimensions,Srinivasan,Structured,,/BIC/TZVIEW,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+"FS_034, FS_035",Reference,"BPC, MDG, S4",Planning & Actuals Dimensions,Srinivasan,Structured,,"/BIC/HZVIEW, RSHIEDIR, RSHIEDIRT",,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+"FS_034, FS_035",Reference,"BPC, MDG, S4",Planning & Actuals Dimensions,Srinivasan,Structured,,/BIC/PZFUNC,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+"FS_034, FS_035",Reference,"BPC, MDG, S4",Planning & Actuals Dimensions,Srinivasan,Structured,,/BIC/TZFUNC,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+"FS_034, FS_035",Reference,"BPC, MDG, S4",Planning & Actuals Dimensions,Srinivasan,Structured,,"/BIC/HZFUNC, RSHIEDIR, RSHIEDIRT",,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+"FS_034, FS_035",Reference,"BPC, MDG, S4",Planning & Actuals Dimensions,Srinivasan,Structured,,ZRTC_BIZ_PRODUTT,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+"FS_034, FS_035",Reference,"BPC, MDG, S4",Planning & Actuals Dimensions,Srinivasan,Structured,,ZRTC_BIZ_PRODUTT,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+"FS_034, FS_035",Reference,"BPC, MDG, S4",Planning & Actuals Dimensions,Srinivasan,Structured,,"/BIC/HZBIZPRD, RSHIEDIR, RSHIEDIRT",,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+"FS_034, FS_035",Reference,"BPC, MDG, S4",Planning & Actuals Dimensions,Srinivasan,Structured,,ZRTC_BIZ_DESKT,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+"FS_034, FS_035",Reference,"BPC, MDG, S4",Planning & Actuals Dimensions,Srinivasan,Structured,,ZRTC_BIZ_DESKT,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+"FS_034, FS_035",Reference,"BPC, MDG, S4",Planning & Actuals Dimensions,Srinivasan,Structured,,"/BIC/HZBIZDSK, RSHIEDIR, RSHIEDIRT",,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+"FS_034, FS_035",Reference,"BPC, MDG, S4",Planning & Actuals Dimensions,Srinivasan,Structured,,/BIC/PZCURIDEN,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+"FS_034, FS_035",Reference,"BPC, MDG, S4",Planning & Actuals Dimensions,Srinivasan,Structured,,/BIC/TZCURIDEN,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+"FS_034, FS_035",Reference,"BPC, MDG, S4",Planning & Actuals Dimensions,Srinivasan,Structured,,/BIC/PZACCIDEN,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+"FS_034, FS_035",Reference,"BPC, MDG, S4",Planning & Actuals Dimensions,Srinivasan,Structured,,/BIC/TZACCIDEN,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+"FS_034, FS_035",Reference,"BPC, MDG, S4",Planning & Actuals Dimensions,Srinivasan,Structured,,T009,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+"FS_034, FS_035",Reference,"BPC, MDG, S4",Planning & Actuals Dimensions,Srinivasan,Structured,,T004,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+"FS_034, FS_035",Reference,"BPC, MDG, S4",Planning & Actuals Dimensions,Srinivasan,Structured,,T004T,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+"FS_034, FS_035",Reference,"BPC, MDG, S4",Planning & Actuals Dimensions,Srinivasan,Structured,,CSKS,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+"FS_034, FS_035",Reference,"BPC, MDG, S4",Planning & Actuals Dimensions,Srinivasan,Structured,,CSKT,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+"FS_034, FS_035",Reference,"BPC, MDG, S4",Planning & Actuals Dimensions,Srinivasan,Structured,,ZTFI_DATAIKU_FIN,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+"FS_034, FS_035",Reference,"BPC, MDG, S4",Planning & Actuals Dimensions,Srinivasan,Structured,,TKA01,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+"FS_034, FS_035",Reference,"BPC, MDG, S4",Planning & Actuals Dimensions,Srinivasan,Structured,,TKA01,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+"FS_034, FS_035",Reference,"BPC, MDG, S4",Planning & Actuals Dimensions,Srinivasan,Structured,,/B631/PPENTITY,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+"FS_034, FS_035",Reference,"BPC, MDG, S4",Planning & Actuals Dimensions,Srinivasan,Structured,,/B631/TPENTITY,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+"FS_034, FS_035",Reference,"BPC, MDG, S4",Planning & Actuals Dimensions,Srinivasan,Structured,,"/B631/HPENTITY, RSHIEDIR, RSHIEDIRT, RSTHIERNODE",,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+"FS_034, FS_035",Reference,"BPC, MDG, S4",Planning & Actuals Dimensions,Srinivasan,Structured,,CEPC,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+"FS_034, FS_035",Reference,"BPC, MDG, S4",Planning & Actuals Dimensions,Srinivasan,Structured,,CEPCT,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+"FS_034, FS_035",Reference,"BPC, MDG, S4",Planning & Actuals Dimensions,Srinivasan,Structured,,ZTFI_DATAIKU_FIN,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+FS_118,Controller Metrics,S4 GL,ICON Finance Control Metrics/BSS,Selva,Structured,SAPABAP1,/FCB/C_SUBSTANTIATION_SUP,Balance Sheet Substantiation,Prioritized,20-Mar,No,NA,Global," 16,570,000 ",Full Load,Remote Table,1 Month,Not Applicable <Check with Preethi first>,M+1,M+1 6:00 PM IST,Monthly,10 Months,Reporting needs to be showed for 10 Months,T+1,T+1 5:30 PM IST,Monthly,10 Months,Internal,No,Yes,Yes,Yes,,,,,,
+FS_118,Controller Metrics,S4 GL,ICON Finance Control Metrics/BSS,Selva,Structured,SAPABAP1,ZIFI_FAR_REPORT_CONS,Fixed Assets,Prioritized,20-Mar,No,NA,Global," 460,000 ",Full Load,Remote Table,1 Month,Not Applicable <Check with Preethi first>,M+1,M+1 6:00 PM IST,Monthly,10 Months,Reporting needs to be showed for 10 Months,T+1,T+1 5:30 PM IST,Monthly,10 Months,Internal,No,Yes,Yes,Yes,,,,,,
+FS_118,Controller Metrics,S4 GL,ICON Finance Control Metrics/BSS,Selva,Structured,SAPABAP1, ZIFA_RETIRE_VALUES,Fixed Assets,Prioritized,20-Mar,No,NA,Global," 83,000 ",Full Load,Remote Table,1 Month,Not Applicable <Check with Preethi first>,M+1,M+1 6:00 PM IST,Monthly,10 Months,Reporting needs to be showed for 10 Months,T+1,T+1 5:30 PM IST,Monthly,10 Months,Internal,No,Yes,Yes,Yes,,,,,,
+FS_115,Controller Metrics,FPSL (ICON),Client MI:- To source the  Client level adjustments posted for Banking and Markets in FPSL(ICON) for source  C55CONSRC='MDU-XX',Selva,Structured,,/BA1/HFSPD,Core acct table sourced with journal corrections details at profolio &  COA level adjustments for Banking and Markets ,Prioritized,March Release,No, ,Global single feed, ,Full Load,Remote table,90 Days ,"/BA1/C55CONSRC='MDU-XX'
+
+/BA1/C55PROCID='7900'
+
+/BIC/C_TPSRCSY='PCRPT'",Daily, , , , , ,,,,Internal,No,tba,Yes, , , , ,,,
+FS_115,Controller Metrics,FPSL (ICON),Client MI:- To source the  Client level adjustments posted for Banking and Markets in FPSL(ICON) for source,Selva,Structured,,fpsl_tb.db.Synonyms::MDU_LINK,"Client,Portfolio  level  journal correction with group level for Banking and Markets ",Prioritized,March Release,No, ,Global single feed, ,Full Load,Remote table,90 Days ,"/BA1/C55CONSRC='MDU-XX'
+
+/BA1/C55PROCID='7900'
+
+/BIC/C_TPSRCSY='PCRPT'",Daily, , , , , ,,,,Internal,No,tba,Yes, , , , ,,,
+FS_115,Controller Metrics,FPSL (ICON),Client MI:- To source the  Client level adjustments posted for Banking and Markets in FPSL(ICON) for source,Selva,Structured,,fpsl_tb.db.Synonyms::TS_TEMP_DATA_DTLS,"Client,Portfolio level  journal correction for Banking and Markets ",Prioritized,March Release,No, ,Global single feed, ,Full Load,Remote table,90 Days ,"/BA1/C55CONSRC='MDU-XX'
+
+/BA1/C55PROCID='7900'
+
+/BIC/C_TPSRCSY='PCRPT'",Daily, , , , , ,,,,Internal,No,tba,Yes, , , , ,,,
+FS_115,Controller Metrics,FPSL (ICON),Client MI:- To source the  Client level adjustments posted for Banking and Markets in FPSL(ICON) for source,Selva,Structured,,fpsl_tb.db.Synonyms::TS_TEMP_DATA,"Client,Portfolio level  journal correction batch details for Banking and Markets ",Prioritized,March Release,No, ,Global single feed, ,Full Load,Remote table,90 Days ,"/BA1/C55CONSRC='MDU-XX'
+
+/BA1/C55PROCID='7900'
+
+/BIC/C_TPSRCSY='PCRPT'",Daily, , , , , ,,,,Internal,No,tba,Yes, , , , ,,,
+FS_118,Controller Metrics,S4 GL,ICON Finance Control Metrics/BSS,Selva,Structured,SAPABAP1,/FCB/GL_MASTER_R,Balance Sheet Substantiation,Prioritized,20-Mar,No,NA,Global," 56,000 ",Full Load,Remote Table,Current year,Not Applicable,N/A - this is a one-off feed,Ad-Hoc,Adhoc,tba,Reporting needs to be showed for 10 Months,Internal,T+1 5:30 PM IST,Adhoc,10 Months,Internal,No,Yes,Yes,Yes,,,,,,
+FS_118,Controller Metrics,S4 GL,ICON Finance Control Metrics/BSS,Selva,Structured,SAPABAP1,/FCB/OVRRDE_REF,Balance Sheet Substantiation,Prioritized,20-Mar,No,NA,Global," 400,000 ",Full Load,Remote Table,Current year,Not Applicable,N/A - this is a one-off feed,Ad-Hoc,Adhoc,tba,Reporting needs to be showed for 10 Months,Internal,T+1 5:30 PM IST,Adhoc,10 Months,Internal,No,Yes,Yes,Yes,,,,,,
+FS_062,Consoldiated Financials,BPC,"""Consolidated SOCIE"" table for SoCIE Actuals ( 7 entity view) ",May Yi,Structured,SAPABAP1,/BIC/AZFI_REP_A1,tba,Not Prioritized,,No,N/A,Global," 102,325,865 ",,,N/A,"Ingestion into Staging layer: bring through all rows and columns
+Between Staging and Pre-processing layer:
+
+Scenario:
+Technical name: /ERP/CATEGORY
+Filtering Criteria: ACT_GRP_F
+
+Currency Identifier:
+Technical name: ZCURIDEN
+Filtering Criteria: RFX
+
+Reported view:
+Technical name: ZLEDGER
+Filtering Criteria: 0L (Financial view)
+
+RTC Acct Identifier:
+Technical name: ZACCIDEN
+Filtering Criteria: FIN
+
+Restatement
+Technical name: ZCUSTOM7
+Filtering Criteria: Original
+
+Transactional currency:	
+Technical name: /ERP/RTCCURR
+Filtering Criteria: USD",Data that falls into the prior month e.g. FinPeriod = prior month,Start of business SGT on day of feed,"Quarterly Feed:
+In Apr, Jul, Oct, Jan at 23:59 on Business Days 10, 13, 18, and 20.  If feed month has > 20 business days, then an additional feed will be run on the last business day of the feed month.  Each feed will overwrite any previous data for the period if it exists e.g. Day 13 feed will overwrite Day 10 feed
+
+Monthly Feed (actually required for All In One Query):
+Monthly on the first business day of each month",Current year and prior year required in pre-processing layer,Analysis includes prior year data,,,,,Internal,No,Yes - GFR’s approval to access the BPC legal views received,BPC data already used - approval not required,BPC data already used - approval not required,BPC data already used - approval not required,,"The policy is to onboard all fields from the underlying tables.  Only the following fields actually required though: 0FISCYEAR , 0FISCPER, AUDIT, ENTITY, FLOW, GL_ACCT, RGROUP, ZVIEW, ZCUSTOM6, RTC_AMO",,,
+FS_062,Consoldiated Financials,BPC,"""Consolidated SOCIE"" table for SoCIE Actuals ( 7 entity view) ",May Yi,Structured,SAPABAP1,/BIC/AZFI_MIG012,tba,Not Prioritized,,No,N/A,Global," 286,581,511 ",,,N/A,"Ingestion into Staging layer: bring through all rows and columns
+Between Staging and Pre-processing layer:
+
+Scenario:
+Technical name: /ERP/CATEGORY
+Filtering Criteria: ACT_GRP_F
+
+Currency Identifier:
+Technical name: ZCURIDEN
+Filtering Criteria: RFX
+
+Reported view:
+Technical name: ZLEDGER
+Filtering Criteria: 0L (Financial view)
+
+RTC Acct Identifier:
+Technical name: ZACCIDEN
+Filtering Criteria: FIN
+
+Restatement
+Technical name: ZCUSTOM7
+Filtering Criteria: Original
+
+Transactional currency:	
+Technical name: /ERP/RTCCURR
+Filtering Criteria: USD",Data that falls into the prior month e.g. FinPeriod = prior month,Start of business SGT on day of feed,"Quarterly Feed:
+In Apr, Jul, Oct, Jan at 23:59 on Business Days 10, 13, 18, and 20.  If feed month has > 20 business days, then an additional feed will be run on the last business day of the feed month.  Each feed will overwrite any previous data for the period if it exists e.g. Day 13 feed will overwrite Day 10 feed
+
+Monthly Feed (actually required for All In One Query):
+Monthly on the first business day of each month",Current year and prior year required in pre-processing layer,Analysis includes prior year data,,,,,Internal,No,Yes - GFR’s approval to access the BPC legal views received,BPC data already used - approval not required,BPC data already used - approval not required,BPC data already used - approval not required,,"The policy is to onboard all fields from the underlying tables.  Only the following fields actually required though: 0FISCYEAR , 0FISCPER, AUDIT, ENTITY, FLOW, GL_ACCT, RGROUP, ZVIEW, ZCUSTOM6, RTC_AMO",,,
+FS_062,Consoldiated Financials,BPC,"""Consolidated SOCIE"" table for SoCIE Actuals ( 7 entity view) ",May Yi,Structured,SAPABAP1,/BIC/AZFI_REP_G1,tba,Not Prioritized,,No,N/A,Global, -   ,,,N/A,"Ingestion into Staging layer: bring through all rows and columns
+Between Staging and Pre-processing layer:
+
+Scenario:
+Technical name: /ERP/CATEGORY
+Filtering Criteria: ACT_GRP_F
+
+Currency Identifier:
+Technical name: ZCURIDEN
+Filtering Criteria: RFX
+
+Reported view:
+Technical name: ZLEDGER
+Filtering Criteria: 0L (Financial view)
+
+RTC Acct Identifier:
+Technical name: ZACCIDEN
+Filtering Criteria: FIN
+
+Restatement
+Technical name: ZCUSTOM7
+Filtering Criteria: Original
+
+Transactional currency:	
+Technical name: /ERP/RTCCURR
+Filtering Criteria: USD",Data that falls into the prior month e.g. FinPeriod = prior month,Start of business SGT on day of feed,"Quarterly Feed:
+In Apr, Jul, Oct, Jan at 23:59 on Business Days 10, 13, 18, and 20.  If feed month has > 20 business days, then an additional feed will be run on the last business day of the feed month.  Each feed will overwrite any previous data for the period if it exists e.g. Day 13 feed will overwrite Day 10 feed
+
+Monthly Feed (actually required for All In One Query):
+Monthly on the first business day of each month",Current year and prior year required in pre-processing layer,Analysis includes prior year data,,,,,Internal,No,Yes - GFR’s approval to access the BPC legal views received,BPC data already used - approval not required,BPC data already used - approval not required,BPC data already used - approval not required,,"The policy is to onboard all fields from the underlying tables.  Only the following fields actually required though: 0FISCYEAR , 0FISCPER, AUDIT, ENTITY, FLOW, GL_ACCT, RGROUP, ZVIEW, ZCUSTOM6, RTC_AMO",,,
+FS_062,Consoldiated Financials,BPC,"""Consolidated SOCIE"" table for SoCIE Actuals ( 7 entity view) ",May Yi,Structured,SAPABAP1,/BIC/AZFI_REP_L1,tba,Not Prioritized,,No,N/A,Global," 210,990,766 ",,,N/A,"Ingestion into Staging layer: bring through all rows and columns
+Between Staging and Pre-processing layer:
+
+Scenario:
+Technical name: /ERP/CATEGORY
+Filtering Criteria: ACT_GRP_F
+
+Currency Identifier:
+Technical name: ZCURIDEN
+Filtering Criteria: RFX
+
+Reported view:
+Technical name: ZLEDGER
+Filtering Criteria: 0L (Financial view)
+
+RTC Acct Identifier:
+Technical name: ZACCIDEN
+Filtering Criteria: FIN
+
+Restatement
+Technical name: ZCUSTOM7
+Filtering Criteria: Original
+
+Transactional currency:	
+Technical name: /ERP/RTCCURR
+Filtering Criteria: USD",Data that falls into the prior month e.g. FinPeriod = prior month,Start of business SGT on day of feed,"Quarterly Feed:
+In Apr, Jul, Oct, Jan at 23:59 on Business Days 10, 13, 18, and 20.  If feed month has > 20 business days, then an additional feed will be run on the last business day of the feed month.  Each feed will overwrite any previous data for the period if it exists e.g. Day 13 feed will overwrite Day 10 feed
+
+Monthly Feed (actually required for All In One Query):
+Monthly on the first business day of each month",Current year and prior year required in pre-processing layer,Analysis includes prior year data,,,,,Internal,No,Yes - GFR’s approval to access the BPC legal views received,BPC data already used - approval not required,BPC data already used - approval not required,BPC data already used - approval not required,,"The policy is to onboard all fields from the underlying tables.  Only the following fields actually required though: 0FISCYEAR , 0FISCPER, AUDIT, ENTITY, FLOW, GL_ACCT, RGROUP, ZVIEW, ZCUSTOM6, RTC_AMO",,,
+FS_062,Consoldiated Financials,BPC,"""Consolidated SOCIE"" table for SoCIE Actuals ( 7 entity view) ",May Yi,Structured,SAPABAP1,/BIC/AZFI_REP_O1,tba,Not Prioritized,,No,N/A,Global," 569,298,410 ",,,N/A,"Ingestion into Staging layer: bring through all rows and columns
+Between Staging and Pre-processing layer:
+
+Scenario:
+Technical name: /ERP/CATEGORY
+Filtering Criteria: ACT_GRP_F
+
+Currency Identifier:
+Technical name: ZCURIDEN
+Filtering Criteria: RFX
+
+Reported view:
+Technical name: ZLEDGER
+Filtering Criteria: 0L (Financial view)
+
+RTC Acct Identifier:
+Technical name: ZACCIDEN
+Filtering Criteria: FIN
+
+Restatement
+Technical name: ZCUSTOM7
+Filtering Criteria: Original",Data that falls into the prior month e.g. FinPeriod = prior month,Start of business SGT on day of feed,"Quarterly Feed:
+In Apr, Jul, Oct, Jan at 23:59 on Business Days 10, 13, 18, and 20.  If feed month has > 20 business days, then an additional feed will be run on the last business day of the feed month.  Each feed will overwrite any previous data for the period if it exists e.g. Day 13 feed will overwrite Day 10 feed
+
+Monthly Feed (actually required for All In One Query):
+Monthly on the first business day of each month",Current year and prior year required in pre-processing layer,Analysis includes prior year data,,,,,Internal,No,Yes - GFR’s approval to access the BPC legal views received,BPC data already used - approval not required,BPC data already used - approval not required,BPC data already used - approval not required,,"The policy is to onboard all fields from the underlying tables.  Only the following fields actually required though: 0FISCYEAR , 0FISCPER, AUDIT, ENTITY, FLOW, GL_ACCT, RGROUP, ZVIEW, ZCUSTOM6, RTC_AMO",,,
+FS_062,Consoldiated Financials,BPC,"""Consolidated SOCIE"" table for SoCIE Actuals ( 7 entity view) ",May Yi,Structured,SAPABAP1,/BIC/AZFI_REP_N1,tba,Not Prioritized,,No,N/A,Global," 222,281,305 ",,,N/A,"Ingestion into Staging layer: bring through all rows and columns
+Between Staging and Pre-processing layer:
+
+Scenario:
+Technical name: /ERP/CATEGORY
+Filtering Criteria: ACT_GRP_F
+
+Currency Identifier:
+Technical name: ZCURIDEN
+Filtering Criteria: RFX
+
+Reported view:
+Technical name: ZLEDGER
+Filtering Criteria: 0L (Financial view)
+
+RTC Acct Identifier:
+Technical name: ZACCIDEN
+Filtering Criteria: FIN
+
+Restatement
+Technical name: ZCUSTOM7
+Filtering Criteria: Original
+
+Transactional currency:	
+Technical name: /ERP/RTCCURR
+Filtering Criteria: USD",Data that falls into the prior month e.g. FinPeriod = prior month,Start of business SGT on day of feed,"Quarterly Feed:
+In Apr, Jul, Oct, Jan at 23:59 on Business Days 10, 13, 18, and 20.  If feed month has > 20 business days, then an additional feed will be run on the last business day of the feed month.  Each feed will overwrite any previous data for the period if it exists e.g. Day 13 feed will overwrite Day 10 feed
+
+Monthly Feed (actually required for All In One Query):
+Monthly on the first business day of each month",Current year and prior year required in pre-processing layer,Analysis includes prior year data,,,,,Internal,No,Yes - GFR’s approval to access the BPC legal views received,BPC data already used - approval not required,BPC data already used - approval not required,BPC data already used - approval not required,,"The policy is to onboard all fields from the underlying tables.  Only the following fields actually required though: 0FISCYEAR , 0FISCPER, AUDIT, ENTITY, FLOW, GL_ACCT, RGROUP, ZVIEW, ZCUSTOM6, RTC_AMO",,,
+FS_062,Consoldiated Financials,BPC,"""Consolidated SOCIE"" table for SoCIE Actuals ( 7 entity view) ",May Yi,Structured,SAPABAP1,ZRTC_NGLGSAM_FIN,tba,Not Prioritized,,No,N/A,Global, -   ,,,N/A,"Ingestion into Staging layer: bring through all rows and columns
+Between Staging and Pre-processing layer:
+
+Scenario:
+Technical name: /ERP/CATEGORY
+Filtering Criteria: ACT_GRP_F
+
+Currency Identifier:
+Technical name: ZCURIDEN
+Filtering Criteria: RFX
+
+Reported view:
+Technical name: ZLEDGER
+Filtering Criteria: 0L (Financial view)
+
+RTC Acct Identifier:
+Technical name: ZACCIDEN
+Filtering Criteria: FIN
+
+Restatement
+Technical name: ZCUSTOM7
+Filtering Criteria: Original
+
+Transactional currency:	
+Technical name: /ERP/RTCCURR
+Filtering Criteria: USD
+
+Additional filtering:
+RCONGR1 != LEGAL2700 AND RCONGR1 != G_NONE",Data that falls into the prior month e.g. FinPeriod = prior month,Start of business SGT on day of feed,"Quarterly Feed:
+In Apr, Jul, Oct, Jan at 23:59 on Business Days 10, 13, 18, and 20.  If feed month has > 20 business days, then an additional feed will be run on the last business day of the feed month.  Each feed will overwrite any previous data for the period if it exists e.g. Day 13 feed will overwrite Day 10 feed
+
+Monthly Feed (actually required for All In One Query):
+Monthly on the first business day of each month",Current year and prior year required in pre-processing layer,Analysis includes prior year data,,,,,Internal,No,Yes - GFR’s approval to access the BPC legal views received,BPC data already used - approval not required,BPC data already used - approval not required,BPC data already used - approval not required,,"The policy is to onboard all fields from the underlying tables.  Only the following fields actually required though: 0FISCYEAR , 0FISCPER, AUDIT, ENTITY, FLOW, GL_ACCT, RGROUP, ZVIEW, ZCUSTOM6, RTC_AMO",,,
+FS_119,WRB Financial & Client metrics,ATHENA,Lego Attributes with Financial &  Non-Financial Metrics (Client with Early View),Selva,Structured,Prd_tbl_uacolob_grp_nsen,group_lego_data_client,Non-financial and some financial data which contain Dimension and Measures,Not Prioritized,15-Apr,No,NA,Global," 700,000 ",Full Load,Remote Table,last 4 years + current year + Early View,EV Flag,"Client: M+35 (5th business day of the next-to-next month); 
+EV: T+10 (10 business days later)",Within 24 hrs of receiving the data,Monthly,last 4 years + current year,Required for analytics,,,,,Internal,No,No,Yes,No,No,,,,,
+"FS_063, FS_065",Consoldiated Financials,BPC,"""All in one Query"" Table for SFX
+Actuals YTD Rates","May Yi (All in one)
+Srini (Actuals YTD Rates)",Structured,SAPABAP1,tcurr,tba (Dileep),Not Prioritized,,No,N/A,Global,"8 columns, 171183 rows",,,N/A,"Ingestion into Staging layer: bring through all rows and columns
+
+Between Staging and Pre-processing layer:
+KURST ='GBR0' and TCURR='USD'",Data that falls into the prior month e.g. FinPeriod = prior month,Start of business SGT on day of feed,Monthly on the first business day of each month,Current year and prior year (pre-processing layer),Analysis including prior year,,,,,Internal,No,Yes,BPC data already used - approval not required,BPC data already used - approval not required,BPC data already used - approval not required,,"The policy is to onboard all fields from the underlying tables.  Only the following fields actually required though: 
+KURST,
+FCURR,
+TCURR,
+GDATU,
+UKURS",,,
+"FS_063, FS_065",Consoldiated Financials,BPC,"""All in one Query"" Table for SFX
+Actuals YTD Rates","May Yi (All in one)
+Srini (Actuals YTD Rates)",Structured,SAPABAP1,"""/BA1/TF4_FXCVFCT""",tba (Dileep),Not Prioritized,,No,N/A,Global,"9 columns, 484 rows",,,N/A,"Ingestion into Staging layer: bring through all rows and columns
+
+Between Staging and Pre-processing layer:
+RATETYPE='GBR0'",Data that falls into the prior month e.g. FinPeriod = prior month,Start of business SGT on day of feed,Monthly on the first business day of each month,Current year and prior year (pre-processing layer),Analysis including prior year,,,,,Internal,No,Yes,BPC data already used - approval not required,BPC data already used - approval not required,BPC data already used - approval not required,,"The policy is to onboard all fields from the underlying tables.  Only the following fields actually required though: 
+FROM_CCY ,
+TO_CCY ,
+VALID_FROM_DATE,
+FROM_FACT,
+TO_FACT,
+DERIVED_RATETYPE,
+MDCODE,
+RATETYPE,",,,
+FS_062,Consoldiated Financials,BPC,"""Consolidated SOCIE"" table for SoCIE Actuals ( 7 entity view) ",May Yi,Structured,,/ZFIGW_REMHIER_SRV/FactsOfZBWINTERFACE_ZH_GLACCT,Required for account mapping,Not Prioritized,,No,N/A,Global,70MB; 40k rows,,,N/A,No filter,As at COB on last business day of previous month,Start of business SGT on day of feed,"Feeds to happen in Apr, Jul, Oct, Jan to reflect data as at the end of the previous month.  There will be 5 feeds during the months (unless there’s an overlap between last business day and 20th or 18th business day in which case there will be fewer feeds)",Current year and prior year,tba,,,,,Internal,No,Yes - GFR’s approval to access the BPC legal views received,BPC data already used - approval not required,BPC data already used - approval not required,BPC data already used - approval not required,,,,,
+FS_062,Consoldiated Financials,BPC,"""Consolidated SOCIE"" table for SoCIE Actuals ( 7 entity view) ",May Yi,Structured,,/ZFIGW_HANAOBJT_MDV1_SRV/FactsOfZBWINTERFACE_ZMD_GL_ACCT,Required for account mapping,Not Prioritized,,No,N/A,Global,40MB; 20k rows,,,N/A,No filter,As at COB on last business day of previous month,Start of business SGT on day of feed,"Feeds to happen in Apr, Jul, Oct, Jan to reflect data as at the end of the previous month.  There will be 5 feeds during the months (unless there’s an overlap between last business day and 20th or 18th business day in which case there will be fewer feeds)",Current year and prior year,tba,,,,,Internal,No,Yes - GFR’s approval to access the BPC legal views received,BPC data already used - approval not required,BPC data already used - approval not required,BPC data already used - approval not required,,,,,
+"FS_063, FS_065",Consoldiated Financials,BPC,"""All in one Query"" Table for SFX
+Actuals YTD Rates","May Yi (All in one)
+Srini (Actuals YTD Rates)",Structured,SAPABAP1,/BIC/FRATE,tba (Dileep),Not Prioritized,,No,N/A,Global,Small,,,N/A,"Ingestion into Staging layer: bring through all rows and columns
+
+Between Staging and Pre-processing layer:
+_ERP_CATEGORY ='ACT_GRP_F'  AND ZRTC_AMO != 0","Monthly (All In One Query): Data that falls into the prior month e.g. FinPeriod = prior month
+Daily (Actuals YTD Rates): Data that falls into the prior business day e.g. FinDay = prior day",Monthly and Daily: Start of business SGT on day of feed,"Monthly (All In One Query): Monthly on the first business day of each month
+Daily (Actuals YTD Rates): Every business day",Current year and prior year (pre-processing layer),Analysis including prior year,,,,,Internal,No,Yes,BPC data already used - approval not required,BPC data already used - approval not required,BPC data already used - approval not required,,"The policy is to onboard all fields from the underlying tables.  Only the following fields actually required though: 
+""ZRACCOUNT"",
+""0FISCPER"",
+""_ERP_RTCCURR"",",,,
+"FS_063, FS_065",Consoldiated Financials,BPC,"""All in one Query"" Table for SFX
+Actuals YTD Rates","May Yi (All in one)
+Srini (Actuals YTD Rates)",Structured,SAPABAP1,/BIC/DRATEP,tba (Dileep),Not Prioritized,,No,N/A,Global,Small,,,N/A,"Ingestion into Staging layer: bring through all rows and columns
+
+Between Staging and Pre-processing layer:
+_ERP_CATEGORY ='ACT_GRP_F'  AND ZRTC_AMO != 0","Monthly (All In One Query): Data that falls into the prior month e.g. FinPeriod = prior month
+Daily (Actuals YTD Rates): Data that falls into the prior business day e.g. FinDay = prior day",Monthly and Daily: Start of business SGT on day of feed,"Monthly (All In One Query): Monthly on the first business day of each month
+Daily (Actuals YTD Rates): Every business day",Current year and prior year (pre-processing layer),Analysis including prior year,,,,,Internal,No,Yes,BPC data already used - approval not required,BPC data already used - approval not required,BPC data already used - approval not required,,"The policy is to onboard all fields from the underlying tables.  Only the following fields actually required though: 
+""ZRACCOUNT"",
+""0FISCPER"",
+""_ERP_RTCCURR"",",,,
+"FS_063, FS_065",Consoldiated Financials,BPC,"""All in one Query"" Table for SFX
+Actuals YTD Rates","May Yi (All in one)
+Srini (Actuals YTD Rates)",Structured,SAPABAP1,/B631/SCATEGORY,tba (Dileep),Not Prioritized,,No,N/A,Global,Small,,,N/A,"Ingestion into Staging layer: bring through all rows and columns
+
+Between Staging and Pre-processing layer:
+_ERP_CATEGORY ='ACT_GRP_F'  AND ZRTC_AMO != 0","Monthly (All In One Query): Data that falls into the prior month e.g. FinPeriod = prior month
+Daily (Actuals YTD Rates): Data that falls into the prior business day e.g. FinDay = prior day",Monthly and Daily: Start of business SGT on day of feed,"Monthly (All In One Query): Monthly on the first business day of each month
+Daily (Actuals YTD Rates): Every business day",Current year and prior year (pre-processing layer),Analysis including prior year,,,,,Internal,No,Yes,BPC data already used - approval not required,BPC data already used - approval not required,BPC data already used - approval not required,,"The policy is to onboard all fields from the underlying tables.  Only the following fields actually required though: 
+""ZRACCOUNT"",
+""0FISCPER"",
+""_ERP_RTCCURR"",",,,
+"FS_063, FS_065",Consoldiated Financials,BPC,"""All in one Query"" Table for SFX
+Actuals YTD Rates","May Yi (All in one)
+Srini (Actuals YTD Rates)",Structured,SAPABAP1,/B631/SRTCCURR,tba (Dileep),Not Prioritized,,No,N/A,Global,Small,,,N/A,"Ingestion into Staging layer: bring through all rows and columns
+
+Between Staging and Pre-processing layer:
+_ERP_CATEGORY ='ACT_GRP_F'  AND ZRTC_AMO != 0","Monthly (All In One Query): Data that falls into the prior month e.g. FinPeriod = prior month
+Daily (Actuals YTD Rates): Data that falls into the prior business day e.g. FinDay = prior day",Monthly and Daily: Start of business SGT on day of feed,"Monthly (All In One Query): Monthly on the first business day of each month
+Daily (Actuals YTD Rates): Every business day",Current year and prior year (pre-processing layer),Analysis including prior year,,,,,Internal,No,Yes,BPC data already used - approval not required,BPC data already used - approval not required,BPC data already used - approval not required,,"The policy is to onboard all fields from the underlying tables.  Only the following fields actually required though: 
+""ZRACCOUNT"",
+""0FISCPER"",
+""_ERP_RTCCURR"",",,,
+"FS_063, FS_065",Consoldiated Financials,BPC,"""All in one Query"" Table for SFX
+Actuals YTD Rates","May Yi (All in one)
+Srini (Actuals YTD Rates)",Structured,SAPABAP1,/BI0/SAMODE,tba (Dileep),Not Prioritized,,No,N/A,Global,Small,,,N/A,"Ingestion into Staging layer: bring through all rows and columns
+
+Between Staging and Pre-processing layer:
+_ERP_CATEGORY ='ACT_GRP_F'  AND ZRTC_AMO != 0","Monthly (All In One Query): Data that falls into the prior month e.g. FinPeriod = prior month
+Daily (Actuals YTD Rates): Data that falls into the prior business day e.g. FinDay = prior day",Monthly and Daily: Start of business SGT on day of feed,"Monthly (All In One Query): Monthly on the first business day of each month
+Daily (Actuals YTD Rates): Every business day",Current year and prior year (pre-processing layer),Analysis including prior year,,,,,Internal,No,Yes,BPC data already used - approval not required,BPC data already used - approval not required,BPC data already used - approval not required,,"The policy is to onboard all fields from the underlying tables.  Only the following fields actually required though: 
+""ZRACCOUNT"",
+""0FISCPER"",
+""_ERP_RTCCURR"",",,,
+"FS_063, FS_065",Consoldiated Financials,BPC,"""All in one Query"" Table for SFX
+Actuals YTD Rates","May Yi (All in one)
+Srini (Actuals YTD Rates)",Structured,SAPABAP1,/BI0/SASOURCE,tba (Dileep),Not Prioritized,,No,N/A,Global,Small,,,N/A,"Ingestion into Staging layer: bring through all rows and columns
+
+Between Staging and Pre-processing layer:
+_ERP_CATEGORY ='ACT_GRP_F'  AND ZRTC_AMO != 0","Monthly (All In One Query): Data that falls into the prior month e.g. FinPeriod = prior month
+Daily (Actuals YTD Rates): Data that falls into the prior business day e.g. FinDay = prior day",Monthly and Daily: Start of business SGT on day of feed,"Monthly (All In One Query): Monthly on the first business day of each month
+Daily (Actuals YTD Rates): Every business day",Current year and prior year (pre-processing layer),Analysis including prior year,,,,,Internal,No,Yes,BPC data already used - approval not required,BPC data already used - approval not required,BPC data already used - approval not required,,"The policy is to onboard all fields from the underlying tables.  Only the following fields actually required though: 
+""ZRACCOUNT"",
+""0FISCPER"",
+""_ERP_RTCCURR"",",,,
+"FS_063, FS_065",Consoldiated Financials,BPC,"""All in one Query"" Table for SFX
+Actuals YTD Rates","May Yi (All in one)
+Srini (Actuals YTD Rates)",Structured,SAPABAP1,/BI0/SATIMSTMP,tba (Dileep),Not Prioritized,,No,N/A,Global,Small,,,N/A,"Ingestion into Staging layer: bring through all rows and columns
+
+Between Staging and Pre-processing layer:
+_ERP_CATEGORY ='ACT_GRP_F'  AND ZRTC_AMO != 0","Monthly (All In One Query): Data that falls into the prior month e.g. FinPeriod = prior month
+Daily (Actuals YTD Rates): Data that falls into the prior business day e.g. FinDay = prior day",Monthly and Daily: Start of business SGT on day of feed,"Monthly (All In One Query): Monthly on the first business day of each month
+Daily (Actuals YTD Rates): Every business day",Current year and prior year (pre-processing layer),Analysis including prior year,,,,,Internal,No,Yes,BPC data already used - approval not required,BPC data already used - approval not required,BPC data already used - approval not required,,"The policy is to onboard all fields from the underlying tables.  Only the following fields actually required though: 
+""ZRACCOUNT"",
+""0FISCPER"",
+""_ERP_RTCCURR"",",,,
+"FS_063, FS_065",Consoldiated Financials,BPC,"""All in one Query"" Table for SFX
+Actuals YTD Rates","May Yi (All in one)
+Srini (Actuals YTD Rates)",Structured,SAPABAP1,/BI0/SAUSER,tba (Dileep),Not Prioritized,,No,N/A,Global,Small,,,N/A,"Ingestion into Staging layer: bring through all rows and columns
+
+Between Staging and Pre-processing layer:
+_ERP_CATEGORY ='ACT_GRP_F'  AND ZRTC_AMO != 0","Monthly (All In One Query): Data that falls into the prior month e.g. FinPeriod = prior month
+Daily (Actuals YTD Rates): Data that falls into the prior business day e.g. FinDay = prior day",Monthly and Daily: Start of business SGT on day of feed,"Monthly (All In One Query): Monthly on the first business day of each month
+Daily (Actuals YTD Rates): Every business day",Current year and prior year (pre-processing layer),Analysis including prior year,,,,,Internal,No,Yes,BPC data already used - approval not required,BPC data already used - approval not required,BPC data already used - approval not required,,"The policy is to onboard all fields from the underlying tables.  Only the following fields actually required though: 
+""ZRACCOUNT"",
+""0FISCPER"",
+""_ERP_RTCCURR"",",,,
+"FS_063, FS_065",Consoldiated Financials,BPC,"""All in one Query"" Table for SFX
+Actuals YTD Rates","May Yi (All in one)
+Srini (Actuals YTD Rates)",Structured,SAPABAP1,/BI0/SFISCPER,tba (Dileep),Not Prioritized,,No,N/A,Global,Small,,,N/A,"Ingestion into Staging layer: bring through all rows and columns
+
+Between Staging and Pre-processing layer:
+_ERP_CATEGORY ='ACT_GRP_F'  AND ZRTC_AMO != 0","Monthly (All In One Query): Data that falls into the prior month e.g. FinPeriod = prior month
+Daily (Actuals YTD Rates): Data that falls into the prior business day e.g. FinDay = prior day",Monthly and Daily: Start of business SGT on day of feed,"Monthly (All In One Query): Monthly on the first business day of each month
+Daily (Actuals YTD Rates): Every business day",Current year and prior year (pre-processing layer),Analysis including prior year,,,,,Internal,No,Yes,BPC data already used - approval not required,BPC data already used - approval not required,BPC data already used - approval not required,,"The policy is to onboard all fields from the underlying tables.  Only the following fields actually required though: 
+""ZRACCOUNT"",
+""0FISCPER"",
+""_ERP_RTCCURR"",",,,
+"FS_063, FS_065",Consoldiated Financials,BPC,"""All in one Query"" Table for SFX
+Actuals YTD Rates","May Yi (All in one)
+Srini (Actuals YTD Rates)",Structured,SAPABAP1,/BI0/SFISCVARNT,tba (Dileep),Not Prioritized,,No,N/A,Global,Small,,,N/A,"Ingestion into Staging layer: bring through all rows and columns
+
+Between Staging and Pre-processing layer:
+_ERP_CATEGORY ='ACT_GRP_F'  AND ZRTC_AMO != 0","Monthly (All In One Query): Data that falls into the prior month e.g. FinPeriod = prior month
+Daily (Actuals YTD Rates): Data that falls into the prior business day e.g. FinDay = prior day",Monthly and Daily: Start of business SGT on day of feed,"Monthly (All In One Query): Monthly on the first business day of each month
+Daily (Actuals YTD Rates): Every business day",Current year and prior year (pre-processing layer),Analysis including prior year,,,,,Internal,No,Yes,BPC data already used - approval not required,BPC data already used - approval not required,BPC data already used - approval not required,,"The policy is to onboard all fields from the underlying tables.  Only the following fields actually required though: 
+""ZRACCOUNT"",
+""0FISCPER"",
+""_ERP_RTCCURR"",",,,
+"FS_063, FS_065",Consoldiated Financials,BPC,"""All in one Query"" Table for SFX
+Actuals YTD Rates","May Yi (All in one)
+Srini (Actuals YTD Rates)",Structured,SAPABAP1,/BIC/SZRACCOUNT,tba (Dileep),Not Prioritized,,No,N/A,Global,Small,,,N/A,"Ingestion into Staging layer: bring through all rows and columns
+
+Between Staging and Pre-processing layer:
+_ERP_CATEGORY ='ACT_GRP_F'  AND ZRTC_AMO != 0","Monthly (All In One Query): Data that falls into the prior month e.g. FinPeriod = prior month
+Daily (Actuals YTD Rates): Data that falls into the prior business day e.g. FinDay = prior day",Monthly and Daily: Start of business SGT on day of feed,"Monthly (All In One Query): Monthly on the first business day of each month
+Daily (Actuals YTD Rates): Every business day",Current year and prior year (pre-processing layer),Analysis including prior year,,,,,Internal,No,Yes,BPC data already used - approval not required,BPC data already used - approval not required,BPC data already used - approval not required,,"The policy is to onboard all fields from the underlying tables.  Only the following fields actually required though: 
+""ZRACCOUNT"",
+""0FISCPER"",
+""_ERP_RTCCURR"",",,,
+"FS_063, FS_065",Consoldiated Financials,BPC,"""All in one Query"" Table for SFX
+Actuals YTD Rates","May Yi (All in one)
+Srini (Actuals YTD Rates)",Structured,SAPABAP1,/BIC/SZRENTITY,tba (Dileep),Not Prioritized,,No,N/A,Global,Small,,,N/A,"Ingestion into Staging layer: bring through all rows and columns
+
+Between Staging and Pre-processing layer:
+_ERP_CATEGORY ='ACT_GRP_F'  AND ZRTC_AMO != 0","Monthly (All In One Query): Data that falls into the prior month e.g. FinPeriod = prior month
+Daily (Actuals YTD Rates): Data that falls into the prior business day e.g. FinDay = prior day",Monthly and Daily: Start of business SGT on day of feed,"Monthly (All In One Query): Monthly on the first business day of each month
+Daily (Actuals YTD Rates): Every business day",Current year and prior year (pre-processing layer),Analysis including prior year,,,,,Internal,No,Yes,BPC data already used - approval not required,BPC data already used - approval not required,BPC data already used - approval not required,,"The policy is to onboard all fields from the underlying tables.  Only the following fields actually required though: 
+""ZRACCOUNT"",
+""0FISCPER"",
+""_ERP_RTCCURR"",",,,
+"FS_063, FS_065",Consoldiated Financials,BPC,"""All in one Query"" Table for SFX
+Actuals YTD Rates","May Yi (All in one)
+Srini (Actuals YTD Rates)",Structured,SAPABAP1,/B631/TRTCCURR,tba (Dileep),Not Prioritized,,No,N/A,Global,Small,,,N/A,"Ingestion into Staging layer: bring through all rows and columns
+
+Between Staging and Pre-processing layer:
+_ERP_CATEGORY ='ACT_GRP_F'  AND ZRTC_AMO != 0","Monthly (All In One Query): Data that falls into the prior month e.g. FinPeriod = prior month
+Daily (Actuals YTD Rates): Data that falls into the prior business day e.g. FinDay = prior day",Monthly and Daily: Start of business SGT on day of feed,"Monthly (All In One Query): Monthly on the first business day of each month
+Daily (Actuals YTD Rates): Every business day",Current year and prior year (pre-processing layer),Analysis including prior year,,,,,Internal,No,Yes,BPC data already used - approval not required,BPC data already used - approval not required,BPC data already used - approval not required,,"The policy is to onboard all fields from the underlying tables.  Only the following fields actually required though: 
+""ZRACCOUNT"",
+""0FISCPER"",
+""_ERP_RTCCURR"",",,,
+"FS_063, FS_065",Consoldiated Financials,BPC,"""All in one Query"" Table for SFX
+Actuals YTD Rates","May Yi (All in one)
+Srini (Actuals YTD Rates)",Structured,SAPABAP1,/BIC/TZRACCOUNT,tba (Dileep),Not Prioritized,,No,N/A,Global,Small,,,N/A,"Ingestion into Staging layer: bring through all rows and columns
+
+Between Staging and Pre-processing layer:
+_ERP_CATEGORY ='ACT_GRP_F'  AND ZRTC_AMO != 0","Monthly (All In One Query): Data that falls into the prior month e.g. FinPeriod = prior month
+Daily (Actuals YTD Rates): Data that falls into the prior business day e.g. FinDay = prior day",Monthly and Daily: Start of business SGT on day of feed,"Monthly (All In One Query): Monthly on the first business day of each month
+Daily (Actuals YTD Rates): Every business day",Current year and prior year (pre-processing layer),Analysis including prior year,,,,,Internal,No,Yes,BPC data already used - approval not required,BPC data already used - approval not required,BPC data already used - approval not required,,"The policy is to onboard all fields from the underlying tables.  Only the following fields actually required though: 
+""ZRACCOUNT"",
+""0FISCPER"",
+""_ERP_RTCCURR"",",,,
+"FS_063, FS_065",Consoldiated Financials,BPC,"""All in one Query"" Table for SFX
+Actuals YTD Rates","May Yi (All in one)
+Srini (Actuals YTD Rates)",Structured,SAPABAP1,/BIC/TZRENTITY,tba (Dileep),Not Prioritized,,No,N/A,Global,Small,,,N/A,"Ingestion into Staging layer: bring through all rows and columns
+
+Between Staging and Pre-processing layer:
+_ERP_CATEGORY ='ACT_GRP_F'  AND ZRTC_AMO != 0","Monthly (All In One Query): Data that falls into the prior month e.g. FinPeriod = prior month
+Daily (Actuals YTD Rates): Data that falls into the prior business day e.g. FinDay = prior day",Monthly and Daily: Start of business SGT on day of feed,"Monthly (All In One Query): Monthly on the first business day of each month
+Daily (Actuals YTD Rates): Every business day",Current year and prior year (pre-processing layer),Analysis including prior year,,,,,Internal,No,Yes,BPC data already used - approval not required,BPC data already used - approval not required,BPC data already used - approval not required,,"The policy is to onboard all fields from the underlying tables.  Only the following fields actually required though: 
+""ZRACCOUNT"",
+""0FISCPER"",
+""_ERP_RTCCURR"",",,,
+FS_107,Lending,RLS (via FDP),"Client Analytics:- To source the Secured, unsecured loan  details.Retail loan  Non Accounting",Selva,Structured,fdp_df_daas_preprod,rls_financial_contract_XX,Non-FM trade information with Dimension & measure,Prioritized,31-May-26,No,NA,Country,,Full Load,Remote Table,90 Days ,,T+1,T+1 5:30 PM IST,Daily,90 Days,,,,,,,,,,,,,,,,
+FS_133,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+FS_107,Lending,RLS (via FDP),"Client Analytics::- To source the Secured, unsecured loan  details.Retail loan  Non Accounting",Selva,Structured,fdp_df_daas_preprod,rls_cm500a_mast_sri_XX,Non-FM trade information with Dimension & measure,Prioritized,31-May-26,No,NA,Country,,Full Load,Remote Table,90 Days ,,T+1,T+1 5:30 PM IST,Daily,90 Days,,,,,,,,,,,,,,,,
+FS_107,Lending,RLS (via FDP),"Client Analytics::- To source the Secured, unsecured loan  details.Retail loan  Non Accounting",Selva,Structured,fdp_df_daas_preprod,rls_bp_fc_assignment_xx,Non-FM trade information with Dimension & measure,Prioritized,31-May-26,No,NA,Country,,Full Load,Remote Table,90 Days ,,T+1,T+1 5:30 PM IST,Daily,90 Days,,,,,,,,,,,,,,,,
+FS_133,Lending,RLS (via FPSL),"Client Analytics::- To source the Secured, unsecured loan  details.Retail loan  Accounting & trade",Selva,Structured,,/BA1/HFSPD,Non-FM Accounting  information with Fact & Measure,Prioritized,30-Apr-26,No,NA,Global,,Full Load,Remote Table,90 Days ,TBD,T+1,T+1 5:30 PM IST,Daily,90 Days,,,,,,,,,,,,,,,,
+FS_128,FM,GPTM(FPSL),Client Analytics::- To source the FM trade level data for client analytics reporting requirement,Selva,Structured,,/BA1/HFSPD,FM trade information with Dimension & measure,Prioritized,28-Feb-26,No,NA,Global,,Full Load,Remote Table,90 Days ,TBD,T+1,T+1 5:30 PM IST,Daily,90 Days,,,,,,,,,,,,,,,,
+FS_129,FM,GPTM(FDP),Client Analytics::- To source the FM trade level data for client analytics reporting requirement,Selva,Structured,,fdp_fsdp_sri_open_uat.fsdp_financial_contract,FM fiancial contract information with Dimension & measure,Prioritized,31-May-26,No,NA,Global,,Full Load,Remote Table,90 Days ,TBD,T+1,T+1 5:30 PM IST,Daily,90 Days,,,,,,,,,,,,,,,,
+FS_129,FM,GPTM(FDP),Client Analytics::- To source the FM trade level data for client analytics reporting requirement,Selva,Structured,,fdp_fsdp_sri_open_uat.fsdp_financial_instrument,FM fiancial instrument information with Dimension & measure,Prioritized,31-May-26,No,NA,Global,,Full Load,Remote Table,90 Days ,TBD,T+1,T+1 5:30 PM IST,Daily,90 Days,,,,,,,,,,,,,,,,
+FS_130,Lending ,LOANIQ(via FPSL),Client Analytics::- To source the Lending Trade level data for client analytics reporting.,Selva,Structured,,/BA1/HFSPD,FM trade information with Dimension & measure,Prioritized,28-Feb-26,No,NA,Global,,Full Load,Remote Table,90 Days ,TBD,T+1,T+1 5:30 PM IST,Daily,90 Days,,,,,,,,,,,,,,,,
+FS_131,Lending ,FSDP (LoanIQ),Lending Non Accounting ,Selva,Structured,,fdp_df_daas_preprod.lniq_bp_fc_assignment_xx ,Non FM fiancial  Contract & instrument information with Dimension & measure,Prioritized,31-May-26,No,NA,Global,,Full Load,Remote Table,90 Days ,TBD,T+1,T+1 5:30 PM IST,Daily,90 Days,,,,,,,,,,,,,,,,
+FS_131,Lending ,FSDP (LoanIQ),Lending Non Accounting ,Selva,Structured,,fdp_df_daas_preprod.lniq_bp_xx ,Non FM fiancial  Contract & instrument information with Dimension & measure,Prioritized,31-May-26,No,NA,Global,,Full Load,Remote Table,90 Days ,TBD,T+1,T+1 5:30 PM IST,Daily,90 Days,,,,,,,,,,,,,,,,
+FS_131,Lending ,FSDP (LoanIQ),Lending Non Accounting ,Selva,Structured,,fdp_df_daas_preprod.lniq_dll_con_flat ,Non FM fiancial  Contract & instrument information with Dimension & measure,Prioritized,31-May-26,No,NA,Global,,Full Load,Remote Table,90 Days ,TBD,T+1,T+1 5:30 PM IST,Daily,90 Days,,,,,,,,,,,,,,,,
+FS_131,Lending ,FSDP (LoanIQ),Lending Non Accounting ,Selva,Structured,,fdp_df_daas_preprod.lniq_ds_fc_extract_facilities_xx _xx ,Non FM fiancial  Contract & instrument information with Dimension & measure,Prioritized,31-May-26,No,NA,Global,,Full Load,Remote Table,90 Days ,TBD,T+1,T+1 5:30 PM IST,Daily,90 Days,,,,,,,,,,,,,,,,
+FS_131,Lending ,FSDP (LoanIQ),Lending Non Accounting ,Selva,Structured,,fdp_df_daas_preprod.lniq_ds_fc_extract_loans_xx ,Non FM fiancial  Contract & instrument information with Dimension & measure,Prioritized,31-May-26,No,NA,Global,,Full Load,Remote Table,90 Days ,TBD,T+1,T+1 5:30 PM IST,Daily,90 Days,,,,,,,,,,,,,,,,
+FS_131,Lending ,FSDP (LoanIQ),Lending Non Accounting ,Selva,Structured,,fdp_df_daas_preprod.lniq_ds_fc_extract_fees_xx,Non FM fiancial  Contract & instrument information with Dimension & measure,Prioritized,31-May-26,No,NA,Global,,Full Load,Remote Table,90 Days ,TBD,T+1,T+1 5:30 PM IST,Daily,90 Days,,,,,,,,,,,,,,,,
+FS_131,Lending ,FSDP (LoanIQ),Lending Non Accounting ,Selva,Structured,,fdp_df_daas_preprod.lniq_financial_contract_xx ,Non FM fiancial  Contract & instrument information with Dimension & measure,Prioritized,31-May-26,No,NA,Global,,Full Load,Remote Table,90 Days ,TBD,T+1,T+1 5:30 PM IST,Daily,90 Days,,,,,,,,,,,,,,,,
+FS_131,Lending ,FSDP (LoanIQ),Lending Non Accounting ,Selva,Structured,,fdp_df_daas_preprod.lniq_interest_xx ,Non FM fiancial  Contract & instrument information with Dimension & measure,Prioritized,31-May-26,No,NA,Global,,Full Load,Remote Table,90 Days ,TBD,T+1,T+1 5:30 PM IST,Daily,90 Days,,,,,,,,,,,,,,,,
+FS_101,Core Banking Channels,LOS (via FPSL),Trade Level,Selva,Structured,,/BA1/HFSPD,Non-FM Accounting  information with Fact & Measure,Prioritized,30-Apr-26,No,NA,Global,,Full Load,Remote Table,90 Days ,TBD,T+1,T+1 5:30 PM IST,Daily,90 Days,,,,,,,,,,,,,,,,
+FS_126,Core Banking Channels,LOS (via FDP),Lending Non Accounting ,Selva,Structured,,fdp_df_daas_preprod.los_bp_fc_assignment_xx ,Non FM fiancial  Contract & instrument information with Dimension & measure,Prioritized,30-Apr-26,No,NA,Global,,Full Load,Remote Table,90 Days ,TBD,T+1,T+1 5:30 PM IST,Daily,90 Days,,,,,,,,,,,,,,,,
+FS_126,Core Banking Channels,LOS (via FDP),Lending Non Accounting ,Selva,Structured,,fdp_df_daas_preprod.los_bp_xx ,Non FM fiancial  Contract & instrument information with Dimension & measure,Prioritized,30-Apr-26,No,NA,Global,,Full Load,Remote Table,90 Days ,TBD,T+1,T+1 5:30 PM IST,Daily,90 Days,,,,,,,,,,,,,,,,
+FS_126,Core Banking Channels,LOS (via FDP),Lending Non Accounting ,Selva,Structured,,fdp_df_daas_preprod.los_dll_con_flat_XX ,Non FM fiancial  Contract & instrument information with Dimension & measure,Prioritized,30-Apr-26,No,NA,Country,,Full Load,Remote Table,90 Days ,TBD,T+1,T+1 5:30 PM IST,Daily,90 Days,,,,,,,,,,,,,,,,
+FS_126,Core Banking Channels,LOS (via FDP),Lending Non Accounting ,Selva,Structured,,fdp_df_daas_preprod.los_financial_contract_XX ,Non FM fiancial  Contract & instrument information with Dimension & measure,Prioritized,30-Apr-26,No,NA,Country,,Full Load,Remote Table,90 Days ,TBD,T+1,T+1 5:30 PM IST,Daily,90 Days,,,,,,,,,,,,,,,,
+FS_126,Core Banking Channels,LOS (via FDP),Lending Non Accounting ,Selva,Structured,,fdp_df_daas_preprod.los_interest_XX ,Non FM fiancial  Contract & instrument information with Dimension & measure,Prioritized,30-Apr-26,No,NA,Country,,Full Load,Remote Table,90 Days ,TBD,T+1,T+1 5:30 PM IST,Daily,90 Days,,,,,,,,,,,,,,,,
+FS_135,FM,FPSL (FM),Client Analytics::- To source the FM trade level data for client analytics reporting requirement,Selva,Structured,,/BA1/HFSPD,FM trade information with Dimension & measure,Prioritized,28-Feb-26,No,NA,Global,,Full Load,Remote Table,90 Days ,TBD,T+1,T+1 1:00 PM IST,Daily,90 Days,,,,,,,,,,,,,,,,
+FS_136,FM,FSDP (Razor),FM Non Accounting ,Selva,Structured,,STG_FSDP.STG_BusinessPartnerTradeAssignment,FM trade information with Dimension & measure,Prioritized,31-May-26,No,NA,Global,,Full Load,Remote Table,90 Days ,TBD,T+1,T+1 1:00 PM IST,Daily,90 Days,,,,,,,,,,,,,,,,
+FS_136,FM,FSDP (Razor),FM Non Accounting ,Selva,Structured,,STG_FSDP.STG_Trade,FM trade information with Dimension & measure,Prioritized,31-May-26,No,NA,Global,,Full Load,Remote Table,90 Days ,TBD,T+1,T+1 1:00 PM IST,Daily,90 Days,,,,,,,,,,,,,,,,
+FS_136,FM,FSDP (Razor),FM Non Accounting ,Selva,Structured,,STG_FSDP.STG_C_GenericTradeExtensions,FM trade information with Dimension & measure,Prioritized,31-May-26,No,NA,Global,,Full Load,Remote Table,90 Days ,TBD,T+1,T+1 1:00 PM IST,Daily,90 Days,,,,,,,,,,,,,,,,
+FS_134,Core banking,TDMS (via FPSL),Core Banking Deposits Accounting,Selva,Structured,,/BA1/HFSPD,Non-FM Accounting  information with Fact & Measure,Prioritized,30-Apr-26,No,NA,Country,,Full Load,Remote Table,90 Days ,TBD,T+1,T+1 1:00 PM IST,Daily,90 Days,,,,,,,,,,,,,,,,
+FS_108,Core banking,TDMS (via FDP),Core Banking Deposits Non Accounting,Selva,Structured,,fdp_df_daas_preprod.tdm_bp_fc_assignment_xx,Non FM fiancial  Contract & instrument information with Dimension & measure,Prioritized,30-Jun-26,No,NA,Country,,Full Load,Remote Table,90 Days ,TBD,T+2,T+2 8:00 AM IST,Daily,90 Days,,,,,,,,,,,,,,,,
+FS_108,Core banking,TDMS (via FDP),Core Banking Deposits Non Accounting,Selva,Structured,,fdp_df_daas_preprod.tdm_dll_con_flat_tw ,Non FM fiancial  Contract & instrument information with Dimension & measure,Prioritized,30-Jun-26,No,NA,Country,,Full Load,Remote Table,90 Days ,TBD,T+2,T+2 8:00 AM IST,Daily,90 Days,,,,,,,,,,,,,,,,
+FS_108,Core banking,TDMS (via FDP),Core Banking Deposits Non Accounting,Selva,Structured,,fdp_df_daas_preprod.tdm_dll_isd_tw ,Non FM fiancial  Contract & instrument information with Dimension & measure,Prioritized,30-Jun-26,No,NA,Country,,Full Load,Remote Table,90 Days ,TBD,T+2,T+2 8:00 AM IST,Daily,90 Days,,,,,,,,,,,,,,,,
+FS_108,Core banking,TDMS (via FDP),Core Banking Deposits Non Accounting,Selva,Structured,,fdp_df_daas_preprod.tdm_financial_contract_tw,Non FM fiancial  Contract & instrument information with Dimension & measure,Prioritized,30-Jun-26,No,NA,Country,,Full Load,Remote Table,90 Days ,TBD,T+2,T+2 8:00 AM IST,Daily,90 Days,,,,,,,,,,,,,,,,
+FS_132,Trade Finance,TXP (via FPSL),Trade Finance Accounting& Trade level ,Selva,Structured,,/BA1/HFSPD,Non-FM Accounting  information with Fact & Measure,Prioritized,30-Apr-26,No,NA,Global,,Full Load,Remote Table,90 Days ,TBD,T+1,T+1 1:00 PM IST,Daily,90 Days,,,,,,,,,,,,,,,,
+FS_110,Trade Finance,TXP (via FSDP),Trade Finance Non Accounting,Selva,Structured,,fdp_fsdp_sri_open_uat.fsdp_financial_contract,Non FM fiancial  Contract & instrument information with Dimension & measure,Prioritized,30-Jun-26,No,NA,Global,,Full Load,Remote Table,90 Days ,TBD,T+2,T+2 8:00 AM IST,Daily,90 Days,,,,,,,,,,,,,,,,
+FS_110,Trade Finance,TXP (via FSDP),Trade Finance Non Accounting,Selva,Structured,,STG_FSDP.STG_FinancialContract,Non FM fiancial  Contract & instrument information with Dimension & measure,Prioritized,30-Jun-26,No,NA,Global,,Full Load,Remote Table,90 Days ,TBD,T+1,T+1 1:00 PM IST,Daily,90 Days,,,,,,,,,,,,,,,,
+FS_110,Trade Finance,TXP (via FSDP),Trade Finance Non Accounting,Selva,Structured,,STG_FSDP.STG_BusinessPartnerContractAssignment,Non FM fiancial  Contract & instrument information with Dimension & measure,Prioritized,30-Jun-26,No,NA,Global,,Full Load,Remote Table,90 Days ,TBD,T+1,T+1 1:00 PM IST,Daily,90 Days,,,,,,,,,,,,,,,,
+FS_141,FM,FMRP(via FPSL),FM Account & Trade level data ,Selva,Structured,,/BA1/HFSPD,FM Accounting  information with Fact & Measure,Prioritized,30-Apr-26,No,NA,Global,,Full Load,Remote Table,90 Days ,TBD,T+1,T+1 1:00 PM IST,Daily,90 Days,,,,,,,,,,,,,,,,
+FS_142,FM,FMRP(via FSDP),FM Non Accounting ,Selva,Structured,,fdp_fsdp_sri_open_uat.fsdp_financial_contract_fmrp,FM fiancial  Contract & instrument information with Dimension & measure,Prioritized,30-Jun-26,No,NA,Global,,Full Load,Remote Table,90 Days ,TBD,T+2,T+2 8:00 AM IST,Daily,90 Days,,,,,,,,,,,,,,,,
+FS_142,FM,FMRP(via FSDP),FM Non Accounting ,Selva,Structured,,STG_FSDP.STG_FinancialContract,FM fiancial  Contract & instrument information with Dimension & measure,Prioritized,30-Jun-26,No,NA,Global,,Full Load,Remote Table,90 Days ,TBD,T+1,T+1 1:00 PM IST,Daily,90 Days,,,,,,,,,,,,,,,,
+FS_142,FM,FMRP(via FSDP),FM Non Accounting ,Selva,Structured,,STG_FSDP.STG_BusinessPartnerContractAssignment,FM fiancial  Contract & instrument information with Dimension & measure,Prioritized,30-Jun-26,No,NA,Global,,Full Load,Remote Table,90 Days ,TBD,T+1,T+1 1:00 PM IST,Daily,90 Days,,,,,,,,,,,,,,,,
+FS_139,Cards,M2P CC(via FPSL),Non FM Account & Trade level data ,Selva,Structured,,/BA1/HFSPD,Non-FM Accounting  information with Fact & Measure,Prioritized,30-Apr-26,No,NA,Global,,Full Load,Remote Table,90 Days ,TBD,T+1,T+1 1:00 PM IST,Daily,90 Days,,,,,,,,,,,,,,,,
+FS_140,Cards,M2P CC(via FSDP),Non Accounting ,Selva,Structured,,fdp_fsdp_sri_open_uat.fsdp_financial_contract,Non FM fiancial  Contract & instrument information with Dimension & measure,Prioritized,30-Jun-26,No,NA,Global,,Full Load,Remote Table,90 Days ,TBD,T+2,T+2 8:00 AM IST,Daily,90 Days,,,,,,,,,,,,,,,,
+FS_140,Cards,M2P CC(via FSDP),Non Accounting ,Selva,Structured,,STG_FSDP.STG_FinancialContract,Non FM fiancial  Contract & instrument information with Dimension & measure,Prioritized,30-Jun-26,No,NA,Global,,Full Load,Remote Table,90 Days ,TBD,T+1,T+1 1:00 PM IST,Daily,90 Days,,,,,,,,,,,,,,,,
+FS_140,Cards,M2P CC(via FSDP),Non Accounting ,Selva,Structured,,STG_FSDP.STG_BusinessPartnerContractAssignment,Non FM fiancial  Contract & instrument information with Dimension & measure,Prioritized,30-Jun-26,No,NA,Global,,Full Load,Remote Table,90 Days ,TBD,T+1,T+1 1:00 PM IST,Daily,90 Days,,,,,,,,,,,,,,,,
+FS_137,FM,FPSL (FM),Client Analytics::- To source the FM trade level data for client analytics reporting requirement,Selva,Structured,,/BA1/HFSPD,FM trade information with Dimension & measure,Prioritized,28-Feb-26,No,NA,Global,,Full Load,Remote Table,90 Days ,TBD,T+1,T+1 1:00 PM IST,Daily,90 Days,,,,,,,,,,,,,,,,
+FS_138,FM,FSDP (Murex),FM Non Accounting ,Selva,Structured,,STG_FSDP.STG_BusinessPartnerTradeAssignment,FM trade information with Dimension & measure,Prioritized,31-May-26,No,NA,Global,,Full Load,Remote Table,90 Days ,TBD,T+1,T+1 1:00 PM IST,Daily,90 Days,,,,,,,,,,,,,,,,
+FS_138,FM,FSDP (Razor),FM Non Accounting ,Selva,Structured,,STG_FSDP.STG_Trade,FM trade information with Dimension & measure,Prioritized,31-May-26,No,NA,Global,,Full Load,Remote Table,90 Days ,TBD,T+1,T+1 1:00 PM IST,Daily,90 Days,,,,,,,,,,,,,,,,
+FS_138,FM,FSDP (Razor),FM Non Accounting ,Selva,Structured,,STG_FSDP.STG_C_GenericTradeExtensions,FM trade information with Dimension & measure,Prioritized,31-May-26,No,NA,Global,,Full Load,Remote Table,90 Days ,TBD,T+1,T+1 1:00 PM IST,Daily,90 Days,,,,,,,,,,,,,,,,
+FS_127,Trade finance ,OTP(FPSL),Trade financd trade level data ,Selva,Structured,,/BA1/HFSPD,Non-FM Accounting  information with Fact & Measure,Prioritized,30-Apr-26,No,NA,Global,,Full Load,Remote Table,90 Days ,TBD,T+1,T+1 1:00 PM IST,Daily,90 Days,,,,,,,,,,,,,,,,
+FS_111,Trade Finance,OTP (via FDP),Trade Finance Non Accounting,Selva,Structured,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,

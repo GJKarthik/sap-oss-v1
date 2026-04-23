@@ -1,0 +1,233 @@
+\chapter{Gap Analysis}
+\label{ch:gap-analysis}
+
+This chapter identifies and documents gaps in the traceability chain,
+including missing links, incomplete coverage, and areas requiring
+further investigation or source document clarification.
+
+% =============================================================================
+\section{Identified Gaps}
+\label{sec:identified-gaps}
+
+\begin{gapbox}{G-001 -- Financial Analysis Section Not Quantified}
+\textbf{Gap ID:} G-001 \\
+\textbf{Layer:} Source Document \\
+\textbf{Location:} \srcref{TB-BC-001}, Section 5: Financial Analysis \\
+\textbf{Issue:} The Financial Analysis section is marked ``TBD'' in the
+source document, preventing derivation of ROI and cost-benefit requirements. \\
+\textbf{Impact:} Cannot derive financial acceptance criteria for the project. \\
+\textbf{Owner:} S1 Badrinath \\
+\textbf{Status:} Open --- awaiting business case update \\
+\textbf{Target Resolution:} 2026-Q2
+\end{gapbox}
+
+\begin{gapbox}{G-002 -- DOI Process Flow Images Not OCR-Processed}
+\textbf{Gap ID:} G-002 \\
+\textbf{Layer:} Extraction \\
+\textbf{Location:} \srcref{TB-DOI-001}, embedded EMF/PNG images \\
+\textbf{Issue:} Four process flow images are extracted as binary files but
+not yet processed through OCR to extract text annotations. \\
+\textbf{Impact:} Process step labels in images not captured in machine-readable
+format; potential missing requirements. \\
+\textbf{Owner:} Technical Lead \\
+\textbf{Status:} Planned for v1.1 \\
+\textbf{Target Resolution:} 2026-05-15
+\end{gapbox}
+
+% =============================================================================
+\section{Gap Register}
+\label{sec:gap-register}
+
+\begin{longtable}{@{}C{1.5cm}L{4cm}C{2cm}C{2cm}C{2cm}C{2cm}@{}}
+\caption{Gap Register}
+\label{tab:gap-register} \\
+\toprule
+\textbf{Gap ID} & \textbf{Description} & \textbf{Layer} & \textbf{Severity} & \textbf{Status} & \textbf{Owner} \\
+\midrule
+\endfirsthead
+\toprule
+\textbf{Gap ID} & \textbf{Description} & \textbf{Layer} & \textbf{Severity} & \textbf{Status} & \textbf{Owner} \\
+\midrule
+\endhead
+\gapref{G-001} & Financial Analysis TBD & Source & Medium & Open & S1 Badrinath \\
+\gapref{G-002} & DOI images not OCR'd & Extraction & Low & Planned & Tech Lead \\
+\bottomrule
+\end{longtable}
+
+% =============================================================================
+\section{Orphan Analysis}
+\label{sec:orphan-analysis}
+
+\subsection{Orphan Requirements}
+
+Requirements that exist but have no forward trace to specifications:
+
+\begin{table}[h]
+\centering
+\caption{Orphan Requirement Check}
+\label{tab:orphan-requirements}
+\begin{tabular}{@{}lcc@{}}
+\toprule
+\textbf{Requirement Category} & \textbf{Total} & \textbf{Orphans} \\
+\midrule
+Executive Summary (TB-REQ-ES*) & 4 & 0 \\
+Scope (TB-REQ-SC*) & 6 & 0 \\
+Process Steps (TB-REQ-PS*) & 8 & 0 \\
+AI Augmentation (TB-REQ-AI*) & 6 & 0 \\
+BSS Risk Assessment (BSS-REQ-*) & 3 & 0 \\
+\midrule
+\textbf{Total} & \textbf{27} & \textbf{0} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textcolor{sourcegreen}{\textbf{Result:}} No orphan requirements identified.
+
+\subsection{Orphan Specifications}
+
+Specifications that exist but have no backward trace to requirements:
+
+\begin{table}[h]
+\centering
+\caption{Orphan Specification Check}
+\label{tab:orphan-specifications}
+\begin{tabular}{@{}lcc@{}}
+\toprule
+\textbf{Specification Type} & \textbf{Total} & \textbf{Orphans} \\
+\midrule
+Process Steps (TB-STEP-*) & 8 & 0 \\
+Decision Points (DP-*) & 5 & 0 \\
+AI Capabilities (AI-*) & 6 & 0 \\
+Controls (TB-CTRL-*) & 3 & 0 \\
+\midrule
+\textbf{Total} & \textbf{22} & \textbf{0} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textcolor{sourcegreen}{\textbf{Result:}} No orphan specifications identified.
+
+\subsection{Orphan Schema Fields}
+
+Schema fields that exist but have no trace to specifications:
+
+\begin{table}[h]
+\centering
+\caption{Orphan Schema Field Check}
+\label{tab:orphan-schema-fields}
+\begin{tabular}{@{}L{5cm}C{2cm}L{6.5cm}@{}}
+\toprule
+\textbf{Field} & \textbf{Orphan?} & \textbf{Justification} \\
+\midrule
+\fieldref{audit\_id} & Yes* & System audit field (infrastructure requirement) \\
+\fieldref{version} & Yes* & Schema versioning field (infrastructure requirement) \\
+\fieldref{processed\_at} & Yes* & ETL timestamp (infrastructure requirement) \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+$^*$These fields are classified as \textbf{infrastructure fields} rather than
+business requirement fields. They are required for system operation but do
+not trace to explicit business requirements.
+
+% =============================================================================
+\section{Coverage Gap Analysis}
+\label{sec:coverage-gap-analysis}
+
+\subsection{Source Document Coverage}
+
+\begin{table}[h]
+\centering
+\caption{Source Document Section Coverage}
+\label{tab:source-section-coverage}
+\begin{tabular}{@{}L{4.5cm}C{2.5cm}L{6.5cm}@{}}
+\toprule
+\textbf{Source Section} & \textbf{Covered?} & \textbf{Notes} \\
+\midrule
+\srcref{TB-BC-001} Section 1 & \checkmark & All requirements extracted \\
+\srcref{TB-BC-001} Section 2 & \checkmark & Scope requirements extracted \\
+\srcref{TB-BC-001} Section 3 & \checkmark & Solution requirements extracted \\
+\srcref{TB-BC-001} Section 5 & \textcolor{gapred}{$\times$} & \gapref{G-001}: TBD in source \\
+\srcref{TB-BC-001} Section 6 & \checkmark & Risk requirements extracted \\
+\srcref{TB-BC-001} Section 7 & \checkmark & Implementation requirements extracted \\
+\srcref{TB-BC-002} All Sections & \checkmark & BSS requirements extracted \\
+\srcref{TB-DOI-001} Text & \checkmark & Fully extracted \\
+\srcref{TB-DOI-001} Images & \textcolor{sapamber}{$\sim$} & \gapref{G-002}: Images not OCR'd \\
+\srcref{TB-BPMN-001} All States & \checkmark & 27 states extracted \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Requirement Type Coverage}
+
+\begin{table}[h]
+\centering
+\caption{Requirement Type Coverage Analysis}
+\label{tab:requirement-type-coverage}
+\begin{tabular}{@{}L{4cm}ccc@{}}
+\toprule
+\textbf{Requirement Type} & \textbf{Expected} & \textbf{Documented} & \textbf{Gap} \\
+\midrule
+Functional Requirements & 20 & 20 & 0 \\
+Non-Functional Requirements & 5 & 5 & 0 \\
+Business Rules & 7 & 7 & 0 \\
+Data Requirements & 8 & 8 & 0 \\
+Financial/ROI Requirements & 2 & 0 & \textcolor{gapred}{2} \\
+\midrule
+\textbf{Total} & \textbf{42} & \textbf{40} & \textbf{2} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\paragraph{Gap Analysis:} Two financial/ROI requirements are missing due to
+\gapref{G-001}. These requirements should define:
+\begin{itemize}[noitemsep]
+  \item Target ROI threshold for project approval
+  \item Cost-benefit acceptance criteria for go-live decision
+\end{itemize}
+
+% =============================================================================
+\section{Gap Resolution Plan}
+\label{sec:gap-resolution}
+
+\begin{table}[h]
+\centering
+\caption{Gap Resolution Plan}
+\label{tab:gap-resolution-plan}
+\begin{tabularx}{\textwidth}{@{}C{1.5cm}L{4cm}L{4.5cm}C{2.5cm}@{}}
+\toprule
+\textbf{Gap ID} & \textbf{Resolution Action} & \textbf{Acceptance Criteria} & \textbf{Target Date} \\
+\midrule
+\gapref{G-001} & Business case author to complete Section 5 & Financial Analysis section populated with ROI calculations & 2026-Q2 \\
+\gapref{G-002} & Run OCR pipeline on DOI images & Text annotations extracted and added to machine-readable corpus & 2026-05-15 \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+% =============================================================================
+\section{Potential Future Gaps}
+\label{sec:future-gaps}
+
+The following areas may generate gaps as the project evolves:
+
+\begin{enumerate}
+  \item \textbf{S/4 HANA Migration:} As entities migrate from PSGL to S/4 HANA,
+        new extraction requirements may emerge
+  \item \textbf{ML Model Updates:} v2.0 ML-adaptive thresholds will require
+        new schema fields and specification updates
+  \item \textbf{Regulatory Changes:} New regulatory requirements may introduce
+        additional BSS risk categories
+  \item \textbf{Entity Expansion:} Addition of new legal entities beyond the
+        current 234 may require parameter configuration updates
+\end{enumerate}
+
+\begin{hitlbox}{H6 -- Gap Analysis Verification}
+The human reviewer must verify the following for checkpoint H6:
+\begin{enumerate}[noitemsep]
+  \item All identified gaps are accurately documented
+  \item Gap severity ratings are appropriate
+  \item Resolution plans are feasible and have assigned owners
+  \item No additional gaps exist that have not been documented
+  \item Orphan analysis is complete and accurate
+\end{enumerate}
+\end{hitlbox}

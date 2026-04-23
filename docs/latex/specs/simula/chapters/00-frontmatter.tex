@@ -1,0 +1,231 @@
+% =============================================================================
+% CHAPTER 0: FRONTMATTER
+% Executive Summary, Document Conventions, and Reading Guide
+% =============================================================================
+\chapter*{Frontmatter}
+\addcontentsline{toc}{chapter}{Frontmatter}
+
+% -----------------------------------------------------------------------------
+% EXECUTIVE SUMMARY
+% -----------------------------------------------------------------------------
+\section*{Executive Summary}
+\addcontentsline{toc}{section}{Executive Summary}
+
+This specification defines the \textbf{Simula Training Data Framework}—a comprehensive system for generating high-quality synthetic training data to enhance SAP AI agents' reasoning capabilities. The framework transforms production schemas and business logic into structured training examples suitable for supervised fine-tuning (SFT) and reinforcement learning (GRPO).
+
+\begin{tcolorbox}[colback=sapblue!10,colframe=sapblue,title=\faIcon{bullseye} Primary Objectives]
+\begin{enumerate}[leftmargin=*]
+    \item \textbf{Schema-Driven Generation}: Extract taxonomy from HANA Cloud schemas via MCP
+    \item \textbf{Multi-Turn Reasoning}: Generate progressive reasoning chains with verification
+    \item \textbf{Quality Assurance}: Implement double-critic filtering and diversity scoring
+    \item \textbf{SAP Integration}: Native compatibility with AI Core, BTP, and GRC platforms
+\end{enumerate}
+\end{tcolorbox}
+
+\subsection*{Key Deliverables}
+
+\begin{itemize}
+    \item \textbf{TrainingExample Schema}: Canonical data model for all generated examples
+    \item \textbf{Taxonomy Builder}: Algorithm for extracting domain concepts from HANA schemas
+    \item \textbf{Generation Engine}: Multi-turn reasoning generator with critic validation
+    \item \textbf{Evaluation Framework}: Elo-based quality scoring and coverage metrics
+    \item \textbf{CLI Tools}: Reproducible pipeline for dataset generation
+\end{itemize}
+
+% -----------------------------------------------------------------------------
+% DOCUMENT CONVENTIONS
+% -----------------------------------------------------------------------------
+\section*{Document Conventions}
+\addcontentsline{toc}{section}{Document Conventions}
+
+\subsection*{Requirement Classification}
+
+All requirements use MoSCoW prioritization:
+
+\begin{table}[h]
+\centering
+\begin{tabular}{@{}llp{8cm}@{}}
+\toprule
+\textbf{Priority} & \textbf{Symbol} & \textbf{Definition} \\
+\midrule
+MUST & \faIcon{exclamation-circle} & Non-negotiable for v1.0 release \\
+SHOULD & \faIcon{check-circle} & Important but can slip to v1.1 \\
+COULD & \faIcon{question-circle} & Nice to have if time permits \\
+WON'T & \faIcon{times-circle} & Explicitly deferred (this phase) \\
+\bottomrule
+\end{tabular}
+\caption{MoSCoW Priority Definitions}
+\end{table}
+
+\subsection*{Colored Boxes}
+
+This specification uses colored boxes to highlight different types of content:
+
+\begin{sourcequote}
+\textit{``Source quotations from research papers or reference documents appear in green boxes with quotation marks.''}
+\end{sourcequote}
+
+\begin{requirement}
+Derived requirements appear in blue boxes and include formal requirement IDs.
+\end{requirement}
+
+\begin{implnote}
+Implementation notes provide technical guidance for developers in purple boxes.
+\end{implnote}
+
+\begin{warningbox}
+Warnings highlight critical constraints or potential pitfalls in red boxes.
+\end{warningbox}
+
+\begin{futurebox}
+Future enhancements (v1.3+) are marked in gold boxes to distinguish them from current scope.
+\end{futurebox}
+
+\subsection*{Requirement ID Conventions}
+
+\begin{table}[h]
+\centering
+\begin{tabular}{@{}llp{6cm}@{}}
+\toprule
+\textbf{Prefix} & \textbf{Category} & \textbf{Example} \\
+\midrule
+SIM-DATA & Data Schema & SIM-DATA-001: TrainingExample format \\
+SIM-TAX & Taxonomy Engine & SIM-TAX-001: Concept extraction \\
+SIM-GEN & Generation Engine & SIM-GEN-001: Multi-turn generation \\
+SIM-EVAL & Evaluation & SIM-EVAL-001: Elo scoring \\
+SIM-CLI & CLI/Pipeline & SIM-CLI-001: Build command \\
+SIM-INT & Integration & SIM-INT-001: HANA connectivity \\
+SIM-HANA & HANA-specific & SIM-HANA-001: Schema extraction \\
+\bottomrule
+\end{tabular}
+\caption{Requirement ID Prefixes}
+\end{table}
+
+% -----------------------------------------------------------------------------
+% HOW TO READ THIS SPECIFICATION
+% -----------------------------------------------------------------------------
+\section*{How to Read This Specification}
+\addcontentsline{toc}{section}{How to Read This Specification}
+
+This specification is organized into five parts plus appendices:
+
+\begin{enumerate}
+    \item \textbf{Part I: Introduction and Context} -- Establishes the problem domain, business requirements, and stakeholder needs
+    \item \textbf{Part II: Architecture and Core Design} -- Defines data schemas, extraction pipelines, and generation algorithms
+    \item \textbf{Part III: Quality Assurance and Evaluation} -- Covers evaluation metrics, testing, and worked examples
+    \item \textbf{Part IV: Implementation and Governance} -- Provides implementation guidance and cross-specification dependencies
+    \item \textbf{Part V: Planning and Future Evolution} -- Presents roadmaps and future enhancement plans
+    \item \textbf{Appendices} -- Contains the implementation gap review, SAP integration guide, and references
+\end{enumerate}
+
+% -----------------------------------------------------------------------------
+% READING GUIDE
+% -----------------------------------------------------------------------------
+\section*{Reading Guide}
+\addcontentsline{toc}{section}{Reading Guide}
+
+\subsection*{Chapter Relationship Flowchart}
+
+The following flowchart shows how the planning and future directions chapters (15--17) relate to other parts of the specification. This centralized view reduces the need to repeat integration context within each chapter.
+
+\mermaidfig[\textwidth]{diagrams/chapter-relationships}%
+  {Chapter relationship flowchart. Blue: core specification. Gold: planning
+    chapters (v1.2 scope). Dotted gray: future scope (v1.3+). Red: gap review.
+    Solid arrows: hard prerequisites. Dashed arrows: remediation dependencies.}%
+  {fig:chapter-relationships}
+
+\noindent
+\textbf{Key Reading Paths:}
+\begin{itemize}
+  \item \textbf{Understanding v1.2 scope}: Ch.2 $\to$ Ch.15 $\to$ App.A1 $\to$ Ch.16
+  \item \textbf{Gap remediation}: App.A1 (P0 gaps) $\to$ Ch.15 (milestones blocked) $\to$ Ch.16 (enterprise phases)
+  \item \textbf{Future planning}: Ch.16 (Phase 3 complete) $\to$ Ch.17 (v1.3+ enhancements)
+\end{itemize}
+
+\subsection*{Audience-Specific Paths}
+
+\begin{tcolorbox}[colback=gray!5,colframe=gray!50,title=\faIcon{user-graduate} For Project Managers / Business Owners]
+\begin{enumerate}
+    \item Frontmatter (this section)
+    \item Chapter 1: Overview and Scope
+    \item Chapter 2: Business Requirements
+    \item Chapter 15: Project Roadmap
+    \item Chapter 16: Implementation Roadmap
+\end{enumerate}
+\end{tcolorbox}
+
+\begin{tcolorbox}[colback=gray!5,colframe=gray!50,title=\faIcon{laptop-code} For Implementers / Developers]
+\begin{enumerate}
+    \item Chapter 1: Overview (full)
+    \item Chapter 3: Canonical Data Schema
+    \item Chapters 4--7: Core Pipeline (Extraction, Taxonomy, Generation, CLI)
+    \item Chapter 12: Implementation Instructions
+    \item Chapter 10: Testing Specification
+    \item Appendix B: SAP Integration Guide
+\end{enumerate}
+\end{tcolorbox}
+
+\begin{tcolorbox}[colback=gray!5,colframe=gray!50,title=\faIcon{microscope} For Quality / Evaluation Engineers]
+\begin{enumerate}
+    \item Chapter 8: Evaluation Framework
+    \item Chapter 9: Worked Example
+    \item Chapter 11: Test Fixtures
+    \item Chapter 10: Testing Specification
+    \item Appendix A: Implementation Gap Review
+\end{enumerate}
+\end{tcolorbox}
+
+\begin{tcolorbox}[colback=gray!5,colframe=gray!50,title=\faIcon{gavel} For Auditors / Compliance Officers]
+\begin{enumerate}
+    \item Chapter 1: Overview (Sections 1.3--1.5 for research traceability)
+    \item Chapter 2: Business Requirements
+    \item Chapter 14: Schema Versioning
+    \item Chapter 13: Cross-Spec Dependencies
+    \item Appendix C: References
+\end{enumerate}
+\end{tcolorbox}
+
+% -----------------------------------------------------------------------------
+% VERSION HISTORY
+% -----------------------------------------------------------------------------
+\section*{Version History}
+\addcontentsline{toc}{section}{Version History}
+
+\begin{longtable}{@{}llp{8cm}@{}}
+\toprule
+\textbf{Version} & \textbf{Date} & \textbf{Changes} \\
+\midrule
+\endhead
+1.0.0 & 2026-04-01 & Initial specification based on Simula research paper \\
+1.1.0 & 2026-04-10 & Added evaluation framework and CLI specification \\
+1.2.0 & 2026-04-21 & Added SAP integration guide, business requirements, and implementation roadmap \\
+1.2.1 & 2026-04-21 & Reorganized chapter structure for improved readability; moved business requirements early; added Part divisions; moved gap review to appendix \\
+1.2.2 & 2026-04-21 & Added Chapter Relationship Flowchart in Frontmatter (Figure~\ref{fig:chapter-relationships}); added Gap-to-Milestone mapping table in Appendix~A1 (Table~\ref{tab:gap-milestone-mapping}) \\
+\bottomrule
+\end{longtable}
+
+% -----------------------------------------------------------------------------
+% DOCUMENT SCOPE MATRIX
+% -----------------------------------------------------------------------------
+\section*{Document Scope Matrix}
+\addcontentsline{toc}{section}{Document Scope Matrix}
+
+\begin{longtable}{@{}p{4cm}p{2cm}p{2cm}p{5cm}@{}}
+\toprule
+\textbf{Topic} & \textbf{In Scope} & \textbf{Chapter(s)} & \textbf{Notes} \\
+\midrule
+\endhead
+TrainingExample schema & \faIcon{check} & 3 & Canonical data model \\
+Taxonomy extraction & \faIcon{check} & 4, 5 & Algorithm 1 \\
+Multi-turn generation & \faIcon{check} & 6 & Algorithm 2 \\
+Double-critic filtering & \faIcon{check} & 6 & Quality gate \\
+Elo-based evaluation & \faIcon{check} & 8 & Quality metrics \\
+SFT training & \faIcon{check} & 3 & Output format \\
+GRPO training & \faIcon{check} & 3 & Reward format \\
+HANA Cloud integration & \faIcon{check} & 4, App. B & MCP-based extraction \\
+Multi-modal input & \faIcon{times} & 17 & Future (v1.3+) \\
+Real-time streaming & \faIcon{times} & -- & Out of scope \\
+Model training execution & \faIcon{times} & -- & Downstream concern \\
+\bottomrule
+\caption{Document Scope Matrix}
+\end{longtable}

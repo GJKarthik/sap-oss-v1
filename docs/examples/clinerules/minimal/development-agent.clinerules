@@ -1,0 +1,141 @@
+# =============================================================================
+# Minimal Development Agent Rules - TEMPLATE
+# Path: src/<DOMAIN_PATH>/.clinerules
+# =============================================================================
+# This is the minimum viable .clinerules file for a development agent.
+# Copy this file and replace all <PLACEHOLDER> values with your domain specifics.
+#
+# Validation: make test-clinerules-path PATH=<your-path>
+# =============================================================================
+
+Purpose
+- Govern implementation and maintenance tasks for <DOMAIN_NAME>.
+- Ensure changes align with specifications and data contracts.
+- Prevent regressions through defined completion criteria.
+
+Mission
+- Keep <DOMAIN_NAME> implementation aligned with its normative specification.
+- Make the codebase safe for agents to modify without breaking contracts.
+- Provide clear guidance on what "done" means for any task.
+
+# -----------------------------------------------------------------------------
+# SOURCE OF TRUTH
+# -----------------------------------------------------------------------------
+
+Source Of Truth
+- Normative specification:
+  - `<SPEC_PATH>/<domain>-spec.tex` (primary)
+  - `<SPEC_PATH>/chapters/*.tex` (detail chapters)
+- Data contracts:
+  - `<SCHEMA_PATH>/<primary>.schema.json`
+  - `<SCHEMA_PATH>/<secondary>.schema.json`
+- Implementation entry points:
+  - `<DOMAIN_PATH>/main.py` (or equivalent)
+  - `<DOMAIN_PATH>/models/` (data models)
+  - `<DOMAIN_PATH>/services/` (business logic)
+  - `<DOMAIN_PATH>/tests/` (test suite)
+
+# -----------------------------------------------------------------------------
+# READ-FIRST FILES
+# -----------------------------------------------------------------------------
+
+Read First On Every Task
+1. Read this .clinerules file to understand constraints.
+2. Read the relevant spec chapter for the task domain.
+3. Read any schema files that govern data being changed.
+4. Read existing tests related to the change area.
+5. Only then begin implementation.
+
+# -----------------------------------------------------------------------------
+# CURRENT REALITY
+# -----------------------------------------------------------------------------
+
+Current Repo Reality You Must Assume
+- The codebase is under active development.
+- Not all spec requirements may be implemented yet.
+- Tests exist but may not have full coverage.
+- Some technical debt may exist (documented in Known Issues).
+
+# -----------------------------------------------------------------------------
+# KNOWN ISSUES
+# -----------------------------------------------------------------------------
+
+Known Issue Registry
+- <DOMAIN>-KI-001 <Brief description>:
+  - symptom: <What you'll observe>
+  - impact: <What breaks or degrades>
+  - prevention: <How to avoid triggering>
+
+# NOTE: Add your domain's known issues here. Every mature .clinerules should
+# have at least 3 known issues documented. Remove this comment when done.
+
+# -----------------------------------------------------------------------------
+# DEFINITION OF DONE
+# -----------------------------------------------------------------------------
+
+Definition Of Done
+- Code changes compile/transpile without errors.
+- All existing tests pass.
+- New functionality has test coverage.
+- Changes align with the governing spec chapter.
+- Data changes validate against relevant schemas.
+- No new linting errors introduced.
+- PR description explains what changed and why.
+
+# -----------------------------------------------------------------------------
+# ENGINEERING RULES
+# -----------------------------------------------------------------------------
+
+Non-Negotiable Engineering Rules
+1. Never modify schema files without updating both producers and consumers.
+2. Never remove a public API without deprecation notice.
+3. Always run tests before declaring completion.
+4. Prefer explicit over implicit behavior.
+5. Document any workarounds for known issues.
+
+# -----------------------------------------------------------------------------
+# CONTRACT RULES
+# -----------------------------------------------------------------------------
+
+Contract Rules
+- All request payloads MUST validate against their input schema.
+- All response payloads MUST validate against their output schema.
+- If code and schema disagree, assume the code is wrong.
+- Schema changes require spec-drift check: `make audit-spec-drift-quick`
+
+# -----------------------------------------------------------------------------
+# CHECKLISTS
+# -----------------------------------------------------------------------------
+
+Pre-Change Checklist
+- [ ] Read the relevant spec chapter
+- [ ] Identify affected schemas
+- [ ] Check for related known issues
+- [ ] Review existing tests in the area
+
+Post-Change Smoke Tests
+- Run unit tests: `cd <DOMAIN_PATH> && make test`
+- Run linting: `cd <DOMAIN_PATH> && make lint`
+- Verify schema compliance: `python -m jsonschema -i payload.json schema.json`
+
+# -----------------------------------------------------------------------------
+# COMPLETION STANDARD
+# -----------------------------------------------------------------------------
+
+Completion Standard
+- The task deliverable matches what the spec requires.
+- Tests prove the implementation works.
+- No regressions in existing functionality.
+- Documentation updated if user-facing behavior changed.
+
+# -----------------------------------------------------------------------------
+# VERSION HISTORY
+# -----------------------------------------------------------------------------
+
+| Version | Date | Changes |
+|---------|------|---------|
+| 1.0.0 | <YYYY-MM-DD> | Initial .clinerules for <DOMAIN_NAME> |
+
+# =============================================================================
+# END OF .clinerules
+# =============================================================================

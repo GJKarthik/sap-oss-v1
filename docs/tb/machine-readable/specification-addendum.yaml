@@ -1,0 +1,416 @@
+# Trial Balance Review Specification Addendum v1.1
+# Addresses review issues from April 2026 Critical Review
+# This file contains machine-readable specifications that supplement the main spec
+
+version: "1.1.0"
+last_updated: "2026-04-18"
+addresses_review_issues:
+  - "3.1: Replace 'fitted ML threshold' with concrete model"
+  - "3.2: Add robust statistics alternatives (MAD, quantiles)"
+  - "3.3: Add per-country parameter view specification"
+  - "3.4: Clarify EUC elimination vs evidence folder"
+  - "3.5: Add training curriculum outline"
+
+# =============================================================================
+# Section 3.1: Concrete Materiality Threshold Model
+# Review Issue: "'fitted ML threshold' — no ML model specified" (Critical)
+# =============================================================================
+
+materiality_threshold_model:
+  description: |
+    Replaces vague "fitted ML threshold" with a concrete, implementable model.
+    Uses historical percentile-based thresholds with rolling average refinement.
+    
+  approach: "hybrid_percentile_rolling"
+  
+  historical_percentile_method:
+    description: "Primary method - uses historical variance distribution"
+    parameters:
+      lookback_periods: 24  # months
+      percentile: 95  # variances above 95th percentile are material
+      minimum_observations: 12  # minimum periods required
+      
+    calculation:
+      step_1: "Collect variance amounts for account category over lookback period"
+      step_2: "Compute 95th percentile of absolute variance values"
+      step_3: "Set threshold = 95th percentile value"
+      
+    formula: |
+      threshold[category] = percentile(abs(variances[category, -24:]), 0.95)
+      
+  rolling_average_refinement:
+    description: "Refinement layer to smooth threshold over time"
+    parameters:
+      window_size: 6  # months
+      smoothing_factor: 0.3  # exponential smoothing alpha
+      
+    formula: |
+      smoothed_threshold[t] = α * raw_threshold[t] + (1-α) * smoothed_threshold[t-1]
+      where α = 0.3
+      
+  category_specific_thresholds:
+    enabled: true
+    categories:
+      ASSET:
+        base_multiplier: 1.0
+        minimum_threshold_local_currency: 10000
+      LIABILITY:
+        base_multiplier: 1.0
+        minimum_threshold_local_currency: 10000
+      EQUITY:
+        base_multiplier: 1.5  # higher bar for equity changes
+        minimum_threshold_local_currency: 25000
+      REVENUE:
+        base_multiplier: 0.8  # lower bar - revenue variances more closely monitored
+        minimum_threshold_local_currency: 5000
+      EXPENSE:
+        base_multiplier: 0.8
+        minimum_threshold_local_currency: 5000
+      INTERCOMPANY:
+        base_multiplier: 1.2
+        minimum_threshold_local_currency: 15000
+        
+  fallback_when_insufficient_history:
+    condition: "observations < minimum_observations"
+    fallback_method: "manual"
+    fallback_thresholds:
+      ASSET: 50000
+      LIABILITY: 50000
+      EQUITY: 100000
+      REVENUE: 25000
+      EXPENSE: 25000
+      INTERCOMPANY: 75000
+    note: "Manual thresholds used until 12 months of data accumulated"
+    
+  threshold_version_tracking:
+    store_in: "TB_MATERIALITY_THRESHOLDS HANA table"
+    columns:
+      - "legal_entity"
+      - "account_category"
+      - "threshold_value"
+      - "threshold_method (percentile|rolling|manual)"
+      - "effective_from"
+      - "effective_to"
+      - "computed_at"
+      
+  validation:
+    comparison_period: "6 months"
+    metric: "false_positive_rate"
+    target: "≤15% of flagged variances determined immaterial upon review"
+    recalibration_trigger: "false_positive_rate > 20%"
+
+# =============================================================================
+# Section 3.2: Robust Statistics Alternatives
+# Review Issue: "3σ normality assumption caveat added but not addressed"
+# =============================================================================
+
+robust_statistics:
+  description: |
+    Provides alternatives to parametric 3σ detection when normality assumption
+    is violated. Implements automatic method selection based on Shapiro-Wilk test.
+    
+  method_selection:
+    test: "Shapiro-Wilk normality test"
+    threshold: 0.05  # p-value threshold
+    logic: |
+      if shapiro_wilk_p_value > 0.05:
+          use "parametric_zscore"
+      else:
+          use "mad_zscore"  # default robust method
+          
+  methods:
+    parametric_zscore:
+      description: "Standard z-score using mean and standard deviation"
+      when_to_use: "Distribution approximately normal (Shapiro-Wilk p > 0.05)"
+      formula: |
+        z = (x - mean) / std
+        flagged if |z| > 3
+      parameters:
+        threshold: 3.0
+        
+    mad_zscore:
+      description: "Modified z-score using Median Absolute Deviation"
+      when_to_use: "Distribution non-normal or has outliers"
+      formula: |
+        MAD = median(|x - median(x)|)
+        modified_z = 0.6745 * (x - median(x)) / MAD
+        flagged if |modified_z| > 3.5
+      parameters:
+        threshold: 3.5
+        scaling_constant: 0.6745  # makes MAD consistent with std for normal dist
+      advantages:
+        - "Robust to outliers"
+        - "Does not assume normality"
+        - "Breakdown point of 50%"
+        
+    percentile_based:
+      description: "Flag values outside percentile range"
+      when_to_use: "Very small sample sizes (n < 12) or highly skewed data"
+      formula: |
+        lower_bound = percentile(x, 2.5)
+        upper_bound = percentile(x, 97.5)
+        flagged if value < lower_bound OR value > upper_bound
+      parameters:
+        lower_percentile: 2.5
+        upper_percentile: 97.5
+        
+    iqr_based:
+      description: "Interquartile range method"
+      when_to_use: "Alternative robust method"
+      formula: |
+        Q1 = percentile(x, 25)
+        Q3 = percentile(x, 75)
+        IQR = Q3 - Q1
+        flagged if value < Q1 - 1.5*IQR OR value > Q3 + 1.5*IQR
+      parameters:
+        multiplier: 1.5  # standard; use 3.0 for more conservative
+        
+  implementation:
+    code_location: "src/training/pipeline/anomaly_detection.py"
+    function_name: "detect_variance_anomalies"
+    returns:
+      - "anomaly_flag: boolean"
+      - "detection_method: string"
+      - "test_statistic: float"
+      - "threshold_used: float"
+      - "normality_test_result: NormalityTestResult"
+
+# =============================================================================
+# Section 3.3: Per-Country Parameter View Specification
+# Review Issue: "234-entity scope is ignored" - only Hong Kong has a view
+# =============================================================================
+
+country_parameter_views:
+  description: |
+    Specification for per-country parameter views. Each legal entity requires
+    a parameter view that customizes thresholds and rules for local requirements.
+    
+  view_template:
+    name_pattern: "{COUNTRY_CODE}_TB_PARAMETERS"
+    required_columns:
+      - name: "legal_entity_code"
+        type: "VARCHAR(10)"
+        description: "Legal entity identifier"
+      - name: "local_currency"
+        type: "VARCHAR(3)"
+        description: "Local currency code"
+      - name: "materiality_base"
+        type: "DECIMAL(18,2)"
+        description: "Base materiality threshold in local currency"
+      - name: "materiality_multipliers"
+        type: "NVARCHAR(1000)"  # JSON
+        description: "Category-specific multipliers as JSON"
+      - name: "close_deadline_pattern"
+        type: "VARCHAR(20)"
+        description: "Close deadline pattern (e.g., 'M+4 WD', 'M+3 CD')"
+      - name: "fiscal_year_end"
+        type: "VARCHAR(5)"
+        description: "Fiscal year end (MM-DD format)"
+      - name: "local_gaap_code"
+        type: "VARCHAR(20)"
+        description: "Local GAAP reference"
+      - name: "intercompany_partners"
+        type: "NVARCHAR(2000)"  # JSON array
+        description: "List of intercompany partner entities"
+      - name: "segment_mapping"
+        type: "NVARCHAR(2000)"  # JSON
+        description: "Segment code to name mapping"
+      - name: "effective_from"
+        type: "DATE"
+      - name: "effective_to"
+        type: "DATE"
+        
+  existing_views:
+    HKG:
+      status: "implemented"
+      table_name: "HKG_TB_PARAMETERS"
+      description: "Hong Kong parameter view"
+      
+  views_to_create:
+    template_ddl: |
+      CREATE VIEW {COUNTRY_CODE}_TB_PARAMETERS AS
+      SELECT 
+        legal_entity_code,
+        local_currency,
+        materiality_base,
+        materiality_multipliers,
+        close_deadline_pattern,
+        fiscal_year_end,
+        local_gaap_code,
+        intercompany_partners,
+        segment_mapping,
+        effective_from,
+        effective_to
+      FROM TB_ENTITY_PARAMETERS
+      WHERE country_code = '{COUNTRY_CODE}'
+        AND CURRENT_DATE BETWEEN effective_from AND COALESCE(effective_to, '9999-12-31');
+        
+  onboarding_process:
+    steps:
+      - step: 1
+        action: "Collect local parameters from Country Finance Lead"
+        deliverable: "Completed parameter questionnaire"
+      - step: 2
+        action: "Create parameter view using template DDL"
+        deliverable: "SQL script executed in HANA"
+      - step: 3
+        action: "Validate view with test data"
+        deliverable: "Validation report"
+      - step: 4
+        action: "Register entity in TB_ENTITY_REGISTRY"
+        deliverable: "Registry entry"
+    estimated_effort_per_entity: "2 hours"
+    
+  rollout_priority:
+    tier_1: ["SGP", "JPN", "AUS"]  # High volume, similar to HKG
+    tier_2: ["USA", "GBR", "DEU", "FRA"]  # Major markets
+    tier_3: ["Remaining 227 entities"]  # Phased rollout
+
+# =============================================================================
+# Section 3.4: EUC Clarification
+# Review Issue: "EUC elimination claim is false"
+# =============================================================================
+
+euc_clarification:
+  description: |
+    Clarifies the relationship between EUC elimination and the evidence folder
+    requirement. The system does NOT fully eliminate EUCs but transforms them
+    from spreadsheet-based controls to system-controlled evidence stores.
+    
+  original_claim: "Elimination of three EUCs"
+  corrected_claim: "Transformation of three EUCs from manual to system-managed"
+  
+  euc_transformation:
+    EUC_001:
+      name: "Variance Tracking Spreadsheet"
+      before: "Manual Excel spreadsheet maintained by GFS Analyst"
+      after: "HANA table TB_VARIANCE_RECORDS with schema validation"
+      eliminated: false
+      transformed_to: "Database table with audit trail"
+      remaining_manual_element: "Analyst commentary input"
+      
+    EUC_002:
+      name: "Commentary Register"
+      before: "Excel workbook with tabs per period"
+      after: "HANA table TB_COMMENTARY_DRAFTS with AI-assisted generation"
+      eliminated: false
+      transformed_to: "Database table with version history"
+      remaining_manual_element: "Human review and approval"
+      
+    EUC_003:
+      name: "Evidence Folder"
+      before: "Shared drive folder with ad-hoc file naming"
+      after: "Structured shared drive folder with standardized naming"
+      eliminated: false
+      transformed_to: "Still a shared drive folder but with enforced structure"
+      remaining_manual_element: "File upload by Analyst"
+      
+  evidence_folder_specification:
+    location: "Shared Drive > Finance > TB_Review > {YYYY-MM} > {LEGAL_ENTITY}"
+    required_artifacts:
+      - filename_pattern: "variance_export_{YYYY-MM}_{ENTITY}.json"
+        content: "Exported variance records"
+        generator: "System automated"
+      - filename_pattern: "rule_firing_log_{YYYY-MM}_{ENTITY}.csv"
+        content: "Decision point audit trail"
+        generator: "System automated"
+      - filename_pattern: "reviewer_signoff_{YYYY-MM}_{ENTITY}.pdf"
+        content: "Signed reviewer checklist"
+        generator: "Manual - uploaded by reviewer"
+      - filename_pattern: "supporting_docs/"
+        content: "Subdirectory for attachments"
+        generator: "Manual - uploaded by analyst"
+        
+  audit_compliance_note: |
+    The evidence folder on Shared Drive remains an EUC by SOX/ISAE 3402 definitions
+    because it involves manual file management. However, risk is mitigated by:
+    1. Standardized naming conventions (enforced by upload validation)
+    2. System-generated core artifacts
+    3. Audit trail in HANA for all system actions
+    4. Periodic completeness checks via automated script
+
+# =============================================================================
+# Section 3.5: Training Curriculum Outline
+# Review Issue: "Training and change management is hand-waved"
+# =============================================================================
+
+training_curriculum:
+  description: |
+    Training curriculum for the 20-25 FTEs transitioning from manual TB review
+    to exception handling role with AI-assisted system.
+    
+  target_audience:
+    role: "GFS Analyst"
+    count: "20-25 FTEs"
+    current_skills: "Excel-based TB review, GL reconciliation"
+    
+  curriculum:
+    module_1:
+      title: "System Overview and Workflow"
+      duration_hours: 2
+      format: "Instructor-led webinar"
+      objectives:
+        - "Understand end-to-end TB review workflow"
+        - "Identify key decision points (DP-001 through DP-005)"
+        - "Know when system handles vs. human intervention required"
+      assessment: "Quiz - 80% pass required"
+      
+    module_2:
+      title: "Exception Handling Procedures"
+      duration_hours: 3
+      format: "Hands-on workshop"
+      objectives:
+        - "Interpret variance flags (PERIOD_SPIKE, SIGN_FLIP, etc.)"
+        - "Review AI-generated commentary drafts"
+        - "Execute accept/edit/reject decisions"
+        - "Document investigation findings"
+      assessment: "Practical exercise - process 10 sample variances"
+      
+    module_3:
+      title: "Commentary Review and Editing"
+      duration_hours: 2
+      format: "Hands-on workshop"
+      objectives:
+        - "Evaluate AI-generated commentary quality"
+        - "Make appropriate edits while preserving audit trail"
+        - "Know when to escalate vs. self-resolve"
+      assessment: "Review 5 AI commentaries, score ≥4/5 on quality assessment"
+      
+    module_4:
+      title: "Escalation and Deadline Management"
+      duration_hours: 1.5
+      format: "Case study discussion"
+      objectives:
+        - "Understand M+4 deadline requirements"
+        - "Execute escalation procedures for unexplained variances"
+        - "Manage BSS risk categories"
+      assessment: "Role-play escalation scenario"
+      
+    module_5:
+      title: "Evidence Management and Audit Readiness"
+      duration_hours: 1.5
+      format: "Instructor-led + demo"
+      objectives:
+        - "Understand evidence folder structure"
+        - "Upload supporting documentation correctly"
+        - "Complete reviewer signoff process"
+        - "Respond to audit queries"
+      assessment: "Complete evidence folder for sample period"
+      
+  certification:
+    required_modules: "All 5"
+    overall_assessment: "End-to-end simulation covering full TB review cycle"
+    pass_criteria:
+      - "Complete review within SLA"
+      - "Zero critical errors"
+      - "≤2 minor errors"
+    recertification: "Annual"
+    
+  delivery_timeline:
+    pilot_group: "5 FTEs - Week 1-2"
+    wave_1: "10 FTEs - Week 3-4"
+    wave_2: "Remaining FTEs - Week 5-6"
+    
+  training_owner: "L&D Lead, GFS COE"
+  curriculum_version: "1.0"
+  effective_date: "TBD - aligned with system go-live"

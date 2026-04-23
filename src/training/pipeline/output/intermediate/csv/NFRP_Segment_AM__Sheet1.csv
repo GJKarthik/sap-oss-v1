@@ -1,0 +1,15 @@
+Attributes,Description
+M_SEGMENT_0,"This column represents the broadest level of market segmentation, categorizing major business areas such as Corporate and Institutional Banking (CIB), Central & Others, Total Customers Unsegmented, Ventures, and Wealth and Retail Banking (WRB). It serves as the primary grouping for segment tracking, providing a macro view of the organization's market focus across diverse business lines. This level is crucial for understanding the overall structure and segmentation of the market within the company"
+M_SEGMENT_1,"This column provides a secondary layer of market segmentation, breaking down the Segment L0 categories into more specific areas such as CIB ex Own Acc, Own Acc, PvB (Private Banking), and WRB Ex PvB. It further segments the broad market categories into distinct areas, allowing for a finer analysis of market focus. This level is essential for identifying specific market types or services within the larger business divisions, including areas like Ventures and Central & Others."
+M_SEGMENT_2,"This column offers a third layer of market segmentation, detailing specific market types or services within the M_SEGMENT_1 areas, such as Client, Own Acc, and WRB Ex PvB. It breaks down the M_SEGMENT_1 categories into specialized units, which can include particular client segments or operational activities. This level is useful for detailed market analysis and for pinpointing specific offerings within the broader market context, including segments like Total Customers Unsegmented."
+M_SEGMENT_3,"This column provides further granularity by specifying particular client segments or operational aspects within the M_SEGMENT_2 categories, such as Affluent ex PVB, SME Banking, and WRB Other. It allows for a finer analysis of market offerings, detailing particular aspects or sub-services within the broader M_SEGMENT_2 categories. This level is essential for pinpointing specific operational activities, client types, or service variations, including segments like Middle Markets and Ventures."
+M_SEGMENT_4,"The most granular level of market segmentation, this column specifies detailed client segments or operational aspects, such as Private Banking, Premium Banking, Medium Enterprises, and High Value SB. It allows for precise tracking and management of market data, enabling organizations to monitor and control offerings at a detailed level. This level is critical for market management, strategic planning, and operational accountability within specific market lines or services, including segments like CTA and FI."
+E_SEGMENT_0,"This column categorizes data according to different business views, such as Corporate and Institutional Banking (CIB), Wealth and Retail Banking (WRB), and Financial Planning and Analysis (FPNA). It enables users to analyze data from various perspectives, aligning with specific business needs and strategies."
+M_SEGMENT_CONCAT,Primary key for this dimension. Its defined by concatenating of all other attributes in the dimension
+,
+,
+,
+,
+,
+,
+,

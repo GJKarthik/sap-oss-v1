@@ -1,0 +1,331 @@
+% =============================================================================
+% SAP-OSS Boxes Package - WWDC Keynote Quality
+% Version: 2.0.1
+% tcolorbox-based callout and highlight boxes
+% Consolidated to 4 primary types for WWDC cleanliness
+% =============================================================================
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{sap-oss-boxes}[2026/04/21 SAP-OSS WWDC-Style Boxes v2.1.1]
+
+% Require tcolorbox with all needed libraries
+\RequirePackage[most]{tcolorbox}
+
+% -----------------------------------------------------------------------------
+% BASE BOX STYLE - WWDC CLEAN
+% -----------------------------------------------------------------------------
+\tcbset{
+  % Minimal base style
+  saposs box base/.style={
+    enhanced,
+    breakable,
+    boxrule=0pt,
+    frame hidden,
+    sharp corners=south,
+    arc=6pt,
+    left=16pt,
+    right=16pt,
+    top=14pt,
+    bottom=14pt,
+    before skip=18pt,
+    after skip=18pt,
+    fonttitle=\fontseries{sb}\selectfont,
+    parbox=false,
+  },
+  % Border-left accent style (WWDC sidebar)
+  saposs sidebar/.style={
+    saposs box base,
+    borderline west={3pt}{0pt}{#1},
+    colback=white,
+  },
+  % Full background style
+  saposs filled/.style={
+    saposs box base,
+    colback=#1!5,
+    borderline west={3pt}{0pt}{#1},
+  },
+}
+
+% =============================================================================
+% PRIMARY BOX TYPES (4 CORE TYPES - WWDC STYLE)
+% =============================================================================
+
+% -----------------------------------------------------------------------------
+% 1. NOTE BOX - Blue, for information
+% -----------------------------------------------------------------------------
+\newtcolorbox{notebox}{
+  saposs sidebar=sapblue,
+  colbacktitle=sapblue!8,
+  coltitle=sapblue,
+  title={\faIcon{info-circle}\hspace{8pt}Note},
+  attach boxed title to top left={xshift=12pt, yshift=-8pt},
+  boxed title style={
+    sharp corners,
+    boxrule=0pt,
+    colback=sapblue!8,
+  },
+}
+
+% Variant without title
+\newtcolorbox{noteboxplain}{
+  saposs sidebar=sapblue,
+  colback=sapblue!3,
+}
+
+% -----------------------------------------------------------------------------
+% 2. WARNING BOX - Amber, for caution
+% -----------------------------------------------------------------------------
+\newtcolorbox{warningbox}{
+  saposs sidebar=sapamber,
+  colbacktitle=sapamber!10,
+  coltitle=sapamber!80!black,
+  title={\faIcon{exclamation-triangle}\hspace{8pt}Warning},
+  attach boxed title to top left={xshift=12pt, yshift=-8pt},
+  boxed title style={
+    sharp corners,
+    boxrule=0pt,
+    colback=sapamber!10,
+  },
+}
+
+% Variant without title
+\newtcolorbox{warningboxplain}{
+  saposs sidebar=sapamber,
+  colback=sapamber!3,
+}
+
+% -----------------------------------------------------------------------------
+% 3. IMPORTANT BOX - Purple, for key insights
+% -----------------------------------------------------------------------------
+\newtcolorbox{importantbox}{
+  saposs sidebar=applepurple,
+  colbacktitle=applepurple!8,
+  coltitle=applepurple,
+  title={\faIcon{lightbulb}\hspace{8pt}Key Insight},
+  attach boxed title to top left={xshift=12pt, yshift=-8pt},
+  boxed title style={
+    sharp corners,
+    boxrule=0pt,
+    colback=applepurple!8,
+  },
+}
+
+% Variant without title
+\newtcolorbox{importantboxplain}{
+  saposs sidebar=applepurple,
+  colback=applepurple!3,
+}
+
+% -----------------------------------------------------------------------------
+% 4. SUCCESS BOX - Green, for completions/achievements
+% -----------------------------------------------------------------------------
+\newtcolorbox{successbox}{
+  saposs sidebar=applegreen,
+  colbacktitle=applegreen!10,
+  coltitle=applegreen!80!black,
+  title={\faIcon{check-circle}\hspace{8pt}Success},
+  attach boxed title to top left={xshift=12pt, yshift=-8pt},
+  boxed title style={
+    sharp corners,
+    boxrule=0pt,
+    colback=applegreen!10,
+  },
+}
+
+% =============================================================================
+% SEMANTIC ALIASES (for backward compatibility)
+% =============================================================================
+
+% Info box → Note box
+\newenvironment{infobox}{\begin{notebox}}{\end{notebox}}
+
+% Danger box → Warning box (severe variant)
+\newtcolorbox{dangerbox}{
+  saposs sidebar=applered,
+  colbacktitle=applered!10,
+  coltitle=applered,
+  title={\faIcon{exclamation-circle}\hspace{8pt}Critical},
+  attach boxed title to top left={xshift=12pt, yshift=-8pt},
+  boxed title style={
+    sharp corners,
+    boxrule=0pt,
+    colback=applered!10,
+  },
+}
+
+% criticalbox - alias for dangerbox; keeps naming consistent with the
+% minimal class (sap-oss-apple-minimal.cls).
+\newenvironment{criticalbox}{\begin{dangerbox}}{\end{dangerbox}}
+
+% =============================================================================
+% TECHNICAL BOXES (kept for spec compatibility)
+% =============================================================================
+
+% ADR Box - Architecture Decision Record
+\newtcolorbox{adrbox}[1]{
+  saposs sidebar=tealdark,
+  colbacktitle=tealdark!8,
+  coltitle=tealdark,
+  title={\faIcon{project-diagram}\hspace{8pt}#1},
+  attach boxed title to top left={xshift=12pt, yshift=-8pt},
+  boxed title style={
+    sharp corners,
+    boxrule=0pt,
+    colback=tealdark!8,
+  },
+}
+
+% Requirement Box
+\NewDocumentEnvironment{requirement}{m}{%
+  \begin{tcolorbox}[
+    saposs sidebar=sapgold,
+    colbacktitle=sapgold!10,
+    coltitle=sapgold!80!black,
+    title={\faIcon{clipboard-check}\hspace{8pt}Requirement: #1},
+    attach boxed title to top left={xshift=12pt, yshift=-8pt},
+    boxed title style={sharp corners, boxrule=0pt, colback=sapgold!10},
+  ]
+}{%
+  \end{tcolorbox}
+}
+
+% Implementation Note
+\newtcolorbox{implnote}{
+  saposs sidebar=applegray2,
+  colbacktitle=applegray3!30,
+  coltitle=applegray1,
+  title={\faIcon{cog}\hspace{8pt}Implementation Note},
+  attach boxed title to top left={xshift=12pt, yshift=-8pt},
+  boxed title style={
+    sharp corners,
+    boxrule=0pt,
+    colback=applegray3!30,
+  },
+}
+
+% Future Work Box
+\newtcolorbox{futurebox}{
+  saposs sidebar=applepurple,
+  colbacktitle=applepurple!5,
+  coltitle=applepurple!80!black,
+  title={\faIcon{rocket}\hspace{8pt}Future Work},
+  attach boxed title to top left={xshift=12pt, yshift=-8pt},
+  boxed title style={
+    sharp corners,
+    boxrule=0pt,
+    colback=applepurple!5,
+  },
+}
+
+% HITL Checkpoint Box
+\newtcolorbox{hitlbox}[1]{
+  saposs sidebar=applegreen,
+  colbacktitle=applegreen!8,
+  coltitle=successdark,
+  title={\faIcon{user-check}\hspace{8pt}HITL Checkpoint: #1},
+  attach boxed title to top left={xshift=12pt, yshift=-8pt},
+  boxed title style={
+    sharp corners,
+    boxrule=0pt,
+    colback=applegreen!8,
+  },
+}
+
+% Gap/Issue Box
+\newtcolorbox{gapbox}[1]{
+  saposs sidebar=applered,
+  colbacktitle=applered!8,
+  coltitle=errordark,
+  title={\faIcon{exclamation-triangle}\hspace{8pt}Gap: #1},
+  attach boxed title to top left={xshift=12pt, yshift=-8pt},
+  boxed title style={
+    sharp corners,
+    boxrule=0pt,
+    colback=applered!8,
+  },
+}
+
+% =============================================================================
+% SIMPLE INLINE COMMANDS (WWDC minimal approach)
+% =============================================================================
+
+% Simple note command (inline)
+\newcommand{\note}[1]{%
+  \begin{notebox}
+    #1
+  \end{notebox}
+}
+
+% Simple warning command (inline)
+\newcommand{\warning}[1]{%
+  \begin{warningbox}
+    #1
+  \end{warningbox}
+}
+
+% Simple important command (inline)
+\newcommand{\important}[1]{%
+  \begin{importantbox}
+    #1
+  \end{importantbox}
+}
+
+% =============================================================================
+% SOURCE QUOTATION BOX (for spec traceability)
+% =============================================================================
+\newtcolorbox{sourcequotebox}[1][Source]{
+  enhanced,
+  breakable,
+  colback=sourcegreen!3,
+  colframe=sourcegreen!50,
+  boxrule=0.5pt,
+  arc=4pt,
+  left=14pt,
+  right=14pt,
+  top=12pt,
+  bottom=12pt,
+  title={\faIcon{quote-left}\hspace{8pt}#1},
+  fonttitle=\small\itshape\color{sourcegreen!80!black},
+  coltitle=sourcegreen!80!black,
+  attach boxed title to top left={xshift=10pt, yshift=-6pt},
+  boxed title style={
+    colback=white,
+    boxrule=0pt,
+  },
+  before skip=16pt,
+  after skip=16pt,
+}
+
+% =============================================================================
+% DEFINITION BOX (clean reference style)
+% =============================================================================
+\NewDocumentEnvironment{definition}{m}{%
+  \begin{tcolorbox}[
+    enhanced,
+    colback=applegray3!15,
+    colframe=applegray3!15,
+    boxrule=0pt,
+    arc=4pt,
+    left=14pt,
+    right=14pt,
+    top=10pt,
+    bottom=10pt,
+    before skip=14pt,
+    after skip=14pt,
+  ]
+  {\fontseries{sb}\selectfont\color{sapblue}#1}\par
+  \vspace{4pt}
+  \color{applegray1}
+}{%
+  \end{tcolorbox}
+}
+
+% =============================================================================
+% CODE CAPTION (WWDC style - context for listings)
+% =============================================================================
+\newcommand{\codecaption}[1]{%
+  \vspace{-6pt}
+  {\small\color{applegray2}\textit{#1}}
+  \vspace{6pt}
+}
+
+\endinput

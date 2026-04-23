@@ -1,0 +1,233 @@
+# =============================================================================
+# Gateway Ingress Runtime Monitor And Alerting Agent Rules
+# Path: src/generativeUI/gateway/.clinerules.runtime-monitor
+# =============================================================================
+# Inherits from: src/intelligence/.clinerules.runtime-monitor
+# Reference: docs/latex/specs/clinerules-agents/chapters/04-regulatory-agents.tex
+# =============================================================================
+
+Purpose
+- Monitor the gateway as the external traffic entry point for all governed AI requests.
+- Enforce header propagation validation, early rejection of invalid requests, and identity envelope integrity.
+- Detect allow-list bypass attempts at the ingress layer before requests reach internal services.
+
+Mission
+- Act as the first line of defense for Regulations compliance at the ingress boundary.
+- Verify required headers (X-Request-ID, X-Agent-Identity, X-Correlation-ID) before routing.
+- Reject requests missing required identity claims with proper HTTP status codes and audit logging.
+- Enforce per-identity rate limits to prevent resource exhaustion.
+
+Source Of Truth
+- Parent regulatory pack:
+  - `src/intelligence/.clinerules.runtime-monitor`
+- Normative spec chapters:
+  - `docs/latex/specs/regulations/chapters/03-mgf-framework.tex`
+  - `docs/latex/specs/regulations/chapters/10-identity-attribution.tex`
+  - `docs/latex/specs/clinerules-agents/chapters/04-regulatory-agents.tex` (Section 4.5)
+- Normative contracts:
+  - `docs/schema/regulations/request-identity.schema.json`
+  - `docs/schema/regulations/agent-identity.schema.json`
+  - `docs/schema/regulations/audit-event.schema.json`
+- Gateway configuration:
+  - `src/generativeUI/gateway/nginx.conf.template`
+  - `src/generativeUI/gateway/health/main.py`
+
+Inheritance Declaration
+- This pack INHERITS from `src/intelligence/.clinerules.runtime-monitor`.
+- All safety-critical flags from the parent pack are preserved or tightened.
+- The ingress overlay ADDS gateway-specific conditions but DOES NOT weaken inherited conditions.
+
+Safety-Critical Flags (Inherited, Cannot Weaken)
+- `deny_by_default`: true (from parent)
+- `allow_unlisted_tools`: false (from parent)
+- `require_identity_envelope`: true (from parent)
+- `audit_before_action`: true (from parent)
+- `circuit_break_enabled`: true (from parent)
+
+Primary Monitoring Objective
+- A request through the gateway is healthy only when:
+  - Required identity headers are present and correctly formatted
+  - Identity tokens originate from trusted issuers
+  - Per-identity rate limits are not exceeded
+  - The request routes to an allow-listed upstream service
+  - Audit logging for the request is successful
+
+Evidence Sources
+- Gateway access logs (nginx access.log, error.log)
+- Authentication service logs
+- Rate-limiter metrics
+- Health endpoints: `/health`, `/health/details`
+- Upstream service response codes and latencies
+- Identity token validation service
+
+Required Headers For Governed Requests
+- `X-Request-ID`: Unique request identifier (required)
+- `X-Correlation-ID`: Correlation identifier for distributed tracing (required)
+- `X-Agent-Identity`: Agent identity envelope (required for AI operations)
+- `X-User-ID`: User identifier (optional but recommended)
+- `X-Tenant-ID`: Tenant identifier (required for multi-tenant operations)
+- `Authorization`: Bearer token for authentication (required)
+
+What Counts As Healthy
+- All required headers are present for governed routes
+- Identity token signature verification succeeds
+- Token issuer matches trusted issuer list
+- Rate limits are within configured thresholds
+- Upstream services respond successfully
+- Audit logging writes succeed
+
+What Must Never Be Reported As Healthy
+- Request with missing `X-Request-ID` or `X-Correlation-ID`
+- Request with invalid or expired authentication token
+- Request with tampered identity envelope
+- Request exceeding rate limits
+- Request routing to non-allow-listed upstream
+- Request where audit logging failed
+
+Critical Alert Conditions (Gateway-Specific)
+1. Missing required identity headers on governed route
+   - Condition code: `GW-ID-001`
+   - Severity: Critical
+   - HTTP response: 401 Unauthorized
+2. Invalid or expired authentication token
+   - Condition code: `GW-AUTH-001`
+   - Severity: Critical
+   - HTTP response: 401 Unauthorized
+3. Identity envelope tampering detected
+   - Condition code: `GW-AUTH-002`
+   - Severity: Critical
+   - HTTP response: 403 Forbidden
+4. Rate limit exceeded for identity
+   - Condition code: `GW-RATE-001`
+   - Severity: Critical
+   - HTTP response: 429 Too Many Requests
+5. Attempt to route to non-allow-listed upstream
+   - Condition code: `GW-ING-001`
+   - Severity: Critical
+   - HTTP response: 403 Forbidden
+
+High Severity Alert Conditions (Gateway-Specific)
+1. Upstream service unavailable
+   - Condition code: `GW-UPSTREAM-001`
+   - Severity: High
+   - HTTP response: 502 Bad Gateway
+2. Upstream service timeout
+   - Condition code: `GW-UPSTREAM-002`
+   - Severity: High
+   - HTTP response: 504 Gateway Timeout
+3. Audit logging failure for governed request
+   - Condition code: `GW-AUD-001`
+   - Severity: High
+   - Action: Reject request, return 503 Service Unavailable
+4. Authentication service unavailable
+   - Condition code: `GW-AUTH-003`
+   - Severity: High
+   - Action: Degrade to cached token validation if available
+
+Medium Severity Alert Conditions
+1. Elevated rate of 4xx responses
+   - Condition code: `GW-CLIENT-001`
+   - Severity: Medium
+   - Threshold: > 10% of requests in 5-minute window
+2. Elevated latency on upstream services
+   - Condition code: `GW-LATENCY-001`
+   - Severity: Medium
+   - Threshold: p95 > 2x baseline
+3. Token refresh failures
+   - Condition code: `GW-AUTH-004`
+   - Severity: Medium
+
+Informational Conditions
+1. Request successfully routed with valid identity
+2. Rate limit approaching threshold (80%)
+3. Upstream service recovered from degraded state
+4. Token successfully validated from cache
+
+Circuit-Break Triggers (Gateway-Specific)
+- 3 consecutive authentication failures from same source in 1 minute
+  - Action: Temporary block for source IP
+  - Duration: 5 minutes
+  - Condition code: `GW-CB-001`
+- 5 consecutive upstream failures in 1 minute
+  - Action: Circuit open for upstream
+  - Duration: 30 seconds before retry
+  - Condition code: `GW-CB-002`
+
+Rate Limit Configuration
+- Default per-identity limit: 100 requests/minute
+- Burst allowance: 20 requests
+- Elevated limit for service accounts: 500 requests/minute
+- Rate limit by:
+  - `X-User-ID` for user requests
+  - `X-Agent-Identity` agent_id for agent requests
+  - Source IP as fallback
+
+Trusted Issuers
+- BTP XSUAA: `https://*.authentication.*.hana.ondemand.com`
+- Internal IDP: Configured in environment
+- Service account tokens: Pre-registered in gateway config
+
+Synthetic Check Cadence
+- Health endpoint check: every 30 seconds
+- Authentication service connectivity: every 1 minute
+- Upstream service health: every 1 minute
+- Rate limit counter sync: every 10 seconds
+
+Required Alert Payload (Gateway-Specific)
+- `request_id`
+- `correlation_id`
+- `source_ip`
+- `user_agent`
+- `route_path`
+- `upstream_service`
+- `severity`
+- `condition_code`
+- `http_status_code`
+- `response_time_ms`
+- `rate_limit_remaining`
+- `timestamp`
+
+Response Rules
+1. Never route governed requests without identity headers
+2. Always log denied requests to audit trail
+3. Return structured error responses with condition codes
+4. Include `X-Request-ID` in all responses for correlation
+5. Set appropriate cache headers for error responses
+
+Operator Triage Checklist
+1. Confirm the source IP and user agent
+2. Confirm the route path and upstream service
+3. Confirm whether identity headers were present
+4. Confirm authentication token validity
+5. Confirm rate limit status for the identity
+6. Confirm upstream service health
+7. Confirm audit trail for the request
+8. Check for pattern of similar failures
+
+Minimum Evidence Required To Close An Alert
+- Confirmation that the root cause is identified
+- Verification that mitigation is in place
+- Audit trail showing successful processing post-fix
+- No recurrence within observation window (15 minutes)
+
+Error Response Format
+```json
+{
+  "error": {
+    "code": "<condition_code>",
+    "message": "<human_readable_message>",
+    "request_id": "<X-Request-ID>",
+    "correlation_id": "<X-Correlation-ID>",
+    "timestamp": "<ISO-8601>",
+    "support_reference": "<audit_event_id>"
+  }
+}
+```
+
+Completion Standard
+- Gateway monitoring covers all governed routes
+- Identity validation is enforced at ingress
+- Rate limiting is active per configuration
+- Audit logging captures all governed requests
+- Circuit breakers protect against cascade failures
+- Alert conditions produce actionable notifications

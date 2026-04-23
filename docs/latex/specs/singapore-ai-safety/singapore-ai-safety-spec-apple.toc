@@ -1,0 +1,124 @@
+\contentsline {chapter}{Executive Summary}{11}{chapter*.2}%
+\contentsline {chapter}{\numberline {1}Normative Source Hierarchy}{15}{chapter.1}%
+\contentsline {section}{\numberline {1.1}Why a source hierarchy matters}{15}{section.1.1}%
+\contentsline {section}{\numberline {1.2}Source precedence}{16}{section.1.2}%
+\contentsline {section}{\numberline {1.3}Normative Singapore sources}{16}{section.1.3}%
+\contentsline {section}{\numberline {1.4}Source class descriptions}{16}{section.1.4}%
+\contentsline {subsection}{\numberline {1.4.1}SG-01: IMDA Model Governance Framework for Agentic AI}{16}{subsection.1.4.1}%
+\contentsline {subsection}{\numberline {1.4.2}SG-02: IMDA Starter Kit for Testing LLM-Based Applications}{17}{subsection.1.4.2}%
+\contentsline {subsection}{\numberline {1.4.3}SG-03: PDPC Model AI Governance Framework}{18}{subsection.1.4.3}%
+\contentsline {subsection}{\numberline {1.4.4}SG-04: PDPC Advisory Guidelines on Personal Data in AI}{18}{subsection.1.4.4}%
+\contentsline {subsection}{\numberline {1.4.5}SG-05: IMDA Project Moonshot / AI Verify}{18}{subsection.1.4.5}%
+\contentsline {subsection}{\numberline {1.4.6}SG-07: CSA Guidelines on Securing AI Systems}{19}{subsection.1.4.6}%
+\contentsline {subsection}{\numberline {1.4.7}SG-08: CSA Agentic AI Addendum (Consultation)}{19}{subsection.1.4.7}%
+\contentsline {section}{\numberline {1.5}Source document locations}{19}{section.1.5}%
+\contentsline {section}{\numberline {1.6}Cross-referencing peer specifications}{20}{section.1.6}%
+\contentsline {chapter}{\numberline {2}System Use Cases in Scope}{21}{chapter.2}%
+\contentsline {section}{\numberline {2.1}Use-case inventory purpose}{21}{section.2.1}%
+\contentsline {section}{\numberline {2.2}Operational use-case inventory}{22}{section.2.2}%
+\contentsline {section}{\numberline {2.3}Use-case descriptions}{23}{section.2.3}%
+\contentsline {subsection}{\numberline {2.3.1}UC-01: Chat and prompt-response synthesis}{23}{subsection.2.3.1}%
+\contentsline {subsection}{\numberline {2.3.2}UC-02: AI-generated UI actions}{23}{subsection.2.3.2}%
+\contentsline {subsection}{\numberline {2.3.3}UC-03: HANA query and data-product prompts}{23}{subsection.2.3.3}%
+\contentsline {subsection}{\numberline {2.3.4}UC-08: Training and deployment}{24}{subsection.2.3.4}%
+\contentsline {subsection}{\numberline {2.3.5}UC-10: Agent/tool orchestration (MCP)}{24}{subsection.2.3.5}%
+\contentsline {section}{\numberline {2.4}Risk tier definitions}{24}{section.2.4}%
+\contentsline {section}{\numberline {2.5}Use-case registration process}{25}{section.2.5}%
+\contentsline {chapter}{\numberline {3}Control Framework}{27}{chapter.3}%
+\contentsline {section}{\numberline {3.1}Control design principles}{27}{section.3.1}%
+\contentsline {section}{\numberline {3.2}Mandatory control catalogue}{28}{section.3.2}%
+\contentsline {section}{\numberline {3.3}Critical controls}{30}{section.3.3}%
+\contentsline {section}{\numberline {3.4}Control category descriptions}{30}{section.3.4}%
+\contentsline {subsection}{\numberline {3.4.1}Governance controls (GOV)}{30}{subsection.3.4.1}%
+\contentsline {subsection}{\numberline {3.4.2}Data controls (DATA)}{31}{subsection.3.4.2}%
+\contentsline {subsection}{\numberline {3.4.3}Agent controls (AGT)}{31}{subsection.3.4.3}%
+\contentsline {subsection}{\numberline {3.4.4}Human controls (HUM)}{31}{subsection.3.4.4}%
+\contentsline {subsection}{\numberline {3.4.5}Security controls (SEC)}{32}{subsection.3.4.5}%
+\contentsline {subsection}{\numberline {3.4.6}Evaluation controls (EVAL)}{32}{subsection.3.4.6}%
+\contentsline {subsection}{\numberline {3.4.7}Monitoring controls (MON)}{32}{subsection.3.4.7}%
+\contentsline {subsection}{\numberline {3.4.8}User controls (USR)}{33}{subsection.3.4.8}%
+\contentsline {section}{\numberline {3.5}Control-to-source traceability}{33}{section.3.5}%
+\contentsline {chapter}{\numberline {4}Risk Scoring Model}{35}{chapter.4}%
+\contentsline {section}{\numberline {4.1}Purpose of risk scoring}{35}{section.4.1}%
+\contentsline {section}{\numberline {4.2}Normalized risk factors}{36}{section.4.2}%
+\contentsline {section}{\numberline {4.3}Inherent Risk Score (IRS)}{36}{section.4.3}%
+\contentsline {subsection}{\numberline {4.3.1}IRS interpretation}{37}{subsection.4.3.1}%
+\contentsline {subsection}{\numberline {4.3.2}Worked example: UC-10 Agent/tool orchestration}{37}{subsection.4.3.2}%
+\contentsline {section}{\numberline {4.4}Applicability-Weighted Control Coverage (AWCC)}{38}{section.4.4}%
+\contentsline {subsection}{\numberline {4.4.1}AWCC interpretation}{38}{subsection.4.4.1}%
+\contentsline {section}{\numberline {4.5}Penalty terms}{39}{section.4.5}%
+\contentsline {section}{\numberline {4.6}Residual Risk Score (RRS)}{39}{section.4.6}%
+\contentsline {subsection}{\numberline {4.6.1}RRS interpretation}{39}{subsection.4.6.1}%
+\contentsline {section}{\numberline {4.7}Deployment Readiness Score (DRS)}{40}{section.4.7}%
+\contentsline {subsection}{\numberline {4.7.1}DRS interpretation}{40}{subsection.4.7.1}%
+\contentsline {section}{\numberline {4.8}Production gate summary}{41}{section.4.8}%
+\contentsline {chapter}{\numberline {5}Metrics and Mathematical Gate Model}{43}{chapter.5}%
+\contentsline {section}{\numberline {5.1}Purpose of quantitative metrics}{43}{section.5.1}%
+\contentsline {section}{\numberline {5.2}Mandatory metric set}{44}{section.5.2}%
+\contentsline {section}{\numberline {5.3}Formal metric definitions}{44}{section.5.3}%
+\contentsline {subsection}{\numberline {5.3.1}M-01: Policy Adherence Rate (PAR)}{45}{subsection.5.3.1}%
+\contentsline {subsection}{\numberline {5.3.2}M-02: Tool Call Accuracy (TCA)}{45}{subsection.5.3.2}%
+\contentsline {subsection}{\numberline {5.3.3}M-03: High-Stakes Checkpoint Coverage (HCC)}{45}{subsection.5.3.3}%
+\contentsline {subsection}{\numberline {5.3.4}M-04: Audit Trace Completeness (ATC)}{46}{subsection.5.3.4}%
+\contentsline {subsection}{\numberline {5.3.5}M-05: Adversarial Defense Rate (ADR)}{46}{subsection.5.3.5}%
+\contentsline {subsection}{\numberline {5.3.6}M-06: Data Leakage Rate (DLR)}{46}{subsection.5.3.6}%
+\contentsline {subsection}{\numberline {5.3.7}M-07: Hallucination/Error Rate (HER)}{47}{subsection.5.3.7}%
+\contentsline {subsection}{\numberline {5.3.8}M-08: Unauthorized Access Rate (UAR)}{47}{subsection.5.3.8}%
+\contentsline {subsection}{\numberline {5.3.9}M-09: Sandbox Enforcement Ratio (SER)}{47}{subsection.5.3.9}%
+\contentsline {section}{\numberline {5.4}Statistical evaluation rules}{48}{section.5.4}%
+\contentsline {subsection}{\numberline {5.4.1}Wilson Lower Confidence Bound}{48}{subsection.5.4.1}%
+\contentsline {subsection}{\numberline {5.4.2}Why Wilson bounds?}{48}{subsection.5.4.2}%
+\contentsline {subsection}{\numberline {5.4.3}Worked example}{48}{subsection.5.4.3}%
+\contentsline {section}{\numberline {5.5}Minimum sample sizes}{49}{section.5.5}%
+\contentsline {section}{\numberline {5.6}Composite evaluation score}{49}{section.5.6}%
+\contentsline {subsection}{\numberline {5.6.1}EVAL interpretation}{50}{subsection.5.6.1}%
+\contentsline {section}{\numberline {5.7}Metric thresholds summary}{50}{section.5.7}%
+\contentsline {chapter}{\numberline {6}Monitoring, Alerting, and Audit Schema}{51}{chapter.6}%
+\contentsline {section}{\numberline {6.1}Monitoring objectives}{51}{section.6.1}%
+\contentsline {section}{\numberline {6.2}Required audit schema}{52}{section.6.2}%
+\contentsline {section}{\numberline {6.3}Identity attribution requirements}{52}{section.6.3}%
+\contentsline {subsection}{\numberline {6.3.1}Agent identity fields}{52}{subsection.6.3.1}%
+\contentsline {subsection}{\numberline {6.3.2}Request identity fields}{53}{subsection.6.3.2}%
+\contentsline {section}{\numberline {6.4}Audit reservation pattern}{53}{section.6.4}%
+\contentsline {section}{\numberline {6.5}Alert severity classes}{54}{section.6.5}%
+\contentsline {section}{\numberline {6.6}Condition codes}{54}{section.6.6}%
+\contentsline {section}{\numberline {6.7}Circuit-break rules}{54}{section.6.7}%
+\contentsline {section}{\numberline {6.8}Drift and anomaly detection}{56}{section.6.8}%
+\contentsline {subsection}{\numberline {6.8.1}Population Stability Index (PSI)}{56}{subsection.6.8.1}%
+\contentsline {subsection}{\numberline {6.8.2}Robust Z-Score}{56}{subsection.6.8.2}%
+\contentsline {section}{\numberline {6.9}Required alert payload}{57}{section.6.9}%
+\contentsline {section}{\numberline {6.10}Operator triage checklist}{58}{section.6.10}%
+\contentsline {section}{\numberline {6.11}Minimum evidence to close an alert}{58}{section.6.11}%
+\contentsline {chapter}{\numberline {7}Implementation Design}{59}{chapter.7}%
+\contentsline {section}{\numberline {7.1}Repository structure}{59}{section.7.1}%
+\contentsline {section}{\numberline {7.2}Governance module architecture}{59}{section.7.2}%
+\contentsline {subsection}{\numberline {7.2.1}Identity module ({\color {pathcolor}\faIcon {folder}\hspace {4pt}\texttt {identity.py}})}{60}{subsection.7.2.1}%
+\contentsline {subsection}{\numberline {7.2.2}Audit module ({\color {pathcolor}\faIcon {folder}\hspace {4pt}\texttt {audit.py}})}{60}{subsection.7.2.2}%
+\contentsline {subsection}{\numberline {7.2.3}Governed agent ({\color {pathcolor}\faIcon {folder}\hspace {4pt}\texttt {governed\_agent.py}})}{61}{subsection.7.2.3}%
+\contentsline {section}{\numberline {7.3}JSON schemas}{61}{section.7.3}%
+\contentsline {section}{\numberline {7.4}Agent rule packs}{61}{section.7.4}%
+\contentsline {subsection}{\numberline {7.4.1}Development pack ({\color {pathcolor}\faIcon {folder}\hspace {4pt}\texttt {.clinerules}})}{62}{subsection.7.4.1}%
+\contentsline {subsection}{\numberline {7.4.2}Runtime-monitor pack ({\color {pathcolor}\faIcon {folder}\hspace {4pt}\texttt {.clinerules.runtime-monitor}})}{62}{subsection.7.4.2}%
+\contentsline {section}{\numberline {7.5}Compliance requirements mapping}{63}{section.7.5}%
+\contentsline {section}{\numberline {7.6}Integration points}{63}{section.7.6}%
+\contentsline {subsection}{\numberline {7.6.1}MCP tool allow-list}{63}{subsection.7.6.1}%
+\contentsline {subsection}{\numberline {7.6.2}Approval-required tools}{64}{subsection.7.6.2}%
+\contentsline {subsection}{\numberline {7.6.3}Audit database schema}{64}{subsection.7.6.3}%
+\contentsline {section}{\numberline {7.7}Testing and validation}{65}{section.7.7}%
+\contentsline {subsection}{\numberline {7.7.1}Validation harness}{65}{subsection.7.7.1}%
+\contentsline {subsection}{\numberline {7.7.2}Running validation}{65}{subsection.7.7.2}%
+\contentsline {section}{\numberline {7.8}Deployment checklist}{66}{section.7.8}%
+\contentsline {chapter}{\numberline {8}References}{67}{chapter.8}%
+\contentsline {section}{\numberline {8.1}Singapore Government sources}{67}{section.8.1}%
+\contentsline {subsection}{\numberline {8.1.1}Primary normative sources}{67}{subsection.8.1.1}%
+\contentsline {subsection}{\numberline {8.1.2}Supplementary sources}{68}{subsection.8.1.2}%
+\contentsline {section}{\numberline {8.2}Open-source tools and frameworks}{68}{section.8.2}%
+\contentsline {section}{\numberline {8.3}Internal specifications}{69}{section.8.3}%
+\contentsline {section}{\numberline {8.4}JSON schemas}{69}{section.8.4}%
+\contentsline {section}{\numberline {8.5}Source document locations}{70}{section.8.5}%
+\contentsline {section}{\numberline {8.6}Version history}{70}{section.8.6}%
+\contentsline {section}{\numberline {8.7}Document control}{71}{section.8.7}%
+\contentsline {chapter}{\numberline {9}Global Wave-Dependency Manifest}{73}{chapter.9}%
+\contentsline {section}{\numberline {9.1}Critical Path Visualization (Waves 1--3)}{73}{section.9.1}%
+\contentsline {section}{\numberline {9.2}Inter-Domain Prerequisite Matrix}{74}{section.9.2}%
+\contentsfinish 

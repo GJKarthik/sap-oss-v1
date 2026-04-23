@@ -1,0 +1,294 @@
+# =============================================================================
+# Simula Training Implementation Agent Rules
+# Path: src/training/.clinerules
+# =============================================================================
+
+Purpose
+- Make `src/training` the authoritative implementation of the Simula training-data framework.
+- Drive the codebase to full spec compliance, not partial library-level alignment.
+- Treat this file as the standing execution contract for any agent working on Simula implementation, maintenance, integration, or migration tasks.
+
+Mission
+- Implement the Simula specification end to end across runner, contracts, evaluation, API integration, and frontend integration.
+- Replace legacy-by-default behavior with Simula-by-default behavior.
+- Keep the system operationally honest: no placeholder telemetry, no synthetic preview data for governed production runs, and no claims of completion while the live path still runs the old pipeline.
+
+Source Of Truth
+- Normative product spec:
+  - `docs/pdf/specs/simula-training-spec.pdf`
+  - `docs/latex/specs/simula/chapters/03-extraction-pipeline.tex`
+  - `docs/latex/specs/simula/chapters/04-taxonomy-engine.tex`
+  - `docs/latex/specs/simula/chapters/05-generation-engine.tex`
+  - `docs/latex/specs/simula/chapters/06-environment-cli.tex`
+  - `docs/latex/specs/simula/chapters/07-evaluation-framework.tex`
+  - `docs/latex/specs/simula/chapters/07a-worked-example.tex`
+  - `docs/latex/specs/simula/chapters/12-implementation-instructions.tex`
+- Normative data contracts:
+  - `docs/schema/simula/training-example.schema.json`
+  - `docs/schema/simula/taxonomy.schema.json`
+- Current implementation reality:
+  - `src/training/scripts/run_hana_pipeline.py`
+  - `src/training/pipeline/hana_schema_extractor.py`
+  - `src/training/pipeline/simula_taxonomy_builder.py`
+  - `src/training/pipeline/simula_data_generator.py`
+  - `src/training/pipeline/simula_complexity_calibrator.py`
+  - `src/training/pipeline/simula_coverage_evaluator.py`
+  - `src/training/pipeline/simula_critic_validator.py`
+  - `src/training/pipeline/simula_diversity_analyzer.py`
+  - `src/training/pipeline/simula_diversity_optimizer.py`
+  - `src/training/pipeline/simula_taxonomy_evaluator.py`
+  - `src/training/pipeline/main.py`
+  - `src/training/pipeline/Makefile`
+  - `src/training/Makefile`
+- Operational integration points outside `src/training` that must be considered whenever end-to-end compliance is the goal:
+  - `src/generativeUI/training-webcomponents-ngx/packages/api-server/src/main.py`
+  - `src/generativeUI/training-webcomponents-ngx/apps/angular-shell/src/app/pages/pipeline/pipeline.component.ts`
+  - `src/generativeUI/training-webcomponents-ngx/apps/angular-shell/src/app/pages/hana-explorer/hana-explorer.component.ts`
+  - `src/generativeUI/training-webcomponents-ngx/apps/angular-shell/src/app/components/shell/shell.component.ts`
+
+Read First On Every Simula Task
+1. Read the relevant spec chapter before changing code.
+2. Read the relevant JSON schema before changing any model or serialized artifact.
+3. Read the current runner and current live integration path before assuming a module is already in production.
+4. Identify whether the task is:
+   - contract repair
+   - runner/orchestration
+   - evaluator integration
+   - API integration
+   - frontend integration
+   - monitoring/alerting
+5. Only then edit code.
+
+Current Repo Reality You Must Assume
+- The current default runtime path is still legacy, centered on:
+  - `src/training/pipeline/main.py`
+  - `src/training/pipeline/Makefile`
+  - `src/training/Makefile`
+  - `training-webcomponents-ngx` API worker commands
+- The Simula modules exist, but they are not yet the authoritative live path.
+- The evaluation layer is only partially integrated and some modules currently drift from the actual runtime models.
+- Passing legacy tests does not prove Simula compliance.
+
+Known Issue Registry
+- `SIM-KI-001` legacy path still default:
+  - symptom: pipeline launches `make all`, legacy template expansion, or `training/pipeline/output/train.jsonl`
+  - impact: production path is not running the spec-defined Simula flow
+  - prevention: default entrypoints, API worker, and UI stage model must all point to the Simula runner
+- `SIM-KI-002` contract drift between runtime models and schemas:
+  - symptom: evaluator modules expect fields not present on `TrainingExample` or taxonomy objects
+  - impact: coverage, critic validation, and downstream evaluation crash at runtime
+  - prevention: schema-first model changes, plus producer and consumer updates in the same change
+- `SIM-KI-003` preview and synthetic fallback masquerading as operational behavior:
+  - symptom: HANA or data preview surfaces return preview/synthetic data while the product appears healthy
+  - impact: operators can mistake demo behavior for production success
+  - prevention: explicit mode labeling and governed-run fail-closed behavior
+- `SIM-KI-004` simulated UI telemetry:
+  - symptom: random throughput, fake stage timing, or placeholder run signals in production surfaces
+  - impact: false confidence, poor incident diagnosis
+  - prevention: bind UI telemetry to real runtime artifacts, logs, and job state
+
+Primary Goal State
+- The default pipeline path launches the Simula HANA-direct flow.
+- Every generated artifact follows one canonical contract shared by runner, API, governance, and frontend.
+- The evaluation framework runs on every completed Simula generation run.
+- Governed runs never silently degrade into preview/demo behavior.
+- Runtime surfaces show real execution state and real artifacts.
+
+10/10 Definition Of Done
+- `src/training/scripts/run_hana_pipeline.py` or an equivalent Simula runner is the authoritative default entrypoint.
+- The live API launches the same Simula runner, not legacy `make all` or legacy schema/template generators.
+- The pipeline implements the spec phases:
+  - extraction: MCP discovery, table enumeration, column extraction, registry population, JSON export
+  - taxonomy: factor identification, breadth-first expansion, best-of-N proposal, critic refinement, level planning
+  - generation: mix sampling, meta-prompt generation, complexification, example generation, double-critic filtering
+  - evaluation: complexity calibration, coverage, diversity, critic calibration, taxonomy quality, and any required adaptive logic/reporting
+- `TrainingExample` artifacts validate against `docs/schema/simula/training-example.schema.json`.
+- Taxonomy artifacts validate against `docs/schema/simula/taxonomy.schema.json`.
+- Every run emits the stable artifact set required by Chapter 6:
+  - `schemas.json`
+  - `taxonomies.json`
+  - `training_data.jsonl`
+  - `generation_stats.json`
+  - `rejected_examples.jsonl`
+  - `complexity_elo_scores.json`
+  - `coverage_report.json`
+  - `diversity_metrics.json`
+  - `critic_calibration.json`
+- Evaluator modules execute without contract drift or runtime exceptions.
+- Governance captures run status plus evaluator outcomes.
+- Frontend surfaces the real Simula artifacts and evaluation results.
+- Preview mode is clearly marked as non-production and is never treated as healthy for governed production runs.
+
+Non-Negotiable Engineering Rules
+1. Prefer the Simula spec over legacy behavior when they conflict.
+2. Preserve the legacy pipeline only as an explicit compatibility path, never as the default path.
+3. Keep one canonical contract for:
+   - `TrainingExample`
+   - taxonomy tree and node structure
+   - evaluation reports
+   - runner outputs
+   - API payloads
+   - frontend artifact expectations
+4. If you add, remove, or rename a serialized field, update all producers, consumers, tests, and schemas in the same change.
+5. Do not create hidden compatibility shims that let modules disagree on core field names.
+6. Do not treat timestamped output filenames as the only canonical output contract. If timestamped files are needed, also materialize stable canonical names or manifests.
+7. Do not ship placeholder or random telemetry for production monitoring surfaces.
+8. Do not let governed runs rely on synthetic preview data except in an explicit demo path that is clearly labeled and segregated.
+9. Do not mark Simula complete just because library modules exist. The default live path must use them.
+
+Canonical Contract Rules
+- `TrainingExample` must be schema-first. At minimum, the runtime contract must support the required schema fields:
+  - `id`
+  - `question`
+  - `sql`
+  - `complexity_score`
+  - `critic_passed`
+- The broader implementation should support the schema-defined Simula fields needed for evaluation and traceability, including:
+  - `schema_context`
+  - `taxonomy_path`
+  - `mix_id`
+  - `complexity_level`
+  - `elo_rating`
+  - `is_complexified`
+  - `critic_evaluation`
+  - `generation_metadata`
+  - `quality_signals`
+- Taxonomy artifacts must expose schema-compatible identifiers and structure, including:
+  - `taxonomy_id`
+  - `name`
+  - `root`
+  - node-level `node_id`
+  - node `path`
+  - statistics and generation metadata
+- If code and schema disagree, assume the code is wrong unless the spec has been explicitly revised.
+
+Required Runtime And Output Behavior
+- The authoritative runner must produce a stable artifact set in the agreed output directory.
+- The runner must fail loudly for these conditions:
+  - zero extracted tables
+  - zero taxonomies
+  - zero examples
+  - missing required artifacts
+  - evaluator contract drift
+  - evaluator runtime exceptions
+- The runner must record enough metadata for governance and debugging:
+  - config used
+  - timestamps
+  - counts by stage
+  - failure reason when unsuccessful
+
+Evaluation And Quality Gates
+- Complexity calibration must run and emit an Elo-based report.
+- Coverage evaluation must run against the generated taxonomies.
+- Diversity analysis must emit both global and local diversity metrics.
+- Critic validation must measure both acceptance of correct samples and rejection of corrupted samples.
+- Taxonomy quality evaluation must be emitted when the taxonomy schema or spec requires it.
+- Adaptive controls described in the spec must be real runtime behavior, not dead helper methods.
+
+Default Threshold Expectations
+- Critic calibration target:
+  - `p(accept | correct) > 0.80`
+  - `p(accept | corrupted) < 0.30`
+- Taxonomy quality targets from schema:
+  - completeness target: `> 0.70`
+  - soundness target: `> 0.90`
+- Coverage and diversity thresholds must be explicit in code or config, not implied by comments alone.
+
+Required Integration Rules
+- If you change the runner contract, update the API worker in:
+  - `src/generativeUI/training-webcomponents-ngx/packages/api-server/src/main.py`
+- If you change pipeline stages, artifact names, or run semantics, update the frontend pipeline page in:
+  - `src/generativeUI/training-webcomponents-ngx/apps/angular-shell/src/app/pages/pipeline/pipeline.component.ts`
+- If you change live-vs-preview behavior, update:
+  - `src/generativeUI/training-webcomponents-ngx/apps/angular-shell/src/app/pages/hana-explorer/hana-explorer.component.ts`
+  - `src/generativeUI/training-webcomponents-ngx/apps/angular-shell/src/app/components/shell/shell.component.ts`
+- Do not leave the UI/API pointing at legacy paths after changing the backend.
+
+Priority Order For Bringing The System To 10/10
+1. Make the Simula runner the authoritative default path.
+2. Repair `TrainingExample`, taxonomy, and evaluator contract drift against the JSON schemas.
+3. Normalize artifact names and locations across runner, API, governance, and frontend.
+4. Integrate the full evaluation framework into the operational run.
+5. Replace placeholder telemetry and preview-first behavior in the live product surfaces.
+6. Only then remove or quarantine remaining legacy defaults.
+
+Pre-Change Checklist
+- Confirm which spec chapter is being implemented.
+- Confirm which JSON schema contracts are affected.
+- Confirm whether the change touches only `src/training` or also requires API/frontend integration updates.
+- Check whether the current live path still references:
+  - `make all`
+  - `schema_pipeline/data_generator.py`
+  - `prepare_training_data.py`
+  - `training/pipeline/output/train.jsonl`
+- Check whether the UI still references legacy stage names or synthetic telemetry.
+- If any of those are still present in the impacted path, treat migration work as part of the task, not optional follow-up.
+
+Task Checklist For Any Non-Trivial Change
+- Confirm which spec chapter governs the task.
+- Confirm which serialized contracts are touched.
+- Confirm whether API and frontend consumers are affected.
+- Add or update tests before declaring completion.
+- Run the narrowest meaningful test set plus at least one end-to-end smoke path for the changed contract.
+- Report any remaining spec gaps explicitly.
+
+Minimum Verification Before Closing Work
+- If training models or artifacts changed:
+  - validate against `docs/schema/simula/training-example.schema.json`
+  - validate against `docs/schema/simula/taxonomy.schema.json` when relevant
+- If runner or pipeline wiring changed:
+  - run the runner entrypoint used by the live API path
+  - verify required output files exist
+- If evaluator code changed:
+  - run evaluator-specific tests
+  - run at least one integration path proving evaluators can consume current examples and taxonomies
+- If API/frontend integration changed:
+  - verify artifact paths and payload shapes end to end
+  - verify governed runs do not show preview as healthy production
+
+Post-Change Smoke Tests
+- Runner and contract smoke:
+  - `python3 src/training/scripts/run_hana_pipeline.py --help`
+  - verify the documented/default entrypoint resolves to the Simula runner
+- Schema and artifact smoke:
+  - generate or stage a representative output set
+  - confirm the canonical artifact names exist in the agreed output directory
+  - confirm the JSONL and taxonomy outputs match the JSON schemas
+- Legacy-path regression smoke:
+  - `rg -n "make all|schema_pipeline/data_generator.py|prepare_training_data.py|training/pipeline/output/train.jsonl" src/generativeUI/training-webcomponents-ngx/packages/api-server/src/main.py`
+  - expected result after full migration: no live Simula path should depend on those references
+- Frontend truthfulness smoke:
+  - `rg -n "Preconvert|Parse Templates|Expand|Build SQL|Math.random\\(" src/generativeUI/training-webcomponents-ngx/apps/angular-shell/src/app/pages/pipeline/pipeline.component.ts`
+  - expected result after full migration: legacy stage model and fake telemetry should not drive the production Simula experience
+- Preview-mode smoke:
+  - verify governed production runs do not settle on preview or synthetic data mode
+  - verify any preview/demo mode is visibly and operationally marked as non-production
+
+Existing Useful Test Entrypoints
+- `python3 -m pytest src/training/pipeline/tests/test_pipeline.py -v --tb=short`
+- `python3 -m pytest src/training/tests -v --tb=short`
+- If API behavior is touched:
+  - `python3 -m pytest src/generativeUI/training-webcomponents-ngx/packages/api-server/tests -v --tb=short`
+
+Failure Conditions That Must Block Completion
+- The default path still runs the legacy template pipeline.
+- Evaluators still expect fields that runtime models do not provide.
+- API still points at legacy dataset refs while the runner writes different artifacts.
+- Frontend still displays simulated stages or random throughput as if they were real Simula telemetry.
+- Governed runs can finish successfully while using preview fallback paths.
+- Artifacts exist but do not validate against the spec-backed schemas.
+
+Working Style
+- Be conservative with contracts and explicit with migrations.
+- Prefer deleting ambiguity over preserving accidental compatibility.
+- When in doubt, make the system more measurable:
+  - more explicit artifact names
+  - more explicit report structures
+  - more explicit tests
+  - more explicit failure modes
+- If you can specify a concrete verification command, do so.
+- Match the operational specificity standard already demonstrated in `src/generativeUI/.clinerules`.
+
+Completion Standard
+- The target is not "good enough."
+- The target is spec-faithful, operationally wired, schema-valid, test-backed, and observable end to end.

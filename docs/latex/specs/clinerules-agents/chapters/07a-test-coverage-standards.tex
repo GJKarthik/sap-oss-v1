@@ -1,0 +1,140 @@
+\chapter{Test Coverage Standards}
+\label{ch:test-coverage}
+
+\section{Purpose}
+
+This chapter establishes mandatory test coverage metrics for agent rule packs
+and their validation harnesses. While the core specification requires test
+entry points, this addendum specifies quantified coverage thresholds.
+
+\section{Coverage metrics}
+
+\subsection{Rule-pack validation coverage}
+
+Every \artifact{.clinerules} file MUST have an associated validation harness
+that achieves the following coverage thresholds:
+
+\begin{table}[htbp]
+\centering
+\footnotesize
+\caption{Mandatory test coverage thresholds.}
+\label{tab:coverage-thresholds}
+\begin{tabularx}{\textwidth}{@{}l l X@{}}
+\toprule
+\textbf{Metric} & \textbf{Threshold} & \textbf{Measurement method} \\
+\midrule
+Section coverage & 100\% & Every required section in the pack must have at least one test case. \\
+Path verification coverage & $\ge 90\%$ & All file paths referenced in the pack must be verified to exist. \\
+Threshold extraction coverage & 100\% & Every numeric threshold must be extracted and testable. \\
+Known issue coverage & $\ge 80\%$ & Known issues must have regression tests or explicit waivers. \\
+Integration smoke coverage & $\ge 2$ tests & Minimum end-to-end smoke tests per pack. \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\subsection{Implementation code coverage}
+
+Code governed by a rule pack MUST maintain the following coverage levels:
+
+\begin{table}[htbp]
+\centering
+\footnotesize
+\caption{Implementation code coverage requirements.}
+\label{tab:code-coverage}
+\begin{tabularx}{\textwidth}{@{}l l X@{}}
+\toprule
+\textbf{Scope} & \textbf{Minimum} & \textbf{Target} \\
+\midrule
+Line coverage & 70\% & 85\% \\
+Branch coverage & 60\% & 75\% \\
+Critical path coverage & 90\% & 100\% \\
+Error handling coverage & 80\% & 95\% \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\subsection{Critical path definition}
+
+A \textbf{critical path} is any code path that:
+\begin{itemize}
+  \item Enforces deny-by-default behavior
+  \item Validates identity envelopes
+  \item Performs audit reservation or completion
+  \item Triggers circuit-breaker or degradation modes
+  \item Handles schema validation failures
+\end{itemize}
+
+Critical paths MUST achieve 90\% minimum coverage with a target of 100\%.
+
+\section{Coverage reporting}
+
+\subsection{Report format}
+
+The validation harness SHALL produce a coverage report in the following format:
+
+\begin{verbatim}
+{
+  "pack_path": "src/intelligence/.clinerules",
+  "timestamp": "2026-04-21T09:00:00Z",
+  "coverage": {
+    "section_coverage": {"achieved": 100, "required": 100, "pass": true},
+    "path_verification": {"achieved": 94, "required": 90, "pass": true},
+    "threshold_extraction": {"achieved": 100, "required": 100, "pass": true},
+    "known_issue_coverage": {"achieved": 85, "required": 80, "pass": true},
+    "smoke_tests": {"count": 3, "required": 2, "pass": true}
+  },
+  "implementation_coverage": {
+    "line_coverage": {"achieved": 78, "minimum": 70, "target": 85},
+    "branch_coverage": {"achieved": 65, "minimum": 60, "target": 75},
+    "critical_path_coverage": {"achieved": 95, "minimum": 90, "target": 100},
+    "error_handling_coverage": {"achieved": 88, "minimum": 80, "target": 95}
+  },
+  "overall_pass": true,
+  "gaps": []
+}
+\end{verbatim}
+
+\subsection{CI/CD integration}
+
+Coverage checks SHALL be integrated into the CI/CD pipeline:
+
+\begin{enumerate}
+  \item Coverage is computed on every PR that modifies a \filepath{.clinerules}
+    file or its governed code.
+  \item PRs that fail to meet minimum thresholds MUST be blocked.
+  \item Coverage trends are tracked over time and reported weekly.
+  \item Coverage regressions (drops $> 5\%$) trigger alerts.
+\end{enumerate}
+
+\section{Coverage exceptions}
+
+\subsection{Exception criteria}
+
+Coverage exceptions MAY be granted when:
+\begin{itemize}
+  \item Third-party dependencies prevent testing certain paths
+  \item Platform-specific code cannot be tested in CI/CD environment
+  \item Experimental code is explicitly marked as such
+\end{itemize}
+
+\subsection{Exception format}
+
+Exceptions MUST be documented in the coverage configuration:
+
+\begin{verbatim}
+coverage_exceptions:
+  - path: "src/intelligence/monitoring/platform_specific.py"
+    reason: "Requires SAP BTP environment for testing"
+    owner: "platform-team@example.com"
+    expires: "2026-07-21"
+    minimum_override: 50
+\end{verbatim}
+
+\section{Enforcement}
+
+\begin{itemize}
+  \item Coverage checks run as part of \texttt{make test-clinerules}
+  \item Failing coverage blocks PR merge
+  \item Coverage reports are attached to PR as status checks
+  \item Weekly coverage summary is published to team dashboard
+\end{itemize}

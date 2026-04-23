@@ -71,6 +71,7 @@ server {
       sub_filter_types text/html;
       sub_filter_once off;
       sub_filter '<base href="/ui5/">' '<base href="/ui5/">';
+      sub_filter 'content="http://localhost:8080"' 'content=""';
       sub_filter 'href="/' 'href="/ui5/';
       sub_filter 'src="/' 'src="/ui5/';
     }
@@ -182,5 +183,18 @@ server {
     location /api/v1/ui5/ {
       default_type application/json;
       return 400 '{"status":"bad_request","message":"Use /api/v1/ui5/mcp/*, /api/v1/ui5/openai/*, or /api/v1/ui5/pal/*"}';
+    }
+
+    # Training and AI Fabric shells still issue absolute /api/* requests.
+    # Route those through the shared training API so the suite gateway works
+    # even when the apps are mounted under /training/ and /aifabric/.
+    location /api/ {
+      rewrite ^/api/(.*)$ /$1 break;
+      proxy_pass http://training_api;
+      proxy_http_version 1.1;
+      proxy_set_header Host $host;
+      proxy_set_header X-Real-IP $remote_addr;
+      proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+      proxy_set_header X-Correlation-ID $request_id;
     }
 }

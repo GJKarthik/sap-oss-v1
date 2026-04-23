@@ -1,0 +1,238 @@
+# =============================================================================
+# API Service Development Agent Rules - Pattern Example
+# Path: src/<service>/.clinerules
+# =============================================================================
+# This pattern is for REST API services with OpenAPI contracts, authentication,
+# rate limiting, and comprehensive error handling.
+#
+# Use this when:
+# - Building new REST API endpoints
+# - Migrating existing APIs to new patterns
+# - Implementing API-first development
+# =============================================================================
+
+Purpose
+- Govern implementation and maintenance of <SERVICE_NAME> REST API.
+- Ensure API contract compliance with OpenAPI specification.
+- Maintain security, performance, and reliability standards.
+
+Mission
+- Keep <SERVICE_NAME> API aligned with its OpenAPI contract.
+- Enforce authentication, authorization, and rate limiting requirements.
+- Ensure comprehensive error handling and logging.
+- Maintain backward compatibility for existing consumers.
+
+# -----------------------------------------------------------------------------
+# SOURCE OF TRUTH
+# -----------------------------------------------------------------------------
+
+Source Of Truth
+- API Contract (OpenAPI 3.0+):
+  - `docs/api/<service>-openapi.yaml`
+- Data Contracts:
+  - `docs/schema/<service>/request.schema.json`
+  - `docs/schema/<service>/response.schema.json`
+  - `docs/schema/<service>/error.schema.json`
+- Implementation:
+  - `src/<service>/routes/` (endpoint handlers)
+  - `src/<service>/middleware/` (auth, rate limiting)
+  - `src/<service>/services/` (business logic)
+  - `src/<service>/models/` (data models)
+  - `src/<service>/tests/` (test suite)
+- Configuration:
+  - `src/<service>/config/` (environment-specific config)
+
+# -----------------------------------------------------------------------------
+# READ-FIRST FILES
+# -----------------------------------------------------------------------------
+
+Read First On Every Task
+1. Read this .clinerules file.
+2. Read the OpenAPI specification for affected endpoints.
+3. Read request/response schemas for any data changes.
+4. Read existing tests for the affected endpoint.
+5. Read authentication/authorization middleware if touching auth.
+6. Only then begin implementation.
+
+# -----------------------------------------------------------------------------
+# CURRENT REALITY
+# -----------------------------------------------------------------------------
+
+Current Repo Reality You Must Assume
+- API is versioned via URL path: /api/v1/, /api/v2/
+- Authentication uses JWT tokens with standard claims
+- Rate limiting is enforced per-identity at gateway level
+- All endpoints must return JSON with standard error format
+- Health endpoints (/health, /health/details) are unauthenticated
+
+# -----------------------------------------------------------------------------
+# KNOWN ISSUES
+# -----------------------------------------------------------------------------
+
+Known Issue Registry
+- API-KI-001 Pagination cursor encoding:
+  - symptom: Cursor tokens may contain special characters
+  - impact: URL encoding issues in some clients
+  - prevention: Always base64-encode cursor tokens
+
+- API-KI-002 Rate limit header inconsistency:
+  - symptom: X-RateLimit-* headers may be missing on error responses
+  - impact: Clients cannot track remaining quota on errors
+  - prevention: Ensure middleware adds headers even on 4xx/5xx
+
+- API-KI-003 Partial response on timeout:
+  - symptom: Long-running requests may return partial data
+  - impact: Clients receive incomplete responses
+  - prevention: Implement request timeouts with proper cleanup
+
+# -----------------------------------------------------------------------------
+# API CONTRACT RULES
+# -----------------------------------------------------------------------------
+
+Contract Rules
+- All endpoints MUST be documented in OpenAPI spec before implementation.
+- Request bodies MUST validate against request.schema.json.
+- Response bodies MUST validate against response.schema.json.
+- Error responses MUST follow error.schema.json format:
+  ```json
+  {
+    "error": {
+      "code": "ERROR_CODE",
+      "message": "Human-readable message",
+      "details": {},
+      "request_id": "uuid"
+    }
+  }
+  ```
+- Breaking changes require new API version (v1 → v2).
+- Deprecated endpoints must include Deprecation header.
+
+# -----------------------------------------------------------------------------
+# AUTHENTICATION AND AUTHORIZATION
+# -----------------------------------------------------------------------------
+
+Auth Rules
+- All endpoints except /health and /docs require valid JWT.
+- JWT must include: sub, exp, iat, iss claims.
+- Authorization is role-based: admin, user, service, readonly.
+- Service-to-service calls use separate service accounts.
+- Failed auth returns 401; insufficient permissions returns 403.
+
+Auth Checklist
+- [ ] Endpoint requires authentication (unless health/docs)
+- [ ] Required role(s) documented in OpenAPI security schemes
+- [ ] Rate limits defined per role
+- [ ] Audit logging includes identity information
+
+# -----------------------------------------------------------------------------
+# ERROR HANDLING
+# -----------------------------------------------------------------------------
+
+Error Code Standards
+| HTTP Status | Error Code Pattern | Example |
+|-------------|-------------------|---------|
+| 400 | INVALID_* | INVALID_REQUEST_BODY |
+| 401 | AUTH_* | AUTH_TOKEN_EXPIRED |
+| 403 | FORBIDDEN_* | FORBIDDEN_RESOURCE |
+| 404 | NOT_FOUND_* | NOT_FOUND_USER |
+| 409 | CONFLICT_* | CONFLICT_DUPLICATE |
+| 429 | RATE_LIMIT_* | RATE_LIMIT_EXCEEDED |
+| 500 | INTERNAL_* | INTERNAL_ERROR |
+| 503 | SERVICE_* | SERVICE_UNAVAILABLE |
+
+Error Response Rules
+1. Always include request_id in error responses.
+2. Never expose internal error details in production.
+3. Log full error details server-side with request_id.
+4. Return appropriate retry-after header for 429 and 503.
+
+# -----------------------------------------------------------------------------
+# PERFORMANCE STANDARDS
+# -----------------------------------------------------------------------------
+
+Performance Thresholds
+- P95 response time: < 500ms for simple reads
+- P95 response time: < 2000ms for complex queries
+- P95 response time: < 5000ms for batch operations
+- Max response size: 10MB (configurable)
+- Default page size: 100 items
+- Max page size: 1000 items
+
+Performance Rules
+1. Implement pagination for all list endpoints.
+2. Support field filtering for large responses.
+3. Use async processing for operations > 30 seconds.
+4. Implement request timeouts (default: 30s).
+5. Cache frequently-read, rarely-changed data.
+
+# -----------------------------------------------------------------------------
+# DEFINITION OF DONE
+# -----------------------------------------------------------------------------
+
+Definition Of Done
+- OpenAPI spec is updated with new/changed endpoints.
+- Request/response schemas are updated if data changed.
+- Endpoint validates input against schema.
+- Endpoint returns schema-compliant responses.
+- Error cases return standard error format.
+- Unit tests cover happy path and error cases.
+- Integration tests verify end-to-end behavior.
+- Rate limiting is configured for new endpoints.
+- Logging includes request_id and identity.
+- No regression in existing endpoint behavior.
+
+# -----------------------------------------------------------------------------
+# ENGINEERING RULES
+# -----------------------------------------------------------------------------
+
+Non-Negotiable Engineering Rules
+1. Never deploy without updating OpenAPI spec first.
+2. Never return 500 for client errors (use 4xx).
+3. Never log sensitive data (tokens, passwords, PII).
+4. Always validate input before processing.
+5. Always return consistent error format.
+6. Always include request_id in all responses.
+7. Never break backward compatibility without version bump.
+
+# -----------------------------------------------------------------------------
+# CHECKLISTS
+# -----------------------------------------------------------------------------
+
+Pre-Change Checklist
+- [ ] Read OpenAPI spec for affected endpoints
+- [ ] Identify affected request/response schemas
+- [ ] Review authentication requirements
+- [ ] Check rate limiting configuration
+- [ ] Review existing tests
+
+Post-Change Smoke Tests
+- Lint OpenAPI: `spectral lint docs/api/<service>-openapi.yaml`
+- Validate schemas: `ajv validate -s schema.json -d payload.json`
+- Run unit tests: `cd src/<service> && make test`
+- Run integration tests: `cd src/<service> && make test-integration`
+- Health check: `curl -sf http://localhost:8080/health`
+- Auth check: `curl -H "Authorization: Bearer $TOKEN" http://localhost:8080/api/v1/me`
+
+# -----------------------------------------------------------------------------
+# COMPLETION STANDARD
+# -----------------------------------------------------------------------------
+
+Completion Standard
+- API spec and implementation are in sync.
+- All requests validate against schema.
+- All responses validate against schema.
+- Error handling is comprehensive and consistent.
+- Tests prove the implementation works.
+- No security vulnerabilities introduced.
+
+# -----------------------------------------------------------------------------
+# VERSION HISTORY
+# -----------------------------------------------------------------------------
+
+| Version | Date | Changes |
+|---------|------|---------|
+| 1.0.0 | 2026-04-21 | Initial API service pattern |
+
+# =============================================================================
+# END OF .clinerules
+# =============================================================================

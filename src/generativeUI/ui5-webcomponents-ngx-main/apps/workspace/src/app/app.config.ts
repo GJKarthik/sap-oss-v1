@@ -14,7 +14,7 @@ import { MainComponent } from './main.component';
 
 const routes: Routes = [
   { path: '', component: MainComponent },
-  { path: 'forms', loadChildren: () => import('./modules/forms/forms.module').then(m => m.FormsModule) },
+  { path: 'forms', redirectTo: 'readiness', pathMatch: 'full' },
   { path: 'joule', loadChildren: () => import('./modules/joule/joule.module').then(m => m.JouleModule) },
   { path: 'collab', loadChildren: () => import('./modules/collab/collab.module').then(m => m.CollabModule) },
   { path: 'generative', loadChildren: () => import('./modules/generative/generative.module').then(m => m.GenerativeModule) },

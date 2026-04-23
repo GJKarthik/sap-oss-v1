@@ -119,31 +119,6 @@ test.describe('Visual Regression Tests', () => {
     });
   });
 
-  test.describe('Data Explorer Page', () => {
-    test('data explorer page matches baseline', async ({ page }) => {
-      await page.goto('/data-explorer', { waitUntil: 'networkidle' });
-      await page.waitForTimeout(500);
-      
-      await expect(page).toHaveScreenshot('data-explorer-full.png', {
-        fullPage: true,
-        animations: 'disabled',
-      });
-    });
-
-    test('asset detail panel matches baseline', async ({ page }) => {
-      await page.goto('/data-explorer', { waitUntil: 'networkidle' });
-      
-      // Click on first asset to open detail panel
-      await page.locator('.asset-card').first().click();
-      await page.waitForTimeout(300);
-      
-      const detailPanel = page.locator('.detail-panel');
-      await expect(detailPanel).toHaveScreenshot('asset-detail-panel.png', {
-        animations: 'disabled',
-      });
-    });
-  });
-
   test.describe('HANA Explorer Page', () => {
     test('hana explorer page matches baseline', async ({ page }) => {
       await page.goto('/hana-explorer', { waitUntil: 'networkidle' });

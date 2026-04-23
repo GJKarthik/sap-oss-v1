@@ -1,0 +1,24 @@
+---
+title: Minimum Swarm for Governed Spec Delivery
+---
+flowchart TB
+    ORCH[Spec Orchestrator]
+    REGDEV[Regulations<br/>Development]
+    REGMON[Regulations<br/>Runtime Monitor]
+    SIM[Simula<br/>Pack]
+    GUI[Generative UI<br/>Pack]
+    PDF[PDF Build &<br/>Validation]
+
+    ORCH --> REGDEV
+    ORCH --> REGMON
+    REGDEV --> SIM
+    REGDEV --> GUI
+    SIM --> PDF
+    GUI --> PDF
+    REGMON --> PDF
+
+    classDef ctrl fill:#FFF4D6,stroke:#FF9500,stroke-width:1.5px,color:#1D1D1F
+    classDef pack fill:#E8F0FC,stroke:#0064D7,color:#1D1D1F
+
+    class ORCH,PDF ctrl
+    class REGDEV,REGMON,SIM,GUI pack

@@ -1,0 +1,211 @@
+% =============================================================================
+% SAP-OSS Listings Package - WWDC Keynote Quality
+% Version: 2.1.0
+% Code listings with Xcode-inspired styling
+% =============================================================================
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{sap-oss-listings}[2026/04/21 SAP-OSS WWDC-Style Listings v2.1]
+
+% Core packages
+\RequirePackage{listings}
+\RequirePackage{tcolorbox}
+\tcbuselibrary{listings,skins}
+
+% -----------------------------------------------------------------------------
+% CODE COLORS - VS Code / Xcode Inspired
+% -----------------------------------------------------------------------------
+\definecolor{codebg}{HTML}{FAFBFC}
+\definecolor{codebgdark}{HTML}{1E1E1E}
+\definecolor{codeframe}{HTML}{E1E4E8}
+\definecolor{codekeyword}{HTML}{D73A49}
+\definecolor{codestring}{HTML}{032F62}
+\definecolor{codecomment}{HTML}{6A737D}
+\definecolor{codenumber}{HTML}{005CC5}
+\definecolor{codeoperator}{HTML}{D73A49}
+\definecolor{codeidentifier}{HTML}{24292E}
+\definecolor{codefunction}{HTML}{6F42C1}
+\definecolor{codetype}{HTML}{22863A}
+\definecolor{linenumberbg}{HTML}{F6F8FA}
+\definecolor{shadowcolor}{HTML}{000000}
+
+% -----------------------------------------------------------------------------
+% BASE LISTING STYLE - WWDC CLEAN
+% -----------------------------------------------------------------------------
+\lstset{
+  basicstyle=\small\ttfamily\color{codeidentifier},
+  keywordstyle=\color{codekeyword}\bfseries,
+  stringstyle=\color{codestring},
+  commentstyle=\color{codecomment}\itshape,
+  numberstyle=\tiny\color{applegray2}\ttfamily,
+  identifierstyle=\color{codeidentifier},
+  showstringspaces=false,
+  showspaces=false,
+  showtabs=false,
+  tabsize=2,
+  breaklines=true,
+  breakatwhitespace=true,
+  breakautoindent=true,
+  columns=flexible,
+  keepspaces=true,
+  frame=none,
+  aboveskip=0pt,
+  belowskip=0pt,
+  xleftmargin=0pt,
+  xrightmargin=0pt,
+  % Line numbers
+  numbers=left,
+  numbersep=12pt, % Reduced for better alignment in boxed context
+  stepnumber=1,
+  % Escape to LaTeX
+  escapeinside={(*@}{@*)},
+  extendedchars=true,
+  inputencoding=utf8,
+  literate={→}{{$\rightarrow$}}1 {←}{{$\leftarrow$}}1 {≥}{{$\geq$}}1 {≤}{{$\leq$}}1 {≠}{{$\neq$}}1,
+}
+
+% -----------------------------------------------------------------------------
+% LANGUAGE DEFINITIONS
+% -----------------------------------------------------------------------------
+
+% Python
+\lstdefinelanguage{pythonx}{
+  language=Python,
+  morekeywords={self,True,False,None,async,await,yield,with,as,lambda,nonlocal,
+                match,case,dataclass,field,Optional,List,Dict,Set,Tuple,Union,
+                Any,Callable,TypeVar,Generic,Protocol,Literal,Final,ClassVar},
+  morecomment=[l]{\#},
+  morestring=[b]",
+  morestring=[b]',
+  morestring=[s]{---}{---}, % Frontmatter support
+  keywordstyle=\color{codekeyword}\bfseries,
+  stringstyle=\color{codestring},
+  commentstyle=\color{codecomment}\itshape,
+  emph={print,len,range,enumerate,zip,map,filter,sorted,reversed,
+        open,read,write,close,json,yaml,Path,datetime},
+  emphstyle=\color{codefunction},
+}
+
+% JSON
+\lstdefinelanguage{jsonx}{
+  morestring=[b]",
+  morecomment=[l]{//},
+  stringstyle=\color{codestring},
+  commentstyle=\color{codecomment}\itshape,
+  literate=
+    *{:}{{{\color{codeoperator}:}}}1
+    {,}{{{\color{codeoperator},}}}1
+    {\{}{{{\color{codeoperator}\{}}}1
+    {\}}{{{\color{codeoperator}\}}}}1
+    {[}{{{\color{codeoperator}[}}}1
+    {]}{{{\color{codeoperator}]}}}1
+    {true}{{{\color{codekeyword}true}}}4
+    {false}{{{\color{codekeyword}false}}}5
+    {null}{{{\color{codekeyword}null}}}4,
+}
+
+% YAML
+\lstdefinelanguage{yamlx}{
+  keywords={true,false,null,yes,no,on,off},
+  keywordstyle=\color{codekeyword},
+  sensitive=false,
+  morecomment=[l]{\#},
+  commentstyle=\color{codecomment}\itshape,
+  stringstyle=\color{codestring},
+  moredelim=[l][\color{codetype}]{:\ },
+  morestring=[b]',
+  morestring=[b]",
+}
+
+% -----------------------------------------------------------------------------
+% WWDC-STYLE CODE BOXES WITH SHADOWS
+% -----------------------------------------------------------------------------
+
+% Base code box style - Xcode inspired with shadow
+\tcbset{
+  code box wwdc/.style={
+    enhanced,
+    breakable,
+    boxrule=0.5pt, % Thin border instead of none
+    colframe=codeframe,
+    colback=codebg,
+    arc=8pt,
+    outer arc=8pt,
+    left=24pt, % Increased left margin for line numbers
+    right=16pt,
+    top=16pt,
+    bottom=16pt,
+    before skip=24pt,
+    after skip=24pt,
+    % Subtle shadow
+    shadow={2pt}{-2pt}{4pt}{shadowcolor!8},
+  },
+  % Dark theme variant
+  code box dark/.style={
+    enhanced,
+    breakable,
+    boxrule=0.5pt,
+    colframe=codeborder,
+    colback=codebgdark,
+    arc=8pt,
+    outer arc=8pt,
+    left=24pt,
+    right=16pt,
+    top=16pt,
+    bottom=16pt,
+    before skip=24pt,
+    after skip=24pt,
+    shadow={2pt}{-2pt}{4pt}{black!30},
+  },
+  % With file path header (Xcode style)
+  code box file/.style={
+    code box wwdc,
+    title={\small\color{applegray2}\faIcon{file-code}\hspace{8pt}\texttt{#1}},
+    coltitle=applegray1,
+    colbacktitle=linenumberbg,
+    fonttitle=\fontseries{sb}\selectfont,
+    boxed title style={
+      boxrule=0.5pt,
+      colframe=codeframe,
+      arc=6pt,
+      colback=linenumberbg,
+    },
+    attach boxed title to top left={xshift=16pt, yshift=-10pt},
+  },
+}
+
+% =============================================================================
+% CODE LISTING ENVIRONMENTS
+% =============================================================================
+
+% Python code with file path
+\NewTCBListing{pythonfile}{ m }{
+  code box file={#1},
+  listing only,
+  listing options={language=pythonx},
+}
+
+% JSON code with file path
+\NewTCBListing{jsonfile}{ m }{
+  code box file={#1},
+  listing only,
+  listing options={language=jsonx},
+}
+
+% YAML code with file path
+\NewTCBListing{yamlfile}{ m }{
+  code box file={#1},
+  listing only,
+  listing options={language=yamlx},
+}
+
+% Generic code with language parameter
+\NewTCBListing{codeblock}{ m m }{
+  code box file={#1},
+  listing only,
+  listing options={language=#2},
+}
+
+% File path inline (enhanced)
+\newcommand{\codefilepath}[1]{\texttt{\color{pathcolor}#1}}
+
+\endinput

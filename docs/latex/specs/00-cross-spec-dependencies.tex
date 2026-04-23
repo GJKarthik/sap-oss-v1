@@ -1,0 +1,112 @@
+% !TEX program = xelatex
+% -----------------------------------------------------------------------------
+% SAP OSS Platform: Global Wave-Dependency Manifest
+% -----------------------------------------------------------------------------
+\documentclass[11pt,a4paper]{report}
+
+\usepackage{xcolor}
+\usepackage[a4paper,margin=28mm]{geometry}
+\usepackage{booktabs}
+\usepackage{tabularx}
+\usepackage{longtable}
+\usepackage{enumitem}
+\usepackage{amssymb}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta,positioning,shapes.geometric}
+\usepackage[hidelinks]{hyperref}
+\usepackage[capitalize,noabbrev]{cleveref}
+\usepackage{tcolorbox}
+\usepackage[table]{colortbl}
+
+\definecolor{sapblue}{HTML}{0B5FA5}
+\definecolor{sapgreen}{HTML}{00695C}
+\definecolor{sapamber}{HTML}{B8360F}
+\definecolor{sapgrey}{HTML}{546E7A}
+\definecolor{sapmidnight}{HTML}{1C2B39}
+\definecolor{sapgold}{HTML}{F0AB00}
+
+\newtcolorbox{adrbox}[2][]{colback=blue!5,colframe=blue!75!black,fonttitle=\bfseries,title=ADR: #2,#1}
+
+\begin{document}
+
+\chapter{Global Wave-Dependency Manifest}
+\label{ch:global-dependencies}
+
+\section{Critical Path Visualization (Waves 1--3)}
+The following chart defines the normative sequencing for implementation agents. A task in a later wave cannot be marked \textsc{complete} until its prerequisites in an earlier wave are validated.
+
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}[
+    node distance=1.5cm,
+    auto,
+    wavebox/.style={rectangle, draw, rounded corners, fill=sapmidnight!10, text width=10em, text centered, minimum height=3em, font=\scriptsize\bfseries},
+    dep/.style={->, >=latex, thick, sapblue},
+    critical/.style={->, >=latex, very thick, sapamber}
+]
+    % --- Wave 1: Foundations ---
+    \node (r1) [wavebox, fill=sapgrey!20] {\textcolor{sapmidnight}{REG-W1: Identity \& Audit Schema}};
+    \node (s1) [wavebox, below of=r1, yshift=-0.5cm] {SIM-W1: HANA Extraction Pipeline};
+    \node (a1) [wavebox, below of=s1, yshift=-0.5cm] {ARA-W1: Invoice Intake \& OCR};
+    \node (t1) [wavebox, below of=a1, yshift=-0.5cm] {TB-W1: Identity Wiring};
+
+    % --- Wave 2: Core Build-out ---
+    \node (r2) [wavebox, right of=r1, xshift=4.5cm, fill=sapmidnight!20] {\textcolor{sapmidnight}{REG-W2: Governance Runtime}};
+    \node (s2) [wavebox, right of=s1, xshift=4.5cm] {SIM-W2: Taxonomy \& Synthesis};
+    \node (a2) [wavebox, right of=a1, xshift=4.5cm] {ARA-W2: Multi-Country VAT};
+    \node (t2) [wavebox, right of=t1, xshift=4.5cm] {TB-W2: Controls \& Workflow};
+
+    % --- Wave 3: Hardening ---
+    \node (r3) [wavebox, right of=r2, xshift=4.5cm, fill=sapmidnight!30] {\textcolor{sapmidnight}{REG-W3: Conformance Suite}};
+    \node (s3) [wavebox, right of=s2, xshift=4.5cm] {SIM-W3: 85\% Coverage Test};
+    \node (a3) [wavebox, right of=a2, xshift=4.5cm] {ARA-W3: Calibration Pilot};
+    \node (t3) [wavebox, right of=t2, xshift=4.5cm] {TB-W3: HITL Dashboard};
+
+    % --- Cross-Domain Dependencies (The Critical Path) ---
+    \draw [critical] (r1) -- node [above, font=\tiny, align=center] {Identity Envelope\\Invariants} (a1.north east);
+    \draw [critical] (r1) -- (t1.north east);
+    \draw [dep] (s1.east) -- node [above, font=\tiny, xshift=-0.5cm] {Training Fixtures} (t2.west);
+    \draw [dep] (s1.east) -- (a2.west);
+    \draw [dep] (r2.south) -- node [left, font=\tiny, yshift=0.3cm] {Policy Gate} (a2.north);
+    \draw [dep] (t2.east) -- node [above, font=\tiny] {Audit Evidence} (r3.west);
+    
+    % --- Wave Transitions ---
+    \draw [->, dashed, sapgrey] (r1.east) -- (r2.west);
+    \draw [->, dashed, sapgrey] (r2.east) -- (r3.west);
+
+    % --- Legend ---
+    \node[draw, sapamber, very thick, label=right:\scriptsize Critical Prerequisite] at (0,-7.5) {};
+    \node[draw, sapblue, thick, label=right:\scriptsize Data Dependency, xshift=4cm] at (0,-7.5) {};
+
+\end{tikzpicture}
+\caption{Cross-specification dependency graph: The blueprint for platform rollout.}
+\end{figure}
+
+\section{Inter-Domain Prerequisite Matrix}
+
+\begin{table}[htbp]
+\centering
+\footnotesize
+\caption{Normative Cross-Domain Prerequisites.}
+\label{tab:prerequisites}
+\begin{tabularx}{\textwidth}{@{}l l l X@{}}
+\toprule
+\textbf{Target Task} & \textbf{Prerequisite} & \textbf{Ref ID} & \textbf{Rationale} \\
+\midrule
+\rowcolor{sapmidnight!5}
+\textbf{ARA-W1} & REG-W1 (Identity) & \texttt{REG-IDENTITY-01} & Invoice intake must be audit-traced from Day 1. \\
+\textbf{TB-W2}  & SIM-W1 (Extraction) & \texttt{SIM-EXTRACT-01} & Anomaly detection requires HANA schema metadata. \\
+\rowcolor{sapmidnight!5}
+\textbf{REG-W2} & SIM-W1 (Registry) & \texttt{SIM-REGISTRY-01} & Governance monitoring relies on the schema registry. \\
+\textbf{ARA-W2} & REG-W2 (Pillar 1) & \texttt{REG-MGF-P1} & VAT release is an HITL gate governed by MAS Pillar 1. \\
+\rowcolor{sapmidnight!5}
+\textbf{TB-W3}  & ARA-W2 (Posted Invoices) & \texttt{ARA-AP-POST} & Review dashboard depends on posted AP data from Arabic domain. \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\begin{adrbox}{Dependency Enforcement}
+Implementation agents are strictly forbidden from "Fast-Forwarding" into Wave 2 if Wave 1 critical prerequisites (marked in \textcolor{sapamber}{\textbf{Gold}}) are in a \textsc{gap} or \textsc{partial} state.
+\end{adrbox}
+
+\end{document}

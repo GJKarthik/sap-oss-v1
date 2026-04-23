@@ -1,0 +1,375 @@
+\chapter{Agent Implementation Instructions}\label{ch:agent-impl}
+
+\section{Purpose and audience}
+This chapter is the self-contained, intent-based instruction set for
+implementing the \emph{Arabic AP invoice processing} domain inside the
+unified SAP OSS platform. It is written for LLM-driven and human
+implementation agents who will extend existing services to realise the
+specification. It assumes only this PDF; every platform decision,
+integration contract, and governance obligation the Arabic workstream
+depends on is restated here so that no companion document is required.
+Existing chapters~\ref{ch:overview}--\ref{ch:ap-roadmap} remain the
+normative source for the Arabic domain itself; this chapter tells
+future agents \emph{how} to build what those chapters describe,
+\emph{where} to put it in the codebase, and \emph{how} it plugs into
+the wider platform.
+
+\input{../shared-intent-core.tex}
+
+\section{FMEA: Failure Mode and Effects Analysis for AI}
+\label{sec:fmea-ai}
+
+The following analysis identifies critical AI failure modes within the Arabic AP pipeline and their deterministic mitigations.
+
+\begin{table}[htbp]
+\centering
+\footnotesize
+\caption{FMEA for Arabic AP AI Pipeline.}
+\label{tab:arabic-fmea}
+\begin{tabularx}{\textwidth}{@{}l X X X@{}}
+\toprule
+\textbf{Failure Mode} & \textbf{Symptom} & \textbf{Impact} & \textbf{Technical Mitigation} \\
+\midrule
+OCR Character Drift & Misreading '5' as '6' in currency fields. & High (Financial) & Cross-field arithmetic validation (Net + VAT == Gross). \\
+Translation Ambiguity & 'Invoice' translated as 'Note' (misclassification). & Medium (Routing) & Metadata-tagging based on ZATCA QR-code extraction. \\
+LLM Field Extraction & Extracting 'Address' into 'Vendor Name'. & Medium (Data Qual.) & Confidence-score threshold check per field. \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\section{This domain in context}
+\label{sec:agent-domain-context}
+Arabic AP is the highest-volume transactional workstream among the
+four domains. Its primary persona is the AP Clerk, whose working view
+is the approval queue surfaced through the shared workspace shell and
+gated by AP entitlements. The domain's entry points are document
+intake (email, SFTP, upload) producing raw invoice artefacts; its
+exit points are (a)~a posted AP document in SAP S/4HANA with a signed
+approval record, and (b)~a VAT compliance checklist emitted to the
+audit store. Every artefact is validated against the Arabic-owned
+schemas in \texttt{structured/schema/} before it leaves the service.
+The domain depends on the horizontal regulations wrapper for runtime
+governance and on Simula for the training corpus used by the OCR,
+field-extraction, and translation models described in
+chapter~\ref{ch:ai}.
+
+\section{Schema contribution}
+\label{sec:agent-schema-contrib}
+Arabic AP owns the schemas catalogued in chapter~\ref{ch:schema}. The
+canonical set is the invoice record (see~\ref{tab:invoice-fields}),
+the VAT compliance checklist (see~\ref{tab:checklist-fields}), and the
+payment instruction record. These schemas live under
+\texttt{docs/latex/specs/arabic/} as normative text and under
+\texttt{structured/schema/} as the JSON Schema artefacts consumed at
+runtime. Registration in the unified registry is additive: each
+schema is listed in
+\texttt{src/intelligence/ai-core-pal/data\_products/registry.yaml}
+with its URI, owning domain (\texttt{arabic}), security class
+(\texttt{confidential}), and LLM routing
+(\texttt{vllm-only}), following the ODPS~4.1 pattern. Simula consumes
+these schemas directly as inputs to its extraction pipeline; it does
+not transform them. The \texttt{requirement.schema.json} files owned
+by TB and regulations remain distinct from anything Arabic owns and
+are not merged with it.
+
+\section{Persona and MCP allow-list}
+\label{sec:agent-persona}
+\begin{itemize}
+  \item \textbf{Persona id:} \texttt{ap-clerk}.
+  \item \textbf{Roles:} invoice intake, VAT review, approval
+    progression, exception handling.
+  \item \textbf{Entitlements:} read/write on the Arabic invoice
+    record; read on the VAT rule set; advance transitions on the
+    \texttt{po-eproc} and \texttt{direct-ap} state machines defined
+    in chapter~\ref{ch:ap}; evidence-write on the control catalogue
+    in~\ref{tab:controls}.
+  \item \textbf{UI route:} \texttt{/ap/\{tenant\}/queue} on the shared
+    workspace shell; surfaced only to callers whose entitlement set
+    includes \texttt{ap-clerk}.
+  \item \textbf{MCP tool allow-list:}
+    \texttt{invoice.intake}, \texttt{invoice.ocr},
+    \texttt{invoice.extract-fields},
+    \texttt{invoice.translate-ar-en}, \texttt{vat.validate},
+    \texttt{vat.calculate}, \texttt{ap.workflow.advance},
+    \texttt{ap.workflow.park}. All other MCP tools are denied by
+    default per MAS MGF pillar~1.
+\end{itemize}
+
+\section{Agent Rule-Pack Binding}
+\label{sec:agent-rule-binding}
+Before initiating any task in this domain, the agent MUST load the following rule packs in order:
+\begin{enumerate}
+  \item \filepath{.clinerules} (Global Standards)
+  \item \filepath{src/intelligence/.clinerules} (Regulations Envelope)
+  \item \filepath{src/arabic/.clinerules} (Arabic Domain Constraints)
+\end{enumerate}
+
+\section{Implementation tasks for this domain}
+\label{sec:agent-tasks}
+The tasks below are intent-based: each task states the outcome a
+future agent must achieve and the location in the existing codebase
+where the work belongs. None of them contains code; each task binds
+to the Arabic chapters that define the required behaviour.
+
+\subsection*{Task A1 --- OCR and translation calibration}
+\textbf{Intent.} Bring Arabic OCR and Arabic--English translation up
+to the precision/recall targets in chapter~\ref{ch:ocr-pilot}.
+
+\begin{adrbox}{Why Tesseract + Custom Post-Processor?}
+We chose Tesseract 5.0 for the baseline due to local-hosting requirements, but added a custom 'Arabic-Context' post-processor to handle the right-to-left layout drift in scanned PDF tables.
+\end{adrbox}
+
+\textbf{In-scope.} Running the pilot sample defined
+in~\ref{tab:pilot-sample}; publishing per-field thresholds for
+accept/review/reject; wiring the thresholds into the pipeline stages
+of chapter~\ref{ch:ai}.
+\textbf{Out-of-scope.} Choosing a new OCR engine; altering the
+canonical invoice schema.
+\textbf{Paths to extend.} OCR and extraction code colocated with the
+pipeline stages referenced in chapter~\ref{ch:ai}; fixture store
+referenced in chapter~\ref{ch:testing}.
+\textbf{Definition of done.} Pilot report committed; thresholds
+checked in as configuration; the stage-3 field extractor rejects
+records below threshold and routes them to human review.
+
+\textbf{Autonomous Verification (Agent Logic):}
+\begin{lstlisting}[language=jsonx]
+// Verify Task A1
+{
+  "test_fixture": "tests/fixtures/arabic/invoice_sample_01.png",
+  "expected_outcome": "ocr_confidence > 0.88",
+  "validation_command": "make test-arabic-ocr"
+}
+\end{lstlisting}
+
+\textbf{Verification.} \texttt{make spec-arabic} builds cleanly and
+the Arabic test suite described in chapter~\ref{ch:testing} passes
+end-to-end on the calibration fixtures.
+
+\subsection*{Task A2 --- Multi-country VAT engine}
+\textbf{Intent.} Implement the VAT compliance engine specified in
+chapter~\ref{ch:vat} and detailed in chapter~\ref{ch:vat-impl}.
+\textbf{In-scope.} Per-country rule modules for Saudi Arabia (ZATCA),
+UAE, Bahrain (NBR), and Oman; registration validation, calculation,
+activity lookup, and checklist emission; the canonical decision
+function in~\ref{fig:ksa-decision}.
+\textbf{Out-of-scope.} VAT rules for countries outside the in-scope
+list in~\ref{tab:countries}.
+\textbf{Paths to extend.} The VAT module layout referenced
+in~\ref{fig:vat-arch}; API contracts in chapter~\ref{ch:vat-impl}.
+\textbf{Definition of done.} Every rule cited
+in~\ref{tab:ksa-rules} has a callable check; the checklist record is
+emitted per invoice and validates against
+\texttt{vat-checklist.schema.json}.
+\textbf{Verification.} Unit tests for each country module (see
+chapter~\ref{ch:testing}) pass; the VAT calculation API contract
+sample in chapter~\ref{ch:vat-impl} returns the expected response.
+
+\subsection*{Task A3 --- AP approval workflow}
+\textbf{Intent.} Realise the AP workflow and approval engine in
+chapter~\ref{ch:ap}, including the \texttt{po-eproc} and
+\texttt{direct-ap} state machines.
+\textbf{In-scope.} Workflow-selection logic in~\ref{fig:workflow-select};
+state transitions in~\ref{fig:po-eproc}; park, reroute, and escalate
+actions with evidence records.
+\textbf{Out-of-scope.} SAP S/4HANA AP posting internals;
+non-Bahrain delegations.
+\textbf{Paths to extend.} Workflow engine hosted in the gateway
+service; evidence store colocated with the control catalogue.
+\textbf{Definition of done.} Each state in the state-machine diagram
+is reachable from a deterministic predecessor; transitions are audit
+logged with the persona id of the acting user; the golden regression
+set in chapter~\ref{ch:controls} executes without human intervention.
+\textbf{Verification.} Workflow unit tests pass; the approval queue
+UI surfaces the correct entitlements for \texttt{ap-clerk}.
+
+\subsection*{Task A4 --- Bahrain DOI seven controls}
+\textbf{Intent.} Evidence the seven Bahrain Delegation of Invoicing
+controls required in chapter~\ref{ch:controls}.
+\textbf{In-scope.} Control enforcement map in~\ref{fig:controls-map};
+the seven rows of the control catalogue in~\ref{tab:controls} that
+concern the Bahrain DOI; evidence emission per control.
+\textbf{Out-of-scope.} Introducing controls for other delegations.
+\textbf{Paths to extend.} Control catalogue file referenced in
+chapter~\ref{ch:controls}; evidence store.
+\textbf{Definition of done.} Running the workflow on the Bahrain
+golden sample triggers every control; each control writes an
+evidence record conforming to the Arabic schema set.
+\textbf{Verification.} Traceability matrix in chapter~\ref{ch:controls}
+is complete; the testing chapter's acceptance suite passes.
+
+\subsection*{Task A5 --- Testing and golden regression set}
+\textbf{Intent.} Deliver the testing specification in
+chapter~\ref{ch:testing} at the coverage targets
+in~\ref{tab:arabic-coverage}.
+\textbf{In-scope.} Invoice and OCR fixtures; unit, integration, and
+regression suites; CI wiring.
+\textbf{Out-of-scope.} Performance benchmarking infrastructure beyond
+what chapter~\ref{ch:testing} defines.
+\textbf{Paths to extend.} Test directory colocated with the Arabic
+service code; fixture store used by Simula as training input.
+\textbf{Definition of done.} Coverage meets the thresholds
+in~\ref{tab:arabic-coverage}; CI gates block regressions; the
+regression golden set is reproducible from fixture seeds.
+\textbf{Verification.} \texttt{make spec-arabic} remains green; the
+Arabic test entry points listed in chapter~\ref{ch:testing} all run.
+
+
+\section{Governance obligations applied to this domain}
+\label{sec:agent-governance}
+The regulations domain wraps Arabic AP at runtime. Four obligations
+apply without exception; each is stated as a concrete hook in the
+Arabic codebase.
+
+\begin{itemize}
+  \item \textbf{MAS MGF four pillars} (see regulations
+    chapter~3 in \texttt{docs/latex/specs/regulations/chapters/03-mgf-framework.tex}).
+    Pillar~1 (assess and bound): every Arabic MCP tool is declared in
+    the allow-list in \S\ref{sec:agent-persona}, deny-by-default.
+    Pillar~2 (design and deploy): the pipeline stages in
+    chapter~\ref{ch:ai} are traceable end-to-end via the
+    per-request identity attribution described below. Pillar~3
+    (operate and monitor) and pillar~4 (govern and disclose) are
+    satisfied by emitting the evidence records produced by the
+    Arabic control catalogue (chapter~\ref{ch:controls}) into the
+    shared governance store.
+  \item \textbf{Identity attribution} (regulations chapter~10,
+    \texttt{10-identity-attribution.tex}). Every MCP call and every
+    workflow transition carries the persona id, agent id, request
+    id, and tenant id. The gateway is the attachment point; Arabic
+    code propagates the identity envelope without mutating it.
+  \item \textbf{Emergent-capability monitoring} (regulations
+    chapter~8, \texttt{08-monitoring-spec.tex}). OCR, extraction,
+    translation, and VAT calculation are instrumented with the
+    monitoring metrics specified in that chapter; metrics flow to
+    the monitoring sink defined there.
+  \item \textbf{Conformance tooling} (regulations chapter~6,
+    \texttt{06-conformance-tooling.tex}). The Arabic service exposes
+    AI Verify 2.0 plug-in hooks and Moonshot CI/CD 1.1.0 benchmark
+    entry points as required by that chapter.
+\end{itemize}
+
+\section{Cross-spec integration --- full detail}
+\label{sec:agent-integration}
+
+\subsection{With Arabic AP}
+Arabic AP exports the invoice record, VAT compliance checklist, and
+payment instruction schemas under \texttt{structured/schema/}
+(chapter~\ref{ch:schema}); registers the MCP tools enumerated in
+\S\ref{sec:agent-persona}; and applies the four governance hooks in
+\S\ref{sec:agent-governance} to every call it serves. External
+consumers (TB, regulations, Simula) see Arabic only through these
+contracts; there are no private back-channels.
+
+\subsection{With Trial Balance}
+Arabic AP produces posted AP records and VAT checklists that feed
+the TB close. TB consumes them as evidence inputs to its
+commentary engine, not as schema merges: the Arabic invoice schema
+and the TB control record remain distinct URIs in the unified
+registry. Integration point: TB's ingestion stage calls the
+Arabic MCP tool \texttt{invoice.extract-fields} with read-only
+entitlements; the response is validated against
+\texttt{invoice.schema.json} before TB accepts it.
+
+\subsection{With Regulations}
+Regulations wraps Arabic at runtime. Every Arabic MCP call is
+brokered through the regulations governance gate, which applies
+pillars~1--4 of MAS MGF, attaches the identity envelope, and routes
+emergent-capability metrics to the monitoring store. The Arabic
+service code does not call regulations directly; the gateway layer
+enforces this. Conformance tests defined in regulations
+chapter~5 (empirical evidence) and chapter~6 (conformance tooling)
+execute against the Arabic service as part of the platform CI gate.
+
+\subsection{With Simula}
+Simula consumes Arabic's schemas as training input. The contract is
+schema-in, \texttt{TrainingExample}-out: Simula reads
+\texttt{invoice.schema.json}, \texttt{vat-checklist.schema.json}, and
+the Arabic fixture store; it produces \texttt{TrainingExample}
+records. Simula does not call Arabic MCP tools at runtime and does
+not share state with the Arabic workflow. No cross-domain
+operational envelope is introduced.
+
+\section{Wave assignment and sequencing}
+\label{sec:agent-waves}
+Implementation runs in three waves.
+
+\begin{itemize}
+  \item \textbf{Wave 1 --- foundations.} Unified schema registry
+    entry; persona-gated surface for the AP Clerk; identity
+    attribution envelope flowing through the gateway. Prerequisites:
+    the regulations chapter~10 identity schema must be frozen.
+  \item \textbf{Wave 2 --- Arabic core build-out.} Tasks A1--A4 above.
+    Prerequisites: Wave~1 complete; Simula training fixtures
+    available from Simula Wave~1 (extraction pipeline).
+  \item \textbf{Wave 3 --- hardening and conformance.} Task A5
+    and full conformance-tooling hook-up. Prerequisites: Wave~2
+    complete; regulations Wave~2 conformance tooling integrated;
+    monitoring sink live.
+\end{itemize}
+
+Arabic occupies Wave~2 for its core build-out and Wave~3 for its
+testing and conformance surfaces.
+
+\section{Acceptance criteria (platform-wide)}
+\label{sec:agent-acceptance}
+When all four chapter~12 instruction sets are implemented, the
+platform satisfies the following invariants:
+
+\begin{enumerate}
+  \item \textbf{One instance.} A single codebase runs a single
+    logical instance; no domain ships as a separate product.
+  \item \textbf{Persona-gated surfaces.} The four personas each
+    reach a tailored UI on the shared shell; no route, MCP tool, or
+    data product is visible outside its persona's entitlement set.
+  \item \textbf{Unified registry.} Every schema in use is listed in
+    the ODPS~4.1 registry under its owning domain; validators
+    resolve \texttt{\$ref}s through the unified registry only.
+  \item \textbf{No schema merges.} The two
+    \texttt{requirement.schema.json} files in TB and regulations
+    remain distinct; no cross-domain composite schemas are produced.
+  \item \textbf{No cross-domain operational envelope.} Runtime
+    orchestration stays within each domain's service; only Simula
+    consumes other domains' outputs, and only as training input.
+  \item \textbf{Governance wraps all three non-regulations domains.}
+    Arabic, TB, and Simula service calls pass through the
+    regulations runtime wrapper without exception.
+\end{enumerate}
+
+\section{References}
+\label{sec:agent-references}
+Within-spec references:
+chapter~\ref{ch:overview} (overview),
+chapter~\ref{ch:schema} (data schema),
+chapter~\ref{ch:ai} (AI pipeline),
+chapter~\ref{ch:vat} (VAT compliance engine),
+chapter~\ref{ch:ap} (AP workflow),
+chapter~\ref{ch:controls} (controls and testing),
+chapter~\ref{ch:references} (references),
+chapter~\ref{ch:vat-impl} (VAT implementation),
+chapter~\ref{ch:testing} (testing specification),
+chapter~\ref{ch:ocr-pilot} (OCR pilot),
+chapter~\ref{ch:ap-roadmap} (project roadmap).
+
+Peer chapter~12 instruction sets for the other three domains (each
+is self-contained; consult directly when operating in that domain):
+\begin{itemize}
+  \item Trial Balance:
+    \texttt{docs/latex/specs/tb/chapters/12-implementation-instructions.tex}.
+  \item Regulations:
+    \texttt{docs/latex/specs/regulations/chapters/12-implementation-instructions.tex}.
+  \item Simula:
+    \texttt{docs/latex/specs/simula/chapters/12-implementation-instructions.tex}.
+\end{itemize}
+
+Shared platform artefacts:
+\begin{itemize}
+  \item ODPS~4.1 registry:
+    \texttt{src/intelligence/ai-core-pal/data\_products/registry.yaml}.
+  \item Schema pipeline and resolver:
+    \texttt{src/intelligence/schema\_pipeline/}.
+  \item Training pipeline (Simula):
+    \texttt{src/training/pipeline/}.
+  \item Shared workspace shell:
+    \texttt{generativeUI/training-webcomponents-ngx}.
+\end{itemize}

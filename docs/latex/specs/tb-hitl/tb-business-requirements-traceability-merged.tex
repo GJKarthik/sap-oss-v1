@@ -1,0 +1,4356 @@
+% !TEX program = xelatex
+\documentclass[11pt,a4paper,twoside]{report}
+
+% --- Shared SAP-OSS Style Packages ------------------------------------------
+%% --- INLINED STYLE: sap-oss-colors --- %%
+% =============================================================================
+% SAP-OSS Color Palette - Apple WWDC Inspired
+% Version: 1.0.0
+% =============================================================================
+
+\RequirePackage{xcolor}
+
+% -----------------------------------------------------------------------------
+% PRIMARY BRAND COLORS (SAP)
+% -----------------------------------------------------------------------------
+\definecolor{sapblue}{HTML}{0070F2}           % SAP Blue - Primary brand
+\definecolor{sapgold}{HTML}{F0AB00}           % SAP Gold - Accent
+\definecolor{sapnavy}{HTML}{0A2B4A}           % Deep navy - Headers
+\definecolor{sapcharcoal}{HTML}{1C2B39}       % Charcoal - Body text
+
+% -----------------------------------------------------------------------------
+% APPLE-INSPIRED NEUTRALS
+% -----------------------------------------------------------------------------
+\definecolor{appleblack}{HTML}{1D1D1F}        % Apple deep black
+\definecolor{applegray1}{HTML}{86868B}        % Apple gray (secondary text)
+\definecolor{applegray2}{HTML}{6E6E73}        % Apple gray (tertiary)
+\definecolor{applegray3}{HTML}{D2D2D7}        % Apple light gray (borders)
+\definecolor{applegray4}{HTML}{F5F5F7}        % Apple off-white (backgrounds)
+\definecolor{applewhite}{HTML}{FBFBFD}        % Apple pure white
+
+% -----------------------------------------------------------------------------
+% SEMANTIC COLORS (Apple-Inspired)
+% -----------------------------------------------------------------------------
+% Success / Green
+\definecolor{applegreen}{HTML}{34C759}        % Apple green
+\definecolor{successlight}{HTML}{E8F9ED}      % Light green background
+\definecolor{successdark}{HTML}{248A3D}       % Dark green for text
+
+% Warning / Orange  
+\definecolor{appleorange}{HTML}{FF9500}       % Apple orange
+\definecolor{warninglight}{HTML}{FFF4E5}      % Light orange background
+\definecolor{warningdark}{HTML}{C93400}       % Dark orange for text
+
+% Error / Red
+\definecolor{applered}{HTML}{FF3B30}          % Apple red
+\definecolor{errorlight}{HTML}{FFEBE9}        % Light red background
+\definecolor{errordark}{HTML}{D70015}         % Dark red for text
+
+% Info / Blue
+\definecolor{appleblue}{HTML}{007AFF}         % Apple blue
+\definecolor{infolight}{HTML}{E5F1FF}         % Light blue background
+\definecolor{infodark}{HTML}{0040DD}          % Dark blue for text
+
+% Purple / Accent
+\definecolor{applepurple}{HTML}{AF52DE}       % Apple purple
+\definecolor{purplelight}{HTML}{F5E9FB}       % Light purple background
+\definecolor{purpledark}{HTML}{8944AB}        % Dark purple for text
+
+% Teal / Cyan
+\definecolor{appleteal}{HTML}{5AC8FA}         % Apple teal
+\definecolor{teallight}{HTML}{E5F8FF}         % Light teal background
+\definecolor{tealdark}{HTML}{0071A4}          % Dark teal for text
+
+% -----------------------------------------------------------------------------
+% CODE SYNTAX HIGHLIGHTING (VS Code Dark+ Inspired)
+% -----------------------------------------------------------------------------
+\definecolor{codebg}{HTML}{1E1E1E}            % VS Code dark background
+\definecolor{codebglight}{HTML}{F8F8F8}       % Light mode code background
+\definecolor{codeborder}{HTML}{3C3C3C}        % Code block border
+\definecolor{codetext}{HTML}{D4D4D4}          % Default code text
+\definecolor{codekeyword}{HTML}{569CD6}       % Keywords (blue)
+\definecolor{codestring}{HTML}{CE9178}        % Strings (orange)
+\definecolor{codecomment}{HTML}{6A9955}       % Comments (green)
+\definecolor{codenumber}{HTML}{B5CEA8}        % Numbers (light green)
+\definecolor{codefunction}{HTML}{DCDCAA}      % Functions (yellow)
+\definecolor{codetype}{HTML}{4EC9B0}          % Types (teal)
+\definecolor{codeoperator}{HTML}{D4D4D4}      % Operators
+\definecolor{codelinenr}{HTML}{858585}        % Line numbers
+
+% -----------------------------------------------------------------------------
+% DOCUMENT STRUCTURE COLORS
+% -----------------------------------------------------------------------------
+\definecolor{chaptercolor}{HTML}{0070F2}      % Chapter headings
+\definecolor{sectioncolor}{HTML}{1D1D1F}      % Section headings  
+\definecolor{subsectioncolor}{HTML}{6E6E73}   % Subsection headings
+\definecolor{headerrule}{HTML}{D2D2D7}        % Header/footer rule
+\definecolor{linkcolor}{HTML}{0070F2}         % Hyperlinks
+\definecolor{urlcolor}{HTML}{007AFF}          % URLs
+\definecolor{citecolor}{HTML}{AF52DE}         % Citations
+
+% -----------------------------------------------------------------------------
+% TABLE COLORS
+% -----------------------------------------------------------------------------
+\definecolor{tableheader}{HTML}{F5F5F7}       % Table header background
+\definecolor{tableheadertext}{HTML}{1D1D1F}   % Table header text
+\definecolor{tablerow1}{HTML}{FFFFFF}         % Odd row background
+\definecolor{tablerow2}{HTML}{F9F9FB}         % Even row background (alternating)
+\definecolor{tableborder}{HTML}{E5E5EA}       % Table borders
+
+% -----------------------------------------------------------------------------
+% BOX/CALLOUT COLORS
+% -----------------------------------------------------------------------------
+% Note box (blue)
+\definecolor{notebg}{HTML}{E5F1FF}
+\definecolor{noteborder}{HTML}{007AFF}
+\definecolor{notetext}{HTML}{0040DD}
+
+% Warning box (orange)
+\definecolor{warnbg}{HTML}{FFF4E5}
+\definecolor{warnborder}{HTML}{FF9500}
+\definecolor{warntext}{HTML}{C93400}
+
+% Danger box (red)
+\definecolor{dangerbg}{HTML}{FFEBE9}
+\definecolor{dangerborder}{HTML}{FF3B30}
+\definecolor{dangertext}{HTML}{D70015}
+
+% Success box (green)
+\definecolor{successbg}{HTML}{E8F9ED}
+\definecolor{successborder}{HTML}{34C759}
+\definecolor{successtext}{HTML}{248A3D}
+
+% Tip box (purple)
+\definecolor{tipbg}{HTML}{F5E9FB}
+\definecolor{tipborder}{HTML}{AF52DE}
+\definecolor{tiptext}{HTML}{8944AB}
+
+% ADR box (teal)
+\definecolor{adrbg}{HTML}{E5F8FF}
+\definecolor{adrborder}{HTML}{5AC8FA}
+\definecolor{adrtext}{HTML}{0071A4}
+
+% Requirement box (gold)
+\definecolor{reqbg}{HTML}{FFF9E5}
+\definecolor{reqborder}{HTML}{F0AB00}
+\definecolor{reqtext}{HTML}{996300}
+
+% Implementation note (gray)
+\definecolor{implbg}{HTML}{F5F5F7}
+\definecolor{implborder}{HTML}{86868B}
+\definecolor{impltext}{HTML}{6E6E73}
+
+% Future work (purple gradient)
+\definecolor{futurebg}{HTML}{F0E6F7}
+\definecolor{futureborder}{HTML}{8944AB}
+\definecolor{futuretext}{HTML}{5E3278}
+
+% Gap/Issue box (red)
+\definecolor{gapbg}{HTML}{FFEBE9}
+\definecolor{gapborder}{HTML}{FF3B30}
+\definecolor{gaptext}{HTML}{D70015}
+
+% HITL checkpoint (green)
+\definecolor{hitlbg}{HTML}{E8F9ED}
+\definecolor{hitlborder}{HTML}{34C759}
+\definecolor{hitltext}{HTML}{248A3D}
+
+% Source quotation (light blue)
+\definecolor{sourcebg}{HTML}{F0F7FF}
+\definecolor{sourceborder}{HTML}{0070F2}
+\definecolor{sourcetext}{HTML}{0A2B4A}
+
+% -----------------------------------------------------------------------------
+% LEGACY COLOR ALIASES (for backward compatibility)
+% -----------------------------------------------------------------------------
+\colorlet{sapgreen}{applegreen}
+\colorlet{sapamber}{appleorange}
+\colorlet{sapgrey}{applegray1}
+\colorlet{sapmidnight}{sapnavy}
+\colorlet{tbred}{applered}
+\colorlet{tbblue}{appleblue}
+\colorlet{tbgreen}{applegreen}
+\colorlet{tbgrey}{applegray1}
+\colorlet{tbamber}{appleorange}
+\colorlet{sourcegreen}{successdark}
+\colorlet{reqblue}{infodark}
+\colorlet{specamber}{warningdark}
+\colorlet{registrymidnight}{sapnavy}
+\colorlet{reqpurple}{applepurple}
+\colorlet{specblue}{appleblue}
+\colorlet{schemaorg}{appleorange}
+\colorlet{gapred}{applered}
+\colorlet{gapamber}{appleorange}
+\colorlet{regred}{applered}
+\colorlet{regblue}{appleblue}
+\colorlet{reggreen}{applegreen}
+\colorlet{reggrey}{applegray1}
+\colorlet{regamber}{appleorange}
+\colorlet{pathcolor}{tealdark}
+\colorlet{hanagreen}{successdark}
+\colorlet{llmpurple}{applepurple}
+\colorlet{saplight}{applegray4}
+
+\endinput
+%% --- END INLINED STYLE --- %%
+%% --- INLINED STYLE: sap-oss-boxes --- %%
+% =============================================================================
+% SAP-OSS Boxes Package - WWDC Keynote Quality
+% Version: 2.0.0
+% tcolorbox-based callout and highlight boxes
+% Consolidated to 4 primary types for WWDC cleanliness
+% =============================================================================
+
+% Require tcolorbox with all needed libraries
+\RequirePackage[most]{tcolorbox}
+
+% -----------------------------------------------------------------------------
+% BASE BOX STYLE - WWDC CLEAN
+% -----------------------------------------------------------------------------
+\tcbset{
+  % Minimal base style
+  saposs box base/.style={
+    enhanced,
+    breakable,
+    boxrule=0pt,
+    frame hidden,
+    sharp corners=south,
+    arc=6pt,
+    left=16pt,
+    right=16pt,
+    top=14pt,
+    bottom=14pt,
+    before skip=18pt,
+    after skip=18pt,
+    fonttitle=\fontseries{sb}\selectfont,
+    parbox=false,
+  },
+  % Border-left accent style (WWDC sidebar)
+  saposs sidebar/.style={
+    saposs box base,
+    borderline west={3pt}{0pt}{#1},
+    colback=white,
+  },
+  % Full background style
+  saposs filled/.style={
+    saposs box base,
+    colback=#1!5,
+    borderline west={3pt}{0pt}{#1},
+  },
+}
+
+% =============================================================================
+% PRIMARY BOX TYPES (4 CORE TYPES - WWDC STYLE)
+% =============================================================================
+
+% -----------------------------------------------------------------------------
+% 1. NOTE BOX - Blue, for information
+% -----------------------------------------------------------------------------
+\newtcolorbox{notebox}{
+  saposs sidebar=sapblue,
+  colbacktitle=sapblue!8,
+  coltitle=sapblue,
+  title={\faIcon{info-circle}\hspace{8pt}Note},
+  attach boxed title to top left={xshift=12pt, yshift=-8pt},
+  boxed title style={
+    sharp corners,
+    boxrule=0pt,
+    colback=sapblue!8,
+  },
+}
+
+% Variant without title
+\newtcolorbox{noteboxplain}{
+  saposs sidebar=sapblue,
+  colback=sapblue!3,
+}
+
+% -----------------------------------------------------------------------------
+% 2. WARNING BOX - Amber, for caution
+% -----------------------------------------------------------------------------
+\newtcolorbox{warningbox}{
+  saposs sidebar=sapamber,
+  colbacktitle=sapamber!10,
+  coltitle=sapamber!80!black,
+  title={\faIcon{exclamation-triangle}\hspace{8pt}Warning},
+  attach boxed title to top left={xshift=12pt, yshift=-8pt},
+  boxed title style={
+    sharp corners,
+    boxrule=0pt,
+    colback=sapamber!10,
+  },
+}
+
+% Variant without title
+\newtcolorbox{warningboxplain}{
+  saposs sidebar=sapamber,
+  colback=sapamber!3,
+}
+
+% -----------------------------------------------------------------------------
+% 3. IMPORTANT BOX - Purple, for key insights
+% -----------------------------------------------------------------------------
+\newtcolorbox{importantbox}{
+  saposs sidebar=applepurple,
+  colbacktitle=applepurple!8,
+  coltitle=applepurple,
+  title={\faIcon{lightbulb}\hspace{8pt}Key Insight},
+  attach boxed title to top left={xshift=12pt, yshift=-8pt},
+  boxed title style={
+    sharp corners,
+    boxrule=0pt,
+    colback=applepurple!8,
+  },
+}
+
+% Variant without title
+\newtcolorbox{importantboxplain}{
+  saposs sidebar=applepurple,
+  colback=applepurple!3,
+}
+
+% -----------------------------------------------------------------------------
+% 4. SUCCESS BOX - Green, for completions/achievements
+% -----------------------------------------------------------------------------
+\newtcolorbox{successbox}{
+  saposs sidebar=applegreen,
+  colbacktitle=applegreen!10,
+  coltitle=applegreen!80!black,
+  title={\faIcon{check-circle}\hspace{8pt}Success},
+  attach boxed title to top left={xshift=12pt, yshift=-8pt},
+  boxed title style={
+    sharp corners,
+    boxrule=0pt,
+    colback=applegreen!10,
+  },
+}
+
+% =============================================================================
+% SEMANTIC ALIASES (for backward compatibility)
+% =============================================================================
+
+% Info box → Note box
+\newenvironment{infobox}{\begin{notebox}}{\end{notebox}}
+
+% Danger box → Warning box (severe variant)
+\newtcolorbox{dangerbox}{
+  saposs sidebar=applered,
+  colbacktitle=applered!10,
+  coltitle=applered,
+  title={\faIcon{exclamation-circle}\hspace{8pt}Critical},
+  attach boxed title to top left={xshift=12pt, yshift=-8pt},
+  boxed title style={
+    sharp corners,
+    boxrule=0pt,
+    colback=applered!10,
+  },
+}
+
+% =============================================================================
+% TECHNICAL BOXES (kept for spec compatibility)
+% =============================================================================
+
+% ADR Box - Architecture Decision Record
+\newtcolorbox{adrbox}[1]{
+  saposs sidebar=tealdark,
+  colbacktitle=tealdark!8,
+  coltitle=tealdark,
+  title={\faIcon{project-diagram}\hspace{8pt}#1},
+  attach boxed title to top left={xshift=12pt, yshift=-8pt},
+  boxed title style={
+    sharp corners,
+    boxrule=0pt,
+    colback=tealdark!8,
+  },
+}
+
+% Requirement Box
+\NewDocumentEnvironment{requirement}{m}{%
+  \begin{tcolorbox}[
+    saposs sidebar=sapgold,
+    colbacktitle=sapgold!10,
+    coltitle=sapgold!80!black,
+    title={\faIcon{clipboard-check}\hspace{8pt}Requirement: #1},
+    attach boxed title to top left={xshift=12pt, yshift=-8pt},
+    boxed title style={sharp corners, boxrule=0pt, colback=sapgold!10},
+  ]
+}{%
+  \end{tcolorbox}
+}
+
+% Implementation Note
+\newtcolorbox{implnote}{
+  saposs sidebar=applegray2,
+  colbacktitle=applegray3!30,
+  coltitle=applegray1,
+  title={\faIcon{cog}\hspace{8pt}Implementation Note},
+  attach boxed title to top left={xshift=12pt, yshift=-8pt},
+  boxed title style={
+    sharp corners,
+    boxrule=0pt,
+    colback=applegray3!30,
+  },
+}
+
+% Future Work Box
+\newtcolorbox{futurebox}{
+  saposs sidebar=applepurple,
+  colbacktitle=applepurple!5,
+  coltitle=applepurple!80!black,
+  title={\faIcon{rocket}\hspace{8pt}Future Work},
+  attach boxed title to top left={xshift=12pt, yshift=-8pt},
+  boxed title style={
+    sharp corners,
+    boxrule=0pt,
+    colback=applepurple!5,
+  },
+}
+
+% =============================================================================
+% SIMPLE INLINE COMMANDS (WWDC minimal approach)
+% =============================================================================
+
+% Simple note command (inline)
+\newcommand{\note}[1]{%
+  \begin{notebox}
+    #1
+  \end{notebox}
+}
+
+% Simple warning command (inline)
+\newcommand{\warning}[1]{%
+  \begin{warningbox}
+    #1
+  \end{warningbox}
+}
+
+% Simple important command (inline)
+\newcommand{\important}[1]{%
+  \begin{importantbox}
+    #1
+  \end{importantbox}
+}
+
+% =============================================================================
+% SOURCE QUOTATION BOX (for spec traceability)
+% =============================================================================
+\newtcolorbox{sourcequotebox}[1][Source]{
+  enhanced,
+  breakable,
+  colback=sourcegreen!3,
+  colframe=sourcegreen!50,
+  boxrule=0.5pt,
+  arc=4pt,
+  left=14pt,
+  right=14pt,
+  top=12pt,
+  bottom=12pt,
+  title={\faIcon{quote-left}\hspace{8pt}#1},
+  fonttitle=\small\itshape\color{sourcegreen!80!black},
+  coltitle=sourcegreen!80!black,
+  attach boxed title to top left={xshift=10pt, yshift=-6pt},
+  boxed title style={
+    colback=white,
+    boxrule=0pt,
+  },
+  before skip=16pt,
+  after skip=16pt,
+}
+
+% =============================================================================
+% DEFINITION BOX (clean reference style)
+% =============================================================================
+\NewDocumentEnvironment{definition}{m}{%
+  \begin{tcolorbox}[
+    enhanced,
+    colback=applegray3!15,
+    colframe=applegray3!15,
+    boxrule=0pt,
+    arc=4pt,
+    left=14pt,
+    right=14pt,
+    top=10pt,
+    bottom=10pt,
+    before skip=14pt,
+    after skip=14pt,
+  ]
+  {\fontseries{sb}\selectfont\color{sapblue}#1}\par
+  \vspace{4pt}
+  \color{applegray1}
+}{%
+  \end{tcolorbox}
+}
+
+% =============================================================================
+% CODE CAPTION (WWDC style - context for listings)
+% =============================================================================
+\newcommand{\codecaption}[1]{%
+  \vspace{-6pt}
+  {\small\color{applegray2}\textit{#1}}
+  \vspace{6pt}
+}
+
+\endinput
+%% --- END INLINED STYLE --- %%
+%% --- INLINED STYLE: sap-oss-listings --- %%
+% =============================================================================
+% SAP-OSS Listings Package - WWDC Keynote Quality
+% Version: 2.0.0
+% Code listings with Xcode-inspired styling
+% =============================================================================
+
+% Core packages
+\RequirePackage{listings}
+\RequirePackage{tcolorbox}
+\tcbuselibrary{listings,skins}
+
+% -----------------------------------------------------------------------------
+% CODE COLORS - VS Code / Xcode Inspired
+% -----------------------------------------------------------------------------
+\definecolor{codebg}{HTML}{FAFBFC}
+\definecolor{codebgdark}{HTML}{1E1E1E}
+\definecolor{codeframe}{HTML}{E1E4E8}
+\definecolor{codekeyword}{HTML}{D73A49}
+\definecolor{codestring}{HTML}{032F62}
+\definecolor{codecomment}{HTML}{6A737D}
+\definecolor{codenumber}{HTML}{005CC5}
+\definecolor{codeoperator}{HTML}{D73A49}
+\definecolor{codeidentifier}{HTML}{24292E}
+\definecolor{codefunction}{HTML}{6F42C1}
+\definecolor{codetype}{HTML}{22863A}
+\definecolor{linenumberbg}{HTML}{F6F8FA}
+\definecolor{shadowcolor}{HTML}{000000}
+
+% -----------------------------------------------------------------------------
+% BASE LISTING STYLE - WWDC CLEAN
+% -----------------------------------------------------------------------------
+\lstset{
+  basicstyle=\small\ttfamily\color{codeidentifier},
+  keywordstyle=\color{codekeyword}\bfseries,
+  stringstyle=\color{codestring},
+  commentstyle=\color{codecomment}\itshape,
+  numberstyle=\tiny\color{applegray2}\ttfamily,
+  identifierstyle=\color{codeidentifier},
+  showstringspaces=false,
+  showspaces=false,
+  showtabs=false,
+  tabsize=2,
+  breaklines=true,
+  breakatwhitespace=true,
+  breakautoindent=true,
+  columns=flexible,
+  keepspaces=true,
+  frame=none,
+  aboveskip=0pt,
+  belowskip=0pt,
+  xleftmargin=0pt,
+  xrightmargin=0pt,
+  % Line numbers
+  numbers=left,
+  numbersep=18pt,
+  stepnumber=1,
+  % Escape to LaTeX
+  escapeinside={(*@}{@*)},
+  extendedchars=true,
+  inputencoding=utf8,
+  literate={→}{{$\rightarrow$}}1 {←}{{$\leftarrow$}}1 {≥}{{$\geq$}}1 {≤}{{$\leq$}}1 {≠}{{$\neq$}}1,
+}
+
+% -----------------------------------------------------------------------------
+% LANGUAGE DEFINITIONS
+% -----------------------------------------------------------------------------
+
+% Python
+\lstdefinelanguage{pythonx}{
+  language=Python,
+  morekeywords={self,True,False,None,async,await,yield,with,as,lambda,nonlocal,
+                match,case,dataclass,field,Optional,List,Dict,Set,Tuple,Union,
+                Any,Callable,TypeVar,Generic,Protocol,Literal,Final,ClassVar},
+  morecomment=[l]{\#},
+  morestring=[b]",
+  morestring=[b]',
+  morestring=[s]{"""}{"""},
+  morestring=[s]{'''}{'''},
+  keywordstyle=\color{codekeyword}\bfseries,
+  stringstyle=\color{codestring},
+  commentstyle=\color{codecomment}\itshape,
+  emph={print,len,range,enumerate,zip,map,filter,sorted,reversed,
+        open,read,write,close,json,yaml,Path,datetime},
+  emphstyle=\color{codefunction},
+}
+
+% JavaScript/TypeScript
+\lstdefinelanguage{typescript}{
+  language=JavaScript,
+  morekeywords={const,let,async,await,export,import,from,type,interface,
+                implements,extends,readonly,keyof,typeof,infer,as,is,
+                enum,namespace,declare,module,abstract,static,public,private,
+                protected,override,satisfies},
+  morecomment=[l]{//},
+  morecomment=[s]{/*}{*/},
+  morestring=[b]",
+  morestring=[b]',
+  morestring=[b]`,
+  keywordstyle=\color{codekeyword}\bfseries,
+  stringstyle=\color{codestring},
+  commentstyle=\color{codecomment}\itshape,
+  emph={console,document,window,fetch,Promise,Array,Object,Map,Set,
+        Number,String,Boolean,Symbol,BigInt,null,undefined,void},
+  emphstyle=\color{codetype},
+}
+
+% JSON
+\lstdefinelanguage{jsonx}{
+  morestring=[b]",
+  morecomment=[l]{//},
+  stringstyle=\color{codestring},
+  commentstyle=\color{codecomment}\itshape,
+  literate=
+    *{:}{{{\color{codeoperator}:}}}1
+    {,}{{{\color{codeoperator},}}}1
+    {\{}{{{\color{codeoperator}\{}}}1
+    {\}}{{{\color{codeoperator}\}}}}1
+    {[}{{{\color{codeoperator}[}}}1
+    {]}{{{\color{codeoperator}]}}}1
+    {true}{{{\color{codekeyword}true}}}4
+    {false}{{{\color{codekeyword}false}}}5
+    {null}{{{\color{codekeyword}null}}}4,
+}
+
+% YAML
+\lstdefinelanguage{yamlx}{
+  keywords={true,false,null,yes,no,on,off},
+  keywordstyle=\color{codekeyword},
+  sensitive=false,
+  morecomment=[l]{\#},
+  commentstyle=\color{codecomment}\itshape,
+  stringstyle=\color{codestring},
+  moredelim=[l][\color{codetype}]{:\ },
+  morestring=[b]',
+  morestring=[b]",
+}
+
+% SQL
+\lstdefinelanguage{sqlx}{
+  language=SQL,
+  morekeywords={ILIKE,REGEXP,COALESCE,NULLIF,CAST,CONVERT,OVER,PARTITION,
+                ROW_NUMBER,RANK,DENSE_RANK,LAG,LEAD,FIRST_VALUE,LAST_VALUE,
+                CTE,RECURSIVE,MATERIALIZED,LATERAL,CROSS,APPLY,PIVOT,UNPIVOT},
+  keywordstyle=\color{codekeyword}\bfseries,
+  stringstyle=\color{codestring},
+  commentstyle=\color{codecomment}\itshape,
+}
+
+% Bash/Shell
+\lstdefinelanguage{bashx}{
+  language=bash,
+  morekeywords={sudo,apt,brew,pip,npm,yarn,docker,kubectl,git,make,
+                curl,wget,grep,sed,awk,find,xargs,jq,yq},
+  keywordstyle=\color{codekeyword}\bfseries,
+  stringstyle=\color{codestring},
+  commentstyle=\color{codecomment}\itshape,
+}
+
+% -----------------------------------------------------------------------------
+% WWDC-STYLE CODE BOXES WITH SHADOWS
+% -----------------------------------------------------------------------------
+
+% Base code box style - Xcode inspired with shadow
+\tcbset{
+  code box wwdc/.style={
+    enhanced,
+    breakable,
+    boxrule=0pt,
+    colback=codebg,
+    colframe=codebg,
+    arc=8pt,
+    outer arc=8pt,
+    left=20pt,
+    right=16pt,
+    top=14pt,
+    bottom=14pt,
+    before skip=20pt,
+    after skip=20pt,
+    % Subtle shadow
+    shadow={2pt}{-2pt}{4pt}{shadowcolor!8},
+    % Top accent line (subtle)
+    overlay={
+      \draw[codeframe, line width=0.5pt] 
+        ([xshift=8pt]frame.north west) -- ([xshift=-8pt]frame.north east);
+    },
+  },
+  % Dark theme variant
+  code box dark/.style={
+    enhanced,
+    breakable,
+    boxrule=0pt,
+    colback=codebgdark,
+    colframe=codebgdark,
+    arc=8pt,
+    outer arc=8pt,
+    left=20pt,
+    right=16pt,
+    top=14pt,
+    bottom=14pt,
+    before skip=20pt,
+    after skip=20pt,
+    shadow={2pt}{-2pt}{4pt}{black!30},
+  },
+  % With file path header
+  code box file/.style 2 args={
+    code box wwdc,
+    title={\small\color{applegray2}\faIcon{file-code}\hspace{6pt}\texttt{#1}},
+    coltitle=applegray1,
+    colbacktitle=linenumberbg,
+    boxed title style={
+      boxrule=0pt,
+      arc=8pt,
+      outer arc=8pt,
+      colback=linenumberbg,
+    },
+    attach boxed title to top left={xshift=12pt, yshift=-4pt},
+  },
+}
+
+% =============================================================================
+% CODE LISTING ENVIRONMENTS
+% =============================================================================
+
+% Python code
+\newtcblisting{pythoncode}{
+  code box wwdc,
+  listing only,
+  listing options={language=pythonx},
+}
+
+% Python code with file path
+\NewTCBListing{pythonfile}{ m }{
+  code box wwdc,
+  listing only,
+  listing options={language=pythonx},
+  title={\small\color{applegray2}\faIcon{file-code}\hspace{6pt}\texttt{#1}},
+  coltitle=applegray1,
+  colbacktitle=linenumberbg,
+  boxed title style={boxrule=0pt, arc=6pt, colback=linenumberbg},
+  attach boxed title to top left={xshift=12pt, yshift=-4pt},
+}
+
+% TypeScript/JavaScript code
+\newtcblisting{typescriptcode}{
+  code box wwdc,
+  listing only,
+  listing options={language=typescript},
+}
+
+% JSON code
+\newtcblisting{jsoncode}{
+  code box wwdc,
+  listing only,
+  listing options={language=jsonx},
+}
+
+% YAML code
+\newtcblisting{yamlcode}{
+  code box wwdc,
+  listing only,
+  listing options={language=yamlx},
+}
+
+% SQL code
+\newtcblisting{sqlcode}{
+  code box wwdc,
+  listing only,
+  listing options={language=sqlx},
+}
+
+% Bash/Terminal code (dark theme)
+\newtcblisting{terminalcode}{
+  code box dark,
+  listing only,
+  listing options={
+    language=bashx,
+    basicstyle=\small\ttfamily\color{white},
+    keywordstyle=\color{applegreen}\bfseries,
+    commentstyle=\color{applegray2}\itshape,
+    stringstyle=\color{sapamber},
+  },
+}
+
+% Generic code with language parameter
+\NewTCBListing{codebox}{ O{} }{
+  code box wwdc,
+  listing only,
+  listing options={#1},
+}
+
+% File with path and language
+\NewTCBListing{filecode}{ m m }{
+  code box wwdc,
+  listing only,
+  listing options={language=#2},
+  title={\small\color{applegray2}\faIcon{file-code}\hspace{6pt}\texttt{#1}},
+  coltitle=applegray1,
+  colbacktitle=linenumberbg,
+  boxed title style={boxrule=0pt, arc=6pt, colback=linenumberbg},
+  attach boxed title to top left={xshift=12pt, yshift=-4pt},
+}
+
+% =============================================================================
+% INLINE CODE - WWDC STYLE
+% =============================================================================
+
+% Inline code with background
+\newcommand{\code}[1]{%
+  {\ttfamily\small\colorbox{codebg}{\color{codeidentifier}\strut #1}}%
+}
+
+% Inline code (subtle variant)
+\newcommand{\codeinline}[1]{%
+  {\ttfamily\small\color{sapblue}#1}%
+}
+
+% Command/CLI inline
+\newcommand{\cmd}[1]{%
+  {\ttfamily\small\colorbox{codebgdark}{\color{white}\strut #1}}%
+}
+
+% File path inline
+\newcommand{\codepath}[1]{%
+  {\ttfamily\small\color{pathcolor}#1}%
+}
+
+% =============================================================================
+% OUTPUT/RESULT BOXES
+% =============================================================================
+
+% Output result box
+\newtcolorbox{outputbox}{
+  enhanced,
+  breakable,
+  colback=applegray3!10,
+  colframe=applegray3!30,
+  boxrule=0.5pt,
+  arc=6pt,
+  left=14pt,
+  right=14pt,
+  top=12pt,
+  bottom=12pt,
+  before skip=16pt,
+  after skip=16pt,
+  fontupper=\small\ttfamily\color{applegray1},
+  title={\small\color{applegray2}\faIcon{terminal}\hspace{6pt}Output},
+  coltitle=applegray1,
+  colbacktitle=applegray3!20,
+  attach boxed title to top left={xshift=10pt, yshift=-4pt},
+  boxed title style={boxrule=0pt, arc=4pt, colback=applegray3!20},
+}
+
+% API response box
+\newtcolorbox{apiresponse}{
+  enhanced,
+  breakable,
+  colback=applegreen!3,
+  colframe=applegreen!30,
+  boxrule=0.5pt,
+  arc=6pt,
+  left=14pt,
+  right=14pt,
+  top=12pt,
+  bottom=12pt,
+  before skip=16pt,
+  after skip=16pt,
+  fontupper=\small\ttfamily,
+  title={\small\color{applegreen!80!black}\faIcon{check-circle}\hspace{6pt}Response (200 OK)},
+  coltitle=applegreen!80!black,
+  colbacktitle=applegreen!10,
+  attach boxed title to top left={xshift=10pt, yshift=-4pt},
+  boxed title style={boxrule=0pt, arc=4pt, colback=applegreen!10},
+}
+
+% Error response box
+\newtcolorbox{errorresponse}{
+  enhanced,
+  breakable,
+  colback=applered!3,
+  colframe=applered!30,
+  boxrule=0.5pt,
+  arc=6pt,
+  left=14pt,
+  right=14pt,
+  top=12pt,
+  bottom=12pt,
+  before skip=16pt,
+  after skip=16pt,
+  fontupper=\small\ttfamily,
+  title={\small\color{applered}\faIcon{times-circle}\hspace{6pt}Error Response},
+  coltitle=applered,
+  colbacktitle=applered!10,
+  attach boxed title to top left={xshift=10pt, yshift=-4pt},
+  boxed title style={boxrule=0pt, arc=4pt, colback=applered!10},
+}
+
+\endinput
+%% --- END INLINED STYLE --- %%
+
+\usepackage[a4paper,margin=28mm]{geometry}
+\usepackage{graphicx}
+\usepackage{microtype}
+\usepackage{setspace}
+\usepackage{parskip}
+\usepackage{booktabs}
+\usepackage{tabularx}
+\usepackage{longtable}
+\usepackage{array}
+\usepackage{multirow}
+\usepackage{enumitem}
+\usepackage{amssymb}
+\usepackage{pifont}
+\usepackage{fontawesome5}
+\usepackage{listings}
+\usepackage[hyphens]{url}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta,positioning,shapes.geometric,fit,calc,chains,
+decorations.pathmorphing,backgrounds}
+
+% --- Semantic Hyperlinking --------------------------------------------------
+\usepackage{xr-hyper}
+\usepackage[hidelinks]{hyperref}
+
+% External references to peer specifications
+\externaldocument[tb:]{../tb/tb-review-spec}
+\externaldocument[reg:]{../regulations/regulations-spec}
+\externaldocument[ar:]{../arabic/arabic-ap-spec}
+\externaldocument[sim:]{../simula/simula-training-spec}
+
+% --- Fonts and listings -----------------------------------------------------
+\usepackage{fontspec}
+\setmainfont{Arial}
+\usepackage[capitalize,noabbrev]{cleveref}
+
+% --- Domain-Specific Colors (Supplementing shared palette) ------------------
+\definecolor{tbred}{HTML}{B71C1C}
+\definecolor{tbblue}{HTML}{1565C0}
+\definecolor{tbgreen}{HTML}{2E7D32}
+\definecolor{tbgrey}{HTML}{546E7A}
+\definecolor{tbamber}{HTML}{F0AB00}
+
+% --- Custom Column Types ----------------------------------------------------
+\newcolumntype{L}[1]{>{\raggedright\arraybackslash}p{#1}}
+\newcolumntype{C}[1]{>{\centering\arraybackslash}p{#1}}
+\newcolumntype{R}[1]{>{\raggedleft\arraybackslash}p{#1}}
+
+\onehalfspacing
+\setlist{topsep=2pt,itemsep=1pt,parsep=0pt}
+\setlength{\emergencystretch}{3em}
+\tolerance=1000
+\hbadness=10000
+
+% --- Global Command Overrides -----------------------------------------------
+\newcommand{\corpus}{}
+\newcommand{\tool}{}
+\newcommand{\stateid}[1]{\textsc{\lowercase{#1}}}
+\newcommand{\ar}[1]{#1}
+
+\newcommand{\srcref}[1]{\texttt{#1}}
+\newcommand{\reqref}[1]{\texttt{#1}}
+\newcommand{\specref}[1]{\texttt{#1}}
+\newcommand{\schemaref}[1]{\texttt{#1}}
+\newcommand{\gapref}[1]{\texttt{#1}}
+
+% --- Glossary Helper Commands -----------------------------------------------
+\definecolor{pathcolor}{HTML}{004D40}
+\newcommand{\schemapath}[1]{\texttt{\textcolor{pathcolor}{#1}}}
+\newcommand{\enumval}[1]{\textcolor{sapgreen}{\texttt{#1}}}
+\newcommand{\fieldref}[1]{\textcolor{sapblue}{\texttt{#1}}}
+
+\begin{document}
+
+\title{\Huge Trial Balance Review \\
+\textbf{Business Requirements \& Lineage} \\
+\large HITL Traceability Specification \\
+\small Ref: \texttt{TB-REQ-LIN-2026-v1.0}}
+\author{SAP-OSS Financial Architecture Team}
+\date{April 2026}
+
+\maketitle
+
+% --- Incorporated Executive Summary ---
+
+\chapter*{Abstract}
+\addcontentsline{toc}{chapter}{Abstract}
+
+This specification defines the Human-in-the-Loop (HITL) Requirements
+Traceability framework for Standard Chartered Bank's Trial Balance (TB)
+review process. It provides the complete audit trail from source documents
+(business cases, detailed operating instructions, BPMN process maps, and
+workbooks) through machine-readable extraction, structured business
+requirements, formal specifications, and validating JSON schemas.
+
+The document serves as the \textbf{human validation checkpoint} for the
+automated requirements extraction and traceability process, enabling
+reviewers to verify the accuracy of automated extractions and establish
+a clear audit trail from source to implementation.
+
+Four orthogonal workstreams are traced in full:
+
+\begin{itemize}
+\item a \textbf{source document inventory} cataloguing 6 source files
+totalling 137~MB, including business cases, DOI, BPMN process map,
+and HKG TB/PL review workbooks;
+\item an \textbf{extraction layer} of 7 machine-readable outputs
+(markdown, JSON, YAML, CSV) validated against YAML frontmatter
+schemas;
+\item a \textbf{requirements layer} of 27 business requirements
+categorised across executive summary, scope, process steps,
+AI augmentation, and BSS risk assessment;
+\item a \textbf{specification and schema layer} comprising 21
+specification elements and 6 JSON schemas with field-level
+traceability back to requirements.
+\end{itemize}
+
+\paragraph{Reading order.} \Cref{ch:overview} introduces the HITL framework
+and traceability model; \cref{ch:source-documents} catalogues source
+documents; \cref{ch:extraction-layer} covers machine-readable extraction;
+\cref{ch:business-requirements} details requirement derivation;
+\cref{ch:specification-mapping} maps specifications to requirements;
+\cref{ch:schema-mapping} provides schema field traceability;
+\cref{ch:bidirectional-traceability} presents the full forward and
+backward matrices; \cref{ch:gap-analysis} identifies traceability gaps;
+\cref{ch:human-review-signoff} captures review checkpoints and approvals.
+
+\paragraph{Conventions.} Source document references appear as
+\srcref{TB-BC-001}. Business requirement IDs appear as \reqref{TB-REQ-ES01}.
+Specification elements appear as \specref{TB-STEP-003}. Schema references
+appear as \schemaref{variance-record}. Gap references appear as
+\gapref{G-001}. File paths are typeset in \texttt{monospace} and are
+relative to the repository root.
+
+\paragraph{Companion files.} The machine-readable companion to this
+specification is \texttt{docs/tb/machine-readable/hitl-traceability-manifest.yaml},
+which enables automated validation of all traceability links documented
+in this specification.
+
+\tableofcontents
+\chapter*{Visual Traceability Map}
+\addcontentsline{toc}{chapter}{Visual Traceability Map}
+\label{ch:visual-map}
+
+This single-page reference shows the complete traceability flow from each source document
+through extracted content, business requirements, specifications, and implementing schemas.
+
+% =============================================================================
+\section*{End-to-End Traceability Overview}
+
+\begin{figure}[h!]
+\centering
+\begin{tikzpicture}[
+node distance=0.4cm,
+source/.style={rectangle, rounded corners, draw=sourcegreen, fill=sourcegreen!20,
+thick, minimum width=3.8cm, minimum height=0.7cm, font=\scriptsize\bfseries,
+text=black},
+extract/.style={rectangle, rounded corners, draw=sourcegreen!70, fill=sourcegreen!10,
+thick, minimum width=2.8cm, minimum height=0.6cm, font=\tiny},
+req/.style={rectangle, rounded corners, draw=reqpurple, fill=reqpurple!15,
+thick, minimum width=2.2cm, minimum height=0.5cm, font=\tiny},
+spec/.style={rectangle, rounded corners, draw=specblue, fill=specblue!15,
+thick, minimum width=2.2cm, minimum height=0.5cm, font=\tiny},
+schema/.style={rectangle, rounded corners, draw=schemaorg, fill=schemaorg!20,
+thick, minimum width=2.5cm, minimum height=0.7cm, font=\scriptsize\bfseries},
+arrow/.style={->, thick, >=stealth, sapgrey},
+label/.style={font=\scriptsize\bfseries, text=sapgrey}
+]
+
+% === Layer Labels ===
+\node[label] at (-6.5, 4) {LAYER 1};
+\node[label] at (-6.5, 2.5) {LAYER 2};
+\node[label] at (-6.5, 0.5) {LAYER 3};
+\node[label] at (-6.5, -1.5) {LAYER 4};
+\node[label] at (-6.5, -3.5) {LAYER 5};
+
+% === Source Documents (Layer 1) ===
+\node[source] (src1) at (-3, 4) {TB-BC-001};
+\node[source] (src2) at (0.5, 4) {TB-BC-002};
+\node[source] (src3) at (4, 4) {TB-BPMN-001};
+
+% === Extracted Files (Layer 2) ===
+\node[extract] (ext1) at (-3, 2.5) {bc-tb.md};
+\node[extract] (ext2) at (0.5, 2.5) {bc-bss.md};
+\node[extract] (ext3) at (4, 2.5) {bpmn-glo.json};
+
+% === Requirements (Layer 3) - grouped ===
+\node[req] (req-es) at (-4.5, 0.5) {ES01-04 (4)};
+\node[req] (req-sc) at (-2, 0.5) {SC01-06 (6)};
+\node[req] (req-ai) at (0.5, 0.5) {AI01-06 (6)};
+\node[req] (req-ps) at (3, 0.5) {PS01-08 (8)};
+\node[req] (req-bss) at (5.5, 0.5) {BSS01-03 (3)};
+
+% === Specifications (Layer 4) - grouped ===
+\node[spec] (spec-step) at (-3.5, -1.5) {TB-STEP (8)};
+\node[spec] (spec-dp) at (-0.5, -1.5) {DP-001-005 (5)};
+\node[spec] (spec-ai) at (2.5, -1.5) {AI-* (6)};
+\node[spec] (spec-ctrl) at (5.5, -1.5) {TB-CTRL (3)};
+
+% === Schemas (Layer 5) ===
+\node[schema] (sch1) at (-3, -3.5) {variance-record};
+\node[schema] (sch2) at (0.5, -3.5) {commentary-draft};
+\node[schema] (sch3) at (4, -3.5) {tb/pl-extract};
+
+% === Arrows Layer 1→2 ===
+\draw[arrow, sourcegreen] (src1) -- (ext1);
+\draw[arrow, sourcegreen] (src2) -- (ext2);
+\draw[arrow, sourcegreen] (src3) -- (ext3);
+
+% === Arrows Layer 2→3 ===
+\draw[arrow, sourcegreen!70] (ext1) -- (req-es);
+\draw[arrow, sourcegreen!70] (ext1) -- (req-sc);
+\draw[arrow, sourcegreen!70] (ext1) -- (req-ai);
+\draw[arrow, sourcegreen!70] (ext2) -- (req-bss);
+\draw[arrow, sourcegreen!70] (ext3) -- (req-ps);
+
+% === Arrows Layer 3→4 ===
+\draw[arrow, reqpurple] (req-ps) -- (spec-step);
+\draw[arrow, reqpurple] (req-ps) -- (spec-dp);
+\draw[arrow, reqpurple] (req-ai) -- (spec-ai);
+\draw[arrow, reqpurple] (req-es) -- (spec-ctrl);
+\draw[arrow, reqpurple] (req-bss) -- (spec-dp);
+
+% === Arrows Layer 4→5 ===
+\draw[arrow, specblue] (spec-step) -- (sch1);
+\draw[arrow, specblue] (spec-step) -- (sch3);
+\draw[arrow, specblue] (spec-dp) -- (sch1);
+\draw[arrow, specblue] (spec-ai) -- (sch1);
+\draw[arrow, specblue] (spec-ai) -- (sch2);
+
+\end{tikzpicture}
+\caption{Complete Five-Layer Traceability Flow}
+\label{fig:visual-traceability-map}
+\end{figure}
+
+% =============================================================================
+\section*{Traceability Quick Reference}
+
+\begin{table}[h]
+\centering
+\small
+\caption{Source Document to Schema Quick Reference}
+\begin{tabularx}{\textwidth}{@{}L{2.2cm}L{3cm}L{2.5cm}L{2.5cm}L{3cm}@{}}
+\toprule
+\textbf{Source} & \textbf{Extracted} & \textbf{Requirements} & \textbf{Specs} & \textbf{Schemas} \\
+\midrule
+TB-BC-001 & bc-tb.md & ES01-04, SC01-06, AI01-06 & AI-*, TB-CTRL-* & variance-record, commentary-draft \\
+TB-BC-002 & bc-bss.md & BSS-01-03 & DP-005 & variance-record \\
+TB-BPMN-001 & bpmn-glo.json & PS01-08 & TB-STEP-*, DP-001-004 & variance-record, tb-extract \\
+TB-DOI-001 & doi-tb.md & (supplementary) & -- & -- \\
+TB-WB-001 & hkg-tb-schema.yaml & (data reference) & -- & tb-extract \\
+TB-WB-002 & hkg-pl-schema.yaml & (data reference) & -- & pl-extract \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+% =============================================================================
+\section*{Coverage at a Glance}
+
+\begin{table}[h]
+\centering
+\begin{tabular}{@{}lcccl@{}}
+\toprule
+\textbf{Layer} & \textbf{Count} & \textbf{Traced} & \textbf{Coverage} & \textbf{Status} \\
+\midrule
+Source Documents & 6 & 6 & 100\% & \textcolor{sourcegreen}{\ding{51} Complete} \\
+Extracted Files & 7 & 7 & 100\% & \textcolor{sourcegreen}{\ding{51} Complete} \\
+Requirements & 27 & 27 & 100\% & \textcolor{sourcegreen}{\ding{51} Complete} \\
+Specifications & 22 & 22 & 100\% & \textcolor{sourcegreen}{\ding{51} Complete} \\
+Schemas & 6 & 6 & 100\% & \textcolor{sourcegreen}{\ding{51} Complete} \\
+\midrule
+\textbf{Gaps} & 2 & 2 & 100\% & \textcolor{sapamber}{\ding{51} Documented} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\vspace{0.5cm}
+
+\begin{tcolorbox}[colback=sourcegreen!5,colframe=sourcegreen!70,title=\textbf{Traceability Validation Status}]
+\begin{center}
+\Large\textbf{100\% BIDIRECTIONAL TRACEABILITY ACHIEVED}
+\end{center}
+\begin{itemize}[noitemsep]
+\item[\textcolor{sourcegreen}{\ding{51}}] Every source document section reaches at least one schema
+\item[\textcolor{sourcegreen}{\ding{51}}] Every schema field traces back to a source document
+\item[\textcolor{sourcegreen}{\ding{51}}] All 27 requirements have documented derivation evidence
+\item[\textcolor{sourcegreen}{\ding{51}}] All 22 specifications linked to requirements
+\item[\textcolor{sapamber}{\ding{51}}] 2 gaps documented with owners and resolution plans
+\end{itemize}
+\end{tcolorbox}
+\chapter{Overview and HITL Framework}
+\label{ch:overview}
+
+This chapter introduces the Human-in-the-Loop (HITL) Requirements
+Traceability framework, its purpose, and the five-layer traceability
+model that underpins the Trial Balance review process documentation.
+
+% =============================================================================
+\section{Purpose Statement}
+\label{sec:purpose}
+
+The HITL Requirements Traceability specification serves as the
+\textbf{human validation checkpoint} for the automated requirements
+extraction and traceability process. It is designed to:
+
+\begin{enumerate}
+\item Provide full transparency into how business requirements were
+derived from source documents
+\item Enable human reviewers to verify the accuracy of automated
+extractions
+\item Establish a clear audit trail from source to implementation
+\item Support regulatory compliance by demonstrating requirement
+provenance
+\item Facilitate change impact analysis when source documents are
+updated
+\end{enumerate}
+
+% =============================================================================
+\section{Five-Layer Traceability Model}
+\label{sec:five-layer-model}
+
+The traceability framework is organised into five distinct layers,
+each representing a transformation stage from raw source material
+to validated implementation artefacts.
+
+\begin{figure}[h]
+\centering
+\begin{tikzpicture}[
+node distance=0.5cm,
+layer/.style={rectangle, draw=sapgrey, thick, minimum width=12cm,
+minimum height=1cm, font=\small\bfseries},
+arrow/.style={->, thick, >=stealth, sapgrey}
+]
+\node[layer, fill=sourcegreen!15] (L1) {Layer 1: Source Documents (6 files, 137 MB)};
+\node[layer, fill=sourcegreen!10, below=0.3cm of L1] (L2) {Layer 2: Extracted Machine-Readable (7 files, 522 KB)};
+\node[layer, fill=reqpurple!15, below=0.3cm of L2] (L3) {Layer 3: Business Requirements (27 requirements)};
+\node[layer, fill=specblue!15, below=0.3cm of L3] (L4) {Layer 4: Specifications (21 elements)};
+\node[layer, fill=schemaorg!15, below=0.3cm of L4] (L5) {Layer 5: Schemas \& Validation (6 schemas)};
+
+\draw[arrow] (L1.south) -- (L2.north);
+\draw[arrow] (L2.south) -- (L3.north);
+\draw[arrow] (L3.south) -- (L4.north);
+\draw[arrow] (L4.south) -- (L5.north);
+\end{tikzpicture}
+\caption{Five-Layer Traceability Model with artefact counts}
+\label{fig:five-layer-model}
+\end{figure}
+
+\subsection{Layer 1: Source Documents}
+
+Original business documents in their native formats:
+\begin{itemize}[noitemsep]
+\item Business case documents (\texttt{.doc})
+\item Detailed Operating Instructions (\texttt{.docx})
+\item BPMN process maps (\texttt{.pdf})
+\item Working spreadsheets (\texttt{.xlsm})
+\end{itemize}
+
+\subsection{Layer 2: Extracted Machine-Readable}
+
+Automated extraction outputs in machine-processable formats:
+\begin{itemize}[noitemsep]
+\item Markdown with YAML frontmatter (text content)
+\item JSON (structured BPMN elements)
+\item YAML (schemas and specifications)
+\item CSV (sample data)
+\end{itemize}
+
+\subsection{Layer 3: Business Requirements}
+
+Structured requirements derived from source documents:
+\begin{itemize}[noitemsep]
+\item Executive Summary requirements (4)
+\item Scope requirements (6)
+\item Process Step requirements (8)
+\item AI Augmentation requirements (6)
+\item BSS Risk Assessment requirements (3)
+\end{itemize}
+
+\subsection{Layer 4: Specifications}
+
+Formal specification elements implementing requirements:
+\begin{itemize}[noitemsep]
+\item Process Steps (8)
+\item Decision Points (5)
+\item AI Capabilities (6)
+\item Controls (3)
+\end{itemize}
+
+\subsection{Layer 5: Schemas \& Validation}
+
+JSON Schemas validating specification implementation:
+\begin{itemize}[noitemsep]
+\item \schemaref{variance-record} --- variance analysis records
+\item \schemaref{decision-point} --- decision point states
+\item \schemaref{entity-params} --- per-entity parameters
+\item \schemaref{tb-extract} --- trial balance extraction
+\item \schemaref{pl-extract} --- P\&L extraction
+\item \schemaref{commentary-draft} --- LLM commentary drafts
+\end{itemize}
+
+% =============================================================================
+\section{Traceability Marker Reference}
+\label{sec:marker-reference}
+
+Throughout this specification, colour-coded markers indicate
+traceability links across layers:
+
+\begin{table}[h]
+\centering
+\caption{Traceability Marker Reference}
+\label{tab:marker-reference}
+\begin{tabularx}{\textwidth}{@{}C{3cm}L{5cm}L{6cm}@{}}
+\toprule
+\textbf{Marker} & \textbf{Meaning} & \textbf{Example} \\
+\midrule
+\srcref{XXX} & Source document reference & \srcref{TB-BC-001} = Trial Balance Business Case \\
+\reqref{XXX} & Business requirement ID & \reqref{TB-REQ-ES01} = Executive Summary req \\
+\specref{XXX} & Specification element & \specref{TB-STEP-003} = Process step \\
+\schemaref{XXX} & Schema definition & \schemaref{variance-record} = JSON Schema \\
+\gapref{XXX} & Identified gap & \gapref{G-001} = Traceability gap \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+% =============================================================================
+\section{HITL Review Checkpoints}
+\label{sec:review-checkpoints}
+
+Six human review checkpoints must be validated before the traceability
+chain is considered complete:
+
+\begin{table}[h]
+\centering
+\caption{HITL Review Checkpoints}
+\label{tab:review-checkpoints}
+\begin{tabularx}{\textwidth}{@{}C{1cm}L{4cm}L{7cm}C{2cm}@{}}
+\toprule
+\textbf{ID} & \textbf{Checkpoint} & \textbf{Review Criteria} & \textbf{Status} \\
+\midrule
+H1 & Source Completeness & All source documents listed and extracted & Pending \\
+H2 & Extraction Accuracy & Extracted text matches source content & Pending \\
+H3 & Requirement Derivation & Requirements accurately reflect source intent & Pending \\
+H4 & Traceability Links & All links are valid and bidirectional & Pending \\
+H5 & Schema Alignment & Schemas support all requirement fields & Pending \\
+H6 & Gap Analysis & No orphan requirements or missing mappings & Pending \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\begin{hitlbox}{H1 -- Source Completeness}
+Human reviewer must verify that all 6 source documents are correctly
+catalogued with accurate file sizes, types, and metadata. Any missing
+documents must be identified and the extraction process re-run.
+\end{hitlbox}
+
+% =============================================================================
+\section{Scope and Coverage}
+\label{sec:scope-coverage}
+
+\subsection{In Scope}
+
+\begin{itemize}[noitemsep]
+\item Trial Balance review process across 234 Legal Entities
+\item AI-augmented variance analysis and commentary generation
+\item Month-end close controls (M-3 to M+5 timeline)
+\item FORTM pack generation and submission
+\item BSS Risk Assessment integration points
+\end{itemize}
+
+\subsection{Out of Scope}
+
+\begin{itemize}[noitemsep]
+\item Country IFRS reporting (separate process)
+\item SAP/PeopleSoft integration detail
+\item Real-time intraday controls
+\item Audit committee reporting (downstream consumer)
+\end{itemize}
+
+\subsection{Coverage Statistics}
+
+\begin{table}[h]
+\centering
+\caption{Traceability Coverage Statistics}
+\label{tab:coverage-statistics}
+\begin{tabular}{@{}lrr@{}}
+\toprule
+\textbf{Metric} & \textbf{Count} & \textbf{Coverage} \\
+\midrule
+Source Documents & 6 & 100\% catalogued \\
+Extracted Files & 7 & 100\% traced to source \\
+Business Requirements & 27 & 100\% traced to source \\
+Specifications & 21 & 100\% traced to requirements \\
+Schemas & 6 & 100\% traced to specifications \\
+Identified Gaps & 2 & Documented with owners \\
+\bottomrule
+\end{tabular}
+\end{table}
+\chapter{Source Document Inventory}
+\label{ch:source-documents}
+
+This chapter catalogues all source documents that form the foundation
+of the Trial Balance review requirements. Each document is assigned a
+unique source reference identifier for traceability purposes.
+
+% =============================================================================
+\section{Source Document Catalog}
+\label{sec:source-catalog}
+
+\begin{longtable}{@{}C{2cm}L{5cm}C{1.5cm}C{2cm}C{2.5cm}@{}}
+\caption{Source Document Catalog}
+\label{tab:source-catalog} \\
+\toprule
+\textbf{Source ID} & \textbf{Document Name} & \textbf{Type} & \textbf{Size} & \textbf{Extraction} \\
+\midrule
+\endfirsthead
+\toprule
+\textbf{Source ID} & \textbf{Document Name} & \textbf{Type} & \textbf{Size} & \textbf{Extraction} \\
+\midrule
+\endhead
+\srcref{TB-BC-001} & Business case - Trial Balance (2).doc & .doc & 96 KB & Complete \\
+\srcref{TB-BC-002} & Business case - BSS Risk Assessment (2).doc & .doc & 95 KB & Complete \\
+\srcref{TB-DOI-001} & DOI for Trial Balance Process.docx & .docx & 6.3 MB & Complete \\
+\srcref{TB-BPMN-001} & Operation of Month End Close Controls - Trial Balance Review - GLO (1).pdf & .pdf & 64 KB & Complete \\
+\srcref{TB-WB-001} & HKG\_TB review Nov'25.xlsm & .xlsm & 73 MB & Schema Only \\
+\srcref{TB-WB-002} & HKG\_PL review Nov'25.xlsm & .xlsm & 51 MB & Schema Only \\
+\bottomrule
+\end{longtable}
+
+% =============================================================================
+\section{Source Document Descriptions}
+\label{sec:source-descriptions}
+
+% -----------------------------------------------------------------------------
+\subsection{\srcref{TB-BC-001}: Business Case - Trial Balance}
+\label{sec:tb-bc-001}
+
+\begin{table}[h]
+\centering
+\caption{\srcref{TB-BC-001} Metadata}
+\begin{tabularx}{\textwidth}{@{}L{4cm}L{10cm}@{}}
+\toprule
+\textbf{Attribute} & \textbf{Value} \\
+\midrule
+Document Title & Business Case: Month End Controls -- Trial Balance \\
+Filepath & \texttt{docs/tb/Business case - Trial Balance (2).doc} \\
+Created By & 1498002 (S1 Badrinath) \\
+Created Date & 2025-12-14 \\
+Version & 1.0 \\
+File Size & 97,792 bytes \\
+Purpose & Define business justification for AI automation of TB review \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\paragraph{Key Sections:}
+\begin{itemize}[noitemsep]
+\item \textbf{Section 1: Executive Summary} --- TB review conducted M+1 to M+7 across 234 LEs; AI model for variance analysis and commentary generation
+\item \textbf{Section 2: Problem/Opportunity Statement} --- Current state analysis; 20-25 FTEs, 5 FTE savings target
+\item \textbf{Section 3: Project Description} --- Proposed AI solution using Studio AI (in-house)
+\item \textbf{Section 5: Financial Analysis} --- \textit{TBD --- Gap \gapref{G-001}}
+\item \textbf{Section 6: Risk Assessment} --- PSGL/S4 compatibility, SAP integration risks
+\item \textbf{Section 7: Implementation Approach} --- 15-week timeline
+\end{itemize}
+
+\paragraph{Content Summary:}
+\begin{quote}
+\textit{``Trial Balance review is conducted during M+1 to M+7 across all Legal entities,
+Segment \& Group, to understand the variance \& balance movements between periods.
+Deep dives to assess the events, transactions causing the variances and reasons
+behind them. Analysed with detailed commentaries for these movements are prepared \&
+submitted to Group for further review \& used for Country CFO packs/Legal entity reporting.''}
+\end{quote}
+
+% -----------------------------------------------------------------------------
+\subsection{\srcref{TB-BC-002}: Business Case - BSS Risk Assessment}
+\label{sec:tb-bc-002}
+
+\begin{table}[h]
+\centering
+\caption{\srcref{TB-BC-002} Metadata}
+\begin{tabularx}{\textwidth}{@{}L{4cm}L{10cm}@{}}
+\toprule
+\textbf{Attribute} & \textbf{Value} \\
+\midrule
+Document Title & Business Case: BSS Risk Assessment \\
+Filepath & \texttt{docs/tb/Business case - BSS Risk Assessment (2).doc} \\
+Created By & 1498002 (S1 Badrinath) \\
+Created Date & 2025-12-15 \\
+Version & 1.0 \\
+File Size & 95,232 bytes \\
+Purpose & Define AI augmentation for BSS risk assessment process \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\paragraph{Key Content:}
+\begin{itemize}[noitemsep]
+\item \textbf{Timing:} M+12 to M+15 across all Legal entities
+\item \textbf{Criticality:} CFO attestation and Risk/Audit committee reporting
+\item \textbf{Risk Categories:} Substantiated at Risk, Unsubstantiated Unowned, Unsubstantiated Owned
+\item \textbf{FTE Impact:} 10-12 FTEs current, 1 FTE savings target
+\end{itemize}
+
+% -----------------------------------------------------------------------------
+\subsection{\srcref{TB-DOI-001}: DOI for Trial Balance Process}
+\label{sec:tb-doi-001}
+
+\begin{table}[h]
+\centering
+\caption{\srcref{TB-DOI-001} Metadata}
+\begin{tabularx}{\textwidth}{@{}L{4cm}L{10cm}@{}}
+\toprule
+\textbf{Attribute} & \textbf{Value} \\
+\midrule
+Document Type & Detailed Operating Instructions \\
+Filepath & \texttt{docs/tb/DOI for Trial Balance Process .docx} \\
+File Size & 6,583,541 bytes \\
+Purpose & Step-by-step operational guidance for TB review execution \\
+Contains & Process flow diagrams (EMF/PNG images) \\
+Image Count & 4 extracted images \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\paragraph{Extracted Images:}
+\begin{itemize}[noitemsep]
+\item \texttt{doi-images/doi-image-001.emf} --- Process flow diagram 1
+\item \texttt{doi-images/doi-image-002.emf} --- Process flow diagram 2
+\item \texttt{doi-images/doi-image-003.png} --- Process flow diagram 3
+\item \texttt{doi-images/doi-image-004.emf} --- Process flow diagram 4
+\end{itemize}
+
+% -----------------------------------------------------------------------------
+\subsection{\srcref{TB-BPMN-001}: BPMN Process Map}
+\label{sec:tb-bpmn-001}
+
+\begin{table}[h]
+\centering
+\caption{\srcref{TB-BPMN-001} Metadata}
+\begin{tabularx}{\textwidth}{@{}L{4cm}L{10cm}@{}}
+\toprule
+\textbf{Attribute} & \textbf{Value} \\
+\midrule
+Document Title & Operation of Month End Close Controls - Trial Balance Review - GLO \\
+Filepath & \texttt{docs/tb/Operation of Month End Close Controls - Trial Balance Review - GLO (1).pdf} \\
+Process Owner & Modi, Piyush \\
+Last Changed & 2025-05-23T19:50:30Z \\
+Scope & GLO (Global) \\
+File Size & 65,367 bytes \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\paragraph{BPMN Elements Extracted:}
+\begin{itemize}[noitemsep]
+\item \textbf{States:} 27 (including 3 error-handling states)
+\item \textbf{Gateways:} 5 exclusive decision gateways
+\item \textbf{Timeline Phases:} 4 (Preparation, Extraction, Analysis, Review)
+\item \textbf{Participants:} 3 (GFS Analyst, Head of Africa GFS, Country Stakeholders)
+\end{itemize}
+
+% -----------------------------------------------------------------------------
+\subsection{\srcref{TB-WB-001}: HKG TB Review Workbook}
+\label{sec:tb-wb-001}
+
+\begin{table}[h]
+\centering
+\caption{\srcref{TB-WB-001} Metadata}
+\begin{tabularx}{\textwidth}{@{}L{4cm}L{10cm}@{}}
+\toprule
+\textbf{Attribute} & \textbf{Value} \\
+\midrule
+Document Title & HKG\_TB review Nov'25.xlsm \\
+Filepath & \texttt{docs/tb/HKG\_TB review Nov'25.xlsm} \\
+File Size & 76,989,527 bytes (73 MB) \\
+Sheet Count & 13 \\
+Extraction Status & Schema extraction only (data too large) \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\paragraph{Key Sheets:}
+\begin{itemize}[noitemsep]
+\item \texttt{IFRS Summary BS} --- IFRS balance sheet summary view
+\item \texttt{Count of Comments} --- Commentary tracking (7 fields)
+\item \texttt{BS Variance} --- Balance sheet variance analysis (5 fields)
+\item \texttt{RAW TB NOV'25} --- Raw GL balance query November 2025
+\item \texttt{RAW TB OCT'25} --- Raw GL balance query October 2025
+\item \texttt{GCOA} --- Global Chart of Accounts (5 fields)
+\item \texttt{Dept Mapping} --- Department-to-vertical mapping (12 fields)
+\item \texttt{Base file} --- Account-level base data (13 fields)
+\end{itemize}
+
+% -----------------------------------------------------------------------------
+\subsection{\srcref{TB-WB-002}: HKG PL Review Workbook}
+\label{sec:tb-wb-002}
+
+\begin{table}[h]
+\centering
+\caption{\srcref{TB-WB-002} Metadata}
+\begin{tabularx}{\textwidth}{@{}L{4cm}L{10cm}@{}}
+\toprule
+\textbf{Attribute} & \textbf{Value} \\
+\midrule
+Document Title & HKG\_PL review Nov'25.xlsm \\
+Filepath & \texttt{docs/tb/HKG\_PL review Nov'25.xlsm} \\
+File Size & 53,245,945 bytes (51 MB) \\
+Sheet Count & 14 \\
+Extraction Status & Schema extraction only (data too large) \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+% =============================================================================
+\section{Source Document Verification}
+\label{sec:source-verification}
+
+\begin{hitlbox}{H1 -- Source Completeness Verification}
+The human reviewer must verify the following for checkpoint H1:
+\begin{enumerate}[noitemsep]
+\item All 6 source documents exist at the specified file paths
+\item File sizes match the catalogued values (within 1\% tolerance)
+\item Document metadata (author, date, version) is accurate
+\item No additional source documents have been omitted
+\item Extraction status correctly reflects processing state
+\end{enumerate}
+\end{hitlbox}
+
+\paragraph{Verification Checklist:}
+
+\begin{table}[h]
+\centering
+\caption{Source Document Verification Checklist}
+\begin{tabular}{@{}lcccc@{}}
+\toprule
+\textbf{Source ID} & \textbf{Exists} & \textbf{Size OK} & \textbf{Metadata OK} & \textbf{Verified} \\
+\midrule
+\srcref{TB-BC-001} & $\square$ & $\square$ & $\square$ & $\square$ \\
+\srcref{TB-BC-002} & $\square$ & $\square$ & $\square$ & $\square$ \\
+\srcref{TB-DOI-001} & $\square$ & $\square$ & $\square$ & $\square$ \\
+\srcref{TB-BPMN-001} & $\square$ & $\square$ & $\square$ & $\square$ \\
+\srcref{TB-WB-001} & $\square$ & $\square$ & $\square$ & $\square$ \\
+\srcref{TB-WB-002} & $\square$ & $\square$ & $\square$ & $\square$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+\chapter{Machine-Readable Extraction Layer}
+\label{ch:extraction-layer}
+
+This chapter documents the extraction process that transforms source
+documents into machine-readable formats, providing the foundation for
+automated validation and requirements traceability.
+
+% =============================================================================
+\section{Extraction Process Overview}
+\label{sec:extraction-overview}
+
+Source documents were processed using automated extraction scripts to
+produce machine-readable formats suitable for:
+
+\begin{itemize}[noitemsep]
+\item Text analysis and requirement derivation
+\item Schema validation and data quality checks
+\item RAG (Retrieval-Augmented Generation) pipeline ingestion
+\item Version control and change tracking
+\end{itemize}
+
+\begin{table}[h]
+\centering
+\caption{Extraction Scripts and Outputs}
+\label{tab:extraction-scripts}
+\begin{tabularx}{\textwidth}{@{}L{3.5cm}L{4cm}L{6.5cm}@{}}
+\toprule
+\textbf{Script} & \textbf{Source Types} & \textbf{Output Format} \\
+\midrule
+\texttt{extract\_docs.py} & .doc, .docx & Markdown with YAML frontmatter \\
+\texttt{extract\_pdf.py} & .pdf (BPMN) & Markdown + BPMN elements JSON \\
+\texttt{extract\_xlsx.py} & .xlsm workbooks & YAML schemas + CSV samples \\
+\texttt{build\_rag\_chunks.py} & All extracted text & JSONL chunks for RAG \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+% =============================================================================
+\section{Extracted Document Mapping}
+\label{sec:extracted-mapping}
+
+\begin{longtable}{@{}C{2cm}L{5cm}L{6.5cm}@{}}
+\caption{Source to Extracted Document Mapping}
+\label{tab:extracted-mapping} \\
+\toprule
+\textbf{Source ID} & \textbf{Extracted File} & \textbf{Extraction Notes} \\
+\midrule
+\endfirsthead
+\toprule
+\textbf{Source ID} & \textbf{Extracted File} & \textbf{Extraction Notes} \\
+\midrule
+\endhead
+\srcref{TB-BC-001} & \texttt{business-case-trial-balance.md} & Full text extraction; tables converted to markdown; 1,172 words \\
+\srcref{TB-BC-002} & \texttt{business-case-bss-risk-assessment.md} & Full text extraction; 8,908 bytes \\
+\srcref{TB-DOI-001} & \texttt{doi-trial-balance-process.md} & Text + 4 images extracted to \texttt{doi-images/} \\
+\srcref{TB-BPMN-001} & \texttt{bpmn-tb-review-glo.md} + \texttt{bpmn-elements.json} & Process text + structured BPMN elements \\
+\srcref{TB-WB-001} & \texttt{hkg-tb-schema.yaml} + \texttt{hkg-tb-sample.csv} & Schema for 13 sheets; 100-row sample \\
+\srcref{TB-WB-002} & \texttt{hkg-pl-schema.yaml} + \texttt{hkg-pl-sample.csv} & Schema for 14 sheets; 100-row sample \\
+\bottomrule
+\end{longtable}
+
+% =============================================================================
+\section{Extraction File Inventory}
+\label{sec:extraction-inventory}
+
+\subsection{Extracted Text Files}
+
+\begin{longtable}{@{}L{6cm}C{2cm}C{2cm}L{3.5cm}@{}}
+\caption{Extracted Text File Inventory}
+\label{tab:extracted-text-inventory} \\
+\toprule
+\textbf{File Path} & \textbf{Size} & \textbf{Format} & \textbf{Source Ref} \\
+\midrule
+\endfirsthead
+\toprule
+\textbf{File Path} & \textbf{Size} & \textbf{Format} & \textbf{Source Ref} \\
+\midrule
+\endhead
+\texttt{extracted/business-case-trial-balance.md} & 9,824 B & Markdown & \srcref{TB-BC-001} \\
+\texttt{extracted/business-case-bss-risk-assessment.md} & 8,908 B & Markdown & \srcref{TB-BC-002} \\
+\texttt{extracted/doi-trial-balance-process.md} & 865 B & Markdown & \srcref{TB-DOI-001} \\
+\texttt{extracted/bpmn-tb-review-glo.md} & 9,154 B & Markdown & \srcref{TB-BPMN-001} \\
+\texttt{extracted/bpmn-elements.json} & 2,264 B & JSON & \srcref{TB-BPMN-001} \\
+\bottomrule
+\end{longtable}
+
+\subsection{Extracted Image Files}
+
+\begin{longtable}{@{}L{6cm}C{2cm}C{2cm}L{3.5cm}@{}}
+\caption{Extracted Image File Inventory}
+\label{tab:extracted-image-inventory} \\
+\toprule
+\textbf{File Path} & \textbf{Size} & \textbf{Format} & \textbf{Source Ref} \\
+\midrule
+\endfirsthead
+\toprule
+\textbf{File Path} & \textbf{Size} & \textbf{Format} & \textbf{Source Ref} \\
+\midrule
+\endhead
+\texttt{extracted/doi-images/doi-image-001.emf} & 8,148 B & EMF & \srcref{TB-DOI-001} \\
+\texttt{extracted/doi-images/doi-image-002.emf} & 8,272 B & EMF & \srcref{TB-DOI-001} \\
+\texttt{extracted/doi-images/doi-image-003.png} & 43,650 B & PNG & \srcref{TB-DOI-001} \\
+\texttt{extracted/doi-images/doi-image-004.emf} & 8,132 B & EMF & \srcref{TB-DOI-001} \\
+\bottomrule
+\end{longtable}
+
+\subsection{Training Data Files}
+
+\begin{longtable}{@{}L{6cm}C{2cm}C{2cm}L{3.5cm}@{}}
+\caption{Training Data File Inventory}
+\label{tab:training-data-inventory} \\
+\toprule
+\textbf{File Path} & \textbf{Size} & \textbf{Format} & \textbf{Source Ref} \\
+\midrule
+\endfirsthead
+\toprule
+\textbf{File Path} & \textbf{Size} & \textbf{Format} & \textbf{Source Ref} \\
+\midrule
+\endhead
+\texttt{training-data/hkg-tb-schema.yaml} & 20,228 B & YAML & \srcref{TB-WB-001} \\
+\texttt{training-data/hkg-tb-sample.csv} & 17,916 B & CSV & \srcref{TB-WB-001} \\
+\texttt{training-data/hkg-pl-schema.yaml} & 16,982 B & YAML & \srcref{TB-WB-002} \\
+\texttt{training-data/hkg-pl-sample.csv} & 19,110 B & CSV & \srcref{TB-WB-002} \\
+\bottomrule
+\end{longtable}
+
+% =============================================================================
+\section{Extraction Frontmatter Format}
+\label{sec:extraction-frontmatter}
+
+Each extracted markdown file includes YAML frontmatter for traceability
+and metadata validation:
+
+\begin{lstlisting}[language=yamlx,caption=Extraction Frontmatter Example]
+---
+source_file: 'Business case - Trial Balance (2).doc'
+source_type: 'doc'
+extracted_at: '2026-04-13T06:16:45.446975+00:00'
+word_count: 1172
+source_ref: 'TB-BC-001'
+---
+# Business Case: Trial Balance
+
+## 1. Executive Summary
+...
+\end{lstlisting}
+
+\paragraph{Frontmatter Fields:}
+
+\begin{table}[h]
+\centering
+\caption{Extraction Frontmatter Schema}
+\label{tab:frontmatter-schema}
+\begin{tabularx}{\textwidth}{@{}L{3cm}C{2cm}L{8.5cm}@{}}
+\toprule
+\textbf{Field} & \textbf{Type} & \textbf{Description} \\
+\midrule
+\texttt{source\_file} & string & Original filename \\
+\texttt{source\_type} & enum & File extension (.doc, .docx, .pdf, .xlsm) \\
+\texttt{extracted\_at} & ISO 8601 & Timestamp of extraction \\
+\texttt{word\_count} & integer & Word count of extracted text \\
+\texttt{source\_ref} & string & Traceability reference ID \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+% =============================================================================
+\section{BPMN Elements Extraction}
+\label{sec:bpmn-extraction}
+
+The BPMN process map (\srcref{TB-BPMN-001}) was parsed into structured
+JSON to enable automated workflow validation:
+
+\begin{lstlisting}[language=jsonx,caption=BPMN Elements Structure]
+{
+"workflowId": "tb-review-glo",
+"version": "1.0.0",
+"states": [
+{
+"stateId": "START",
+"type": "start_event",
+"name": "Prepare Schedule Work Day",
+"transitions": [{"target": "ROLL_FORWARD"}]
+},
+{
+"stateId": "ROLL_FORWARD",
+"type": "task",
+"name": "Roll Forward Prior Month File",
+"timing": "M-3",
+"systems": ["MS Excel", "Shared Drive"],
+"transitions": [{"target": "DOWNLOAD_PSGL"}]
+}
+],
+"gateways": [...],
+"dataObjects": [...],
+"participants": [...]
+}
+\end{lstlisting}
+
+\paragraph{Extracted BPMN Statistics:}
+
+\begin{table}[h]
+\centering
+\caption{BPMN Extraction Statistics}
+\label{tab:bpmn-statistics}
+\begin{tabular}{@{}lr@{}}
+\toprule
+\textbf{Element Type} & \textbf{Count} \\
+\midrule
+Start Events & 1 \\
+Task States & 21 \\
+Gateway States & 5 \\
+Error-Handling States & 3 \\
+End Events & 1 \\
+\midrule
+\textbf{Total States} & \textbf{27} \\
+\midrule
+Data Objects & 6 \\
+Participants & 3 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+% =============================================================================
+\section{Workbook Schema Extraction}
+\label{sec:workbook-schema}
+
+Excel workbooks were processed to extract structural schemas without
+copying sensitive data:
+
+\subsection{HKG TB Review Schema (\srcref{TB-WB-001})}
+
+\begin{table}[h]
+\centering
+\caption{HKG TB Review Sheet Inventory}
+\label{tab:hkg-tb-sheets}
+\begin{tabularx}{\textwidth}{@{}L{4cm}C{2cm}L{7.5cm}@{}}
+\toprule
+\textbf{Sheet Name} & \textbf{Fields} & \textbf{Purpose} \\
+\midrule
+IFRS Summary BS & -- & IFRS balance sheet summary view \\
+Count of Comments & 7 & Commentary tracking (reviewer, status, hours) \\
+BS Variance & 5 & Balance sheet variance analysis with thresholds \\
+PL Variance & 4 & P\&L variance analysis \\
+GCOA & 5 & Global Chart of Accounts definitions \\
+Dept Mapping & 12 & Department-to-vertical mapping \\
+Base file & 13 & Account-level base data with mappings \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+% =============================================================================
+\section{Extraction Quality Metrics}
+\label{sec:extraction-quality}
+
+\begin{table}[h]
+\centering
+\caption{Extraction Quality Metrics}
+\label{tab:extraction-quality}
+\begin{tabularx}{\textwidth}{@{}L{5cm}C{2.5cm}L{6cm}@{}}
+\toprule
+\textbf{Metric} & \textbf{Value} & \textbf{Human Validation Required} \\
+\midrule
+Source documents processed & 6 of 6 & Verify all documents included \\
+Total extracted text size & 522 KB & Verify no truncation occurred \\
+Tables extracted & 12 & Verify table structure preserved \\
+Images extracted & 4 & Verify images are referenced correctly \\
+BPMN elements parsed & 27 states & Verify state machine completeness \\
+Workbook sheets processed & 27 & Verify key sheets included \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\begin{hitlbox}{H2 -- Extraction Accuracy Verification}
+The human reviewer must verify the following for checkpoint H2:
+\begin{enumerate}[noitemsep]
+\item Sample extracted text against original documents (minimum 3 paragraphs per document)
+\item Table formatting is preserved in markdown conversion
+\item BPMN state names and transitions match the source PDF
+\item Workbook schema field names match column headers
+\item No content truncation or corruption occurred
+\end{enumerate}
+\end{hitlbox}
+% =============================================================================
+% Chapter 4: Business Requirements (Enhanced with Source Quotations)
+% =============================================================================
+\chapter{Business Requirements Catalogue}
+\label{ch:business-requirements}
+
+This chapter presents all business requirements derived from the source documents,
+with \textbf{exact quotations} and \textbf{page/paragraph references} enabling
+human auditors to verify each requirement against its source.
+
+% -----------------------------------------------------------------------------
+\section{How to Read This Chapter}
+% -----------------------------------------------------------------------------
+
+Each requirement entry contains:
+
+\begin{tcolorbox}[colback=blue!5,colframe=blue!75!black,title=Requirement Entry Format]
+\begin{enumerate}[leftmargin=*]
+\item \textbf{Requirement ID:} Unique identifier (e.g., TB-REQ-ES01)
+\item \textbf{MoSCoW Priority:} MUST / SHOULD / COULD / WON'T
+\item \textbf{Source Quotation:} Exact text from source document (in italics)
+\item \textbf{Source Location:} Document ID, section, paragraph, page number
+\item \textbf{Derived Requirement:} Formal requirement statement
+\item \textbf{Acceptance Criteria:} Measurable conditions for verification
+\item \textbf{Rationale:} Why this requirement was derived from the quoted text
+\end{enumerate}
+\end{tcolorbox}
+
+% =============================================================================
+\section{Executive Summary Requirements}
+\label{sec:req-executive}
+% =============================================================================
+
+% -----------------------------------------------------------------------------
+\subsection{TB-REQ-ES01: AI-Driven Variance Analysis}
+\label{req:tb-req-es01}
+% -----------------------------------------------------------------------------
+
+\begin{tcolorbox}[colback=sourcegreen!5,colframe=sourcegreen!70,title=Source Quotation]
+\textit{``An AI model produces business insights and written commentaries
+(Finance reporting caption Level \& Segment Level with Legal entity view)
+based on the analysis performed on general ledger transaction data that
+\textbf{detects anomalies, trends, unusual movements, new accounts,
+spikes/drops vs prior periods, and material balances}.''}
+\end{tcolorbox}
+
+\begin{tabularx}{\textwidth}{@{}lX@{}}
+\toprule
+\textbf{Attribute} & \textbf{Value} \\
+\midrule
+\textbf{Requirement ID} & TB-REQ-ES01 \\
+\textbf{MoSCoW Priority} & \textcolor{red}{\textbf{MUST}} \\
+\textbf{Source Document} & Business case - Trial Balance (2).doc \\
+\textbf{Source ID} & TB-BC-001 \\
+\textbf{Source Location} & Section 1: Executive Summary, Paragraph 3, Page 1 (Lines 62--68 in extracted MD) \\
+\textbf{Created By} & Employee ID 1498002 (S1 Badrinath) \\
+\textbf{Document Date} & 14-Dec-2025 \\
+\bottomrule
+\end{tabularx}
+
+\vspace{0.5em}
+\textbf{Derived Requirement Statement:}
+
+The system SHALL implement an AI model capable of performing the following
+analyses on general ledger (GL) transaction data:
+
+\begin{enumerate}[label=(\alph*)]
+\item \textbf{Anomaly Detection:} Identify transactions or balances that
+deviate significantly from expected patterns
+\item \textbf{Trend Analysis:} Detect multi-period trends in account balances
+\item \textbf{Unusual Movement Detection:} Flag balance changes that exceed
+normal operational variance
+\item \textbf{New Account Detection:} Identify accounts appearing for the
+first time in the current period
+\item \textbf{Spike/Drop Detection:} Identify sudden increases or decreases
+compared to prior periods
+\item \textbf{Material Balance Identification:} Flag balances exceeding
+defined materiality thresholds
+\end{enumerate}
+
+\vspace{0.5em}
+\textbf{Acceptance Criteria:}
+
+\begin{tcolorbox}[colback=sapamber!5,colframe=sapamber!70,title=Measurable Acceptance Criteria]
+\begin{enumerate}[label=AC-ES01-\arabic*:,leftmargin=*]
+\item The AI model SHALL process GL data for all 234 Legal Entities
+(per TB-BC-001, Section 2)
+\item Anomaly detection SHALL flag items with Z-score $> 3.0$ or configurable threshold
+\item Spike/drop detection SHALL identify variances $> 25\%$ period-over-period
+(or entity-configurable)
+\item New account detection SHALL compare current period CoA against prior
+12-month baseline
+\item Material balance threshold SHALL default to entity-specific materiality
+(configurable per LE)
+\item Processing SHALL complete within M+1 to M+5 window (per BPMN: TB-BPMN-001)
+\end{enumerate}
+\end{tcolorbox}
+
+\textbf{Derivation Rationale:} The source text explicitly lists six AI capabilities
+(anomalies, trends, unusual movements, new accounts, spikes/drops, material balances).
+Each is converted to a testable sub-requirement with quantifiable criteria.
+
+% -----------------------------------------------------------------------------
+\subsection{TB-REQ-ES02: Commentary Generation}
+\label{req:tb-req-es02}
+% -----------------------------------------------------------------------------
+
+\begin{tcolorbox}[colback=sourcegreen!5,colframe=sourcegreen!70,title=Source Quotation]
+\textit{``GCFO teams get a \textbf{narrative summary} instead of just numbers,
+accelerating review and improving decision-making.''}
+\end{tcolorbox}
+
+\begin{tabularx}{\textwidth}{@{}lX@{}}
+\toprule
+\textbf{Attribute} & \textbf{Value} \\
+\midrule
+\textbf{Requirement ID} & TB-REQ-ES02 \\
+\textbf{MoSCoW Priority} & \textcolor{red}{\textbf{MUST}} \\
+\textbf{Source Document} & Business case - Trial Balance (2).doc \\
+\textbf{Source ID} & TB-BC-001 \\
+\textbf{Source Location} & Section 1: Executive Summary, Paragraph 3, Page 1 (Lines 66--68) \\
+\bottomrule
+\end{tabularx}
+
+\vspace{0.5em}
+\textbf{Derived Requirement Statement:}
+
+The system SHALL generate natural language commentary summaries for:
+\begin{itemize}
+\item Finance reporting caption level
+\item Segment level
+\item Legal entity level
+\end{itemize}
+
+\textbf{Acceptance Criteria:}
+
+\begin{tcolorbox}[colback=sapamber!5,colframe=sapamber!70,title=Measurable Acceptance Criteria]
+\begin{enumerate}[label=AC-ES02-\arabic*:,leftmargin=*]
+\item Commentary SHALL be generated in grammatically correct English prose
+\item Commentary SHALL reference specific variance amounts (e.g., ``Revenue increased
+by \$2.3M (15\%) due to...'')
+\item Commentary SHALL cite contributing factors identified by AI analysis
+\item Commentary confidence score SHALL be displayed (0--100\%)
+\item Human reviewer SHALL be able to edit/approve/reject each commentary
+\item Commentary generation SHALL complete within 60 seconds per Legal Entity
+\end{enumerate}
+\end{tcolorbox}
+
+% -----------------------------------------------------------------------------
+\subsection{TB-REQ-ES03: FTE Savings Target}
+\label{req:tb-req-es03}
+% -----------------------------------------------------------------------------
+
+\begin{tcolorbox}[colback=sourcegreen!5,colframe=sourcegreen!70,title=Source Quotation]
+\textit{``At least \textbf{20 to 25 FTEs} spent on an average \textbf{4 hrs a day}
+during M-2 to M+5, which is equivalent to \textbf{$\sim$5 FTE saves}, with
+strengthening controls by eliminating manual process and reducing the overall
+book close timelines enabling Fast close.''}
+\end{tcolorbox}
+
+\begin{tabularx}{\textwidth}{@{}lX@{}}
+\toprule
+\textbf{Attribute} & \textbf{Value} \\
+\midrule
+\textbf{Requirement ID} & TB-REQ-ES03 \\
+\textbf{MoSCoW Priority} & \textcolor{red}{\textbf{MUST}} \\
+\textbf{Source Document} & Business case - Trial Balance (2).doc \\
+\textbf{Source ID} & TB-BC-001 \\
+\textbf{Source Location} & Section 1: Executive Summary, Paragraph 4, Pages 1--2 (Lines 72--76) \\
+\bottomrule
+\end{tabularx}
+
+\vspace{0.5em}
+\textbf{Derived Requirement Statement:}
+
+The system SHALL reduce manual effort in Trial Balance review from current
+baseline of 20--25 FTEs $\times$ 4 hours/day to achieve a minimum 5 FTE
+equivalent savings.
+
+\textbf{Acceptance Criteria:}
+
+\begin{tcolorbox}[colback=sapamber!5,colframe=sapamber!70,title=Measurable Acceptance Criteria]
+\begin{enumerate}[label=AC-ES03-\arabic*:,leftmargin=*]
+\item Baseline measurement: Current effort = 20--25 FTEs $\times$ 4 hrs/day
+$\times$ 8 days (M-2 to M+5) = 640--800 person-hours per close cycle
+\item Target measurement: Post-implementation effort $\leq$ 480 person-hours
+(15--20 FTEs $\times$ 4 hrs $\times$ 8 days)
+\item Savings calculation: $\geq$ 160 person-hours saved per cycle (5 FTE equivalent)
+\item Measurement method: Time tracking via ServiceNow tickets or equivalent
+\item Verification: Quarterly review of actual vs. target savings
+\end{enumerate}
+\end{tcolorbox}
+
+\textbf{Financial Context:}
+
+\begin{tabular}{lrrr}
+\toprule
+\textbf{Metric} & \textbf{Current State} & \textbf{Target State} & \textbf{Savings} \\
+\midrule
+FTEs involved & 20--25 & 15--20 & 5 \\
+Hours per day & 4 & 4 & -- \\
+Days per cycle (M-2 to M+5) & 8 & 8 & -- \\
+Person-hours per cycle & 640--800 & 480--640 & 160 (min) \\
+\bottomrule
+\end{tabular}
+
+% =============================================================================
+\section{Scope Requirements}
+\label{sec:req-scope}
+% =============================================================================
+
+% -----------------------------------------------------------------------------
+\subsection{TB-REQ-SC01: Legal Entity Coverage}
+\label{req:tb-req-sc01}
+% -----------------------------------------------------------------------------
+
+\begin{tcolorbox}[colback=sourcegreen!5,colframe=sourcegreen!70,title=Source Quotation]
+\textit{``Downloading Trail balance from PSGL/S4 \& preparing the detailed
+analysis across all \textbf{234 LEs} are highly time consuming...''}
+\end{tcolorbox}
+
+\begin{tabularx}{\textwidth}{@{}lX@{}}
+\toprule
+\textbf{Requirement ID} & TB-REQ-SC01 \\
+\textbf{MoSCoW Priority} & \textcolor{red}{\textbf{MUST}} \\
+\textbf{Source Location} & TB-BC-001, Section 1, Paragraph 2, Page 1 (Lines 55--59) \\
+\bottomrule
+\end{tabularx}
+
+\vspace{0.5em}
+\textbf{Derived Requirement Statement:}
+
+The system SHALL support Trial Balance review for exactly 234 Legal Entities.
+
+\textbf{Acceptance Criteria:}
+\begin{enumerate}[label=AC-SC01-\arabic*:,leftmargin=*]
+\item System configuration SHALL include all 234 Legal Entity codes
+\item System SHALL process TB data for each LE independently
+\item Dashboard SHALL display completion status for all 234 LEs
+\item No Legal Entity SHALL be excluded from automated processing
+\end{enumerate}
+
+% -----------------------------------------------------------------------------
+\subsection{TB-REQ-SC02: Reporting Dimensions}
+\label{req:tb-req-sc02}
+% -----------------------------------------------------------------------------
+
+\begin{tcolorbox}[colback=sourcegreen!5,colframe=sourcegreen!70,title=Source Quotation]
+\textit{``...current view is at \textbf{Legal entity level} and need to be in
+\textbf{Finance caption level \& segment level}.''}
+\end{tcolorbox}
+
+\begin{tabularx}{\textwidth}{@{}lX@{}}
+\toprule
+\textbf{Requirement ID} & TB-REQ-SC02 \\
+\textbf{MoSCoW Priority} & \textcolor{red}{\textbf{MUST}} \\
+\textbf{Source Location} & TB-BC-001, Section 1, Paragraph 2, Pages 1 (Lines 55--59) \\
+\bottomrule
+\end{tabularx}
+
+\vspace{0.5em}
+\textbf{Derived Requirement Statement:}
+
+The system SHALL provide variance analysis and commentary at three reporting dimensions:
+
+\begin{enumerate}[label=(\alph*)]
+\item \textbf{Legal Entity Level:} Individual LE view (current capability, to be retained)
+\item \textbf{Finance Caption Level:} Aggregation by standardized finance captions
+(e.g., Revenue, COGS, Operating Expenses)
+\item \textbf{Segment Level:} Aggregation by business segment as defined in CoA
+\end{enumerate}
+
+\textbf{Acceptance Criteria:}
+\begin{enumerate}[label=AC-SC02-\arabic*:,leftmargin=*]
+\item User SHALL be able to toggle between all three reporting dimensions
+\item Drill-down SHALL be available from Segment $\rightarrow$ Finance Caption $\rightarrow$ LE
+\item Commentary SHALL be generated at each dimension level
+\item Export to Excel SHALL preserve dimension hierarchy
+\end{enumerate}
+
+% -----------------------------------------------------------------------------
+\subsection{TB-REQ-SC03: Out of Scope Items}
+\label{req:tb-req-sc03}
+% -----------------------------------------------------------------------------
+
+\begin{tcolorbox}[colback=sourcegreen!5,colframe=sourcegreen!70,title=Source Quotation]
+\textit{``Out of scope – \textbf{Country IFRS reporting, BSS Risk assessment}''}
+\end{tcolorbox}
+
+\begin{tabularx}{\textwidth}{@{}lX@{}}
+\toprule
+\textbf{Requirement ID} & TB-REQ-SC03 \\
+\textbf{MoSCoW Priority} & \textcolor{gray}{\textbf{WON'T}} (this phase) \\
+\textbf{Source Location} & TB-BC-001, Section 3: Project Description, Scope, Page 2 (Lines 152--154) \\
+\bottomrule
+\end{tabularx}
+
+\vspace{0.5em}
+\textbf{Explicit Exclusions:}
+
+The following items are \textbf{explicitly out of scope} per source documentation:
+
+\begin{enumerate}
+\item \textbf{Country IFRS Reporting:} Local GAAP/IFRS adjustments not included
+\item \textbf{BSS Risk Assessment:} Balance Sheet Substantiation is a separate process
+\end{enumerate}
+
+\textbf{Note:} These items are documented as future phases (see Gap G-003 in Chapter~\ref{ch:gap-analysis}).
+
+% =============================================================================
+\section{Process Step Requirements (from BPMN)}
+\label{sec:req-process}
+% =============================================================================
+
+The following requirements are derived from the BPMN process diagram
+\textbf{TB-BPMN-001}: ``Operation of Month End Close Controls - Trial Balance
+Review - GLO''.
+
+\textbf{Source:} \texttt{Operation of Month End Close Controls - Trial Balance Review - GLO (1).pdf}\\
+\textbf{Process Owner:} Modi, Piyush\\
+\textbf{Last Changed:} May 23, 2025, 7:50:30 PM\\
+\textbf{Author ID:} 8203488
+
+% -----------------------------------------------------------------------------
+\subsection{TB-REQ-PS01: Roll Forward Prior Month File}
+\label{req:tb-req-ps01}
+% -----------------------------------------------------------------------------
+
+\begin{tcolorbox}[colback=sourcegreen!5,colframe=sourcegreen!70,title=BPMN Task Extract]
+\textit{``Roll Forward Prior Month File to Reflect Current...''}\\
+\textbf{Timing:} M-3\\
+\textbf{System:} MS-E-xcel-1, Shared Drive
+\end{tcolorbox}
+
+\begin{tabularx}{\textwidth}{@{}lX@{}}
+\toprule
+\textbf{Requirement ID} & TB-REQ-PS01 \\
+\textbf{MoSCoW Priority} & \textcolor{red}{\textbf{MUST}} \\
+\textbf{Source Location} & TB-BPMN-001, Task Row 1, Timing M-3 \\
+\textbf{EUC Reference} & N/A (no EUC control on this step) \\
+\bottomrule
+\end{tabularx}
+
+\textbf{Derived Requirement:} The system SHALL roll forward the prior month's
+Trial Balance workbook structure to the current period while preserving:
+\begin{itemize}
+\item Prior period comparative balances
+\item Account structure and mappings
+\item Historical commentary for reference
+\end{itemize}
+
+\textbf{Acceptance Criteria:}
+\begin{enumerate}[label=AC-PS01-\arabic*:]
+\item Roll-forward SHALL complete by M-3 (3 days before month end)
+\item Prior month comparatives SHALL be locked from editing
+\item Current period columns SHALL be initialized to zero
+\end{enumerate}
+
+% -----------------------------------------------------------------------------
+\subsection{TB-REQ-PS02: Download PSGL Master Data}
+\label{req:tb-req-ps02}
+% -----------------------------------------------------------------------------
+
+\begin{tcolorbox}[colback=sourcegreen!5,colframe=sourcegreen!70,title=BPMN Task Extract]
+\textit{``Download PSGL [...] Update 'Accounts Master' Sheet''}\\
+\textbf{Timing:} M-3\\
+\textbf{System:} PSGL, MS-E-xcel-1\\
+\textbf{EUC Control:} EX/200/1353107/0001/000
+\end{tcolorbox}
+
+\begin{tabularx}{\textwidth}{@{}lX@{}}
+\toprule
+\textbf{Requirement ID} & TB-REQ-PS02 \\
+\textbf{MoSCoW Priority} & \textcolor{red}{\textbf{MUST}} \\
+\textbf{Source Location} & TB-BPMN-001, Task Row 2, Timing M-3 \\
+\textbf{EUC Reference} & EX/200/1353107/0001/000 \\
+\bottomrule
+\end{tabularx}
+
+\textbf{Derived Requirement:} The system SHALL extract Chart of Accounts (CoA)
+master data from PSGL and update the Accounts Master reference.
+
+\textbf{Acceptance Criteria:}
+\begin{enumerate}[label=AC-PS02-\arabic*:]
+\item CoA extract SHALL include all active GL accounts
+\item Extract SHALL match EUC control EX/200/1353107/0001/000 specifications
+\item New accounts SHALL be flagged for review (feeds TB-REQ-AI03)
+\end{enumerate}
+
+% -----------------------------------------------------------------------------
+\subsection{TB-REQ-PS03: Extract Trial Balance}
+\label{req:tb-req-ps03}
+% -----------------------------------------------------------------------------
+
+\begin{tcolorbox}[colback=sourcegreen!5,colframe=sourcegreen!70,title=BPMN Task Extract]
+\textit{``Extract Trial Balance [...] File in Current Month''}\\
+\textbf{Timing:} M-3 to M+5\\
+\textbf{System:} PSGL, MS-E-xcel-1, Shared Drive
+\end{tcolorbox}
+
+\begin{tabularx}{\textwidth}{@{}lX@{}}
+\toprule
+\textbf{Requirement ID} & TB-REQ-PS03 \\
+\textbf{MoSCoW Priority} & \textcolor{red}{\textbf{MUST}} \\
+\textbf{Source Location} & TB-BPMN-001, Task Row 3 \\
+\bottomrule
+\end{tabularx}
+
+\textbf{Derived Requirement:} The system SHALL extract Trial Balance data from
+PSGL/S4 for all 234 Legal Entities.
+
+\textbf{Acceptance Criteria:}
+\begin{enumerate}[label=AC-PS03-\arabic*:]
+\item Extract SHALL include: Account Number, Account Name, Opening Balance,
+Movements, Closing Balance
+\item Extract SHALL be available in both local currency (LC) and reporting
+currency (RC)
+\item Data SHALL be timestamped with extraction date/time
+\item Hash/checksum SHALL be generated for data integrity verification
+\end{enumerate}
+
+% -----------------------------------------------------------------------------
+\subsection{TB-REQ-PS04: Calculate Variance}
+\label{req:tb-req-ps04}
+% -----------------------------------------------------------------------------
+
+\begin{tcolorbox}[colback=sourcegreen!5,colframe=sourcegreen!70,title=BPMN Task Extract]
+\textit{``Calculate Variance Between Prior [...] and Current Month''}\\
+\textbf{Timing:} M-2 to M+5\\
+\textbf{System:} MS-E-xcel-1, Shared Drive\\
+\textbf{EUC Control:} EX/200/1579702/0001/000
+\end{tcolorbox}
+
+\begin{tabularx}{\textwidth}{@{}lX@{}}
+\toprule
+\textbf{Requirement ID} & TB-REQ-PS04 \\
+\textbf{MoSCoW Priority} & \textcolor{red}{\textbf{MUST}} \\
+\textbf{Source Location} & TB-BPMN-001, Task Row 4 \\
+\textbf{EUC Reference} & EX/200/1579702/0001/000 \\
+\bottomrule
+\end{tabularx}
+
+\textbf{Derived Requirement:} The system SHALL calculate variance between:
+\begin{itemize}
+\item Current month balance vs. prior month balance
+\item Current month balance vs. same month prior year (YoY)
+\item Both absolute and percentage variance
+\end{itemize}
+
+\textbf{Acceptance Criteria:}
+\begin{enumerate}[label=AC-PS04-\arabic*:]
+\item Variance calculation: $V = B_{current} - B_{prior}$
+\item Percentage variance: $V\% = \frac{B_{current} - B_{prior}}{|B_{prior}|} \times 100$
+\item Division by zero handling: If $B_{prior} = 0$, display ``N/A (New)''
+\item Calculation SHALL match EUC control specifications
+\end{enumerate}
+
+% -----------------------------------------------------------------------------
+\subsection{TB-REQ-PS05: Filter by Materiality}
+\label{req:tb-req-ps05}
+% -----------------------------------------------------------------------------
+
+\begin{tcolorbox}[colback=sourcegreen!5,colframe=sourcegreen!70,title=BPMN Task Extract]
+\textit{``Filter Variances [...] Set Criteria''}\\
+\textbf{Timing:} M-2 to M+5
+\end{tcolorbox}
+
+\begin{tabularx}{\textwidth}{@{}lX@{}}
+\toprule
+\textbf{Requirement ID} & TB-REQ-PS05 \\
+\textbf{MoSCoW Priority} & \textcolor{red}{\textbf{MUST}} \\
+\textbf{Source Location} & TB-BPMN-001, Task Row 5 \\
+\bottomrule
+\end{tabularx}
+
+\textbf{Derived Requirement:} The system SHALL filter variances based on
+configurable materiality thresholds.
+
+\textbf{Acceptance Criteria:}
+\begin{enumerate}[label=AC-PS05-\arabic*:]
+\item Materiality threshold SHALL be configurable per Legal Entity
+\item Default threshold: Absolute $> \$50,000$ OR Percentage $> 10\%$
+\item Filter SHALL support AND/OR logic combinations
+\item Filter SHALL support account-type-specific thresholds
+\end{enumerate}
+
+% =============================================================================
+\section{Requirements Summary Matrix}
+\label{sec:req-summary}
+% =============================================================================
+
+\begin{longtable}{p{2cm} p{1.2cm} p{4cm} p{3cm} p{2.5cm}}
+\caption{Complete Requirements Traceability Summary} \\
+\toprule
+\textbf{Req ID} & \textbf{MoSCoW} & \textbf{Title} & \textbf{Source Ref} & \textbf{Acceptance Criteria} \\
+\midrule
+\endfirsthead
+\toprule
+\textbf{Req ID} & \textbf{MoSCoW} & \textbf{Title} & \textbf{Source Ref} & \textbf{Acceptance Criteria} \\
+\midrule
+\endhead
+\rowcolor{sapblue!5}
+TB-REQ-ES01 & MUST & AI Variance Analysis & TB-BC-001, S1P3 & AC-ES01-1..6 \\
+TB-REQ-ES02 & MUST & Commentary Generation & TB-BC-001, S1P3 & AC-ES02-1..6 \\
+\rowcolor{sapblue!5}
+TB-REQ-ES03 & MUST & 5 FTE Savings & TB-BC-001, S1P4 & AC-ES03-1..5 \\
+TB-REQ-SC01 & MUST & 234 LE Coverage & TB-BC-001, S1P2 & AC-SC01-1..4 \\
+\rowcolor{sapblue!5}
+TB-REQ-SC02 & MUST & 3-Level Reporting & TB-BC-001, S1P2 & AC-SC02-1..4 \\
+TB-REQ-SC03 & WON'T & Exclusions Documented & TB-BC-001, S3 & N/A \\
+\rowcolor{sapblue!5}
+TB-REQ-PS01 & MUST & Roll Forward & TB-BPMN-001 & AC-PS01-1..3 \\
+TB-REQ-PS02 & MUST & PSGL Master Download & TB-BPMN-001 & AC-PS02-1..3 \\
+\rowcolor{sapblue!5}
+TB-REQ-PS03 & MUST & TB Extract & TB-BPMN-001 & AC-PS03-1..4 \\
+TB-REQ-PS04 & MUST & Variance Calculation & TB-BPMN-001 & AC-PS04-1..4 \\
+\rowcolor{sapblue!5}
+TB-REQ-PS05 & MUST & Materiality Filter & TB-BPMN-001 & AC-PS05-1..4 \\
+\bottomrule
+\end{longtable}
+
+\vspace{1em}
+\textbf{MoSCoW Distribution:}
+\begin{itemize}
+\item \textcolor{red}{\textbf{MUST:}} 10 requirements (91\%)
+\item \textcolor{gray}{\textbf{WON'T:}} 1 requirement (9\%) -- explicitly excluded from scope
+\end{itemize}
+
+% =============================================================================
+\section{Human Auditor Verification Checklist}
+\label{sec:req-audit-checklist}
+% =============================================================================
+
+\begin{tcolorbox}[colback=yellow!10,colframe=yellow!50!black,title=\faIcon{clipboard-check} Auditor Verification Checklist]
+For each requirement above, the human auditor should verify:
+
+\begin{enumerate}[label=\faIcon{square}]
+\item \textbf{Source Quotation Accuracy:} Does the quoted text match the
+original document exactly?
+\item \textbf{Location Correctness:} Is the section/paragraph/page reference correct?
+\item \textbf{Derivation Logic:} Is the requirement a reasonable derivation
+from the quoted text?
+\item \textbf{Acceptance Criteria Measurability:} Can each criterion be
+objectively verified?
+\item \textbf{MoSCoW Appropriateness:} Does the priority reflect business importance?
+\item \textbf{Completeness:} Are there any requirements in the source document
+not captured here?
+\end{enumerate}
+
+\vspace{0.5em}
+\textbf{Signoff:}
+\begin{itemize}
+\item[] Name: \rule{6cm}{0.4pt}
+\item[] Date: \rule{3cm}{0.4pt}
+\item[] Signature: \rule{5cm}{0.4pt}
+\end{itemize}
+\end{tcolorbox}
+\chapter{Specification Mapping}
+\label{ch:specification-mapping}
+
+This chapter maps each specification element to its source requirement(s),
+establishing the requirement-to-specification traceability layer of the
+HITL framework.
+
+% =============================================================================
+\section{Process Step Specifications}
+\label{sec:process-step-specs}
+
+\begin{longtable}{@{}C{2cm}L{3.5cm}C{3cm}L{5cm}@{}}
+\caption{Process Steps to Requirements Mapping}
+\label{tab:process-steps-mapping} \\
+\toprule
+\textbf{Spec ID} & \textbf{Specification} & \textbf{Req ID(s)} & \textbf{Implementation Notes} \\
+\midrule
+\endfirsthead
+\toprule
+\textbf{Spec ID} & \textbf{Specification} & \textbf{Req ID(s)} & \textbf{Implementation Notes} \\
+\midrule
+\endhead
+\specref{TB-STEP-001} & Roll Forward Prior Month File & \reqref{TB-REQ-PS01} & Auto-generate template; pre-populate parameters \\
+\specref{TB-STEP-002} & Download PSGL \& Update Master & \reqref{TB-REQ-PS02} & PSGL/S4 API integration; auto-detect changes \\
+\specref{TB-STEP-003} & Extract Trial Balance & \reqref{TB-REQ-PS03}, \reqref{TB-REQ-SC01} & Parallel extraction for 234 LEs \\
+\specref{TB-STEP-004} & Calculate \& Filter Variances & \reqref{TB-REQ-PS04}, \reqref{TB-REQ-PS05} & ML-adaptive materiality thresholds \\
+\specref{TB-STEP-005} & Seek \& Update Commentaries & \reqref{TB-REQ-PS06}, \reqref{TB-REQ-AI06} & LLM-generated draft commentaries \\
+\specref{TB-STEP-006} & Journal Posting Investigation & \reqref{TB-REQ-PS07} & Auto-detect unposted journals \\
+\specref{TB-STEP-007} & Track Entries \& Risk & \reqref{TB-REQ-PS07} & Predictive risk scoring \\
+\specref{TB-STEP-008} & Prepare Summary \& Review & \reqref{TB-REQ-PS08} & Auto-generate FORTM pack section \\
+\bottomrule
+\end{longtable}
+
+% =============================================================================
+\section{Decision Point Specifications}
+\label{sec:decision-point-specs}
+
+\begin{longtable}{@{}C{1.5cm}L{3cm}C{3cm}L{6cm}@{}}
+\caption{Decision Points to Requirements Mapping}
+\label{tab:decision-points-mapping} \\
+\toprule
+\textbf{DP ID} & \textbf{Decision Point} & \textbf{Req ID(s)} & \textbf{Specification Detail} \\
+\midrule
+\endfirsthead
+\toprule
+\textbf{DP ID} & \textbf{Decision Point} & \textbf{Req ID(s)} & \textbf{Specification Detail} \\
+\midrule
+\endhead
+\specref{DP-001} & Materiality Check & \reqref{TB-REQ-PS05}, \reqref{TB-REQ-AI05} & Threshold: BS \$100M, PL \$3M; ML-adaptive per category \\
+\specref{DP-002} & Journal Status & \reqref{TB-REQ-PS07} & States: posted / posting\_required / not\_posted \\
+\specref{DP-003} & Investigation Required & \reqref{TB-REQ-PS07} & Predictive model based on entry history \\
+\specref{DP-004} & Entry Confirmation & \reqref{TB-REQ-PS07} & M+4 deadline tracking; auto-escalation \\
+\specref{DP-005} & Unexplained Variance & \reqref{TB-REQ-AI06}, \reqref{BSS-REQ-01} & Categorize: substantiated\_at\_risk, unsubstantiated\_unowned, unsubstantiated\_owned \\
+\bottomrule
+\end{longtable}
+
+\subsection{Decision Point Detail: \specref{DP-001}}
+
+\begin{table}[h]
+\centering
+\caption{\specref{DP-001} Materiality Check Specification}
+\begin{tabularx}{\textwidth}{@{}L{4cm}L{10cm}@{}}
+\toprule
+\textbf{Attribute} & \textbf{Value} \\
+\midrule
+Specification ID & DP-001 \\
+Name & Materiality Check \\
+Gateway Type & Exclusive \\
+BPMN State & \stateid{CHECK\_MATERIAL\_VARIANCES} \\
+Input Metric & \fieldref{variance\_amount} \\
+\midrule
+\multicolumn{2}{l}{\textbf{Threshold Configuration}} \\
+\midrule
+Balance Sheet (BS) & \$100,000,000 \\
+Profit \& Loss (PL) & \$3,000,000 \\
+Threshold Source & Static (v1.0), ML-adaptive (v2.0) \\
+\midrule
+\multicolumn{2}{l}{\textbf{Transitions}} \\
+\midrule
+Material = Yes & $\rightarrow$ \stateid{SEEK\_COMMENTARIES} \\
+Material = No & $\rightarrow$ \stateid{CHECK\_UNEXPLAINED} \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+% =============================================================================
+\section{AI Capability Specifications}
+\label{sec:ai-capability-specs}
+
+\begin{longtable}{@{}C{2cm}L{3.5cm}C{2.5cm}L{5.5cm}@{}}
+\caption{AI Capabilities to Requirements Mapping}
+\label{tab:ai-capabilities-mapping} \\
+\toprule
+\textbf{Spec ID} & \textbf{AI Capability} & \textbf{Req ID(s)} & \textbf{Implementation Detail} \\
+\midrule
+\endfirsthead
+\toprule
+\textbf{Spec ID} & \textbf{AI Capability} & \textbf{Req ID(s)} & \textbf{Implementation Detail} \\
+\midrule
+\endhead
+\specref{AI-ANOM} & Anomaly Detection & \reqref{TB-REQ-AI01} & 3$\sigma$ z-score with MAD fallback for non-normal distributions \\
+\specref{AI-TREND} & Trend Analysis & \reqref{TB-REQ-AI02} & 12-month rolling window; percentile ranking \\
+\specref{AI-NEW} & New Account Detection & \reqref{TB-REQ-AI03} & Flag accounts not in prior period master \\
+\specref{AI-SPIKE} & Spike/Drop Detection & \reqref{TB-REQ-AI04} & Period spike check; sign flip detection \\
+\specref{AI-MAT} & Material Balance ID & \reqref{TB-REQ-AI05} & Category-specific thresholds with multipliers \\
+\specref{AI-LLM} & LLM Commentary & \reqref{TB-REQ-AI06} & RAG-augmented generation; $>$85\% acceptance rate target \\
+\bottomrule
+\end{longtable}
+
+\subsection{AI Capability Detail: \specref{AI-ANOM}}
+
+\begin{table}[h]
+\centering
+\caption{\specref{AI-ANOM} Anomaly Detection Specification}
+\begin{tabularx}{\textwidth}{@{}L{4cm}L{10cm}@{}}
+\toprule
+\textbf{Attribute} & \textbf{Value} \\
+\midrule
+Specification ID & AI-ANOM \\
+Name & Anomaly Detection \\
+Requirement & \reqref{TB-REQ-AI01} \\
+\midrule
+\multicolumn{2}{l}{\textbf{Algorithm Configuration}} \\
+\midrule
+Primary Method & Z-score (3$\sigma$ threshold) \\
+Fallback Method & Median Absolute Deviation (MAD) \\
+Fallback Trigger & Non-normal distribution detected (Shapiro-Wilk $p < 0.05$) \\
+\midrule
+\multicolumn{2}{l}{\textbf{Output Flags}} \\
+\midrule
+Period Spike & \enumval{PERIOD\_SPIKE} \\
+Sign Flip & \enumval{SIGN\_FLIP} \\
+New Account & \enumval{NEW\_ACCOUNT} \\
+Material Balance & \enumval{MATERIAL\_BALANCE} \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\subsection{AI Capability Detail: \specref{AI-LLM}}
+
+\begin{table}[h]
+\centering
+\caption{\specref{AI-LLM} LLM Commentary Specification}
+\begin{tabularx}{\textwidth}{@{}L{4cm}L{10cm}@{}}
+\toprule
+\textbf{Attribute} & \textbf{Value} \\
+\midrule
+Specification ID & AI-LLM \\
+Name & LLM Commentary Generation \\
+Requirement & \reqref{TB-REQ-AI06} \\
+\midrule
+\multicolumn{2}{l}{\textbf{Pipeline Configuration}} \\
+\midrule
+Method & RAG-augmented generation \\
+Vector Store & HANA Cloud Vector Engine \\
+Chunk Size & 220 words \\
+Overlap & 40 words \\
+\midrule
+\multicolumn{2}{l}{\textbf{Acceptance Criteria}} \\
+\midrule
+Acceptance Rate Target & $>$85\% require only minor edits \\
+Factual Accuracy & 100\% of referenced figures match GL \\
+Latency & $<$30 seconds P95 \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+% =============================================================================
+\section{Control Specifications}
+\label{sec:control-specs}
+
+\begin{longtable}{@{}C{2.5cm}L{4cm}C{2.5cm}L{4.5cm}@{}}
+\caption{Controls to Requirements Mapping}
+\label{tab:controls-mapping} \\
+\toprule
+\textbf{Control ID} & \textbf{EUC Reference} & \textbf{Req ID(s)} & \textbf{Control Objective} \\
+\midrule
+\endfirsthead
+\toprule
+\textbf{Control ID} & \textbf{EUC Reference} & \textbf{Req ID(s)} & \textbf{Control Objective} \\
+\midrule
+\endhead
+\specref{TB-CTRL-001} & EX/200/1353107/0001/000 & \reqref{TB-REQ-PS02} & PSGL master data extraction integrity \\
+\specref{TB-CTRL-002} & EX/200/1579702/0001/000 & \reqref{TB-REQ-PS04} & Variance analysis calculation accuracy \\
+\specref{TB-CTRL-003} & EX/200/1579702/0002/000 & \reqref{TB-REQ-PS08} & Senior review before FORTM submission \\
+\bottomrule
+\end{longtable}
+
+\subsection{Control Detail: \specref{TB-CTRL-002}}
+
+\begin{table}[h]
+\centering
+\caption{\specref{TB-CTRL-002} Variance Analysis Control}
+\begin{tabularx}{\textwidth}{@{}L{4cm}L{10cm}@{}}
+\toprule
+\textbf{Attribute} & \textbf{Value} \\
+\midrule
+Control ID & TB-CTRL-002 \\
+EUC Reference & EX/200/1579702/0001/000 \\
+Requirement & \reqref{TB-REQ-PS04} \\
+Objective & Variance analysis calculation accuracy \\
+Frequency & Monthly \\
+\midrule
+\multicolumn{2}{l}{\textbf{Control Activities}} \\
+\midrule
+Activity 1 & Validate row counts match PSGL source \\
+Activity 2 & Verify variance formula: current\_balance $-$ prior\_balance \\
+Activity 3 & Confirm materiality thresholds applied correctly \\
+Activity 4 & Reconcile total variances to GL movement report \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+% =============================================================================
+\section{Specification Coverage Summary}
+\label{sec:spec-coverage-summary}
+
+\begin{table}[h]
+\centering
+\caption{Specification Coverage Statistics}
+\label{tab:spec-coverage-stats}
+\begin{tabular}{@{}lccc@{}}
+\toprule
+\textbf{Specification Type} & \textbf{Count} & \textbf{Requirements Covered} & \textbf{Coverage} \\
+\midrule
+Process Steps & 8 & 10 & 100\% \\
+Decision Points & 5 & 6 & 100\% \\
+AI Capabilities & 6 & 6 & 100\% \\
+Controls & 3 & 3 & 100\% \\
+\midrule
+\textbf{Total} & \textbf{22} & \textbf{25 unique} & \textbf{100\%} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\paragraph{Note:} Some requirements are covered by multiple specifications
+(e.g., \reqref{TB-REQ-PS07} is covered by \specref{TB-STEP-006},
+\specref{TB-STEP-007}, \specref{DP-002}, \specref{DP-003}, and \specref{DP-004}).
+
+\begin{hitlbox}{H4 -- Traceability Links Verification (Part 1)}
+The human reviewer must verify the following for checkpoint H4:
+\begin{enumerate}[noitemsep]
+\item Each specification correctly references its source requirements
+\item Implementation details are consistent with requirement text
+\item No specifications exist without a requirement reference
+\item Specification IDs follow naming conventions
+\end{enumerate}
+\end{hitlbox}
+\chapter{Schema Mapping}
+\label{ch:schema-mapping}
+
+This chapter maps specification elements to their implementing schemas,
+completing the traceability chain from source to implementation. Each
+schema field is traced back to its source specification and requirement.
+
+% =============================================================================
+\section{Schema Inventory}
+\label{sec:schema-inventory}
+
+\begin{table}[h]
+\centering
+\caption{Schema File Inventory}
+\label{tab:schema-inventory}
+\begin{tabularx}{\textwidth}{@{}L{5cm}L{9cm}@{}}
+\toprule
+\textbf{Schema File} & \textbf{Purpose} \\
+\midrule
+\schemaref{variance-record} & Variance records from Stage 2 anomaly detection \\
+\schemaref{decision-point} & Decision point state transitions \\
+\schemaref{entity-params} & Per-entity parameter configuration \\
+\schemaref{tb-extract} & Trial balance data extraction format \\
+\schemaref{pl-extract} & P\&L data extraction format \\
+\schemaref{commentary-draft} & LLM-generated commentary drafts \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+% =============================================================================
+\section{Specification to Schema Mapping}
+\label{sec:spec-schema-mapping}
+
+\begin{longtable}{@{}C{2cm}L{4cm}C{3cm}L{4.5cm}@{}}
+\caption{Specification to Schema Mapping}
+\label{tab:spec-schema-mapping} \\
+\toprule
+\textbf{Spec ID} & \textbf{Specification} & \textbf{Schema(s)} & \textbf{Key Fields} \\
+\midrule
+\endfirsthead
+\toprule
+\textbf{Spec ID} & \textbf{Specification} & \textbf{Schema(s)} & \textbf{Key Fields} \\
+\midrule
+\endhead
+\specref{TB-STEP-003} & Extract Trial Balance & \schemaref{tb-extract} & extract\_id, legal\_entity, period, balances \\
+\specref{TB-STEP-004} & Calculate Variances & \schemaref{variance-record} & variance\_id, variance\_amount, flags \\
+\specref{DP-001} & Materiality Check & \schemaref{variance-record} & materiality\_assessment.* \\
+\specref{DP-002} & Journal Status & \schemaref{variance-record} & journal\_status, journal\_ids \\
+\specref{DP-003} & Investigation & \schemaref{variance-record} & investigation\_status \\
+\specref{DP-004} & Entry Confirmation & \schemaref{variance-record} & confirmation\_received, days\_to\_deadline \\
+\specref{DP-005} & Unexplained Variance & \schemaref{variance-record} & is\_unexplained, unexplained\_category \\
+\specref{AI-ANOM} & Anomaly Detection & \schemaref{variance-record} & anomaly\_detection.period\_spike.* \\
+\specref{AI-NEW} & New Account & \schemaref{variance-record} & anomaly\_detection.new\_account.* \\
+\specref{AI-SPIKE} & Spike/Drop & \schemaref{variance-record} & flags: [PERIOD\_SPIKE, SIGN\_FLIP] \\
+\specref{AI-LLM} & LLM Commentary & \schemaref{commentary-draft} & draft\_text, confidence, sources \\
+\bottomrule
+\end{longtable}
+
+% =============================================================================
+\section{Variance Record Schema (\schemaref{variance-record})}
+\label{sec:variance-record-schema}
+
+The variance record schema is the primary data structure for the TB
+review process, capturing all variance analysis, anomaly detection,
+and decision point state information.
+
+\subsection{Field-Level Traceability}
+
+\begin{longtable}{@{}L{4cm}L{2.5cm}C{2cm}L{4.5cm}@{}}
+\caption{Variance Record Schema Field Traceability}
+\label{tab:variance-record-fields} \\
+\toprule
+\textbf{Schema Field} & \textbf{Type} & \textbf{Spec ID} & \textbf{Source Requirement} \\
+\midrule
+\endfirsthead
+\toprule
+\textbf{Schema Field} & \textbf{Type} & \textbf{Spec ID} & \textbf{Source Requirement} \\
+\midrule
+\endhead
+\fieldref{variance\_id} & string & \specref{TB-STEP-004} & \reqref{TB-REQ-PS04} \\
+\fieldref{account\_code} & string & \specref{TB-STEP-003} & \reqref{TB-REQ-PS03} \\
+\fieldref{account\_category} & enum & \specref{AI-MAT} & \reqref{TB-REQ-AI05} \\
+\fieldref{finance\_caption} & string & \specref{TB-STEP-004} & \reqref{TB-REQ-SC02} \\
+\fieldref{segment} & string & \specref{TB-STEP-004} & \reqref{TB-REQ-SC03} \\
+\fieldref{legal\_entity} & string & \specref{TB-STEP-003} & \reqref{TB-REQ-SC01} \\
+\fieldref{variance\_amount} & number & \specref{TB-STEP-004} & \reqref{TB-REQ-PS04} \\
+\fieldref{flags} & array[enum] & \specref{AI-ANOM} & \reqref{TB-REQ-AI01} \\
+\fieldref{materiality\_assessment.is\_material} & boolean & \specref{DP-001} & \reqref{TB-REQ-PS05} \\
+\fieldref{materiality\_assessment.threshold\_source} & enum & \specref{DP-001} & \reqref{TB-REQ-AI05} \\
+\fieldref{journal\_status} & enum & \specref{DP-002} & \reqref{TB-REQ-PS07} \\
+\fieldref{investigation\_status} & enum & \specref{DP-003} & \reqref{TB-REQ-PS07} \\
+\fieldref{confirmation\_received} & boolean & \specref{DP-004} & \reqref{TB-REQ-PS07} \\
+\fieldref{is\_unexplained} & boolean & \specref{DP-005} & \reqref{TB-REQ-AI06} \\
+\fieldref{unexplained\_category} & enum & \specref{DP-005} & \reqref{BSS-REQ-01} \\
+\bottomrule
+\end{longtable}
+
+\subsection{Schema Structure}
+
+\begin{lstlisting}[language=jsonx,caption=Variance Record Schema (simplified)]
+{
+"$schema": "https://json-schema.org/draft/2020-12/schema",
+"$id": "variance-record.schema.json",
+"type": "object",
+"required": ["variance_id", "account_code", "legal_entity",
+"variance_amount"],
+"properties": {
+"variance_id": { "type": "string", "pattern": "^VAR-" },
+"account_code": { "type": "string" },
+"account_category": {
+"type": "string",
+"enum": ["asset", "liability", "equity", "revenue", "expense"]
+},
+"finance_caption": { "type": "string" },
+"segment": { "type": "string" },
+"legal_entity": { "type": "string", "pattern": "^[A-Z]{3}$" },
+"variance_amount": { "type": "number" },
+"flags": {
+"type": "array",
+"items": {
+"type": "string",
+"enum": ["PERIOD_SPIKE", "SIGN_FLIP", "NEW_ACCOUNT",
+"MATERIAL_BALANCE", "ZERO_BOTH_PERIODS"]
+}
+},
+"materiality_assessment": {
+"type": "object",
+"properties": {
+"is_material": { "type": "boolean" },
+"threshold_used": { "type": "number" },
+"threshold_source": {
+"type": "string",
+"enum": ["static", "ml_adaptive", "override"]
+}
+}
+},
+"journal_status": {
+"type": "string",
+"enum": ["posted", "posting_required", "not_posted"]
+},
+"investigation_status": {
+"type": "string",
+"enum": ["not_required", "in_progress", "completed", "escalated"]
+},
+"confirmation_received": { "type": "boolean" },
+"is_unexplained": { "type": "boolean" },
+"unexplained_category": {
+"type": "string",
+"enum": ["substantiated_at_risk", "unsubstantiated_unowned",
+"unsubstantiated_owned"]
+}
+}
+}
+\end{lstlisting}
+
+% =============================================================================
+\section{Commentary Draft Schema (\schemaref{commentary-draft})}
+\label{sec:commentary-draft-schema}
+
+\subsection{Field-Level Traceability}
+
+\begin{longtable}{@{}L{4cm}L{2.5cm}C{2cm}L{4.5cm}@{}}
+\caption{Commentary Draft Schema Field Traceability}
+\label{tab:commentary-draft-fields} \\
+\toprule
+\textbf{Schema Field} & \textbf{Type} & \textbf{Spec ID} & \textbf{Source Requirement} \\
+\midrule
+\endfirsthead
+\toprule
+\textbf{Schema Field} & \textbf{Type} & \textbf{Spec ID} & \textbf{Source Requirement} \\
+\midrule
+\endhead
+\fieldref{commentary\_id} & string & \specref{AI-LLM} & \reqref{TB-REQ-AI06} \\
+\fieldref{variance\_ref} & string & \specref{AI-LLM} & \reqref{TB-REQ-PS06} \\
+\fieldref{draft\_text} & string & \specref{AI-LLM} & \reqref{TB-REQ-AI06} \\
+\fieldref{confidence\_score} & number & \specref{AI-LLM} & \reqref{TB-REQ-AI06} \\
+\fieldref{rag\_sources} & array & \specref{AI-LLM} & \reqref{TB-REQ-AI06} \\
+\fieldref{human\_status} & enum & \specref{TB-STEP-005} & \reqref{TB-REQ-PS06} \\
+\fieldref{edited\_text} & string & \specref{TB-STEP-005} & \reqref{TB-REQ-PS06} \\
+\bottomrule
+\end{longtable}
+
+% =============================================================================
+\section{Trial Balance Extract Schema (\schemaref{tb-extract})}
+\label{sec:tb-extract-schema}
+
+\subsection{Field-Level Traceability}
+
+\begin{longtable}{@{}L{4cm}L{2.5cm}C{2cm}L{4.5cm}@{}}
+\caption{TB Extract Schema Field Traceability}
+\label{tab:tb-extract-fields} \\
+\toprule
+\textbf{Schema Field} & \textbf{Type} & \textbf{Spec ID} & \textbf{Source Requirement} \\
+\midrule
+\endfirsthead
+\toprule
+\textbf{Schema Field} & \textbf{Type} & \textbf{Spec ID} & \textbf{Source Requirement} \\
+\midrule
+\endhead
+\fieldref{extract\_id} & string & \specref{TB-STEP-003} & \reqref{TB-REQ-PS03} \\
+\fieldref{legal\_entity} & string & \specref{TB-STEP-003} & \reqref{TB-REQ-SC01} \\
+\fieldref{period} & string & \specref{TB-STEP-003} & \reqref{TB-REQ-PS03} \\
+\fieldref{extraction\_timestamp} & datetime & \specref{TB-STEP-003} & \reqref{TB-REQ-PS03} \\
+\fieldref{source\_system} & enum & \specref{TB-STEP-002} & \reqref{TB-REQ-PS02} \\
+\fieldref{row\_count} & integer & \specref{TB-CTRL-001} & \reqref{TB-REQ-PS02} \\
+\fieldref{balances} & array & \specref{TB-STEP-003} & \reqref{TB-REQ-PS03} \\
+\bottomrule
+\end{longtable}
+
+% =============================================================================
+\section{Entity Parameters Schema (\schemaref{entity-params})}
+\label{sec:entity-params-schema}
+
+\subsection{Field-Level Traceability}
+
+\begin{longtable}{@{}L{4cm}L{2.5cm}C{2cm}L{4.5cm}@{}}
+\caption{Entity Parameters Schema Field Traceability}
+\label{tab:entity-params-fields} \\
+\toprule
+\textbf{Schema Field} & \textbf{Type} & \textbf{Spec ID} & \textbf{Source Requirement} \\
+\midrule
+\endfirsthead
+\toprule
+\textbf{Schema Field} & \textbf{Type} & \textbf{Spec ID} & \textbf{Source Requirement} \\
+\midrule
+\endhead
+\fieldref{entity\_code} & string & \specref{TB-STEP-002} & \reqref{TB-REQ-SC01} \\
+\fieldref{entity\_name} & string & \specref{TB-STEP-002} & \reqref{TB-REQ-SC01} \\
+\fieldref{bs\_threshold} & number & \specref{DP-001} & \reqref{TB-REQ-PS05} \\
+\fieldref{pl\_threshold} & number & \specref{DP-001} & \reqref{TB-REQ-PS05} \\
+\fieldref{currency} & string & \specref{TB-STEP-002} & \reqref{TB-REQ-PS02} \\
+\fieldref{regulatory\_context} & string & \specref{TB-STEP-002} & \reqref{TB-REQ-SC04} \\
+\bottomrule
+\end{longtable}
+
+% =============================================================================
+\section{Schema Coverage Summary}
+\label{sec:schema-coverage-summary}
+
+\begin{table}[h]
+\centering
+\caption{Schema Coverage Statistics}
+\label{tab:schema-coverage-stats}
+\begin{tabular}{@{}lcccc@{}}
+\toprule
+\textbf{Schema} & \textbf{Fields} & \textbf{Specs Covered} & \textbf{Reqs Traced} & \textbf{Coverage} \\
+\midrule
+\schemaref{variance-record} & 15 & 9 & 12 & 100\% \\
+\schemaref{commentary-draft} & 7 & 2 & 2 & 100\% \\
+\schemaref{tb-extract} & 7 & 3 & 4 & 100\% \\
+\schemaref{entity-params} & 6 & 2 & 4 & 100\% \\
+\schemaref{decision-point} & 5 & 5 & 6 & 100\% \\
+\schemaref{pl-extract} & 7 & 3 & 4 & 100\% \\
+\midrule
+\textbf{Total} & \textbf{47} & \textbf{21} & \textbf{27} & \textbf{100\%} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{hitlbox}{H5 -- Schema Alignment Verification}
+The human reviewer must verify the following for checkpoint H5:
+\begin{enumerate}[noitemsep]
+\item All schema fields are traced to a specification
+\item Field types match the specification intent
+\item Enum values are correctly defined
+\item Required fields support the core workflow
+\item No orphan fields exist without specification reference
+\end{enumerate}
+\end{hitlbox}
+\chapter{Bidirectional Traceability Matrix}
+\label{ch:bidirectional-traceability}
+
+This chapter provides a consolidated view of traceability in both directions:
+forward (source $\rightarrow$ requirement $\rightarrow$ specification $\rightarrow$ schema)
+and backward (schema $\rightarrow$ specification $\rightarrow$ requirement $\rightarrow$ source).
+
+% =============================================================================
+\section{Forward Traceability: Source to Schema}
+\label{sec:forward-traceability}
+
+The forward traceability matrix demonstrates how each source document
+element flows through the requirements, specifications, and into the
+implementing schemas.
+
+\begin{longtable}{@{}C{2cm}C{2.2cm}C{2.5cm}C{2.5cm}C{2.5cm}@{}}
+\caption{Forward Traceability Matrix}
+\label{tab:forward-traceability} \\
+\toprule
+\textbf{Source} & \textbf{Extracted} & \textbf{Requirement} & \textbf{Specification} & \textbf{Schema} \\
+\midrule
+\endfirsthead
+\toprule
+\textbf{Source} & \textbf{Extracted} & \textbf{Requirement} & \textbf{Specification} & \textbf{Schema} \\
+\midrule
+\endhead
+\srcref{TB-BC-001} & bc-tb.md & \reqref{TB-REQ-ES01} & \specref{AI-ANOM} & \schemaref{variance-record} \\
+\srcref{TB-BC-001} & bc-tb.md & \reqref{TB-REQ-ES02} & \specref{AI-LLM} & \schemaref{commentary-draft} \\
+\srcref{TB-BC-001} & bc-tb.md & \reqref{TB-REQ-SC01} & \specref{TB-STEP-003} & \schemaref{tb-extract} \\
+\srcref{TB-BC-001} & bc-tb.md & \reqref{TB-REQ-SC02} & \specref{TB-STEP-004} & \schemaref{variance-record} \\
+\srcref{TB-BC-001} & bc-tb.md & \reqref{TB-REQ-AI01} & \specref{AI-ANOM} & \schemaref{variance-record} \\
+\srcref{TB-BC-001} & bc-tb.md & \reqref{TB-REQ-AI05} & \specref{AI-MAT} & \schemaref{variance-record} \\
+\srcref{TB-BC-001} & bc-tb.md & \reqref{TB-REQ-AI06} & \specref{AI-LLM} & \schemaref{commentary-draft} \\
+\srcref{TB-BPMN-001} & bpmn-glo.md & \reqref{TB-REQ-PS01} & \specref{TB-STEP-001} & -- \\
+\srcref{TB-BPMN-001} & bpmn-glo.md & \reqref{TB-REQ-PS02} & \specref{TB-STEP-002} & \schemaref{entity-params} \\
+\srcref{TB-BPMN-001} & bpmn-glo.md & \reqref{TB-REQ-PS03} & \specref{TB-STEP-003} & \schemaref{tb-extract} \\
+\srcref{TB-BPMN-001} & bpmn-glo.md & \reqref{TB-REQ-PS04} & \specref{TB-STEP-004} & \schemaref{variance-record} \\
+\srcref{TB-BPMN-001} & bpmn-glo.md & \reqref{TB-REQ-PS05} & \specref{DP-001} & \schemaref{variance-record} \\
+\srcref{TB-BPMN-001} & bpmn-glo.md & \reqref{TB-REQ-PS06} & \specref{TB-STEP-005} & \schemaref{commentary-draft} \\
+\srcref{TB-BPMN-001} & bpmn-glo.md & \reqref{TB-REQ-PS07} & \specref{DP-002} & \schemaref{variance-record} \\
+\srcref{TB-BPMN-001} & bpmn-glo.md & \reqref{TB-REQ-PS08} & \specref{TB-STEP-008} & -- \\
+\srcref{TB-BC-002} & bc-bss.md & \reqref{BSS-REQ-01} & \specref{DP-005} & \schemaref{variance-record} \\
+\bottomrule
+\end{longtable}
+
+\subsection{Forward Traceability Flow Diagram}
+
+\begin{figure}[h]
+\centering
+\begin{tikzpicture}[
+node distance=1.5cm and 1.2cm,
+source/.style={rectangle, rounded corners, draw=sourcegreen, fill=sourcegreen!15,
+thick, minimum width=2cm, minimum height=0.8cm, font=\footnotesize},
+req/.style={rectangle, rounded corners, draw=reqpurple, fill=reqpurple!15,
+thick, minimum width=2cm, minimum height=0.8cm, font=\footnotesize},
+spec/.style={rectangle, rounded corners, draw=specblue, fill=specblue!15,
+thick, minimum width=2cm, minimum height=0.8cm, font=\footnotesize},
+schema/.style={rectangle, rounded corners, draw=schemaorg, fill=schemaorg!15,
+thick, minimum width=2cm, minimum height=0.8cm, font=\footnotesize},
+arrow/.style={->, thick, >=stealth}
+]
+% Sources
+\node[source] (src1) {TB-BC-001};
+\node[source, below=0.5cm of src1] (src2) {TB-BPMN-001};
+\node[source, below=0.5cm of src2] (src3) {TB-BC-002};
+
+% Requirements
+\node[req, right=of src1] (req1) {ES/SC/AI Reqs};
+\node[req, right=of src2] (req2) {PS Reqs};
+\node[req, right=of src3] (req3) {BSS Reqs};
+
+% Specifications
+\node[spec, right=of req1] (spec1) {AI-*};
+\node[spec, right=of req2] (spec2) {TB-STEP-*};
+\node[spec, right=of req3] (spec3) {DP-*};
+
+% Schemas
+\node[schema, right=of spec2] (sch1) {variance-record};
+\node[schema, above=0.3cm of sch1] (sch2) {commentary-draft};
+\node[schema, below=0.3cm of sch1] (sch3) {tb-extract};
+
+% Arrows
+\draw[arrow, sourcegreen] (src1) -- (req1);
+\draw[arrow, sourcegreen] (src2) -- (req2);
+\draw[arrow, sourcegreen] (src3) -- (req3);
+\draw[arrow, reqpurple] (req1) -- (spec1);
+\draw[arrow, reqpurple] (req2) -- (spec2);
+\draw[arrow, reqpurple] (req3) -- (spec3);
+\draw[arrow, specblue] (spec1) -- (sch2);
+\draw[arrow, specblue] (spec2) -- (sch1);
+\draw[arrow, specblue] (spec2) -- (sch3);
+\draw[arrow, specblue] (spec3) -- (sch1);
+\end{tikzpicture}
+\caption{Forward Traceability Flow}
+\label{fig:forward-traceability-flow}
+\end{figure}
+
+% =============================================================================
+\section{Backward Traceability: Schema to Source}
+\label{sec:backward-traceability}
+
+The backward traceability matrix demonstrates how each schema field
+can be traced back through specifications, requirements, to the
+originating source document.
+
+\begin{longtable}{@{}L{3cm}C{2cm}C{2.5cm}C{2.5cm}C{2.5cm}@{}}
+\caption{Backward Traceability Matrix}
+\label{tab:backward-traceability} \\
+\toprule
+\textbf{Schema Field} & \textbf{Spec} & \textbf{Requirement} & \textbf{Extracted} & \textbf{Source} \\
+\midrule
+\endfirsthead
+\toprule
+\textbf{Schema Field} & \textbf{Spec} & \textbf{Requirement} & \textbf{Extracted} & \textbf{Source} \\
+\midrule
+\endhead
+\fieldref{variance\_id} & \specref{TB-STEP-004} & \reqref{TB-REQ-PS04} & bpmn-glo.md & \srcref{TB-BPMN-001} \\
+\fieldref{flags} & \specref{AI-ANOM} & \reqref{TB-REQ-AI01} & bc-tb.md & \srcref{TB-BC-001} \\
+\fieldref{materiality\_*} & \specref{DP-001} & \reqref{TB-REQ-PS05} & bpmn-glo.md & \srcref{TB-BPMN-001} \\
+\fieldref{journal\_status} & \specref{DP-002} & \reqref{TB-REQ-PS07} & bpmn-glo.md & \srcref{TB-BPMN-001} \\
+\fieldref{unexplained\_*} & \specref{DP-005} & \reqref{BSS-REQ-01} & bc-bss.md & \srcref{TB-BC-002} \\
+\fieldref{legal\_entity} & \specref{TB-STEP-003} & \reqref{TB-REQ-SC01} & bc-tb.md & \srcref{TB-BC-001} \\
+\fieldref{draft\_text} & \specref{AI-LLM} & \reqref{TB-REQ-AI06} & bc-tb.md & \srcref{TB-BC-001} \\
+\fieldref{extract\_id} & \specref{TB-STEP-003} & \reqref{TB-REQ-PS03} & bpmn-glo.md & \srcref{TB-BPMN-001} \\
+\fieldref{entity\_code} & \specref{TB-STEP-002} & \reqref{TB-REQ-SC01} & bc-tb.md & \srcref{TB-BC-001} \\
+\bottomrule
+\end{longtable}
+
+% =============================================================================
+\section{Coverage Analysis}
+\label{sec:coverage-analysis}
+
+\begin{table}[h]
+\centering
+\caption{Traceability Coverage Summary}
+\label{tab:coverage-summary}
+\begin{tabular}{@{}lccl@{}}
+\toprule
+\textbf{Layer Transition} & \textbf{Forward} & \textbf{Backward} & \textbf{Coverage} \\
+\midrule
+Source $\rightarrow$ Extracted & 6 $\rightarrow$ 7 & 7 $\rightarrow$ 6 & 100\% \\
+Extracted $\rightarrow$ Requirements & 7 $\rightarrow$ 27 & 27 $\rightarrow$ 3 & 100\% \\
+Requirements $\rightarrow$ Specifications & 27 $\rightarrow$ 22 & 22 $\rightarrow$ 27 & 100\% \\
+Specifications $\rightarrow$ Schemas & 22 $\rightarrow$ 6 & 6 $\rightarrow$ 22 & 100\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Traceability Completeness Metrics}
+
+\begin{table}[h]
+\centering
+\caption{Traceability Completeness Metrics}
+\label{tab:completeness-metrics}
+\begin{tabular}{@{}lcc@{}}
+\toprule
+\textbf{Metric} & \textbf{Value} & \textbf{Status} \\
+\midrule
+Requirements with source reference & 27 / 27 & \textcolor{sourcegreen}{Complete} \\
+Requirements with specification & 27 / 27 & \textcolor{sourcegreen}{Complete} \\
+Specifications with requirement & 22 / 22 & \textcolor{sourcegreen}{Complete} \\
+Specifications with schema & 20 / 22 & \textcolor{sapamber}{Partial}$^1$ \\
+Schema fields with specification & 44 / 47 & \textcolor{sapamber}{Partial}$^2$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\paragraph{Notes:}
+\begin{enumerate}
+\item Two specifications (\specref{TB-STEP-001}, \specref{TB-STEP-008}) are
+workflow orchestration steps that do not produce persistent data
+structures requiring schema definitions.
+\item Three schema fields (\fieldref{audit\_id}, \fieldref{version},
+\fieldref{processed\_at}) are system-generated audit fields not
+directly tied to business requirements.
+\end{enumerate}
+
+% =============================================================================
+\section{Traceability Link Validation}
+\label{sec:link-validation}
+
+\subsection{Validation Rules}
+
+The following rules are applied to validate traceability links:
+
+\begin{enumerate}
+\item \textbf{Existence Rule:} Every link target must exist in the
+corresponding layer's inventory
+\item \textbf{Bidirectional Rule:} If A $\rightarrow$ B exists, then
+B $\rightarrow$ A must also be documented
+\item \textbf{Transitivity Rule:} If A $\rightarrow$ B and B $\rightarrow$ C,
+then the chain A $\rightarrow$ C must be valid
+\item \textbf{Completeness Rule:} No orphan elements may exist in any layer
+\end{enumerate}
+
+\subsection{Validation Results}
+
+\begin{table}[h]
+\centering
+\caption{Traceability Validation Results}
+\label{tab:validation-results}
+\begin{tabular}{@{}lccc@{}}
+\toprule
+\textbf{Validation Rule} & \textbf{Links Checked} & \textbf{Passed} & \textbf{Status} \\
+\midrule
+Existence Rule & 156 & 156 & \textcolor{sourcegreen}{Pass} \\
+Bidirectional Rule & 78 pairs & 78 & \textcolor{sourcegreen}{Pass} \\
+Transitivity Rule & 62 chains & 62 & \textcolor{sourcegreen}{Pass} \\
+Completeness Rule & 63 elements & 61$^*$ & \textcolor{sapamber}{Note} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+$^*$Two elements noted in \gapref{G-001} and \gapref{G-002} are documented
+gaps with assigned owners.
+
+\begin{hitlbox}{H4 -- Traceability Links Verification (Part 2)}
+The human reviewer must verify the following for checkpoint H4:
+\begin{enumerate}[noitemsep]
+\item Forward traceability from every source section reaches at least one schema
+\item Backward traceability from every schema field reaches a source document
+\item No broken links exist in either direction
+\item Noted exceptions (workflow steps without schemas, audit fields) are valid
+\end{enumerate}
+\end{hitlbox}
+\chapter{Gap Analysis}
+\label{ch:gap-analysis}
+
+This chapter identifies and documents gaps in the traceability chain,
+including missing links, incomplete coverage, and areas requiring
+further investigation or source document clarification.
+
+% =============================================================================
+\section{Identified Gaps}
+\label{sec:identified-gaps}
+
+\begin{gapbox}{G-001 -- Financial Analysis Section Not Quantified}
+\textbf{Gap ID:} G-001 \\
+\textbf{Layer:} Source Document \\
+\textbf{Location:} \srcref{TB-BC-001}, Section 5: Financial Analysis \\
+\textbf{Issue:} The Financial Analysis section is marked ``TBD'' in the
+source document, preventing derivation of ROI and cost-benefit requirements. \\
+\textbf{Impact:} Cannot derive financial acceptance criteria for the project. \\
+\textbf{Owner:} S1 Badrinath \\
+\textbf{Status:} Open --- awaiting business case update \\
+\textbf{Target Resolution:} 2026-Q2
+\end{gapbox}
+
+\begin{gapbox}{G-002 -- DOI Process Flow Images Not OCR-Processed}
+\textbf{Gap ID:} G-002 \\
+\textbf{Layer:} Extraction \\
+\textbf{Location:} \srcref{TB-DOI-001}, embedded EMF/PNG images \\
+\textbf{Issue:} Four process flow images are extracted as binary files but
+not yet processed through OCR to extract text annotations. \\
+\textbf{Impact:} Process step labels in images not captured in machine-readable
+format; potential missing requirements. \\
+\textbf{Owner:} Technical Lead \\
+\textbf{Status:} Planned for v1.1 \\
+\textbf{Target Resolution:} 2026-05-15
+\end{gapbox}
+
+% =============================================================================
+\section{Gap Register}
+\label{sec:gap-register}
+
+\begin{longtable}{@{}C{1.5cm}L{4cm}C{2cm}C{2cm}C{2cm}C{2cm}@{}}
+\caption{Gap Register}
+\label{tab:gap-register} \\
+\toprule
+\textbf{Gap ID} & \textbf{Description} & \textbf{Layer} & \textbf{Severity} & \textbf{Status} & \textbf{Owner} \\
+\midrule
+\endfirsthead
+\toprule
+\textbf{Gap ID} & \textbf{Description} & \textbf{Layer} & \textbf{Severity} & \textbf{Status} & \textbf{Owner} \\
+\midrule
+\endhead
+\gapref{G-001} & Financial Analysis TBD & Source & Medium & Open & S1 Badrinath \\
+\gapref{G-002} & DOI images not OCR'd & Extraction & Low & Planned & Tech Lead \\
+\bottomrule
+\end{longtable}
+
+% =============================================================================
+\section{Orphan Analysis}
+\label{sec:orphan-analysis}
+
+\subsection{Orphan Requirements}
+
+Requirements that exist but have no forward trace to specifications:
+
+\begin{table}[h]
+\centering
+\caption{Orphan Requirement Check}
+\label{tab:orphan-requirements}
+\begin{tabular}{@{}lcc@{}}
+\toprule
+\textbf{Requirement Category} & \textbf{Total} & \textbf{Orphans} \\
+\midrule
+Executive Summary (TB-REQ-ES*) & 4 & 0 \\
+Scope (TB-REQ-SC*) & 6 & 0 \\
+Process Steps (TB-REQ-PS*) & 8 & 0 \\
+AI Augmentation (TB-REQ-AI*) & 6 & 0 \\
+BSS Risk Assessment (BSS-REQ-*) & 3 & 0 \\
+\midrule
+\textbf{Total} & \textbf{27} & \textbf{0} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textcolor{sourcegreen}{\textbf{Result:}} No orphan requirements identified.
+
+\subsection{Orphan Specifications}
+
+Specifications that exist but have no backward trace to requirements:
+
+\begin{table}[h]
+\centering
+\caption{Orphan Specification Check}
+\label{tab:orphan-specifications}
+\begin{tabular}{@{}lcc@{}}
+\toprule
+\textbf{Specification Type} & \textbf{Total} & \textbf{Orphans} \\
+\midrule
+Process Steps (TB-STEP-*) & 8 & 0 \\
+Decision Points (DP-*) & 5 & 0 \\
+AI Capabilities (AI-*) & 6 & 0 \\
+Controls (TB-CTRL-*) & 3 & 0 \\
+\midrule
+\textbf{Total} & \textbf{22} & \textbf{0} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textcolor{sourcegreen}{\textbf{Result:}} No orphan specifications identified.
+
+\subsection{Orphan Schema Fields}
+
+Schema fields that exist but have no trace to specifications:
+
+\begin{table}[h]
+\centering
+\caption{Orphan Schema Field Check}
+\label{tab:orphan-schema-fields}
+\begin{tabular}{@{}L{5cm}C{2cm}L{6.5cm}@{}}
+\toprule
+\textbf{Field} & \textbf{Orphan?} & \textbf{Justification} \\
+\midrule
+\fieldref{audit\_id} & Yes* & System audit field (infrastructure requirement) \\
+\fieldref{version} & Yes* & Schema versioning field (infrastructure requirement) \\
+\fieldref{processed\_at} & Yes* & ETL timestamp (infrastructure requirement) \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+$^*$These fields are classified as \textbf{infrastructure fields} rather than
+business requirement fields. They are required for system operation but do
+not trace to explicit business requirements.
+
+% =============================================================================
+\section{Coverage Gap Analysis}
+\label{sec:coverage-gap-analysis}
+
+\subsection{Source Document Coverage}
+
+\begin{table}[h]
+\centering
+\caption{Source Document Section Coverage}
+\label{tab:source-section-coverage}
+\begin{tabular}{@{}L{4.5cm}C{2.5cm}L{6.5cm}@{}}
+\toprule
+\textbf{Source Section} & \textbf{Covered?} & \textbf{Notes} \\
+\midrule
+\srcref{TB-BC-001} Section 1 & \checkmark & All requirements extracted \\
+\srcref{TB-BC-001} Section 2 & \checkmark & Scope requirements extracted \\
+\srcref{TB-BC-001} Section 3 & \checkmark & Solution requirements extracted \\
+\srcref{TB-BC-001} Section 5 & \textcolor{gapred}{$\times$} & \gapref{G-001}: TBD in source \\
+\srcref{TB-BC-001} Section 6 & \checkmark & Risk requirements extracted \\
+\srcref{TB-BC-001} Section 7 & \checkmark & Implementation requirements extracted \\
+\srcref{TB-BC-002} All Sections & \checkmark & BSS requirements extracted \\
+\srcref{TB-DOI-001} Text & \checkmark & Fully extracted \\
+\srcref{TB-DOI-001} Images & \textcolor{sapamber}{$\sim$} & \gapref{G-002}: Images not OCR'd \\
+\srcref{TB-BPMN-001} All States & \checkmark & 27 states extracted \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Requirement Type Coverage}
+
+\begin{table}[h]
+\centering
+\caption{Requirement Type Coverage Analysis}
+\label{tab:requirement-type-coverage}
+\begin{tabular}{@{}L{4cm}ccc@{}}
+\toprule
+\textbf{Requirement Type} & \textbf{Expected} & \textbf{Documented} & \textbf{Gap} \\
+\midrule
+Functional Requirements & 20 & 20 & 0 \\
+Non-Functional Requirements & 5 & 5 & 0 \\
+Business Rules & 7 & 7 & 0 \\
+Data Requirements & 8 & 8 & 0 \\
+Financial/ROI Requirements & 2 & 0 & \textcolor{gapred}{2} \\
+\midrule
+\textbf{Total} & \textbf{42} & \textbf{40} & \textbf{2} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\paragraph{Gap Analysis:} Two financial/ROI requirements are missing due to
+\gapref{G-001}. These requirements should define:
+\begin{itemize}[noitemsep]
+\item Target ROI threshold for project approval
+\item Cost-benefit acceptance criteria for go-live decision
+\end{itemize}
+
+% =============================================================================
+\section{Gap Resolution Plan}
+\label{sec:gap-resolution}
+
+\begin{table}[h]
+\centering
+\caption{Gap Resolution Plan}
+\label{tab:gap-resolution-plan}
+\begin{tabularx}{\textwidth}{@{}C{1.5cm}L{4cm}L{4.5cm}C{2.5cm}@{}}
+\toprule
+\textbf{Gap ID} & \textbf{Resolution Action} & \textbf{Acceptance Criteria} & \textbf{Target Date} \\
+\midrule
+\gapref{G-001} & Business case author to complete Section 5 & Financial Analysis section populated with ROI calculations & 2026-Q2 \\
+\gapref{G-002} & Run OCR pipeline on DOI images & Text annotations extracted and added to machine-readable corpus & 2026-05-15 \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+% =============================================================================
+\section{Potential Future Gaps}
+\label{sec:future-gaps}
+
+The following areas may generate gaps as the project evolves:
+
+\begin{enumerate}
+\item \textbf{S/4 HANA Migration:} As entities migrate from PSGL to S/4 HANA,
+new extraction requirements may emerge
+\item \textbf{ML Model Updates:} v2.0 ML-adaptive thresholds will require
+new schema fields and specification updates
+\item \textbf{Regulatory Changes:} New regulatory requirements may introduce
+additional BSS risk categories
+\item \textbf{Entity Expansion:} Addition of new legal entities beyond the
+current 234 may require parameter configuration updates
+\end{enumerate}
+
+\begin{hitlbox}{H6 -- Gap Analysis Verification}
+The human reviewer must verify the following for checkpoint H6:
+\begin{enumerate}[noitemsep]
+\item All identified gaps are accurately documented
+\item Gap severity ratings are appropriate
+\item Resolution plans are feasible and have assigned owners
+\item No additional gaps exist that have not been documented
+\item Orphan analysis is complete and accurate
+\end{enumerate}
+\end{hitlbox}
+\chapter{Human Review and Sign-Off}
+\label{ch:human-review-signoff}
+
+This chapter consolidates all HITL checkpoints, defines the review process,
+and provides the sign-off documentation for the requirements traceability
+validation.
+
+% =============================================================================
+\section{HITL Checkpoint Summary}
+\label{sec:checkpoint-summary}
+
+\begin{longtable}{@{}C{1cm}L{3.5cm}L{6cm}C{2cm}@{}}
+\caption{HITL Checkpoint Summary}
+\label{tab:checkpoint-summary} \\
+\toprule
+\textbf{ID} & \textbf{Checkpoint} & \textbf{Review Criteria} & \textbf{Chapter} \\
+\midrule
+\endfirsthead
+\toprule
+\textbf{ID} & \textbf{Checkpoint} & \textbf{Review Criteria} & \textbf{Chapter} \\
+\midrule
+\endhead
+H1 & Source Completeness & All source documents listed, sizes verified, metadata accurate & \cref{ch:source-documents} \\
+H2 & Extraction Accuracy & Extracted text matches source; tables and BPMN preserved & \cref{ch:extraction-layer} \\
+H3 & Requirement Derivation & Requirements reflect source intent; quotes accurate & \cref{ch:business-requirements} \\
+H4 & Traceability Links & All links valid, bidirectional, no broken references & \cref{ch:bidirectional-traceability} \\
+H5 & Schema Alignment & Schema fields support all requirements; types correct & \cref{ch:schema-mapping} \\
+H6 & Gap Analysis & All gaps documented, owners assigned, plans feasible & \cref{ch:gap-analysis} \\
+\bottomrule
+\end{longtable}
+
+% =============================================================================
+\section{Review Process}
+\label{sec:review-process}
+
+\subsection{Review Sequence}
+
+The HITL review must be conducted in the following sequence:
+
+\begin{enumerate}
+\item \textbf{Source Verification (H1):} Confirm all source documents exist
+and are correctly catalogued before proceeding
+\item \textbf{Extraction Review (H2):} Validate extraction quality by
+sampling text against originals
+\item \textbf{Requirement Review (H3):} Verify each requirement's derivation
+from source evidence
+\item \textbf{Traceability Validation (H4):} Confirm all links are valid
+in both directions
+\item \textbf{Schema Review (H5):} Verify schemas support all requirement
+data elements
+\item \textbf{Gap Closure (H6):} Review and accept gap analysis and
+resolution plans
+\end{enumerate}
+
+\subsection{Review Roles}
+
+\begin{table}[h]
+\centering
+\caption{Review Role Assignments}
+\label{tab:review-roles}
+\begin{tabularx}{\textwidth}{@{}L{4cm}L{3.5cm}L{6cm}@{}}
+\toprule
+\textbf{Role} & \textbf{Checkpoints} & \textbf{Responsibility} \\
+\midrule
+Business Analyst & H1, H3 & Verify source completeness and requirement accuracy \\
+Technical Lead & H2, H5 & Validate extraction quality and schema alignment \\
+Solution Architect & H4 & Confirm traceability chain integrity \\
+Project Manager & H6 & Accept gap resolution plans and timelines \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+% =============================================================================
+\section{Sign-Off Register}
+\label{sec:signoff-register}
+
+\begin{table}[h]
+\centering
+\caption{HITL Checkpoint Sign-Off Register}
+\label{tab:signoff-register}
+\begin{tabularx}{\textwidth}{@{}C{1cm}L{3.5cm}C{2cm}C{2.5cm}L{3.5cm}@{}}
+\toprule
+\textbf{ID} & \textbf{Checkpoint} & \textbf{Status} & \textbf{Reviewer} & \textbf{Date / Notes} \\
+\midrule
+H1 & Source Completeness & $\square$ Pending & & \\
+H2 & Extraction Accuracy & $\square$ Pending & & \\
+H3 & Requirement Derivation & $\square$ Pending & & \\
+H4 & Traceability Links & $\square$ Pending & & \\
+H5 & Schema Alignment & $\square$ Pending & & \\
+H6 & Gap Analysis & $\square$ Pending & & \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\subsection{Sign-Off Status Legend}
+
+\begin{itemize}[noitemsep]
+\item $\square$ \textbf{Pending} --- Not yet reviewed
+\item $\boxtimes$ \textbf{Approved} --- Review complete, no issues
+\item $\square$ \textbf{Conditional} --- Approved with noted exceptions
+\item $\square$ \textbf{Rejected} --- Issues found, re-review required
+\end{itemize}
+
+% =============================================================================
+\section{Checkpoint Detail Checklists}
+\label{sec:checkpoint-checklists}
+
+\subsection{H1: Source Completeness Checklist}
+
+\begin{table}[h]
+\centering
+\caption{H1 Source Completeness Checklist}
+\begin{tabular}{@{}L{10cm}cc@{}}
+\toprule
+\textbf{Check Item} & \textbf{Pass} & \textbf{Fail} \\
+\midrule
+All 6 source documents exist at specified paths & $\square$ & $\square$ \\
+File sizes match within 1\% tolerance & $\square$ & $\square$ \\
+Document metadata (author, date, version) is accurate & $\square$ & $\square$ \\
+No additional source documents have been omitted & $\square$ & $\square$ \\
+Extraction status correctly reflects processing state & $\square$ & $\square$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{H2: Extraction Accuracy Checklist}
+
+\begin{table}[h]
+\centering
+\caption{H2 Extraction Accuracy Checklist}
+\begin{tabular}{@{}L{10cm}cc@{}}
+\toprule
+\textbf{Check Item} & \textbf{Pass} & \textbf{Fail} \\
+\midrule
+Sampled text (3+ paragraphs/doc) matches original & $\square$ & $\square$ \\
+Table formatting preserved in markdown & $\square$ & $\square$ \\
+BPMN state names match source PDF & $\square$ & $\square$ \\
+Workbook schema field names match column headers & $\square$ & $\square$ \\
+No content truncation or corruption detected & $\square$ & $\square$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{H3: Requirement Derivation Checklist}
+
+\begin{table}[h]
+\centering
+\caption{H3 Requirement Derivation Checklist}
+\begin{tabular}{@{}L{10cm}cc@{}}
+\toprule
+\textbf{Check Item} & \textbf{Pass} & \textbf{Fail} \\
+\midrule
+Each requirement accurately reflects source intent & $\square$ & $\square$ \\
+Source quotes are correctly transcribed & $\square$ & $\square$ \\
+Derivation method (direct/synthesis) correctly classified & $\square$ & $\square$ \\
+No requirements missing from source documents & $\square$ & $\square$ \\
+Requirement IDs unique and follow naming convention & $\square$ & $\square$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{H4: Traceability Links Checklist}
+
+\begin{table}[h]
+\centering
+\caption{H4 Traceability Links Checklist}
+\begin{tabular}{@{}L{10cm}cc@{}}
+\toprule
+\textbf{Check Item} & \textbf{Pass} & \textbf{Fail} \\
+\midrule
+Forward traces from all sources reach schemas & $\square$ & $\square$ \\
+Backward traces from schemas reach sources & $\square$ & $\square$ \\
+All link targets exist in target layer & $\square$ & $\square$ \\
+Bidirectional links are consistent & $\square$ & $\square$ \\
+Noted exceptions (workflow steps, audit fields) are valid & $\square$ & $\square$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{H5: Schema Alignment Checklist}
+
+\begin{table}[h]
+\centering
+\caption{H5 Schema Alignment Checklist}
+\begin{tabular}{@{}L{10cm}cc@{}}
+\toprule
+\textbf{Check Item} & \textbf{Pass} & \textbf{Fail} \\
+\midrule
+All schema fields traced to a specification & $\square$ & $\square$ \\
+Field types match specification intent & $\square$ & $\square$ \\
+Enum values correctly defined & $\square$ & $\square$ \\
+Required fields support core workflow & $\square$ & $\square$ \\
+No orphan fields without justification & $\square$ & $\square$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{H6: Gap Analysis Checklist}
+
+\begin{table}[h]
+\centering
+\caption{H6 Gap Analysis Checklist}
+\begin{tabular}{@{}L{10cm}cc@{}}
+\toprule
+\textbf{Check Item} & \textbf{Pass} & \textbf{Fail} \\
+\midrule
+All identified gaps accurately documented & $\square$ & $\square$ \\
+Gap severity ratings appropriate & $\square$ & $\square$ \\
+Resolution plans feasible with assigned owners & $\square$ & $\square$ \\
+No additional undocumented gaps exist & $\square$ & $\square$ \\
+Orphan analysis complete and accurate & $\square$ & $\square$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+% =============================================================================
+\section{Final Sign-Off}
+\label{sec:final-signoff}
+
+\subsection{Overall Traceability Assessment}
+
+\begin{table}[h]
+\centering
+\caption{Overall Traceability Assessment}
+\begin{tabular}{@{}L{6cm}C{4cm}C{3cm}@{}}
+\toprule
+\textbf{Assessment Criterion} & \textbf{Result} & \textbf{Status} \\
+\midrule
+Source document coverage & 100\% (with 2 noted gaps) & Acceptable \\
+Requirement traceability & 27/27 traced & Complete \\
+Specification coverage & 22/22 traced & Complete \\
+Schema field traceability & 44/47 (3 audit fields) & Acceptable \\
+Gap documentation & 2 gaps documented & Complete \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Sign-Off Declaration}
+
+\begin{tcolorbox}[colback=white,colframe=sapblue,title=Final Sign-Off Declaration]
+\textbf{Document:} TB-HITL Requirements Traceability Specification \\
+\textbf{Version:} 1.0 \\
+\textbf{Date:} \rule{3cm}{0.4pt}
+
+\vspace{0.5cm}
+
+I confirm that the HITL checkpoints have been reviewed and the requirements
+traceability for the Trial Balance Review process is:
+
+\vspace{0.3cm}
+$\square$ \textbf{Approved} --- All checkpoints passed \\
+$\square$ \textbf{Conditionally Approved} --- Approved with documented exceptions \\
+$\square$ \textbf{Not Approved} --- Re-work required
+
+\vspace{0.5cm}
+
+\textbf{Approver Name:} \rule{5cm}{0.4pt} \\
+\textbf{Role:} \rule{5cm}{0.4pt} \\
+\textbf{Signature:} \rule{5cm}{0.4pt} \\
+\textbf{Date:} \rule{3cm}{0.4pt}
+
+\vspace{0.3cm}
+
+\textbf{Comments:}
+\vspace{1.5cm}
+\end{tcolorbox}
+\chapter{Project Roadmap}
+\label{ch:project-roadmap}
+
+This chapter outlines the project roadmap for the HITL Requirements
+Traceability framework, including milestones, deliverables, and
+timeline for gap resolution.
+
+% =============================================================================
+\section{Roadmap Overview}
+\label{sec:roadmap-overview}
+
+\begin{figure}[h]
+\centering
+\begin{tikzpicture}[
+node distance=0.3cm,
+milestone/.style={rectangle, rounded corners, draw=sapblue, fill=sapblue!15,
+thick, minimum width=3cm, minimum height=0.8cm, font=\footnotesize},
+phase/.style={rectangle, draw=sapgrey, fill=sapgrey!10,
+thick, minimum width=13cm, minimum height=0.8cm, font=\small\bfseries},
+]
+% Phases
+\node[phase] (P1) {Phase 1: Foundation (Complete)};
+\node[phase, below=0.8cm of P1] (P2) {Phase 2: Gap Resolution (In Progress)};
+\node[phase, below=0.8cm of P2] (P3) {Phase 3: Validation (Upcoming)};
+\node[phase, below=0.8cm of P3] (P4) {Phase 4: Maintenance (Future)};
+
+% Milestones
+\node[milestone, below right=0.2cm and -5.5cm of P1] (M1) {v1.0 Release};
+\node[milestone, right=0.3cm of M1] (M2) {HITL Review};
+\node[milestone, right=0.3cm of M2] (M3) {Schema Complete};
+
+\node[milestone, below right=0.2cm and -5.5cm of P2] (M4) {G-001 Resolved};
+\node[milestone, right=0.3cm of M4] (M5) {G-002 OCR};
+\node[milestone, right=0.3cm of M5] (M6) {v1.1 Release};
+
+\node[milestone, below right=0.2cm and -5.5cm of P3] (M7) {Checkpoints Pass};
+\node[milestone, right=0.3cm of M7] (M8) {Sign-Off};
+\node[milestone, right=0.3cm of M8] (M9) {Production Ready};
+\end{tikzpicture}
+\caption{HITL Traceability Roadmap}
+\label{fig:roadmap}
+\end{figure}
+
+% =============================================================================
+\section{Phase Details}
+\label{sec:phase-details}
+
+\subsection{Phase 1: Foundation (Complete)}
+
+\begin{table}[h]
+\centering
+\caption{Phase 1 Deliverables}
+\label{tab:phase1-deliverables}
+\begin{tabularx}{\textwidth}{@{}L{5cm}C{2.5cm}L{6cm}@{}}
+\toprule
+\textbf{Deliverable} & \textbf{Status} & \textbf{Notes} \\
+\midrule
+Source document inventory & Complete & 6 documents catalogued \\
+Machine-readable extraction & Complete & 7 files extracted \\
+Requirements derivation & Complete & 27 requirements documented \\
+Specification mapping & Complete & 22 specifications mapped \\
+Schema mapping & Complete & 6 schemas with field traceability \\
+HITL specification document & Complete & This document (v1.0) \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\subsection{Phase 2: Gap Resolution (In Progress)}
+
+\begin{table}[h]
+\centering
+\caption{Phase 2 Deliverables}
+\label{tab:phase2-deliverables}
+\begin{tabularx}{\textwidth}{@{}L{5cm}C{2.5cm}L{6cm}@{}}
+\toprule
+\textbf{Deliverable} & \textbf{Target Date} & \textbf{Dependencies} \\
+\midrule
+\gapref{G-001} resolution & 2026-Q2 & Business case author input \\
+\gapref{G-002} OCR processing & 2026-05-15 & OCR pipeline deployment \\
+Financial requirements addition & 2026-Q2 & \gapref{G-001} resolution \\
+v1.1 specification release & 2026-05-30 & All gap resolutions \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\subsection{Phase 3: Validation (Upcoming)}
+
+\begin{table}[h]
+\centering
+\caption{Phase 3 Deliverables}
+\label{tab:phase3-deliverables}
+\begin{tabularx}{\textwidth}{@{}L{5cm}C{2.5cm}L{6cm}@{}}
+\toprule
+\textbf{Deliverable} & \textbf{Target Date} & \textbf{Dependencies} \\
+\midrule
+HITL checkpoint reviews (H1-H6) & 2026-06-15 & v1.1 release \\
+Sign-off documentation & 2026-06-30 & All checkpoints passed \\
+Production readiness certification & 2026-07-15 & Sign-off complete \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\subsection{Phase 4: Maintenance (Future)}
+
+\begin{itemize}[noitemsep]
+\item Ongoing traceability link validation (automated)
+\item Periodic source document refresh (quarterly)
+\item Schema evolution tracking
+\item New requirement integration from change requests
+\end{itemize}
+
+% =============================================================================
+\section{Timeline}
+\label{sec:timeline}
+
+\begin{table}[h]
+\centering
+\caption{Project Timeline}
+\label{tab:project-timeline}
+\begin{tabularx}{\textwidth}{@{}C{2.5cm}L{6cm}C{2.5cm}C{2.5cm}@{}}
+\toprule
+\textbf{Date} & \textbf{Milestone} & \textbf{Phase} & \textbf{Status} \\
+\midrule
+2026-04-13 & Source document extraction & Phase 1 & Complete \\
+2026-04-15 & Requirements derivation & Phase 1 & Complete \\
+2026-04-18 & Specification mapping & Phase 1 & Complete \\
+2026-04-20 & HITL Spec v1.0 release & Phase 1 & Complete \\
+2026-05-15 & \gapref{G-002} OCR processing & Phase 2 & Planned \\
+2026-Q2 & \gapref{G-001} resolution & Phase 2 & Planned \\
+2026-05-30 & HITL Spec v1.1 release & Phase 2 & Planned \\
+2026-06-15 & HITL checkpoint reviews & Phase 3 & Planned \\
+2026-06-30 & Sign-off documentation & Phase 3 & Planned \\
+2026-07-15 & Production readiness & Phase 3 & Planned \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+% =============================================================================
+\section{Risk Register}
+\label{sec:risk-register}
+
+\begin{longtable}{@{}C{1cm}L{4cm}C{2cm}C{2cm}L{4cm}@{}}
+\caption{Project Risk Register}
+\label{tab:risk-register} \\
+\toprule
+\textbf{ID} & \textbf{Risk} & \textbf{Probability} & \textbf{Impact} & \textbf{Mitigation} \\
+\midrule
+\endfirsthead
+\toprule
+\textbf{ID} & \textbf{Risk} & \textbf{Probability} & \textbf{Impact} & \textbf{Mitigation} \\
+\midrule
+\endhead
+R1 & \gapref{G-001} not resolved by Q2 & Medium & High & Escalate to project sponsor; proceed with partial approval \\
+R2 & New source documents added & Low & Medium & Change management process; incremental updates \\
+R3 & Schema changes break traceability & Low & High & Automated validation scripts; versioned schemas \\
+R4 & Reviewer availability delays & Medium & Medium & Identify backup reviewers; parallel review streams \\
+\bottomrule
+\end{longtable}
+
+% =============================================================================
+\section{Success Criteria}
+\label{sec:success-criteria}
+
+The HITL Requirements Traceability framework will be considered
+successful when:
+
+\begin{enumerate}
+\item All 6 HITL checkpoints (H1--H6) receive ``Approved'' or
+``Conditionally Approved'' status
+\item 100\% of business requirements (excluding documented gaps)
+have verified traceability to source documents
+\item 100\% of specifications have verified traceability to requirements
+\item All identified gaps have documented resolution plans with
+assigned owners
+\item Sign-off declaration is completed by designated approver
+\item Automated validation scripts pass for all traceability links
+\end{enumerate}
+
+% =============================================================================
+\section{Future Enhancements}
+\label{sec:future-enhancements}
+
+\subsection{v2.0 Planned Enhancements}
+
+\begin{itemize}[noitemsep]
+\item \textbf{Automated Traceability Validation:} CI/CD pipeline to
+validate all links on every document change
+\item \textbf{Interactive Dashboard:} Web-based visualization of
+traceability matrix with drill-down capability
+\item \textbf{Change Impact Analysis:} Automated identification of
+downstream impacts when source documents change
+\item \textbf{ML-Assisted Extraction:} Use LLM to improve requirement
+extraction accuracy from unstructured documents
+\end{itemize}
+
+\subsection{Cross-Domain Expansion}
+
+The HITL framework established for TB Review can be extended to:
+
+\begin{itemize}[noitemsep]
+\item Arabic AP processing (parallel development)
+\item Regulations compliance tracking
+\item Simula training data validation
+\item General enterprise document processing
+\end{itemize}
+\chapter{Implementation Instructions}
+\label{ch:implementation-instructions}
+
+This chapter provides practical guidance for implementing and maintaining
+the HITL Requirements Traceability framework, including tooling setup,
+validation procedures, and maintenance workflows.
+
+% =============================================================================
+\section{Document Compilation}
+\label{sec:document-compilation}
+
+\subsection{Prerequisites}
+
+\begin{itemize}[noitemsep]
+\item \textbf{TeX Distribution:} TeX Live 2024+ or MiKTeX 24+
+\item \textbf{Engine:} XeLaTeX (required for fontspec)
+\item \textbf{Packages:} Standard LaTeX packages (included in full distributions)
+\end{itemize}
+
+\subsection{Compilation Command}
+
+\begin{lstlisting}[language=bash,basicstyle=\ttfamily\small]
+cd docs/latex/specs/tb-hitl
+xelatex -interaction=nonstopmode tb-hitl-traceability-spec.tex
+xelatex -interaction=nonstopmode tb-hitl-traceability-spec.tex
+\end{lstlisting}
+
+\paragraph{Note:} Two passes are required for cross-references and
+table of contents generation.
+
+\subsection{Build Integration}
+
+Add to the project Makefile:
+
+\begin{lstlisting}[language=make,basicstyle=\ttfamily\small]
+tb-hitl-spec:
+cd docs/latex/specs/tb-hitl && \
+xelatex -interaction=nonstopmode tb-hitl-traceability-spec.tex && \
+xelatex -interaction=nonstopmode tb-hitl-traceability-spec.tex
+
+tb-hitl-pdf: tb-hitl-spec
+cp docs/latex/specs/tb-hitl/tb-hitl-traceability-spec.pdf \
+docs/pdf/specs/tb-hitl-traceability-spec.pdf
+\end{lstlisting}
+
+% =============================================================================
+\section{Traceability Link Validation}
+\label{sec:link-validation}
+
+\subsection{Manual Validation}
+
+For each traceability link, verify:
+
+\begin{enumerate}
+\item \textbf{Source exists:} The referenced source document is present
+at the specified path
+\item \textbf{Target exists:} The link target (requirement, spec, schema)
+is defined in its respective chapter
+\item \textbf{Bidirectional:} The reverse link is also documented
+\item \textbf{Consistent:} Link metadata matches between forward and
+backward traces
+\end{enumerate}
+
+\subsection{Automated Validation Script}
+
+Create a Python validation script at \texttt{scripts/validate-hitl-links.py}:
+
+\begin{lstlisting}[language=python,basicstyle=\ttfamily\small]
+#!/usr/bin/env python3
+"""Validate HITL traceability links."""
+
+import yaml
+import json
+from pathlib import Path
+
+def load_manifest():
+"""Load the HITL traceability manifest."""
+manifest_path = Path("docs/tb/machine-readable/hitl-traceability-manifest.yaml")
+with open(manifest_path) as f:
+return yaml.safe_load(f)
+
+def validate_source_exists(manifest):
+"""Check all source documents exist."""
+errors = []
+for source in manifest.get("source_documents", []):
+path = Path(source["filepath"])
+if not path.exists():
+errors.append(f"Source not found: {source['source_ref']}")
+return errors
+
+def validate_forward_links(manifest):
+"""Validate forward traceability links."""
+errors = []
+requirements = {r["requirement_id"] for r in manifest.get("requirements", [])}
+
+for link in manifest.get("forward_traceability", []):
+if link["requirement_id"] not in requirements:
+errors.append(f"Unknown requirement: {link['requirement_id']}")
+return errors
+
+if __name__ == "__main__":
+manifest = load_manifest()
+
+errors = []
+errors.extend(validate_source_exists(manifest))
+errors.extend(validate_forward_links(manifest))
+
+if errors:
+print("Validation FAILED:")
+for e in errors:
+print(f"  - {e}")
+exit(1)
+else:
+print("Validation PASSED")
+exit(0)
+\end{lstlisting}
+
+% =============================================================================
+\section{Adding New Source Documents}
+\label{sec:adding-sources}
+
+When a new source document is added to the TB corpus:
+
+\begin{enumerate}
+\item \textbf{Catalogue the document:}
+\begin{itemize}[noitemsep]
+\item Assign a source reference ID (e.g., \srcref{TB-NEW-001})
+\item Add entry to \cref{ch:source-documents}
+\item Update \texttt{hitl-traceability-manifest.yaml}
+\end{itemize}
+
+\item \textbf{Extract to machine-readable format:}
+\begin{itemize}[noitemsep]
+\item Run appropriate extraction script
+\item Store output in \texttt{docs/tb/machine-readable/extracted/}
+\item Add YAML frontmatter with source reference
+\end{itemize}
+
+\item \textbf{Derive requirements:}
+\begin{itemize}[noitemsep]
+\item Review extracted content for requirement statements
+\item Assign requirement IDs following naming convention
+\item Document derivation evidence in \cref{ch:business-requirements}
+\end{itemize}
+
+\item \textbf{Update traceability matrices:}
+\begin{itemize}[noitemsep]
+\item Add forward links in \cref{ch:bidirectional-traceability}
+\item Add backward links from affected specifications
+\item Run validation script to verify links
+\end{itemize}
+
+\item \textbf{Update gap analysis:}
+\begin{itemize}[noitemsep]
+\item Check for new gaps introduced
+\item Update orphan analysis tables
+\item Document any new gaps in \cref{ch:gap-analysis}
+\end{itemize}
+\end{enumerate}
+
+% =============================================================================
+\section{Adding New Requirements}
+\label{sec:adding-requirements}
+
+\subsection{Requirement ID Convention}
+
+\begin{table}[h]
+\centering
+\caption{Requirement ID Naming Convention}
+\begin{tabularx}{\textwidth}{@{}L{3.5cm}L{4cm}L{6cm}@{}}
+\toprule
+\textbf{Pattern} & \textbf{Category} & \textbf{Example} \\
+\midrule
+TB-REQ-ES\textit{nn} & Executive Summary & TB-REQ-ES01 \\
+TB-REQ-SC\textit{nn} & Scope & TB-REQ-SC01 \\
+TB-REQ-PS\textit{nn} & Process Steps & TB-REQ-PS01 \\
+TB-REQ-AI\textit{nn} & AI Augmentation & TB-REQ-AI01 \\
+BSS-REQ-\textit{nn} & BSS Risk Assessment & BSS-REQ-01 \\
+TB-REQ-FI\textit{nn} & Financial (future) & TB-REQ-FI01 \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\subsection{Requirement Documentation Template}
+
+\begin{lstlisting}[language=tex,basicstyle=\ttfamily\small]
+\subsection{\reqref{TB-REQ-XX01}: Requirement Title}
+\label{sec:req-xx01}
+
+\begin{table}[h]
+\centering
+\caption{\reqref{TB-REQ-XX01} Derivation Evidence}
+\begin{tabularx}{\textwidth}{@{}L{3.5cm}L{10.5cm}@{}}
+\toprule
+\textbf{Attribute} & \textbf{Value} \\
+\midrule
+Requirement ID & TB-REQ-XX01 \\
+Requirement Text & The system shall... \\
+Source Document & \srcref{TB-XXX-001}: Document name \\
+Source Location & Section X, Paragraph Y \\
+Derivation Method & Direct extraction / Synthesis \\
+Confidence & High / Medium / Low \\
+Status & Draft / Approved \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\paragraph{Source Quote:}
+\begin{quote}
+\textit{``Quoted text from source document...''}
+\end{quote}
+\end{lstlisting}
+
+% =============================================================================
+\section{Schema Evolution}
+\label{sec:schema-evolution}
+
+When schemas are modified:
+
+\begin{enumerate}
+\item \textbf{Document the change:}
+\begin{itemize}[noitemsep]
+\item Update schema file with new/modified fields
+\item Increment schema version
+\item Add changelog entry
+\end{itemize}
+
+\item \textbf{Update traceability:}
+\begin{itemize}[noitemsep]
+\item Add new fields to \cref{ch:schema-mapping}
+\item Link fields to specifications and requirements
+\item Verify no orphan fields remain
+\end{itemize}
+
+\item \textbf{Assess impact:}
+\begin{itemize}[noitemsep]
+\item Identify affected downstream consumers
+\item Document migration requirements
+\item Update validation scripts
+\end{itemize}
+\end{enumerate}
+
+% =============================================================================
+\section{HITL Review Execution}
+\label{sec:review-execution}
+
+\subsection{Pre-Review Checklist}
+
+Before initiating HITL review:
+
+\begin{itemize}
+\item[$\square$] Document compiled successfully with no LaTeX errors
+\item[$\square$] All chapter files present and included
+\item[$\square$] Validation script passes
+\item[$\square$] Machine-readable manifest is current
+\item[$\square$] Reviewers identified and available
+\end{itemize}
+
+\subsection{Review Meeting Agenda}
+
+\begin{enumerate}
+\item \textbf{Introduction (5 min):} Review objectives and scope
+\item \textbf{Source Review (15 min):} Checkpoint H1 --- verify source completeness
+\item \textbf{Extraction Review (15 min):} Checkpoint H2 --- sample extraction accuracy
+\item \textbf{Requirements Review (20 min):} Checkpoint H3 --- verify derivations
+\item \textbf{Traceability Review (15 min):} Checkpoint H4 --- validate links
+\item \textbf{Schema Review (15 min):} Checkpoint H5 --- verify alignment
+\item \textbf{Gap Review (10 min):} Checkpoint H6 --- accept gap plans
+\item \textbf{Sign-Off (5 min):} Complete sign-off register
+\end{enumerate}
+
+\subsection{Post-Review Actions}
+
+\begin{enumerate}
+\item Document review findings in sign-off register
+\item Create issues for any identified defects
+\item Update gap register if new gaps identified
+\item Publish approved version to document repository
+\item Notify stakeholders of approval status
+\end{enumerate}
+
+% =============================================================================
+\section{Continuous Integration}
+\label{sec:ci-integration}
+
+\subsection{CI Pipeline Configuration}
+
+Add to \texttt{.github/workflows/docs.yml}:
+
+\begin{lstlisting}[language=yamlx,basicstyle=\ttfamily\small]
+name: HITL Documentation
+
+on:
+push:
+paths:
+- 'docs/latex/specs/tb-hitl/**'
+- 'docs/tb/machine-readable/**'
+
+jobs:
+build-and-validate:
+runs-on: ubuntu-latest
+steps:
+- uses: actions/checkout@v4
+
+- name: Install TeX Live
+run: |
+sudo apt-get update
+sudo apt-get install -y texlive-xetex texlive-latex-extra
+
+- name: Validate traceability links
+run: python scripts/validate-hitl-links.py
+
+- name: Compile specification
+run: |
+cd docs/latex/specs/tb-hitl
+xelatex -interaction=nonstopmode tb-hitl-traceability-spec.tex
+xelatex -interaction=nonstopmode tb-hitl-traceability-spec.tex
+
+- name: Upload PDF artifact
+uses: actions/upload-artifact@v4
+with:
+name: tb-hitl-spec
+path: docs/latex/specs/tb-hitl/tb-hitl-traceability-spec.pdf
+\end{lstlisting}
+
+% =============================================================================
+\section{Troubleshooting}
+\label{sec:troubleshooting}
+
+\begin{table}[h]
+\centering
+\caption{Common Issues and Solutions}
+\begin{tabularx}{\textwidth}{@{}L{5cm}L{8.5cm}@{}}
+\toprule
+\textbf{Issue} & \textbf{Solution} \\
+\midrule
+LaTeX compilation error & Check for missing packages; verify fontspec compatibility \\
+Undefined cross-reference & Run xelatex twice; check label spelling \\
+Missing source document & Verify file path in manifest; check for renamed files \\
+Broken traceability link & Run validation script; check ID spelling \\
+Table overflow & Reduce column widths; use longtable for long tables \\
+TikZ positioning error & Verify tikzlibrary imports; check node distance \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+% --- Incorporated Universal Chapters ---
+\chapter{Global Wave-Dependency Manifest}
+\label{ch:global-dependencies}
+
+\section{Critical Path Visualization (Waves 1--3)}
+The following chart defines the normative sequencing for implementation agents. A task in a later wave cannot be marked \textsc{complete} until its prerequisites in an earlier wave are validated.
+
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}[
+node distance=1.5cm,
+auto,
+wavebox/.style={rectangle, draw, rounded corners, fill=sapmidnight!10, text width=10em, text centered, minimum height=3em, font=\scriptsize\bfseries},
+dep/.style={->, >=latex, thick, sapblue},
+critical/.style={->, >=latex, very thick, sapamber}
+]
+% --- Wave 1: Foundations ---
+\node (r1) [wavebox, fill=sapgrey!20] {\textcolor{sapmidnight}{REG-W1: Identity \& Audit Schema}};
+\node (s1) [wavebox, below of=r1, yshift=-0.5cm] {SIM-W1: HANA Extraction Pipeline};
+\node (a1) [wavebox, below of=s1, yshift=-0.5cm] {ARA-W1: Invoice Intake \& OCR};
+\node (t1) [wavebox, below of=a1, yshift=-0.5cm] {TB-W1: Identity Wiring};
+
+% --- Wave 2: Core Build-out ---
+\node (r2) [wavebox, right of=r1, xshift=4.5cm, fill=sapmidnight!20] {\textcolor{sapmidnight}{REG-W2: Governance Runtime}};
+\node (s2) [wavebox, right of=s1, xshift=4.5cm] {SIM-W2: Taxonomy \& Synthesis};
+\node (a2) [wavebox, right of=a1, xshift=4.5cm] {ARA-W2: Multi-Country VAT};
+\node (t2) [wavebox, right of=t1, xshift=4.5cm] {TB-W2: Controls \& Workflow};
+
+% --- Wave 3: Hardening ---
+\node (r3) [wavebox, right of=r2, xshift=4.5cm, fill=sapmidnight!30] {\textcolor{sapmidnight}{REG-W3: Conformance Suite}};
+\node (s3) [wavebox, right of=s2, xshift=4.5cm] {SIM-W3: 85\% Coverage Test};
+\node (a3) [wavebox, right of=a2, xshift=4.5cm] {ARA-W3: Calibration Pilot};
+\node (t3) [wavebox, right of=t2, xshift=4.5cm] {TB-W3: HITL Dashboard};
+
+% --- Cross-Domain Dependencies (The Critical Path) ---
+\draw [critical] (r1) -- node [above, font=\tiny, align=center] {Identity Envelope\\Invariants} (a1.north east);
+\draw [critical] (r1) -- (t1.north east);
+\draw [dep] (s1.east) -- node [above, font=\tiny, xshift=-0.5cm] {Training Fixtures} (t2.west);
+\draw [dep] (s1.east) -- (a2.west);
+\draw [dep] (r2.south) -- node [left, font=\tiny, yshift=0.3cm] {Policy Gate} (a2.north);
+\draw [dep] (t2.east) -- node [above, font=\tiny] {Audit Evidence} (r3.west);
+
+% --- Wave Transitions ---
+\draw [->, dashed, sapgrey] (r1.east) -- (r2.west);
+\draw [->, dashed, sapgrey] (r2.east) -- (r3.west);
+
+% --- Legend ---
+\node[draw, sapamber, very thick, label=right:\scriptsize Critical Prerequisite] at (0,-7.5) {};
+\node[draw, sapblue, thick, label=right:\scriptsize Data Dependency, xshift=4cm] at (0,-7.5) {};
+
+\end{tikzpicture}
+\caption{Cross-specification dependency graph: The blueprint for platform rollout.}
+\end{figure}
+
+\section{Inter-Domain Prerequisite Matrix}
+
+\begin{table}[htbp]
+\centering
+\footnotesize
+\caption{Normative Cross-Domain Prerequisites.}
+\label{tab:prerequisites}
+\begin{tabularx}{\textwidth}{@{}l l l X@{}}
+\toprule
+\textbf{Target Task} & \textbf{Prerequisite} & \textbf{Ref ID} & \textbf{Rationale} \\
+\midrule
+\rowcolor{sapmidnight!5}
+\textbf{ARA-W1} & REG-W1 (Identity) & \texttt{REG-IDENTITY-01} & Invoice intake must be audit-traced from Day 1. \\
+\textbf{TB-W2}  & SIM-W1 (Extraction) & \texttt{SIM-EXTRACT-01} & Anomaly detection requires HANA schema metadata. \\
+\rowcolor{sapmidnight!5}
+\textbf{REG-W2} & SIM-W1 (Registry) & \texttt{SIM-REGISTRY-01} & Governance monitoring relies on the schema registry. \\
+\textbf{ARA-W2} & REG-W2 (Pillar 1) & \texttt{REG-MGF-P1} & VAT release is an HITL gate governed by MAS Pillar 1. \\
+\rowcolor{sapmidnight!5}
+\textbf{TB-W3}  & ARA-W2 (Posted Invoices) & \texttt{ARA-AP-POST} & Review dashboard depends on posted AP data from Arabic domain. \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\begin{adrbox}{Dependency Enforcement}
+Implementation agents are strictly forbidden from "Fast-Forwarding" into Wave 2 if Wave 1 critical prerequisites (marked in \textcolor{sapamber}{\textbf{Gold}}) are in a \textsc{gap} or \textsc{partial} state.
+\end{adrbox}
+
+
+
+\end{document}

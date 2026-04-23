@@ -30,21 +30,197 @@ logger = logging.getLogger(__name__)
 
 
 @dataclass
+class CriticEvaluation:
+    """Double-critic evaluation results (Step 5 of Algorithm 2)."""
+    verdict: str = "ACCEPT"  # ACCEPT, REVISE, REJECT
+    correct_query_response: str = ""
+    correct_query_answer: str = ""  # YES, NO, UNCERTAIN
+    incorrect_query_response: str = ""
+    incorrect_query_answer: str = ""  # YES, NO, UNCERTAIN
+    is_valid: bool = True
+    confidence: float = 1.0
+    evaluated_at: Optional[str] = None
+    adaptive_threshold_applied: Optional[float] = None
+    
+    def to_dict(self) -> dict:
+        """Serialize to dictionary."""
+        result = {
+            "verdict": self.verdict,
+            "correct_query_response": self.correct_query_response,
+            "correct_query_answer": self.correct_query_answer,
+            "incorrect_query_response": self.incorrect_query_response,
+            "incorrect_query_answer": self.incorrect_query_answer,
+            "is_valid": self.is_valid,
+            "confidence": self.confidence,
+        }
+        if self.evaluated_at:
+            result["evaluated_at"] = self.evaluated_at
+        if self.adaptive_threshold_applied is not None:
+            result["adaptive_threshold_applied"] = self.adaptive_threshold_applied
+        return result
+
+
+@dataclass
+class GenerationMetadata:
+    """Generation process metadata."""
+    model: str = ""
+    temperature: float = 0.7
+    generated_at: Optional[str] = None
+    latency_ms: Optional[int] = None
+    batch_id: str = ""
+    seed: Optional[int] = None
+    meta_prompt_id: str = ""
+    
+    def to_dict(self) -> dict:
+        """Serialize to dictionary."""
+        result = {
+            "model": self.model,
+            "temperature": self.temperature,
+        }
+        if self.generated_at:
+            result["generated_at"] = self.generated_at
+        if self.latency_ms is not None:
+            result["latency_ms"] = self.latency_ms
+        if self.batch_id:
+            result["batch_id"] = self.batch_id
+        if self.seed is not None:
+            result["seed"] = self.seed
+        if self.meta_prompt_id:
+            result["meta_prompt_id"] = self.meta_prompt_id
+        return result
+
+
+@dataclass
+class QualitySignals:
+    """Quality signals for a training example."""
+    sql_valid: bool = True
+    sql_executable: Optional[bool] = None
+    question_length: int = 0
+    sql_length: int = 0
+    join_count: int = 0
+    subquery_count: int = 0
+    cte_count: int = 0
+    aggregate_count: int = 0
+    embedding_vector: Optional[list[float]] = None
+    nearest_neighbor_distance: Optional[float] = None
+    
+    def to_dict(self) -> dict:
+        """Serialize to dictionary."""
+        result = {
+            "sql_valid": self.sql_valid,
+            "question_length": self.question_length,
+            "sql_length": self.sql_length,
+            "join_count": self.join_count,
+            "subquery_count": self.subquery_count,
+            "cte_count": self.cte_count,
+            "aggregate_count": self.aggregate_count,
+        }
+        if self.sql_executable is not None:
+            result["sql_executable"] = self.sql_executable
+        if self.embedding_vector is not None:
+            result["embedding_vector"] = self.embedding_vector
+        if self.nearest_neighbor_distance is not None:
+            result["nearest_neighbor_distance"] = self.nearest_neighbor_distance
+        return result
+
+
+@dataclass
 class TrainingExample:
-    """A single training example (question + SQL pair)."""
+    """
+    A single training example (question + SQL pair).
+    
+    Schema-compliant with docs/schema/simula/training-example.schema.json.
+    Required fields: id, question, sql, complexity_score, critic_passed
+    """
+    # Required fields per schema
     id: str
     question: str
     sql: str
-    domain: str
-    table: str
-    difficulty: str = "medium"
-    taxonomy_mix: dict = field(default_factory=dict)
-    meta_prompt: str = ""
+    complexity_score: float = 0.5
+    critic_passed: bool = True
+    
+    # Optional fields per schema
+    schema_context: str = ""
+    taxonomy_path: list[str] = field(default_factory=list)
+    mix_id: str = ""
+    complexity_level: str = "MEDIUM"  # EASY, MEDIUM, HARD
+    elo_rating: Optional[float] = None
     is_complexified: bool = False
-    critic_verdict: Optional[str] = None
+    original_question: Optional[str] = None
+    original_sql: Optional[str] = None
+    critic_evaluation: Optional[CriticEvaluation] = None
+    generation_metadata: Optional[GenerationMetadata] = None
+    quality_signals: Optional[QualitySignals] = None
+    
+    # Legacy fields for backward compatibility (not in schema)
+    domain: str = ""
+    table: str = ""
+    difficulty: str = "medium"  # Maps to complexity_level
+    taxonomy_mix: dict = field(default_factory=dict)  # Maps to taxonomy_path
+    meta_prompt: str = ""
+    critic_verdict: Optional[str] = None  # Maps to critic_evaluation.verdict
+    
+    def __post_init__(self):
+        """Post-initialization to sync legacy and schema fields."""
+        # Sync difficulty -> complexity_level
+        if self.difficulty and not self.complexity_level:
+            self.complexity_level = self.difficulty.upper()
+        elif self.complexity_level and not self.difficulty:
+            self.difficulty = self.complexity_level.lower()
+        
+        # Sync taxonomy_mix -> taxonomy_path
+        if self.taxonomy_mix and not self.taxonomy_path:
+            self.taxonomy_path = list(self.taxonomy_mix.values()) if isinstance(self.taxonomy_mix, dict) else []
+        
+        # Sync critic_verdict -> critic_evaluation.verdict
+        if self.critic_verdict and not self.critic_evaluation:
+            self.critic_evaluation = CriticEvaluation(verdict=self.critic_verdict)
+        elif self.critic_evaluation and not self.critic_verdict:
+            self.critic_verdict = self.critic_evaluation.verdict
     
     def to_dict(self) -> dict:
-        """Serialize to dictionary for JSONL output."""
+        """
+        Serialize to dictionary for JSONL output.
+        
+        Produces schema-compliant output per docs/schema/simula/training-example.schema.json.
+        """
+        result = {
+            # Required fields
+            "id": self.id,
+            "question": self.question,
+            "sql": self.sql,
+            "complexity_score": self.complexity_score,
+            "critic_passed": self.critic_passed,
+        }
+        
+        # Optional fields (include only if set)
+        if self.schema_context:
+            result["schema_context"] = self.schema_context
+        if self.taxonomy_path:
+            result["taxonomy_path"] = self.taxonomy_path
+        if self.mix_id:
+            result["mix_id"] = self.mix_id
+        if self.complexity_level:
+            result["complexity_level"] = self.complexity_level
+        if self.elo_rating is not None:
+            result["elo_rating"] = self.elo_rating
+        if self.is_complexified:
+            result["is_complexified"] = self.is_complexified
+        if self.original_question:
+            result["original_question"] = self.original_question
+        if self.original_sql:
+            result["original_sql"] = self.original_sql
+        if self.critic_evaluation:
+            result["critic_evaluation"] = self.critic_evaluation.to_dict()
+        if self.generation_metadata:
+            result["generation_metadata"] = self.generation_metadata.to_dict()
+        if self.quality_signals:
+            result["quality_signals"] = self.quality_signals.to_dict()
+        
+        return result
+    
+    def to_legacy_dict(self) -> dict:
+        """Serialize to legacy dictionary format for backward compatibility."""
         return {
             "id": self.id,
             "question": self.question,
@@ -58,7 +234,7 @@ class TrainingExample:
         }
     
     def to_jsonl(self) -> str:
-        """Serialize to JSONL line."""
+        """Serialize to JSONL line (schema-compliant format)."""
         return json.dumps(self.to_dict())
 
 

@@ -1,0 +1,2521 @@
+% =============================================================================
+% CHAPTER 18: TEXT-TO-SQL DRIFT DETECTION FRAMEWORK
+% =============================================================================
+
+\chapter{Text-to-SQL Drift Detection Framework}
+\label{chap:tts-drift}
+
+\section{Purpose and Scope}
+
+This chapter defines a comprehensive drift detection framework for Text-to-SQL
+pipelines. Drift occurs when the relationship between any of the following
+artifacts diverges from the expected baseline:
+
+\begin{enumerate}
+  \item \textbf{HANA Table Schemas} --- The source of truth for database structure
+  \item \textbf{Agent/User Prompts} --- Natural language queries from users or agents
+  \item \textbf{Generated SQL} --- The Text-to-SQL model output
+\end{enumerate}
+
+The framework integrates with:
+\begin{itemize}
+  \item Simula training data generation (Chapter~\ref{chap:generator})
+  \item Spec-drift audit infrastructure (Chapter~4a of clinerules-agents)
+  \item Singapore AI Safety metrics framework (Chapter~5 of singapore-ai-safety)
+\end{itemize}
+
+\section{Drift Taxonomy}
+
+The Text-to-SQL drift taxonomy distinguishes three primary drift sources:
+
+\begin{enumerate}
+  \item \textbf{Schema Drift} --- Changes to HANA database structure not reflected in training
+  \item \textbf{User Prompt Drift} --- Evolution of human user query patterns and vocabulary
+  \item \textbf{Agent Prompt Drift} --- Changes in AI agent query generation behavior
+\end{enumerate}
+
+\begin{table}[htbp]
+\centering
+\footnotesize
+\caption{Text-to-SQL Drift Types by Source}
+\label{tab:tts-drift-types}
+\begin{tabularx}{\textwidth}{@{}l l l X l@{}}
+\toprule
+\textbf{Code} & \textbf{Type} & \textbf{Source} & \textbf{Description} & \textbf{Severity} \\
+\midrule
+TTS-DRIFT-001 & Schema Drift & Schema & HANA schema changed without training update & CRITICAL \\
+TTS-DRIFT-002 & Coverage Drift & Schema & Training no longer covers schema adequately & HIGH \\
+TTS-DRIFT-003 & Semantic Drift & User/Agent & Prompt intent no longer aligns with SQL & CRITICAL \\
+TTS-DRIFT-004 & Terminology Drift & User & User vocabulary diverged from schema terms & MEDIUM \\
+TTS-DRIFT-005 & Complexity Drift & User/Agent & Query complexity differs from training & MEDIUM \\
+TTS-DRIFT-006 & Execution Drift & All & SQL execution success rate degraded & CRITICAL \\
+TTS-DRIFT-007 & Agent Behavior Drift & Agent & Agent query patterns changed significantly & HIGH \\
+TTS-DRIFT-008 & User Behavior Drift & User & User query patterns changed significantly & MEDIUM \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\subsection{Schema Drift Sources (TTS-DRIFT-001, TTS-DRIFT-002)}
+
+\textbf{Definition:} Schema drift occurs when the HANA Cloud database structure
+changes and the Text-to-SQL training data becomes stale or inconsistent.
+
+\begin{table}[htbp]
+\centering
+\footnotesize
+\caption{Schema Drift Trigger Events}
+\label{tab:schema-drift-triggers}
+\begin{tabularx}{\textwidth}{@{}l l l X@{}}
+\toprule
+\textbf{Event} & \textbf{Weight} & \textbf{Impact} & \textbf{Mitigation} \\
+\midrule
+Column dropped & 1.0 & SQL references fail & Immediate retraining \\
+Column type changed & 0.5 & Type errors in queries & Schema re-extraction \\
+Column renamed & 0.3 & Minor query failures & Vocabulary update \\
+Table added & 0.2 & Missing coverage & Incremental training \\
+FK relationship changed & 0.4 & Invalid JOINs & Schema refresh \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\textbf{Rating Criteria for Schema Drift Metrics:}
+
+\begin{table}[htbp]
+\centering
+\footnotesize
+\caption{Schema Drift Metric Quality Assessment}
+\label{tab:schema-metric-rating}
+\begin{tabularx}{\textwidth}{@{}l c c c c X@{}}
+\toprule
+\textbf{Metric} & \textbf{Accuracy} & \textbf{Coverage} & \textbf{Speed} & \textbf{Overall} & \textbf{Notes} \\
+\midrule
+TTS-M01 (SCR) & 95\% & High & Fast & \textbf{A} & Direct column comparison \\
+TTS-M02 (SSS) & 90\% & High & Fast & \textbf{A} & Time-weighted staleness \\
+TTS-M03 (CTMR) & 85\% & Medium & Medium & \textbf{B+} & Requires SQL parsing \\
+TTS-M04 (FKCR) & 90\% & High & Medium & \textbf{A-} & FK metadata required \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\subsection{User Prompt Drift Sources (TTS-DRIFT-004, TTS-DRIFT-008)}
+
+\textbf{Definition:} User prompt drift occurs when human users change their
+query patterns, vocabulary, or complexity expectations over time.
+
+\begin{table}[htbp]
+\centering
+\footnotesize
+\caption{User Prompt Drift Indicators}
+\label{tab:user-drift-indicators}
+\begin{tabularx}{\textwidth}{@{}l X l l@{}}
+\toprule
+\textbf{Indicator} & \textbf{Description} & \textbf{Metric} & \textbf{Threshold} \\
+\midrule
+Vocabulary shift & New terms not in training data & TTS-M07 & JSD $> 0.15$ \\
+Query complexity increase & Users asking harder questions & TTS-M11 & KL $> 0.10$ \\
+Ambiguity increase & More vague or underspecified prompts & TTS-M08 & ARR $< 0.75$ \\
+Domain expansion & Users querying new table areas & TTS-M01 & SCR $< 0.85$ \\
+Intent mismatch & Users expect different results & TTS-M06 & IPR $< 0.90$ \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\textbf{Rating Criteria for User Prompt Drift Metrics:}
+
+\begin{table}[htbp]
+\centering
+\footnotesize
+\caption{User Prompt Drift Metric Quality Assessment}
+\label{tab:user-metric-rating}
+\begin{tabularx}{\textwidth}{@{}l c c c c X@{}}
+\toprule
+\textbf{Metric} & \textbf{Accuracy} & \textbf{Coverage} & \textbf{Speed} & \textbf{Overall} & \textbf{Notes} \\
+\midrule
+TTS-M05 (SAS) & 80\% & High & Slow & \textbf{B+} & Embedding-dependent \\
+TTS-M06 (IPR) & 85\% & High & Slow & \textbf{B+} & Requires critic model \\
+TTS-M07 (TDS) & 90\% & Medium & Fast & \textbf{A-} & JSD computation \\
+TTS-M08 (ARR) & 75\% & Medium & Slow & \textbf{B} & Ambiguity detection hard \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\subsection{Agent Prompt Drift Sources (TTS-DRIFT-003, TTS-DRIFT-007)}
+
+\textbf{Definition:} Agent prompt drift occurs when AI agents (Cline, copilots,
+or automated systems) change their query generation behavior.
+
+\begin{table}[htbp]
+\centering
+\footnotesize
+\caption{Agent Prompt Drift Indicators}
+\label{tab:agent-drift-indicators}
+\begin{tabularx}{\textwidth}{@{}l X l l@{}}
+\toprule
+\textbf{Indicator} & \textbf{Description} & \textbf{Metric} & \textbf{Threshold} \\
+\midrule
+Template evolution & Agent prompts follow new patterns & TTS-M05 & SAS $< 0.80$ \\
+Instruction compliance & Agent adheres to system prompts & TTS-M06 & IPR $< 0.90$ \\
+Query structure shift & SQL generation patterns changed & TTS-M11 & CDD $> 0.10$ \\
+Tool calling patterns & Different tool invocation sequences & TTS-M09 & ESR $< 0.95$ \\
+Context window usage & Agent uses context differently & TTS-M10 & RFS $< 0.85$ \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\textbf{Rating Criteria for Agent Prompt Drift Metrics:}
+
+\begin{table}[htbp]
+\centering
+\footnotesize
+\caption{Agent Prompt Drift Metric Quality Assessment}
+\label{tab:agent-metric-rating}
+\begin{tabularx}{\textwidth}{@{}l c c c c X@{}}
+\toprule
+\textbf{Metric} & \textbf{Accuracy} & \textbf{Coverage} & \textbf{Speed} & \textbf{Overall} & \textbf{Notes} \\
+\midrule
+TTS-M05 (SAS) & 85\% & High & Slow & \textbf{A-} & Effective for agent drift \\
+TTS-M06 (IPR) & 90\% & High & Slow & \textbf{A} & Critical for agents \\
+TTS-M09 (ESR) & 95\% & High & Fast & \textbf{A+} & Direct execution check \\
+TTS-M10 (RFS) & 85\% & Medium & Slow & \textbf{B+} & Result comparison \\
+TTS-M11 (CDD) & 80\% & Medium & Fast & \textbf{B+} & Distribution comparison \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\subsection{Distinguishing User vs Agent Prompts}
+
+The framework must distinguish between human user prompts and AI agent prompts
+for accurate drift attribution:
+
+\begin{table}[htbp]
+\centering
+\footnotesize
+\caption{User vs Agent Prompt Classification}
+\label{tab:user-agent-classification}
+\begin{tabularx}{\textwidth}{@{}l X X@{}}
+\toprule
+\textbf{Characteristic} & \textbf{User Prompts} & \textbf{Agent Prompts} \\
+\midrule
+Variability & High (natural language variety) & Low (templated patterns) \\
+Vocabulary & Domain-specific, informal & Precise, instruction-following \\
+Complexity & Variable (beginner to expert) & Consistent (system-configured) \\
+Ambiguity & Common (underspecified) & Rare (explicit requirements) \\
+Context usage & Limited (single query) & Rich (multi-turn, tools) \\
+Error patterns & Typos, vague terms & Tool calling errors, format issues \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\textbf{Classification Method:}
+
+\begin{lstlisting}[language=jsonx,caption={User vs Agent prompt classification}]
+def classify_prompt_source(prompt: str, metadata: dict) -> str:
+    """
+    Classify prompt as user or agent based on characteristics.
+    
+    Returns: "user", "agent", or "unknown"
+    """
+    # Check metadata first
+    if "agent_id" in metadata or "tool_call_id" in metadata:
+        return "agent"
+    
+    if "user_session_id" in metadata:
+        # Additional heuristics for user prompts
+        features = {
+            "has_typos": detect_typos(prompt),
+            "uses_informal_language": detect_informal(prompt),
+            "high_variability": compute_perplexity(prompt) > 10,
+            "explicit_instructions": has_system_instructions(prompt),
+        }
+        
+        user_score = (features["has_typos"] + 
+                      features["uses_informal_language"] +
+                      features["high_variability"])
+        agent_score = features["explicit_instructions"]
+        
+        return "user" if user_score > agent_score else "agent"
+    
+    return "unknown"
+\end{lstlisting}
+
+\subsection{Combined Drift Assessment Matrix}
+
+\begin{table}[htbp]
+\centering
+\footnotesize
+\caption{Comprehensive Drift Assessment Matrix}
+\label{tab:drift-assessment-matrix}
+\begin{tabularx}{\textwidth}{@{}l c c c c@{}}
+\toprule
+\textbf{Metric} & \textbf{Schema} & \textbf{User Prompt} & \textbf{Agent Prompt} & \textbf{Weight} \\
+\midrule
+TTS-M01 (SCR) & \checkmark & -- & -- & 15\% \\
+TTS-M02 (SSS) & \checkmark & -- & -- & 10\% \\
+TTS-M03 (CTMR) & \checkmark & -- & -- & 5\% \\
+TTS-M04 (FKCR) & \checkmark & -- & -- & 10\% \\
+TTS-M05 (SAS) & -- & \checkmark & \checkmark & 15\% \\
+TTS-M06 (IPR) & -- & \checkmark & \checkmark & 10\% \\
+TTS-M07 (TDS) & -- & \checkmark & -- & 3\% \\
+TTS-M08 (ARR) & -- & \checkmark & -- & 5\% \\
+TTS-M09 (ESR) & \checkmark & \checkmark & \checkmark & 15\% \\
+TTS-M10 (RFS) & -- & \checkmark & \checkmark & 10\% \\
+TTS-M11 (CDD) & -- & \checkmark & \checkmark & 2\% \\
+TTS-M12 (TCD) & \checkmark & -- & -- & -- \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\textbf{Reading the matrix:}
+\begin{itemize}
+  \item \checkmark = Metric is relevant for this drift source
+  \item Weight = Contribution to composite TTS-EVAL score
+  \item Metrics can be relevant to multiple sources
+\end{itemize}
+
+\section{Mandatory Drift Metrics}
+
+\subsection{Metric Overview}
+
+\begin{table}[htbp]
+\centering
+\footnotesize
+\caption{Text-to-SQL Drift Metrics (12 Metrics)}
+\label{tab:tts-metrics}
+\begin{tabularx}{\textwidth}{@{}l l X l@{}}
+\toprule
+\textbf{ID} & \textbf{Name} & \textbf{Definition} & \textbf{Drift Link} \\
+\midrule
+\metricid{TTS-M01} & Schema Coverage Rate (SCR) & Fraction of HANA columns referenced in training & TTS-DRIFT-002 \\
+\metricid{TTS-M02} & Schema Staleness Score (SSS) & Age-weighted schema changes not in training & TTS-DRIFT-001 \\
+\metricid{TTS-M03} & Column Type Mismatch Rate (CTMR) & Fraction of SQL with type-incompatible ops & TTS-DRIFT-001 \\
+\metricid{TTS-M04} & Foreign Key Consistency Rate (FKCR) & Fraction of JOINs following valid FKs & TTS-DRIFT-001 \\
+\metricid{TTS-M05} & Semantic Alignment Score (SAS) & Cosine similarity prompt-to-SQL embeddings & TTS-DRIFT-003 \\
+\metricid{TTS-M06} & Intent Preservation Rate (IPR) & Fraction of prompts correctly answered & TTS-DRIFT-003 \\
+\metricid{TTS-M07} & Terminology Drift Score (TDS) & Vocabulary divergence from schema terms & TTS-DRIFT-004 \\
+\metricid{TTS-M08} & Ambiguity Resolution Rate (ARR) & Fraction of ambiguous prompts disambiguated & TTS-DRIFT-003 \\
+\metricid{TTS-M09} & Execution Success Rate (ESR) & Fraction of SQL executing without error & TTS-DRIFT-006 \\
+\metricid{TTS-M10} & Result Fidelity Score (RFS) & Semantic similarity expected vs actual results & TTS-DRIFT-006 \\
+\metricid{TTS-M11} & Complexity Distribution Drift (CDD) & KL divergence training vs production complexity & TTS-DRIFT-005 \\
+\metricid{TTS-M12} & Taxonomy Coverage Drift (TCD) & Change in taxonomy node coverage over time & TTS-DRIFT-002 \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\subsection{Schema Drift Metrics (TTS-M01 to TTS-M04)}
+
+\subsubsection{TTS-M01: Schema Coverage Rate (SCR)}
+
+\begin{equation}
+\boxed{
+SCR = \frac{|C_{\text{referenced}}|}{|C_{\text{schema}}|}
+}
+\end{equation}
+
+\begin{description}
+  \item[Variables] $C_{\text{referenced}}$ = columns referenced in training examples;
+        $C_{\text{schema}}$ = columns in HANA schema
+  \item[Direction] Higher is better
+  \item[Threshold] $SCR \geq 0.85$ required
+  \item[Drift Link] \driftid{TTS-DRIFT-002}
+\end{description}
+
+\subsubsection{TTS-M02: Schema Staleness Score (SSS)}
+
+\begin{equation}
+\boxed{
+SSS = \sum_{i \in \Delta_{\text{schema}}} w_i \cdot \text{age}(i)
+}
+\end{equation}
+
+\begin{description}
+  \item[Variables] $\Delta_{\text{schema}}$ = set of schema changes not in training;
+        $w_i$ = importance weight (1.0 column drop, 0.5 type change, 0.3 rename);
+        $\text{age}(i)$ = days since change
+  \item[Direction] Lower is better
+  \item[Threshold] $SSS \leq 7.0$ required (approximately 1 week tolerance)
+  \item[Drift Link] \driftid{TTS-DRIFT-001}
+\end{description}
+
+\subsubsection{TTS-M03: Column Type Mismatch Rate (CTMR)}
+
+\begin{equation}
+\boxed{
+CTMR = \frac{N_{\text{type-incompatible operations}}}{N_{\text{total column references}}}
+}
+\end{equation}
+
+\begin{description}
+  \item[Direction] Lower is better
+  \item[Threshold] $CTMR \leq 0.02$ required
+  \item[Drift Link] \driftid{TTS-DRIFT-001}
+\end{description}
+
+\subsubsection{TTS-M04: Foreign Key Consistency Rate (FKCR)}
+
+\begin{equation}
+\boxed{
+FKCR = \frac{N_{\text{valid FK joins}}}{N_{\text{total joins}}}
+}
+\end{equation}
+
+\begin{description}
+  \item[Direction] Higher is better
+  \item[Threshold] $FKCR \geq 0.95$ required
+  \item[Drift Link] \driftid{TTS-DRIFT-001}
+\end{description}
+
+\subsection{Semantic Drift Metrics (TTS-M05 to TTS-M08)}
+
+\subsubsection{TTS-M05: Semantic Alignment Score (SAS)}
+
+\begin{equation}
+\boxed{
+SAS = \frac{1}{N} \sum_{j=1}^{N} \cos(E_{\text{prompt}}^j, E_{\text{sql}}^j)
+}
+\end{equation}
+
+\begin{description}
+  \item[Variables] $E_{\text{prompt}}$ = embedding of natural language prompt;
+        $E_{\text{sql}}$ = embedding of SQL intent (parsed query structure);
+        $\cos()$ = cosine similarity
+  \item[Direction] Higher is better
+  \item[Threshold] $SAS \geq 0.80$ required
+  \item[Drift Link] \driftid{TTS-DRIFT-003}
+\end{description}
+
+\subsubsection{TTS-M06: Intent Preservation Rate (IPR)}
+
+\begin{equation}
+\boxed{
+IPR = \frac{N_{\text{correctly answered prompts}}}{N_{\text{total prompts evaluated}}}
+}
+\end{equation}
+
+\begin{description}
+  \item[Direction] Higher is better
+  \item[Threshold] $IPR \geq 0.90$ required
+  \item[Drift Link] \driftid{TTS-DRIFT-003}
+\end{description}
+
+\subsubsection{TTS-M07: Terminology Drift Score (TDS)}
+
+\begin{equation}
+\boxed{
+TDS = JSD(P_{\text{prompt\_vocab}} \| P_{\text{schema\_vocab}})
+}
+\end{equation}
+
+\begin{description}
+  \item[Variables] $P_{\text{prompt\_vocab}}$ = term probability distribution in prompts;
+        $P_{\text{schema\_vocab}}$ = term distribution in schema (columns, tables);
+        $JSD$ = Jensen-Shannon Divergence
+  \item[Direction] Lower is better
+  \item[Threshold] $TDS \leq 0.15$ required
+  \item[Drift Link] \driftid{TTS-DRIFT-004}
+\end{description}
+
+\subsubsection{TTS-M08: Ambiguity Resolution Rate (ARR)}
+
+\begin{equation}
+\boxed{
+ARR = \frac{N_{\text{ambiguous prompts correctly resolved}}}{N_{\text{ambiguous prompts total}}}
+}
+\end{equation}
+
+\begin{description}
+  \item[Direction] Higher is better
+  \item[Threshold] $ARR \geq 0.75$ required
+  \item[Drift Link] \driftid{TTS-DRIFT-003}
+\end{description}
+
+\subsection{Generation Quality Drift Metrics (TTS-M09 to TTS-M12)}
+
+\subsubsection{TTS-M09: Execution Success Rate (ESR)}
+
+\begin{equation}
+\boxed{
+ESR = \frac{N_{\text{SQL executed successfully}}}{N_{\text{SQL generated}}}
+}
+\end{equation}
+
+\begin{description}
+  \item[Direction] Higher is better
+  \item[Threshold] $ESR \geq 0.95$ required
+  \item[Drift Link] \driftid{TTS-DRIFT-006}
+\end{description}
+
+\subsubsection{TTS-M10: Result Fidelity Score (RFS)}
+
+\begin{equation}
+\boxed{
+RFS = \frac{1}{N} \sum_{j=1}^{N} \text{sim}(R_{\text{expected}}^j, R_{\text{actual}}^j)
+}
+\end{equation}
+
+\begin{description}
+  \item[Variables] $R_{\text{expected}}$ = expected query result (ground truth);
+        $R_{\text{actual}}$ = actual query result; $\text{sim}()$ = semantic similarity
+  \item[Direction] Higher is better
+  \item[Threshold] $RFS \geq 0.85$ required
+  \item[Drift Link] \driftid{TTS-DRIFT-006}
+\end{description}
+
+\subsubsection{TTS-M11: Complexity Distribution Drift (CDD)}
+
+\begin{equation}
+\boxed{
+CDD = KL(P_{\text{train\_complexity}} \| P_{\text{prod\_complexity}})
+}
+\end{equation}
+
+\begin{description}
+  \item[Variables] Using Elo-calibrated complexity scores from Algorithm~3
+        (Chapter~\ref{chap:evaluation})
+  \item[Direction] Lower is better
+  \item[Threshold] $CDD \leq 0.10$ required
+  \item[Drift Link] \driftid{TTS-DRIFT-005}
+\end{description}
+
+\subsubsection{TTS-M12: Taxonomy Coverage Drift (TCD)}
+
+\begin{equation}
+\boxed{
+TCD = |LRC_{\text{baseline}} - LRC_{\text{current}}|
+}
+\end{equation}
+
+\begin{description}
+  \item[Variables] $LRC$ = Level Ratio Coverage from Chapter~\ref{chap:evaluation}
+  \item[Direction] Lower is better
+  \item[Threshold] $TCD \leq 0.05$ required (5\% coverage change tolerance)
+  \item[Drift Link] \driftid{TTS-DRIFT-002}
+\end{description}
+
+\subsection{Statistical Foundation Metrics (TTS-M13 to TTS-M15)}
+
+These metrics provide rigorous statistical foundations for drift detection,
+enabling hypothesis testing and multi-metric validation.
+
+\subsubsection{TTS-M13: Wasserstein Distance (W1D)}
+
+The \textbf{Wasserstein distance} (Earth Mover's Distance) quantifies the
+minimum ``work'' needed to transform the synthetic distribution $Q$ into
+the real distribution $P$:
+
+\begin{equation}
+\boxed{
+W_1(P, Q) = \int_{-\infty}^{\infty} |F_P(x) - F_Q(x)| \, dx
+}
+\end{equation}
+
+\begin{description}
+  \item[Variables] $F_P$, $F_Q$ = cumulative distribution functions of real and
+        synthetic data respectively
+  \item[Direction] Lower is better
+  \item[Threshold] $W_{1,\text{norm}} \leq 0.10$ required (normalized to [0,1])
+  \item[Implementation] \texttt{scipy.stats.wasserstein\_distance()}
+  \item[Use Cases] Continuous variables, complexity scores, numeric columns
+  \item[Drift Link] All drift types (cross-cutting)
+\end{description}
+
+\textbf{Normalization formula:}
+\begin{equation}
+W_{1,\text{norm}} = \frac{W_1(P, Q)}{\max(|x_{\max} - x_{\min}|, \epsilon)}
+\end{equation}
+
+\subsubsection{TTS-M14: Population Stability Index (PSI)}
+
+The \textbf{PSI} measures how a distribution has shifted across predefined
+bins, widely used in financial risk modeling for scorecard stability:
+
+\begin{equation}
+\boxed{
+PSI = \sum_{i=1}^{k} (P_i - Q_i) \cdot \ln\left(\frac{P_i}{Q_i}\right)
+}
+\end{equation}
+
+\begin{description}
+  \item[Variables] $P_i$ = proportion in bin $i$ for real data;
+        $Q_i$ = proportion in bin $i$ for synthetic data;
+        $k$ = number of bins (typically 10)
+  \item[Direction] Lower is better
+  \item[Threshold] Industry standard:
+    \begin{itemize}
+      \item $PSI < 0.10$ --- No significant drift
+      \item $0.10 \leq PSI < 0.25$ --- Moderate drift (investigate)
+      \item $PSI \geq 0.25$ --- Significant drift (action required)
+    \end{itemize}
+  \item[Implementation] Custom implementation with Laplace smoothing
+  \item[Use Cases] Categorical columns, discretized continuous variables, enums
+  \item[Drift Link] \driftid{TTS-DRIFT-001}, \driftid{TTS-DRIFT-002}
+\end{description}
+
+\textbf{Laplace smoothing to avoid division by zero:}
+\begin{equation}
+P_i' = \frac{P_i \cdot n + \alpha}{n + k\alpha}, \quad \alpha = 0.001
+\end{equation}
+
+\subsubsection{TTS-M15: Kolmogorov-Smirnov Statistic (KSS)}
+
+The \textbf{KS test} is a non-parametric test measuring the maximum distance
+between two empirical CDFs:
+
+\begin{equation}
+\boxed{
+D_{KS} = \sup_x |F_P(x) - F_Q(x)|
+}
+\end{equation}
+
+\begin{description}
+  \item[Variables] $F_P$, $F_Q$ = empirical CDFs; $\sup$ = supremum (maximum)
+  \item[Direction] Lower $D_{KS}$ is better; higher p-value is better
+  \item[Threshold] $p\text{-value} > 0.05$ required (no significant drift at 95\% confidence)
+  \item[Implementation] \texttt{scipy.stats.ks\_2samp()}
+  \item[Use Cases] Continuous variables, location and shape differences
+  \item[Drift Link] \driftid{TTS-DRIFT-005}, \driftid{TTS-DRIFT-006}
+\end{description}
+
+\textbf{Decision rule:}
+\begin{equation}
+\text{Drift detected} \iff p\text{-value} \leq 0.05 \text{ (reject } H_0: P = Q\text{)}
+\end{equation}
+
+\subsection{Statistical Metric Comparison}
+
+\begin{table}[htbp]
+\centering
+\footnotesize
+\caption{Statistical Metrics Comparison}
+\label{tab:stat-metrics-comparison}
+\begin{tabularx}{\textwidth}{@{}l l l X l@{}}
+\toprule
+\textbf{Metric} & \textbf{Applicability} & \textbf{Sensitivity} & \textbf{Theoretical Basis} & \textbf{Speed} \\
+\midrule
+W1D & Continuous, ordinal & Proportional to shifts & Optimal transport theory & Medium \\
+PSI & Categorical, binned & Practical thresholds & KL-divergence variant & Fast \\
+KSS & Continuous & Location \& shape & Non-parametric CDF test & Fast \\
+JSD (M07) & Both & Center-sensitive & Symmetric KL-divergence & Fast \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\section{Composite TTS-EVAL Score}
+
+The \textbf{TTS Evaluation Score} combines all drift metrics into a single
+composite score, following the pattern established in singapore-ai-safety:
+
+\begin{equation}
+\boxed{
+\begin{aligned}
+TTS\_EVAL = 100 \times \Big(
+  &0.15 \cdot SCR +
+  0.10 \cdot (1 - SSS_{\text{norm}}) +
+  0.10 \cdot FKCR \\
+  &+ 0.15 \cdot SAS +
+  0.10 \cdot IPR +
+  0.15 \cdot ESR \\
+  &+ 0.10 \cdot RFS +
+  0.05 \cdot ARR
+\Big) \\
+- 100 \times \Big(
+  &0.05 \cdot CTMR +
+  0.03 \cdot TDS +
+  0.02 \cdot CDD
+\Big)
+\end{aligned}
+}
+\label{eq:tts-eval}
+\end{equation}
+
+\noindent where $SSS_{\text{norm}} = \min(SSS / 14.0, 1.0)$ normalizes staleness
+to a 0--1 range (14 days = maximum acceptable staleness).
+
+\subsection{TTS-EVAL Interpretation}
+
+\begin{table}[htbp]
+\centering
+\caption{TTS-EVAL Score Interpretation}
+\begin{tabular}{l l l}
+\toprule
+\textbf{Score Band} & \textbf{Status} & \textbf{Action} \\
+\midrule
+$TTS\_EVAL \geq 85$ & \textcolor{green}{\textbf{GREEN}} & Production ready, no action \\
+$70 \leq TTS\_EVAL < 85$ & \textcolor{orange}{\textbf{AMBER}} & Investigate, schedule remediation \\
+$55 \leq TTS\_EVAL < 70$ & \textcolor{orange}{\textbf{AMBER}} & Urgent remediation required \\
+$TTS\_EVAL < 55$ & \textcolor{red}{\textbf{RED}} & Kill-switch trigger, halt production \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{Statistical Evaluation Rules}
+
+Following the singapore-ai-safety specification, all metrics use the
+\textbf{95\% Wilson Lower Confidence Bound} for ``higher is better'' metrics:
+
+\begin{equation}
+\boxed{
+LCB_{95} = \frac{\hat{p} + \frac{z^2}{2n} - z\sqrt{\frac{\hat{p}(1-\hat{p})}{n} + \frac{z^2}{4n^2}}}{1 + \frac{z^2}{n}}
+\quad \text{where } z = 1.96
+}
+\end{equation}
+
+For ``lower is better'' metrics (CTMR, TDS, CDD, SSS), use the
+\textbf{95\% Wilson Upper Confidence Bound}.
+
+\textbf{Production gate rule:} A metric passes only if the confidence-bounded
+value meets the threshold.
+
+\section{Minimum Sample Sizes}
+
+\begin{table}[htbp]
+\centering
+\caption{Minimum Sample Sizes for TTS Drift Detection}
+\label{tab:tts-sample-sizes}
+\begin{tabular}{l l l l l}
+\toprule
+\textbf{Evaluation Context} & \textbf{Min Queries} & \textbf{Repetitions} & \textbf{Total} & \textbf{Frequency} \\
+\midrule
+Training Data Generation & 500 & 1 & 500 & Per batch \\
+CI/CD Gate & 100 & 3 & 300 & Per PR \\
+Production Monitoring & 1000 & 1 & 1000 & Daily \\
+User Population Sampling & See Table~\ref{tab:user-sampling} & -- & -- & Rolling \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{User Population Sampling Strategy}
+
+\begin{table}[htbp]
+\centering
+\caption{Stratified Sampling by User Population}
+\label{tab:user-sampling}
+\begin{tabularx}{\textwidth}{@{}l l l l X@{}}
+\toprule
+\textbf{Segment} & \textbf{Definition} & \textbf{Sample Rate} & \textbf{Frequency} & \textbf{Focus Metrics} \\
+\midrule
+Power Users & $>100$ queries/day & 100\% & Real-time & All TTS-M01--M12 \\
+Regular Users & 10--100/day & 20\% & Hourly & TTS-M05, M06, M09, M10 \\
+Occasional Users & $<10$/day & 5\% & Daily & TTS-M09, M10 \\
+New Users & First 30 days & 50\% & Real-time & TTS-M06, M08 (ambiguity) \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\begin{lstlisting}[language=jsonx,caption={User population sampler (simula\_tts\_drift\_sampler.py)}]
+@dataclass
+class SamplingConfig:
+    """Configuration for stratified user sampling."""
+    
+    power_user_threshold: int = 100  # queries/day
+    regular_user_min: int = 10
+    new_user_window_days: int = 30
+    
+    sampling_rates: dict[str, float] = field(default_factory=lambda: {
+        "power_user": 1.0,
+        "regular_user": 0.2,
+        "occasional_user": 0.05,
+        "new_user": 0.5,
+    })
+
+class UserPopulationSampler:
+    """Stratified sampling for drift detection across user populations."""
+    
+    def __init__(self, config: SamplingConfig):
+        self.config = config
+        self._user_query_counts: dict[str, int] = {}
+        self._user_first_seen: dict[str, datetime] = {}
+    
+    def classify_user(self, user_id: str) -> str:
+        """Classify user into population segment."""
+        first_seen = self._user_first_seen.get(user_id)
+        if first_seen and (datetime.now() - first_seen).days < self.config.new_user_window_days:
+            return "new_user"
+        
+        daily_count = self._user_query_counts.get(user_id, 0)
+        if daily_count > self.config.power_user_threshold:
+            return "power_user"
+        elif daily_count >= self.config.regular_user_min:
+            return "regular_user"
+        return "occasional_user"
+    
+    def should_sample(self, user_id: str) -> bool:
+        """Determine if this query should be sampled for drift analysis."""
+        segment = self.classify_user(user_id)
+        rate = self.config.sampling_rates[segment]
+        return random.random() < rate
+\end{lstlisting}
+
+\section{Training-Time Drift Evaluation}
+
+During Simula training data generation, drift metrics are computed to ensure
+generated examples remain aligned with the current HANA schema:
+
+\begin{lstlisting}[language=jsonx,caption={Training-time drift evaluator (simula\_tts\_drift\_evaluator.py)}]
+@dataclass
+class TTSMetricReport:
+    """Complete drift metric report."""
+    
+    # Schema drift metrics
+    scr: float  # Schema Coverage Rate
+    sss: float  # Schema Staleness Score
+    ctmr: float  # Column Type Mismatch Rate
+    fkcr: float  # Foreign Key Consistency Rate
+    
+    # Semantic drift metrics
+    sas: float  # Semantic Alignment Score
+    ipr: float  # Intent Preservation Rate
+    tds: float  # Terminology Drift Score
+    arr: float  # Ambiguity Resolution Rate
+    
+    # Generation quality metrics
+    esr: float  # Execution Success Rate
+    rfs: float  # Result Fidelity Score
+    cdd: float  # Complexity Distribution Drift
+    tcd: float  # Taxonomy Coverage Drift
+    
+    # Composite score
+    tts_eval: float
+    
+    # Metadata
+    evaluated_at: str
+    sample_size: int
+    confidence_level: float = 0.95
+
+class TTSTrainingEvaluator:
+    """Evaluate drift metrics during training data generation."""
+    
+    def __init__(
+        self,
+        schema_registry: SchemaRegistry,
+        embedding_model: str = "sentence-transformers/all-MiniLM-L6-v2",
+    ):
+        self.schema_registry = schema_registry
+        self.embedding_model = embedding_model
+    
+    async def evaluate_batch(
+        self,
+        examples: list[TrainingExample],
+        baseline: Optional[TTSMetricReport] = None,
+    ) -> TTSMetricReport:
+        """
+        Evaluate drift metrics for a batch of training examples.
+        
+        Args:
+            examples: Training examples to evaluate
+            baseline: Optional baseline for drift comparison
+            
+        Returns:
+            Complete drift metric report
+        """
+        # Schema drift metrics
+        scr = self._compute_schema_coverage(examples)
+        sss = self._compute_schema_staleness()
+        ctmr = self._compute_type_mismatch_rate(examples)
+        fkcr = self._compute_fk_consistency(examples)
+        
+        # Semantic drift metrics
+        sas = await self._compute_semantic_alignment(examples)
+        ipr = await self._compute_intent_preservation(examples)
+        tds = self._compute_terminology_drift(examples)
+        arr = await self._compute_ambiguity_resolution(examples)
+        
+        # Generation quality metrics
+        esr = self._compute_execution_success(examples)
+        rfs = await self._compute_result_fidelity(examples)
+        
+        # Distribution drift (requires baseline)
+        cdd = 0.0
+        tcd = 0.0
+        if baseline:
+            cdd = self._compute_complexity_drift(examples, baseline)
+            tcd = self._compute_taxonomy_drift(examples, baseline)
+        
+        # Composite score
+        tts_eval = self._compute_tts_eval(
+            scr, sss, ctmr, fkcr, sas, ipr, tds, arr, esr, rfs, cdd
+        )
+        
+        return TTSMetricReport(
+            scr=scr, sss=sss, ctmr=ctmr, fkcr=fkcr,
+            sas=sas, ipr=ipr, tds=tds, arr=arr,
+            esr=esr, rfs=rfs, cdd=cdd, tcd=tcd,
+            tts_eval=tts_eval,
+            evaluated_at=datetime.now().isoformat(),
+            sample_size=len(examples),
+        )
+    
+    def _compute_schema_coverage(self, examples: list[TrainingExample]) -> float:
+        """Compute Schema Coverage Rate (SCR)."""
+        schema_columns = set()
+        for table in self.schema_registry.get_all_tables():
+            for column in table.columns:
+                schema_columns.add(f"{table.table_name}.{column.name}")
+        
+        referenced_columns = set()
+        for example in examples:
+            # Parse SQL to extract column references
+            columns = self._extract_columns_from_sql(example.sql)
+            referenced_columns.update(columns)
+        
+        if not schema_columns:
+            return 1.0
+        return len(referenced_columns & schema_columns) / len(schema_columns)
+    
+    def _compute_tts_eval(
+        self,
+        scr: float, sss: float, ctmr: float, fkcr: float,
+        sas: float, ipr: float, tds: float, arr: float,
+        esr: float, rfs: float, cdd: float,
+    ) -> float:
+        """Compute composite TTS-EVAL score."""
+        # Normalize SSS to 0-1 range (14 days max)
+        sss_norm = min(sss / 14.0, 1.0)
+        
+        # Positive contributions
+        positive = (
+            0.15 * scr +
+            0.10 * (1 - sss_norm) +
+            0.10 * fkcr +
+            0.15 * sas +
+            0.10 * ipr +
+            0.15 * esr +
+            0.10 * rfs +
+            0.05 * arr
+        )
+        
+        # Negative contributions (penalties)
+        negative = (
+            0.05 * ctmr +
+            0.03 * tds +
+            0.02 * cdd
+        )
+        
+        return 100 * positive - 100 * negative
+\end{lstlisting}
+
+\section{Production Monitoring}
+
+\begin{lstlisting}[language=jsonx,caption={Production drift monitor (simula\_tts\_drift\_monitor.py)}]
+@dataclass
+class DriftAlert:
+    """Alert for detected drift."""
+    
+    alert_id: str
+    severity: str  # "LOW", "MEDIUM", "HIGH", "CRITICAL"
+    drift_type: str  # TTS-DRIFT-001 to TTS-DRIFT-006
+    metric_code: str  # TTS-M01 to TTS-M12
+    current_value: float
+    threshold: float
+    baseline_value: float
+    delta: float
+    timestamp: str
+    user_segment: Optional[str] = None
+    sample_queries: list[str] = field(default_factory=list)
+
+class TTSProductionMonitor:
+    """Monitor drift in production Text-to-SQL pipeline."""
+    
+    def __init__(
+        self,
+        baseline: TTSMetricReport,
+        drift_threshold: float = 0.10,
+        alert_callback: Optional[Callable[[DriftAlert], None]] = None,
+    ):
+        self.baseline = baseline
+        self.drift_threshold = drift_threshold
+        self.alert_callback = alert_callback
+        self._rolling_metrics: dict[str, deque] = defaultdict(lambda: deque(maxlen=1000))
+    
+    async def monitor_query(
+        self,
+        prompt: str,
+        generated_sql: str,
+        execution_result: Optional[Any],
+        user_id: str,
+    ) -> Optional[DriftAlert]:
+        """
+        Monitor a single query for drift signals.
+        
+        Args:
+            prompt: Natural language prompt
+            generated_sql: Generated SQL query
+            execution_result: Result of SQL execution (None if failed)
+            user_id: User identifier for segmentation
+            
+        Returns:
+            DriftAlert if drift detected, None otherwise
+        """
+        # Track execution success
+        execution_success = execution_result is not None
+        self._rolling_metrics["esr"].append(1.0 if execution_success else 0.0)
+        
+        # Compute rolling ESR
+        current_esr = sum(self._rolling_metrics["esr"]) / len(self._rolling_metrics["esr"])
+        esr_delta = abs(current_esr - self.baseline.esr)
+        
+        # Check for significant drift
+        if esr_delta > self.drift_threshold:
+            alert = DriftAlert(
+                alert_id=str(uuid.uuid4()),
+                severity="CRITICAL" if esr_delta > 0.2 else "HIGH",
+                drift_type="TTS-DRIFT-006",
+                metric_code="TTS-M09",
+                current_value=current_esr,
+                threshold=0.95,
+                baseline_value=self.baseline.esr,
+                delta=esr_delta,
+                timestamp=datetime.now().isoformat(),
+                user_segment=self._classify_user(user_id),
+            )
+            
+            if self.alert_callback:
+                self.alert_callback(alert)
+            
+            return alert
+        
+        return None
+    
+    def get_rolling_report(self) -> TTSMetricReport:
+        """Get drift report based on rolling window of queries."""
+        # Aggregate rolling metrics
+        esr = sum(self._rolling_metrics["esr"]) / max(len(self._rolling_metrics["esr"]), 1)
+        
+        # Return partial report with available metrics
+        return TTSMetricReport(
+            scr=self.baseline.scr,  # Use baseline for schema metrics
+            sss=self.baseline.sss,
+            ctmr=self.baseline.ctmr,
+            fkcr=self.baseline.fkcr,
+            sas=self.baseline.sas,
+            ipr=self.baseline.ipr,
+            tds=self.baseline.tds,
+            arr=self.baseline.arr,
+            esr=esr,
+            rfs=self.baseline.rfs,
+            cdd=0.0,  # Requires full evaluation
+            tcd=0.0,
+            tts_eval=self._estimate_tts_eval(esr),
+            evaluated_at=datetime.now().isoformat(),
+            sample_size=len(self._rolling_metrics["esr"]),
+        )
+\end{lstlisting}
+
+\section{CI/CD Integration}
+
+\subsection{Training Data Generation Gate}
+
+The drift evaluator integrates with Simula's generation pipeline as a quality gate:
+
+\begin{lstlisting}[language=bash,caption={CI/CD gate for TTS drift}]
+# In GitHub Actions workflow
+- name: Run TTS Drift Evaluation
+  run: |
+    python -m src.training.pipeline.simula_tts_drift_evaluator \
+      --examples data/hana_generated/*.jsonl \
+      --schema-registry docs/schema/simula/hana-schema-entry.schema.json \
+      --baseline data/baselines/tts_baseline.json \
+      --output reports/tts_drift_report.json
+    
+- name: Check TTS-EVAL Score
+  run: |
+    TTS_EVAL=$(jq '.tts_eval' reports/tts_drift_report.json)
+    if (( $(echo "$TTS_EVAL < 70" | bc -l) )); then
+      echo "TTS-EVAL score $TTS_EVAL below threshold 70"
+      exit 1
+    fi
+\end{lstlisting}
+
+\subsection{Drift Alert Workflow}
+
+\begin{table}[htbp]
+\centering
+\caption{Drift Alert Response Actions}
+\begin{tabularx}{\textwidth}{@{}l l X l@{}}
+\toprule
+\textbf{Severity} & \textbf{TTS-EVAL} & \textbf{Action} & \textbf{Timeline} \\
+\midrule
+CRITICAL & $< 55$ & Kill-switch, halt production, page on-call & Immediate \\
+HIGH & $55$--$70$ & Block deployments, create P1 ticket & 4 hours \\
+MEDIUM & $70$--$85$ & Create P2 ticket, schedule remediation & 1 week \\
+LOW & $\geq 85$ & Log for tracking, no action required & -- \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\section{HANA Cloud Telemetry Tables}
+
+Drift metrics are persisted to HANA Cloud for historical analysis:
+
+\begin{lstlisting}[language=sql,caption={TTS Drift telemetry tables}]
+-- See docs/hana-cloud/TTS_DRIFT_TABLES_DDL.sql for complete DDL
+
+-- Drift metrics history
+CREATE COLUMN TABLE "FINSIGHT_GOV"."TTS_DRIFT_METRICS" (
+    "METRIC_ID" NVARCHAR(64) NOT NULL,
+    "TIMESTAMP" TIMESTAMP NOT NULL,
+    "METRIC_CODE" NVARCHAR(20) NOT NULL,  -- TTS-M01 to TTS-M12
+    "VALUE" DECIMAL(10,6),
+    "THRESHOLD" DECIMAL(10,6),
+    "PASSED" BOOLEAN,
+    "USER_SEGMENT" NVARCHAR(50),
+    "BATCH_ID" NVARCHAR(64),
+    PRIMARY KEY ("METRIC_ID")
+);
+
+-- Schema snapshots for staleness tracking
+CREATE COLUMN TABLE "FINSIGHT_GOV"."TTS_SCHEMA_SNAPSHOTS" (
+    "SNAPSHOT_ID" NVARCHAR(64) NOT NULL,
+    "SCHEMA_NAME" NVARCHAR(100),
+    "TABLE_NAME" NVARCHAR(100),
+    "COLUMN_HASH" NVARCHAR(64),
+    "SNAPSHOT_AT" TIMESTAMP,
+    "TRAINING_SYNC_AT" TIMESTAMP,
+    PRIMARY KEY ("SNAPSHOT_ID")
+);
+\end{lstlisting}
+
+\section{Stochastic Surprise Gate (SSG) Framework}
+\label{sec:ssg-framework}
+
+The SSG framework provides a unified, statistically rigorous approach to drift detection
+across all four drift areas. It treats each drift-sensitive artifact as a \textbf{time series}
+and uses a calibrated surprise score (Z-score) based on a Hull-White mean-reverting
+stochastic differential equation.
+
+\subsection{Mathematical Foundation}
+
+The SSG models the drift-sensitive observable $x_t$ as evolving according to:
+
+\begin{equation}
+\boxed{
+dx_t = a(\theta(t) - x_t)dt + \sigma dW_t
+}
+\label{eq:hull-white-sde}
+\end{equation}
+
+\begin{description}
+  \item[Variables] $a$ = mean reversion speed; $\theta(t)$ = time-dependent long-run mean;
+        $\sigma$ = volatility; $W_t$ = Wiener process
+  \item[Discretization] Euler-Maruyama: $\hat{x}_{t+1} = x_t + a(\theta(t) - x_t)\Delta t$
+\end{description}
+
+\subsection{Surprise Score Calculation}
+
+\subsubsection{Step 1: Compute Residual (Innovation)}
+
+After observing $x_t$, the residual is:
+
+\begin{equation}
+\epsilon_t = x_t - \hat{x}_t
+\end{equation}
+
+\subsubsection{Step 2: Update Volatility Estimate}
+
+Use exponentially weighted moving variance:
+
+\begin{equation}
+\boxed{
+\sigma_t^2 = \lambda \sigma_{t-1}^2 + (1-\lambda)\epsilon_t^2
+}
+\end{equation}
+
+where $\lambda \in [0.95, 0.99]$ is the forgetting factor.
+
+\subsubsection{Step 3: Compute Z-Score (Surprise)}
+
+\begin{equation}
+\boxed{
+Z_t = \frac{|\epsilon_t|}{\max(\sigma_t, \sigma_{\min})}
+}
+\end{equation}
+
+where $\sigma_{\min} = 10^{-9}$ prevents division by zero.
+
+\subsubsection{Step 4: Apply Surprise Gate}
+
+\begin{equation}
+\text{Drift detected} \iff Z_t > Z_{\text{threshold}}
+\end{equation}
+
+Default $Z_{\text{threshold}} = 2.0$ (corresponds to $\approx 95\%$ confidence).
+
+\subsubsection{Step 5: Convert to p-Value}
+
+For statistical reporting, convert Z-score to two-tailed p-value:
+
+\begin{equation}
+\boxed{
+p = \text{erfc}\left(\frac{Z_t}{\sqrt{2}}\right)
+}
+\end{equation}
+
+\subsection{SSG Surprise Metrics (TTS-M16 to TTS-M19)}
+
+\begin{table}[htbp]
+\centering
+\footnotesize
+\caption{Stochastic Surprise Gate Metrics}
+\label{tab:ssg-metrics}
+\begin{tabularx}{\textwidth}{@{}l l X l@{}}
+\toprule
+\textbf{ID} & \textbf{Name} & \textbf{Observable} & \textbf{Application} \\
+\midrule
+\metricid{TTS-M16} & Codebase Surprise Score (CSS) & Architecture constraint violations & Agent code drift \\
+\metricid{TTS-M17} & Schema Surprise Score (SSS-HW) & Schema dissimilarity count & HANA schema drift \\
+\metricid{TTS-M18} & Prompt Surprise Score (PSS) & Embedding distance from centroid & User/agent prompts \\
+\metricid{TTS-M19} & Token Surprise Score (TSS) & $-\log_2 P(\text{token}) / H$ & TOON token stream \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\subsubsection{TTS-M16: Codebase Surprise Score (CSS)}
+
+For AI coding agents, measure deviation from architectural specification:
+
+\begin{equation}
+\boxed{
+Z_t^{\text{code}} = \frac{|e_t - \hat{e}_t|}{\sigma_t^{\text{code}}}
+}
+\end{equation}
+
+\begin{description}
+  \item[Observable $e_t$] Vector of: import violations, module boundary violations,
+        file length violations, pattern mismatch counts
+  \item[Predictive Model] Hull-White with $\theta = 0$ (ideal state has zero violations)
+  \item[Threshold] $Z^{\text{code}} > 2.0$ triggers CI block
+  \item[Mitigation] Refresh \texttt{AGENTS.md}, request human review
+\end{description}
+
+\subsubsection{TTS-M17: Schema Surprise Score (SSS-HW)}
+
+For HANA schema drift against Simula generator expectations:
+
+\begin{equation}
+\boxed{
+Z_t^{\text{schema}} = \frac{|d_t - \hat{d}_t|}{\sigma_t^{\text{schema}}}
+}
+\end{equation}
+
+\begin{description}
+  \item[Observable $d_t$] Dissimilarity vector: mismatched columns, type changes,
+        missing indices, FK violations
+  \item[Predictive Model] Hull-White with time-dependent $\theta(t) = \theta_0 + \beta t$
+        to accommodate planned migrations
+  \item[Threshold] $Z^{\text{schema}} > 2.0$ triggers generator freeze
+  \item[Mitigation] Auto-adjust generator spec or emit alert for manual alignment
+\end{description}
+
+\subsubsection{TTS-M18: Prompt Surprise Score (PSS)}
+
+For user/agent prompt drift from training distribution:
+
+\begin{equation}
+\boxed{
+Z_t^{\text{prompt}} = \frac{\|\text{embedding}_t - \mathbb{E}[\text{embedding}_t]\|_2}{\sigma_t^{\text{prompt}}}
+}
+\end{equation}
+
+\begin{description}
+  \item[Observable] Euclidean distance between prompt embedding and training centroid
+  \item[Predictive Model] Moving average of embeddings with mean-reverting dynamic
+  \item[Threshold] $Z^{\text{prompt}} > 2.0$ indicates out-of-distribution prompt
+  \item[Mitigation] Switch to fallback template, log for retraining
+\end{description}
+
+\subsubsection{TTS-M19: Token Surprise Score (TSS)}
+
+For TOON token stream drift:
+
+\begin{equation}
+\boxed{
+Z_t^{\text{toon}} = \frac{S_t - \mathbb{E}[S]}{\sigma_t^{\text{toon}}}
+\quad \text{where} \quad
+S_t = \frac{-\log_2 P(\text{token}_t)}{H}
+}
+\end{equation}
+
+\begin{description}
+  \item[Observable $S_t$] Normalized token surprise (entropy-scaled negative log probability)
+  \item[Token Model] Adaptive n-gram with exponential forgetting
+  \item[Threshold] $Z^{\text{toon}} > 2.0$ indicates unexpected structure
+  \item[Mitigation] Trigger DSPy re-optimization, insert correction token
+\end{description}
+
+\subsection{Significance Classification}
+
+\begin{table}[htbp]
+\centering
+\caption{Z-Score Significance Levels}
+\label{tab:z-significance}
+\begin{tabular}{l c c l}
+\toprule
+\textbf{Z-Score Range} & \textbf{p-Value} & \textbf{Classification} & \textbf{Action} \\
+\midrule
+$Z \leq 1.0$ & $\geq 0.317$ & Normal & No action \\
+$1.0 < Z \leq 2.0$ & $0.046$--$0.317$ & Noteworthy & Log for monitoring \\
+$2.0 < Z \leq 3.0$ & $0.003$--$0.046$ & Significant & Trigger mitigation \\
+$Z > 3.0$ & $< 0.003$ & Extreme & Immediate escalation \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Online Calibration}
+
+The SSG uses recursive least squares (RLS) with exponential forgetting to adapt model parameters:
+
+\begin{lstlisting}[language=jsonx,caption={Online calibrator for Hull-White parameters}]
+@dataclass
+class OnlineCalibrator:
+    """Recursive calibrator for Hull-White model parameters."""
+    
+    forgetting_factor: float = 0.98  # lambda
+    
+    # Parameter estimates
+    mean_reversion_estimate: float = 0.5
+    long_run_mean_estimate: float = 0.0
+    volatility_estimate: float = 0.1
+    
+    # RLS state
+    _P: float = 1.0  # Covariance estimate
+    
+    def update(self, x_t: float, x_hat: float, epsilon: float):
+        """Update parameter estimates using new observation."""
+        # Update covariance with forgetting
+        self._P = (1 / self.forgetting_factor) * self._P
+        
+        # Compute Kalman gain
+        K = self._P / (1 + self._P)
+        
+        # Update parameter estimates
+        self.mean_reversion_estimate += K * epsilon * (x_t - self.long_run_mean_estimate)
+        
+        # Update volatility using EWMA variance
+        self.volatility_estimate = math.sqrt(
+            self.forgetting_factor * self.volatility_estimate**2 +
+            (1 - self.forgetting_factor) * epsilon**2
+        )
+        
+        # Update covariance
+        self._P = (1 - K) * self._P
+\end{lstlisting}
+
+\subsection{Audit Trail Structure}
+
+Every surprise gate decision produces an immutable audit record:
+
+\begin{lstlisting}[language=jsonx,caption={Surprise audit trail schema}]
+@dataclass
+class SurpriseAuditTrail:
+    """Immutable audit record for surprise gate decisions."""
+    
+    # Identifiers
+    audit_id: str
+    timestamp: str
+    observable_type: str  # "code", "schema", "prompt", "toon"
+    
+    # Observation
+    observed_value: float
+    predicted_value: float
+    residual: float
+    
+    # Surprise metrics
+    z_score: float
+    p_value: float
+    significance: str  # "normal", "noteworthy", "significant", "extreme"
+    trigger: bool
+    
+    # Model state at decision time
+    hull_white_state: dict[str, float]  # a, theta, sigma
+    calibrator_version: str
+    
+    # Action taken
+    mitigation_action: Optional[str]
+    
+    # Governance
+    compliant_with: list[str]  # e.g., ["MAS-TRH-2024", "ISO-42001"]
+\end{lstlisting}
+
+\section{Future Directions: TOON and DSPy Integration}
+\label{sec:tts-drift-future}
+
+\begin{futurebox}
+\textbf{v1.3+ Scope}\\
+The following integrations are planned for future releases and are explicitly
+out of scope for v1.2 implementation.
+\end{futurebox}
+
+\subsection{Token-Oriented Object Notation (TOON)}
+
+TOON provides structured metadata that travels with AI-generated content.
+For Text-to-SQL drift detection, TOON metadata enables:
+
+\begin{itemize}
+  \item \textbf{Provenance tracking} --- Schema version, training data version, model version
+  \item \textbf{Drift signals} --- SCR at generation time, SAS at inference time
+  \item \textbf{Governance} --- Drift score, last check timestamp, alert status
+\end{itemize}
+
+\begin{lstlisting}[language=jsonx,caption={TOON drift metadata structure}]
+@dataclass
+class TOONDriftMetadata:
+    """TOON-compliant drift metadata for Text-to-SQL."""
+    
+    # Provenance
+    schema_version: str
+    training_data_version: str
+    model_version: str
+    
+    # Drift Signals
+    scr_at_generation: float
+    sas_at_inference: float
+    complexity_band: str  # "easy", "medium", "hard"
+    
+    # Traceability
+    taxonomy_path: list[str]
+    schema_tables_used: list[str]
+    
+    # Governance
+    drift_score: float
+    last_drift_check: str
+    drift_alert_status: str  # "green", "amber", "red"
+\end{lstlisting}
+
+\subsection{DSPy Integration}
+
+DSPy (Declarative Self-improving Language Programs) enables:
+
+\begin{itemize}
+  \item \textbf{Programmatic prompt optimization} --- Tune prompts based on drift metrics
+  \item \textbf{Modular composition} --- Separate schema extraction, intent, SQL generation
+  \item \textbf{Self-correction} --- Retry with refined prompts when drift detected
+\end{itemize}
+
+\begin{lstlisting}[language=jsonx,caption={DSPy module with drift guard (future)}]
+import dspy
+
+class TextToSQLWithDriftGuard(dspy.Module):
+    """DSPy module with integrated drift detection."""
+    
+    def __init__(self, schema_registry: SchemaRegistry):
+        super().__init__()
+        self.schema_extractor = dspy.ChainOfThought(
+            "question -> relevant_tables, relevant_columns"
+        )
+        self.sql_generator = dspy.ChainOfThought(
+            "question, schema_context -> sql_query"
+        )
+        self.drift_detector = dspy.Predict(
+            "sql_query, schema_context -> drift_score, drift_reasons"
+        )
+        self.schema_registry = schema_registry
+    
+    def forward(self, question: str):
+        # Step 1: Schema extraction
+        schema_pred = self.schema_extractor(question=question)
+        
+        # Step 2: SQL generation
+        sql_pred = self.sql_generator(
+            question=question,
+            schema_context=self._get_context(schema_pred.relevant_tables)
+        )
+        
+        # Step 3: Drift detection
+        drift_pred = self.drift_detector(
+            sql_query=sql_pred.sql_query,
+            schema_context=self._get_context(schema_pred.relevant_tables)
+        )
+        
+        # Step 4: Self-correction if drift detected
+        if drift_pred.drift_score > 0.2:
+            sql_pred = self._regenerate_with_guidance(
+                question, drift_pred.drift_reasons
+            )
+        
+        return dspy.Prediction(
+            sql=sql_pred.sql_query,
+            drift_score=drift_pred.drift_score,
+        )
+\end{lstlisting}
+
+\section{Known Limitations \& Roadmap}
+
+\subsection{Review Summary (v1.2)}
+
+This specification has been reviewed against the following criteria.
+\textbf{Overall Rating: 7.5/10} --- solid foundation with clear taxonomy and
+mathematical rigor, but requires empirical validation before production deployment.
+
+\begin{table}[htbp]
+\centering
+\caption{Specification Review Scores}
+\label{tab:review-scores}
+\begin{tabular}{l c l}
+\toprule
+\textbf{Criterion} & \textbf{Score} & \textbf{Assessment} \\
+\midrule
+Completeness & 7/10 & Missing latency/cost metrics \\
+Mathematical Rigor & 9/10 & Strong statistical foundation \\
+Practicality & 6/10 & Computational cost concerns \\
+Innovation & 8/10 & SSG is novel \\
+Governance \& Audit & 9/10 & Excellent audit trail design \\
+Implementation Readiness & 5/10 & Needs empirical validation \\
+Documentation Quality & 8/10 & Good cross-references \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Known Limitations}
+
+\begin{table}[htbp]
+\centering
+\footnotesize
+\caption{Known Limitations and Mitigation Status}
+\label{tab:limitations}
+\begin{tabularx}{\textwidth}{@{}l X l l@{}}
+\toprule
+\textbf{Area} & \textbf{Issue} & \textbf{Severity} & \textbf{Status} \\
+\midrule
+Empirical validation & No results from real HANA data or agent logs & HIGH & v1.3 \\
+Threshold justification & Thresholds not derived from error analysis & MEDIUM & v1.3 \\
+Computational cost & No overhead analysis for real-time monitoring & MEDIUM & Addressed \\
+User/agent classification & Heuristic rules are brittle & LOW & v1.3 \\
+TOON + DSPy integration & Marked as future, conceptual only & MEDIUM & v1.3 \\
+Ambiguity resolution (ARR) & Detection method not specified & HIGH & v1.3 \\
+Calibration drift & No recovery from SSG calibration failure & MEDIUM & Addressed \\
+Missing metrics & No latency drift or token cost drift & LOW & v2.0 \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\subsection{Computational Optimizations}
+
+To address the computational cost concerns, the following optimizations are
+provided:
+
+\subsubsection{Sliced Wasserstein Approximation}
+
+For real-time monitoring, use the \textbf{sliced Wasserstein distance} which
+projects distributions onto random 1-D subspaces:
+
+\begin{equation}
+\boxed{
+SW_1(P, Q) = \frac{1}{L} \sum_{\ell=1}^{L} W_1(P_\ell, Q_\ell)
+}
+\end{equation}
+
+where $P_\ell$ and $Q_\ell$ are 1-D projections onto random unit vectors.
+
+\textbf{Complexity comparison:}
+\begin{itemize}
+  \item Full Wasserstein: $O(n^3 \log n)$ for exact, $O(n^2)$ for entropic
+  \item Sliced Wasserstein: $O(L \cdot n \log n)$ where $L=50$ projections typical
+\end{itemize}
+
+\textbf{Implementation flag:}
+\begin{lstlisting}[language=jsonx]
+wasserstein_result = StatisticalDriftCalculator.compute_wasserstein(
+    p_values, q_values,
+    use_fast_approximation=True,  # Use sliced Wasserstein
+    num_projections=50,
+)
+\end{lstlisting}
+
+\subsubsection{Tiered Metric Strategy}
+
+\begin{table}[htbp]
+\centering
+\caption{Tiered Metrics by Latency Budget}
+\label{tab:tiered-metrics}
+\begin{tabular}{l l l l}
+\toprule
+\textbf{Tier} & \textbf{Latency} & \textbf{Metrics} & \textbf{Use Case} \\
+\midrule
+Real-time & $<10$ms & ESR, rolling counts & Per-query monitoring \\
+Fast & $<100$ms & PSI, KS, sliced Wasserstein & Batch (per minute) \\
+Full & $<1$s & Full Wasserstein, SSG, SAS & Offline analysis \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Calibration Health Checks}
+
+To detect and recover from SSG calibration failure, the following checks are
+implemented:
+
+\begin{lstlisting}[language=jsonx,caption={Calibration health check}]
+@dataclass
+class CalibrationHealth:
+    """Health status of SSG calibration."""
+    
+    volatility: float
+    volatility_z_score: float
+    is_healthy: bool
+    recovery_action: Optional[str]
+
+class HullWhiteSurpriseGate:
+    
+    SIGMA_MIN_THRESHOLD: float = 1e-6
+    SIGMA_MAX_THRESHOLD: float = 100.0
+    
+    def check_calibration_health(self) -> CalibrationHealth:
+        """Check if SSG calibration is healthy."""
+        sigma = self.state.volatility
+        
+        # Check for implausibly low volatility (collapsed)
+        if sigma < self.SIGMA_MIN_THRESHOLD:
+            return CalibrationHealth(
+                volatility=sigma,
+                volatility_z_score=float("inf"),
+                is_healthy=False,
+                recovery_action="reset_calibrator_sigma_collapsed",
+            )
+        
+        # Check for implausibly high volatility (exploded)
+        if sigma > self.SIGMA_MAX_THRESHOLD:
+            return CalibrationHealth(
+                volatility=sigma,
+                volatility_z_score=float("inf"),
+                is_healthy=False,
+                recovery_action="reset_calibrator_sigma_exploded",
+            )
+        
+        return CalibrationHealth(
+            volatility=sigma,
+            volatility_z_score=0.0,
+            is_healthy=True,
+            recovery_action=None,
+        )
+    
+    def auto_recover_calibration(self) -> bool:
+        """Auto-recover from calibration failure."""
+        health = self.check_calibration_health()
+        if not health.is_healthy:
+            self.calibrator.reset()
+            self.state.volatility = self.initial_volatility
+            return True
+        return False
+\end{lstlisting}
+
+\subsection{Roadmap}
+
+\begin{table}[htbp]
+\centering
+\footnotesize
+\caption{Implementation Roadmap}
+\label{tab:roadmap}
+\begin{tabularx}{\textwidth}{@{}l l X l@{}}
+\toprule
+\textbf{Version} & \textbf{Target} & \textbf{Deliverables} & \textbf{Priority} \\
+\midrule
+v1.2.1 & 2026-Q2 & Sliced Wasserstein, calibration health checks & HIGH \\
+v1.3 & 2026-Q3 & Spider validation, threshold bootstrap, ARR module & HIGH \\
+v1.3 & 2026-Q3 & TOON/DSPy working implementation & MEDIUM \\
+v1.3 & 2026-Q3 & User/agent classification improvement & LOW \\
+v2.0 & 2026-Q4 & TTS-M20 (Latency), TTS-M21 (Token Cost) & MEDIUM \\
+v2.0 & 2026-Q4 & Multivariate Mahalanobis surprise & LOW \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\subsection{Pilot Deployment Strategy}
+
+Before production deployment, conduct a pilot with the following parameters:
+
+\begin{enumerate}
+  \item \textbf{Traffic sample:} 1\% of production HANA queries
+  \item \textbf{Metrics:} Lightweight only (PSI, KS, rolling ESR)
+  \item \textbf{Heavy metrics:} Defer Wasserstein and full SSG to offline batch
+  \item \textbf{Goal:} Collect empirical drift patterns for threshold tuning
+  \item \textbf{Duration:} 4 weeks minimum
+\end{enumerate}
+
+\section{Detailed Implementation Specifications}
+
+This section provides implementation-ready specifications for roadmap items.
+
+\subsection{Sliced Wasserstein Distance Implementation}
+\label{sec:sliced-wasserstein-impl}
+
+\subsubsection{Algorithm}
+
+\begin{algorithm}[H]
+\caption{Sliced Wasserstein Distance}
+\label{alg:sliced-wasserstein}
+\begin{algorithmic}[1]
+\Require Samples $P = \{p_1, \ldots, p_m\}$, $Q = \{q_1, \ldots, q_n\}$, projections $L$
+\Ensure Sliced Wasserstein distance $SW_1(P, Q)$
+\State $sw \gets 0$
+\For{$\ell = 1$ to $L$}
+    \State $\theta_\ell \gets \text{random\_unit\_vector}(d)$ \Comment{Sample direction}
+    \State $P_\ell \gets \{\theta_\ell^\top p_i : p_i \in P\}$ \Comment{Project P}
+    \State $Q_\ell \gets \{\theta_\ell^\top q_j : q_j \in Q\}$ \Comment{Project Q}
+    \State $P_\ell^{\text{sorted}} \gets \text{sort}(P_\ell)$
+    \State $Q_\ell^{\text{sorted}} \gets \text{sort}(Q_\ell)$
+    \If{$m \neq n$} \Comment{Interpolate if sizes differ}
+        \State $P_\ell^{\text{interp}}, Q_\ell^{\text{interp}} \gets \text{interpolate\_to\_common\_grid}(P_\ell, Q_\ell)$
+        \State $w_\ell \gets \frac{1}{k}\sum_{i=1}^{k} |P_\ell^{\text{interp}}[i] - Q_\ell^{\text{interp}}[i]|$
+    \Else
+        \State $w_\ell \gets \frac{1}{m}\sum_{i=1}^{m} |P_\ell^{\text{sorted}}[i] - Q_\ell^{\text{sorted}}[i]|$
+    \EndIf
+    \State $sw \gets sw + w_\ell$
+\EndFor
+\State \Return $sw / L$
+\end{algorithmic}
+\end{algorithm}
+
+\subsubsection{Python Implementation}
+
+\begin{lstlisting}[language=jsonx,caption={Sliced Wasserstein implementation}]
+import numpy as np
+from typing import Optional
+
+def compute_sliced_wasserstein(
+    p_values: np.ndarray,
+    q_values: np.ndarray,
+    num_projections: int = 50,
+    seed: Optional[int] = None,
+) -> float:
+    """
+    Compute sliced Wasserstein distance.
+    
+    Args:
+        p_values: Array of shape (m,) or (m, d) for d-dimensional data
+        q_values: Array of shape (n,) or (n, d)
+        num_projections: Number of random projections (L)
+        seed: Random seed for reproducibility
+        
+    Returns:
+        Sliced Wasserstein distance
+    """
+    rng = np.random.default_rng(seed)
+    
+    # Handle 1D case
+    if p_values.ndim == 1:
+        p_values = p_values.reshape(-1, 1)
+    if q_values.ndim == 1:
+        q_values = q_values.reshape(-1, 1)
+    
+    d = p_values.shape[1]
+    m, n = len(p_values), len(q_values)
+    
+    # Common grid size for interpolation
+    grid_size = max(m, n)
+    
+    total_distance = 0.0
+    
+    for _ in range(num_projections):
+        # Sample random direction on unit sphere
+        theta = rng.standard_normal(d)
+        theta = theta / np.linalg.norm(theta)
+        
+        # Project samples
+        p_proj = p_values @ theta
+        q_proj = q_values @ theta
+        
+        # Sort projections
+        p_sorted = np.sort(p_proj)
+        q_sorted = np.sort(q_proj)
+        
+        # Interpolate to common grid if sizes differ
+        if m != n:
+            p_interp = np.interp(
+                np.linspace(0, 1, grid_size),
+                np.linspace(0, 1, m),
+                p_sorted
+            )
+            q_interp = np.interp(
+                np.linspace(0, 1, grid_size),
+                np.linspace(0, 1, n),
+                q_sorted
+            )
+            w_l = np.mean(np.abs(p_interp - q_interp))
+        else:
+            w_l = np.mean(np.abs(p_sorted - q_sorted))
+        
+        total_distance += w_l
+    
+    return total_distance / num_projections
+\end{lstlisting}
+
+\subsubsection{Parameters and Thresholds}
+
+\begin{table}[htbp]
+\centering
+\caption{Sliced Wasserstein Parameters}
+\begin{tabular}{l l l l}
+\toprule
+\textbf{Parameter} & \textbf{Default} & \textbf{Range} & \textbf{Rationale} \\
+\midrule
+\texttt{num\_projections} & 50 & 20--200 & 50 gives $<5\%$ variance \\
+\texttt{seed} & None & Any int & Set for reproducibility in CI \\
+\texttt{threshold} & 0.10 & 0.05--0.20 & Same as full W1D \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Calibration Health Check Implementation}
+\label{sec:calibration-health-impl}
+
+\subsubsection{Health Check Algorithm}
+
+\begin{algorithm}[H]
+\caption{SSG Calibration Health Check}
+\label{alg:calibration-health}
+\begin{algorithmic}[1]
+\Require SSG state $S = (a, \theta, \sigma_t)$, history window $H$
+\Ensure Health status, recovery action
+\State $\sigma_{\min} \gets 10^{-6}$, $\sigma_{\max} \gets 100.0$
+\State $a_{\min} \gets 0.01$, $a_{\max} \gets 10.0$
+\If{$\sigma_t < \sigma_{\min}$}
+    \State \Return (\texttt{UNHEALTHY}, ``sigma\_collapsed'', \texttt{RESET})
+\EndIf
+\If{$\sigma_t > \sigma_{\max}$}
+    \State \Return (\texttt{UNHEALTHY}, ``sigma\_exploded'', \texttt{RESET})
+\EndIf
+\If{$a < a_{\min}$ or $a > a_{\max}$}
+    \State \Return (\texttt{UNHEALTHY}, ``mean\_reversion\_invalid'', \texttt{RESET})
+\EndIf
+\State $\sigma_{\text{history}} \gets [\sigma_{t-k} : k \in H]$ \Comment{Collect historical volatility}
+\State $\mu_\sigma \gets \text{mean}(\sigma_{\text{history}})$
+\State $\text{sd}_\sigma \gets \text{std}(\sigma_{\text{history}})$
+\State $z_\sigma \gets |\sigma_t - \mu_\sigma| / \max(\text{sd}_\sigma, 10^{-9})$
+\If{$z_\sigma > 3.0$}
+    \State \Return (\texttt{WARNING}, ``sigma\_drifted'', \texttt{LOG\_ONLY})
+\EndIf
+\State \Return (\texttt{HEALTHY}, None, None)
+\end{algorithmic}
+\end{algorithm}
+
+\subsubsection{Python Implementation}
+
+\begin{lstlisting}[language=jsonx,caption={Calibration health check implementation}]
+from dataclasses import dataclass
+from enum import Enum
+from typing import Optional, List
+from collections import deque
+
+class HealthStatus(Enum):
+    HEALTHY = "healthy"
+    WARNING = "warning"
+    UNHEALTHY = "unhealthy"
+
+class RecoveryAction(Enum):
+    NONE = "none"
+    LOG_ONLY = "log_only"
+    RESET = "reset"
+    ESCALATE = "escalate"
+
+@dataclass
+class CalibrationHealth:
+    """Detailed health status of SSG calibration."""
+    
+    status: HealthStatus
+    reason: Optional[str]
+    action: RecoveryAction
+    
+    # Current state
+    volatility: float
+    mean_reversion: float
+    
+    # Diagnostic metrics
+    volatility_z_score: float
+    volatility_history_mean: float
+    volatility_history_std: float
+    observations_since_reset: int
+    
+    def to_audit_record(self) -> dict:
+        """Convert to audit trail record."""
+        return {
+            "status": self.status.value,
+            "reason": self.reason,
+            "action": self.action.value,
+            "volatility": self.volatility,
+            "mean_reversion": self.mean_reversion,
+            "volatility_z_score": self.volatility_z_score,
+            "volatility_history_mean": self.volatility_history_mean,
+            "volatility_history_std": self.volatility_history_std,
+            "observations_since_reset": self.observations_since_reset,
+        }
+
+class CalibrationHealthChecker:
+    """Check and maintain SSG calibration health."""
+    
+    # Thresholds
+    SIGMA_MIN = 1e-6
+    SIGMA_MAX = 100.0
+    A_MIN = 0.01
+    A_MAX = 10.0
+    Z_WARNING_THRESHOLD = 3.0
+    
+    def __init__(self, history_window: int = 100):
+        self.history_window = history_window
+        self._sigma_history: deque = deque(maxlen=history_window)
+        self._observations = 0
+    
+    def record_observation(self, sigma: float) -> None:
+        """Record a volatility observation."""
+        self._sigma_history.append(sigma)
+        self._observations += 1
+    
+    def check_health(
+        self,
+        sigma: float,
+        mean_reversion: float,
+    ) -> CalibrationHealth:
+        """
+        Check calibration health.
+        
+        Args:
+            sigma: Current volatility estimate
+            mean_reversion: Current mean reversion speed
+            
+        Returns:
+            CalibrationHealth with status and recommended action
+        """
+        # Check hard bounds on sigma
+        if sigma < self.SIGMA_MIN:
+            return CalibrationHealth(
+                status=HealthStatus.UNHEALTHY,
+                reason="sigma_collapsed",
+                action=RecoveryAction.RESET,
+                volatility=sigma,
+                mean_reversion=mean_reversion,
+                volatility_z_score=float("inf"),
+                volatility_history_mean=0.0,
+                volatility_history_std=0.0,
+                observations_since_reset=self._observations,
+            )
+        
+        if sigma > self.SIGMA_MAX:
+            return CalibrationHealth(
+                status=HealthStatus.UNHEALTHY,
+                reason="sigma_exploded",
+                action=RecoveryAction.RESET,
+                volatility=sigma,
+                mean_reversion=mean_reversion,
+                volatility_z_score=float("inf"),
+                volatility_history_mean=0.0,
+                volatility_history_std=0.0,
+                observations_since_reset=self._observations,
+            )
+        
+        # Check mean reversion bounds
+        if mean_reversion < self.A_MIN or mean_reversion > self.A_MAX:
+            return CalibrationHealth(
+                status=HealthStatus.UNHEALTHY,
+                reason="mean_reversion_invalid",
+                action=RecoveryAction.RESET,
+                volatility=sigma,
+                mean_reversion=mean_reversion,
+                volatility_z_score=0.0,
+                volatility_history_mean=0.0,
+                volatility_history_std=0.0,
+                observations_since_reset=self._observations,
+            )
+        
+        # Check volatility stability (need history)
+        if len(self._sigma_history) >= 10:
+            import statistics
+            mu = statistics.mean(self._sigma_history)
+            sd = statistics.stdev(self._sigma_history) if len(self._sigma_history) > 1 else 1e-9
+            z = abs(sigma - mu) / max(sd, 1e-9)
+            
+            if z > self.Z_WARNING_THRESHOLD:
+                return CalibrationHealth(
+                    status=HealthStatus.WARNING,
+                    reason="sigma_drifted",
+                    action=RecoveryAction.LOG_ONLY,
+                    volatility=sigma,
+                    mean_reversion=mean_reversion,
+                    volatility_z_score=z,
+                    volatility_history_mean=mu,
+                    volatility_history_std=sd,
+                    observations_since_reset=self._observations,
+                )
+            
+            return CalibrationHealth(
+                status=HealthStatus.HEALTHY,
+                reason=None,
+                action=RecoveryAction.NONE,
+                volatility=sigma,
+                mean_reversion=mean_reversion,
+                volatility_z_score=z,
+                volatility_history_mean=mu,
+                volatility_history_std=sd,
+                observations_since_reset=self._observations,
+            )
+        
+        # Not enough history yet
+        return CalibrationHealth(
+            status=HealthStatus.HEALTHY,
+            reason="insufficient_history",
+            action=RecoveryAction.NONE,
+            volatility=sigma,
+            mean_reversion=mean_reversion,
+            volatility_z_score=0.0,
+            volatility_history_mean=0.0,
+            volatility_history_std=0.0,
+            observations_since_reset=self._observations,
+        )
+\end{lstlisting}
+
+\subsection{Spider Dataset Validation Specification}
+\label{sec:spider-validation-impl}
+
+\subsubsection{Dataset Requirements}
+
+\begin{table}[htbp]
+\centering
+\caption{Spider Dataset Validation Parameters}
+\begin{tabular}{l l l}
+\toprule
+\textbf{Parameter} & \textbf{Value} & \textbf{Source} \\
+\midrule
+Dataset & Spider v1.0 & \url{https://yale-lily.github.io/spider} \\
+Split & dev (1,034 examples) & Standard benchmark \\
+Databases & 20 databases & Cross-domain coverage \\
+Complexity levels & Easy, Medium, Hard, Extra & Per Spider taxonomy \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsubsection{Synthetic Drift Injection Protocol}
+
+\begin{lstlisting}[language=jsonx,caption={Drift injection for validation}]
+@dataclass
+class DriftInjectionConfig:
+    """Configuration for synthetic drift injection."""
+    
+    # Schema drift parameters
+    column_drop_rate: float = 0.05  # 5% of columns dropped
+    column_rename_rate: float = 0.10  # 10% renamed
+    type_change_rate: float = 0.03  # 3% type changes
+    
+    # Prompt drift parameters
+    vocabulary_shift_rate: float = 0.15  # 15% new terms
+    complexity_shift: float = 0.20  # 20% harder queries
+    
+    # Temporal parameters
+    drift_start_fraction: float = 0.30  # Drift starts at 30%
+    drift_ramp_fraction: float = 0.20  # Full drift by 50%
+
+class SpiderDriftInjector:
+    """Inject synthetic drift into Spider dataset."""
+    
+    def __init__(self, config: DriftInjectionConfig):
+        self.config = config
+        self._original_schemas: dict[str, dict] = {}
+    
+    def inject_schema_drift(
+        self,
+        schema: dict,
+        drift_intensity: float,
+    ) -> tuple[dict, list[str]]:
+        """
+        Inject schema drift.
+        
+        Args:
+            schema: Original database schema
+            drift_intensity: 0.0 (no drift) to 1.0 (full drift)
+            
+        Returns:
+            (modified_schema, list_of_changes)
+        """
+        changes = []
+        modified = copy.deepcopy(schema)
+        
+        for table in modified["tables"]:
+            for col in table["columns"]:
+                r = random.random()
+                
+                # Column drop
+                if r < self.config.column_drop_rate * drift_intensity:
+                    col["_dropped"] = True
+                    changes.append(f"DROP {table['name']}.{col['name']}")
+                    continue
+                
+                # Column rename
+                if r < (self.config.column_drop_rate + self.config.column_rename_rate) * drift_intensity:
+                    old_name = col["name"]
+                    col["name"] = f"{old_name}_v2"
+                    changes.append(f"RENAME {table['name']}.{old_name} -> {col['name']}")
+                    continue
+                
+                # Type change
+                if r < (self.config.column_drop_rate + self.config.column_rename_rate + 
+                        self.config.type_change_rate) * drift_intensity:
+                    old_type = col["type"]
+                    col["type"] = self._mutate_type(old_type)
+                    changes.append(f"TYPE {table['name']}.{col['name']}: {old_type} -> {col['type']}")
+        
+        # Filter dropped columns
+        for table in modified["tables"]:
+            table["columns"] = [c for c in table["columns"] if not c.get("_dropped")]
+        
+        return modified, changes
+    
+    def inject_prompt_drift(
+        self,
+        prompt: str,
+        drift_intensity: float,
+    ) -> str:
+        """Inject vocabulary drift into prompt."""
+        words = prompt.split()
+        for i, word in enumerate(words):
+            if random.random() < self.config.vocabulary_shift_rate * drift_intensity:
+                words[i] = self._synonym_or_noise(word)
+        return " ".join(words)
+\end{lstlisting}
+
+\subsubsection{Validation Metrics Protocol}
+
+\begin{enumerate}
+  \item \textbf{Baseline Phase} (examples 1--300):
+    \begin{itemize}
+      \item No drift injected
+      \item Compute baseline TTS-EVAL, store as $TTS\_EVAL_{\text{baseline}}$
+      \item Record all 19 metric baselines
+    \end{itemize}
+  
+  \item \textbf{Drift Ramp Phase} (examples 301--500):
+    \begin{itemize}
+      \item Linearly increase drift intensity from 0.0 to 1.0
+      \item Record TTS-EVAL at each 50-example checkpoint
+      \item Record first-detection example index for each metric
+    \end{itemize}
+  
+  \item \textbf{Full Drift Phase} (examples 501--1034):
+    \begin{itemize}
+      \item Drift intensity = 1.0 (constant)
+      \item Compute final TTS-EVAL, compare to baseline
+      \item Record false positive rate (alerts during baseline)
+      \item Record false negative rate (missed drift during ramp)
+    \end{itemize}
+\end{enumerate}
+
+\subsubsection{Expected Outputs}
+
+\begin{table}[htbp]
+\centering
+\caption{Spider Validation Expected Outputs}
+\begin{tabular}{l l l}
+\toprule
+\textbf{Output} & \textbf{File} & \textbf{Contents} \\
+\midrule
+Baseline report & \texttt{spider\_baseline.json} & All 19 metrics at t=300 \\
+Drift detection curve & \texttt{spider\_drift\_curve.csv} & TTS-EVAL vs example index \\
+False positive rate & \texttt{spider\_fpr.json} & FPR per metric (should be $<5\%$) \\
+False negative rate & \texttt{spider\_fnr.json} & FNR per metric (should be $<10\%$) \\
+Latency report & \texttt{spider\_latency.json} & P50, P95, P99 per metric \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Threshold Bootstrap Analysis Specification}
+\label{sec:threshold-bootstrap-impl}
+
+\subsubsection{Bootstrap Protocol}
+
+\begin{algorithm}[H]
+\caption{Threshold Bootstrap via Percentile Method}
+\label{alg:threshold-bootstrap}
+\begin{algorithmic}[1]
+\Require Clean dataset $D$ (no drift), metric function $f$, target FPR $\alpha$
+\Ensure Threshold $\tau$ such that $P(f(x) > \tau | \text{no drift}) \le \alpha$
+\State $B \gets 1000$ \Comment{Bootstrap iterations}
+\State $n \gets |D|$
+\State $S \gets []$ \Comment{Bootstrap metric samples}
+\For{$b = 1$ to $B$}
+    \State $D^*_b \gets \text{sample\_with\_replacement}(D, n)$
+    \State $m_b \gets f(D^*_b)$ \Comment{Compute metric on bootstrap sample}
+    \State $S.\text{append}(m_b)$
+\EndFor
+\If{metric direction is ``higher is better''}
+    \State $\tau \gets \text{percentile}(S, \alpha \times 100)$ \Comment{Lower tail}
+\Else
+    \State $\tau \gets \text{percentile}(S, (1 - \alpha) \times 100)$ \Comment{Upper tail}
+\EndIf
+\State \Return $\tau$
+\end{algorithmic}
+\end{algorithm}
+
+\subsubsection{Python Implementation}
+
+\begin{lstlisting}[language=jsonx,caption={Threshold bootstrap implementation}]
+import numpy as np
+from typing import Callable, List, Tuple
+from dataclasses import dataclass
+
+@dataclass
+class BootstrapResult:
+    """Result of bootstrap threshold analysis."""
+    
+    metric_name: str
+    direction: str  # "higher_better" or "lower_better"
+    
+    # Bootstrap distribution
+    bootstrap_mean: float
+    bootstrap_std: float
+    bootstrap_percentiles: dict[int, float]  # {5: 0.82, 50: 0.90, 95: 0.95}
+    
+    # Derived thresholds at different FPR levels
+    threshold_fpr_01: float  # 1% FPR
+    threshold_fpr_05: float  # 5% FPR
+    threshold_fpr_10: float  # 10% FPR
+    
+    # Validation
+    actual_fpr: float  # Measured FPR on holdout
+    num_bootstrap_samples: int
+
+def bootstrap_threshold(
+    data: List[dict],
+    metric_fn: Callable[[List[dict]], float],
+    metric_name: str,
+    direction: str,
+    num_bootstrap: int = 1000,
+    target_fpr: float = 0.05,
+    seed: int = 42,
+) -> BootstrapResult:
+    """
+    Compute threshold via bootstrap.
+    
+    Args:
+        data: Clean dataset (no drift)
+        metric_fn: Function to compute metric from data
+        metric_name: Name of the metric
+        direction: "higher_better" or "lower_better"
+        num_bootstrap: Number of bootstrap iterations
+        target_fpr: Target false positive rate
+        seed: Random seed
+        
+    Returns:
+        BootstrapResult with threshold and diagnostics
+    """
+    rng = np.random.default_rng(seed)
+    n = len(data)
+    
+    # Bootstrap sampling
+    bootstrap_metrics = []
+    for _ in range(num_bootstrap):
+        indices = rng.choice(n, size=n, replace=True)
+        sample = [data[i] for i in indices]
+        m = metric_fn(sample)
+        bootstrap_metrics.append(m)
+    
+    bootstrap_metrics = np.array(bootstrap_metrics)
+    
+    # Compute percentiles
+    percentiles = {
+        1: np.percentile(bootstrap_metrics, 1),
+        5: np.percentile(bootstrap_metrics, 5),
+        10: np.percentile(bootstrap_metrics, 10),
+        25: np.percentile(bootstrap_metrics, 25),
+        50: np.percentile(bootstrap_metrics, 50),
+        75: np.percentile(bootstrap_metrics, 75),
+        90: np.percentile(bootstrap_metrics, 90),
+        95: np.percentile(bootstrap_metrics, 95),
+        99: np.percentile(bootstrap_metrics, 99),
+    }
+    
+    # Derive thresholds based on direction
+    if direction == "higher_better":
+        # Threshold is lower bound (alert if below)
+        threshold_01 = np.percentile(bootstrap_metrics, 1)
+        threshold_05 = np.percentile(bootstrap_metrics, 5)
+        threshold_10 = np.percentile(bootstrap_metrics, 10)
+    else:
+        # Threshold is upper bound (alert if above)
+        threshold_01 = np.percentile(bootstrap_metrics, 99)
+        threshold_05 = np.percentile(bootstrap_metrics, 95)
+        threshold_10 = np.percentile(bootstrap_metrics, 90)
+    
+    return BootstrapResult(
+        metric_name=metric_name,
+        direction=direction,
+        bootstrap_mean=float(np.mean(bootstrap_metrics)),
+        bootstrap_std=float(np.std(bootstrap_metrics)),
+        bootstrap_percentiles=percentiles,
+        threshold_fpr_01=threshold_01,
+        threshold_fpr_05=threshold_05,
+        threshold_fpr_10=threshold_10,
+        actual_fpr=0.0,  # To be filled after validation
+        num_bootstrap_samples=num_bootstrap,
+    )
+\end{lstlisting}
+
+\subsubsection{Threshold Documentation Template}
+
+Each threshold must be documented with:
+
+\begin{lstlisting}[language=jsonx,caption={Threshold documentation schema}]
+{
+  "metric_code": "TTS-M01",
+  "metric_name": "Schema Coverage Rate",
+  "current_threshold": 0.85,
+  "threshold_derivation": {
+    "method": "bootstrap_percentile",
+    "dataset": "Spider v1.0 dev split (n=1034)",
+    "bootstrap_iterations": 1000,
+    "target_fpr": 0.05,
+    "bootstrap_mean": 0.912,
+    "bootstrap_std": 0.023,
+    "derived_threshold": 0.867,
+    "chosen_threshold": 0.85,
+    "rationale": "Rounded down to 0.85 for operational margin"
+  },
+  "validation": {
+    "holdout_dataset": "Spider train subset (n=500)",
+    "measured_fpr": 0.042,
+    "measured_fnr": 0.08,
+    "validated_at": "2026-04-23"
+  }
+}
+\end{lstlisting}
+
+\subsection{Ambiguity Resolution Rate (ARR) Module Specification}
+\label{sec:arr-impl}
+
+\subsubsection{Ambiguity Classification}
+
+\begin{table}[htbp]
+\centering
+\footnotesize
+\caption{Ambiguity Types for Text-to-SQL}
+\begin{tabularx}{\textwidth}{@{}l X l@{}}
+\toprule
+\textbf{Type} & \textbf{Example} & \textbf{Resolution Strategy} \\
+\midrule
+Lexical & ``Show sales'' (which sales table?) & Schema lookup, clarification \\
+Scope & ``Show recent orders'' (what is recent?) & Default + flag \\
+Aggregation & ``Total revenue'' (sum? count?) & Context inference \\
+Temporal & ``Last month'' (relative to when?) & Timestamp context \\
+Entity & ``Show customer info'' (which customer?) & Require filter \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\subsubsection{Ambiguity Detector Architecture}
+
+\begin{lstlisting}[language=jsonx,caption={ARR module architecture}]
+from dataclasses import dataclass
+from enum import Enum
+from typing import List, Optional
+
+class AmbiguityType(Enum):
+    LEXICAL = "lexical"
+    SCOPE = "scope"
+    AGGREGATION = "aggregation"
+    TEMPORAL = "temporal"
+    ENTITY = "entity"
+    NONE = "none"
+
+@dataclass
+class AmbiguityDetection:
+    """Result of ambiguity detection."""
+    
+    is_ambiguous: bool
+    ambiguity_type: AmbiguityType
+    confidence: float
+    ambiguous_span: Optional[str]
+    suggested_clarifications: List[str]
+    resolution_applied: Optional[str]
+
+class AmbiguityDetector:
+    """
+    Detect and classify ambiguity in Text-to-SQL prompts.
+    
+    Uses a two-stage approach:
+    1. Rule-based heuristics for common patterns
+    2. Small classifier for edge cases
+    """
+    
+    # Heuristic patterns
+    LEXICAL_PATTERNS = [
+        r"\b(show|get|display)\s+\w+\b",  # Vague verbs
+        r"\b(info|data|stuff)\b",  # Vague nouns
+    ]
+    
+    SCOPE_PATTERNS = [
+        r"\b(recent|latest|new|old)\b",  # Relative time
+        r"\b(some|few|many|all)\b",  # Vague quantities
+    ]
+    
+    TEMPORAL_PATTERNS = [
+        r"\b(last|this|next)\s+(week|month|year|quarter)\b",
+        r"\b(yesterday|today|tomorrow)\b",
+    ]
+    
+    def __init__(
+        self,
+        schema_terms: set[str],
+        classifier_model: Optional[str] = "microsoft/deberta-v3-small",
+        classifier_threshold: float = 0.7,
+    ):
+        """
+        Initialize detector.
+        
+        Args:
+            schema_terms: Set of valid schema terms (tables, columns)
+            classifier_model: HuggingFace model for edge cases
+            classifier_threshold: Confidence threshold for classifier
+        """
+        self.schema_terms = {t.lower() for t in schema_terms}
+        self.classifier_model = classifier_model
+        self.classifier_threshold = classifier_threshold
+        self._classifier = None  # Lazy load
+    
+    def detect(self, prompt: str, schema_context: dict) -> AmbiguityDetection:
+        """
+        Detect ambiguity in a prompt.
+        
+        Args:
+            prompt: Natural language query
+            schema_context: Available schema information
+            
+        Returns:
+            AmbiguityDetection result
+        """
+        import re
+        
+        prompt_lower = prompt.lower()
+        
+        # Check lexical ambiguity (unknown terms)
+        words = set(re.findall(r'\b\w+\b', prompt_lower))
+        unknown_terms = words - self.schema_terms - self._stopwords()
+        
+        if len(unknown_terms) > 3:  # Many unknown terms
+            return AmbiguityDetection(
+                is_ambiguous=True,
+                ambiguity_type=AmbiguityType.LEXICAL,
+                confidence=0.8,
+                ambiguous_span=", ".join(list(unknown_terms)[:3]),
+                suggested_clarifications=[
+                    f"Did you mean: {self._suggest_term(t)}" for t in list(unknown_terms)[:2]
+                ],
+                resolution_applied=None,
+            )
+        
+        # Check scope ambiguity
+        for pattern in self.SCOPE_PATTERNS:
+            match = re.search(pattern, prompt_lower)
+            if match:
+                return AmbiguityDetection(
+                    is_ambiguous=True,
+                    ambiguity_type=AmbiguityType.SCOPE,
+                    confidence=0.7,
+                    ambiguous_span=match.group(),
+                    suggested_clarifications=[
+                        "Please specify an exact count or range",
+                        "Consider adding a numeric limit"
+                    ],
+                    resolution_applied="default_limit_100",
+                )
+        
+        # Check temporal ambiguity
+        for pattern in self.TEMPORAL_PATTERNS:
+            match = re.search(pattern, prompt_lower)
+            if match:
+                return AmbiguityDetection(
+                    is_ambiguous=True,
+                    ambiguity_type=AmbiguityType.TEMPORAL,
+                    confidence=0.9,
+                    ambiguous_span=match.group(),
+                    suggested_clarifications=[
+                        "Please specify exact dates",
+                        f"Interpreting '{match.group()}' relative to current date"
+                    ],
+                    resolution_applied="relative_to_current_timestamp",
+                )
+        
+        # Fall back to classifier for edge cases
+        if self._classifier is None:
+            self._load_classifier()
+        
+        if self._classifier:
+            result = self._classifier_predict(prompt)
+            if result["is_ambiguous"] and result["confidence"] > self.classifier_threshold:
+                return AmbiguityDetection(
+                    is_ambiguous=True,
+                    ambiguity_type=AmbiguityType(result["type"]),
+                    confidence=result["confidence"],
+                    ambiguous_span=None,
+                    suggested_clarifications=["Consider providing more specific terms"],
+                    resolution_applied=None,
+                )
+        
+        # No ambiguity detected
+        return AmbiguityDetection(
+            is_ambiguous=False,
+            ambiguity_type=AmbiguityType.NONE,
+            confidence=0.95,
+            ambiguous_span=None,
+            suggested_clarifications=[],
+            resolution_applied=None,
+        )
+\end{lstlisting}
+
+\subsubsection{ARR Metric Computation}
+
+\begin{lstlisting}[language=jsonx,caption={ARR metric computation}]
+def compute_arr(
+    prompts: List[str],
+    schema_context: dict,
+    ground_truth_resolutions: List[str],
+    detector: AmbiguityDetector,
+) -> float:
+    """
+    Compute Ambiguity Resolution Rate.
+    
+    Args:
+        prompts: List of prompts to evaluate
+        schema_context: Schema information
+        ground_truth_resolutions: Expected SQL for each prompt
+        detector: Ambiguity detector instance
+        
+    Returns:
+        ARR score in [0, 1]
+    """
+    ambiguous_count = 0
+    correctly_resolved = 0
+    
+    for prompt, expected_sql in zip(prompts, ground_truth_resolutions):
+        detection = detector.detect(prompt, schema_context)
+        
+        if detection.is_ambiguous:
+            ambiguous_count += 1
+            
+            # Check if resolution was correct
+            if detection.resolution_applied:
+                # Generate SQL with resolution and compare
+                resolved_sql = generate_sql_with_resolution(
+                    prompt, detection.resolution_applied
+                )
+                if sql_equivalent(resolved_sql, expected_sql):
+                    correctly_resolved += 1
+    
+    if ambiguous_count == 0:
+        return 1.0  # No ambiguous prompts = perfect score
+    
+    return correctly_resolved / ambiguous_count
+\end{lstlisting}
+
+\section{Implementation Checklist}
+
+\begin{itemize}
+  \item[\texttt{[x]}] Define 19 TTS drift metrics (TTS-M01 to TTS-M19)
+  \item[\texttt{[x]}] Specify calculation formulas with statistical bounds
+  \item[\texttt{[x]}] Define TTS-EVAL composite score
+  \item[\texttt{[x]}] Specify user population sampling strategy
+  \item[\texttt{[x]}] Implement \texttt{simula\_tts\_drift\_evaluator.py}
+  \item[\texttt{[x]}] Implement \texttt{simula\_tts\_drift\_monitor.py}
+  \item[\texttt{[x]}] Implement \texttt{simula\_tts\_drift\_sampler.py}
+  \item[\texttt{[x]}] Create HANA Cloud DDL for drift telemetry
+  \item[\texttt{[x]}] Create JSON schemas for drift artifacts
+  \item[\texttt{[x]}] Update spec-code-mapping.yaml
+  \item[\texttt{[x]}] Implement HullWhiteSurpriseGate (SSG)
+  \item[\texttt{[x]}] Add calibration health checks
+  \item[\texttt{[ ]}] Integrate with CI/CD pipeline
+  \item[\texttt{[ ]}] Spider dataset validation
+  \item[\texttt{[ ]}] Threshold bootstrap analysis
+  \item[\texttt{[ ]}] Ambiguity resolution module (ARR)
+\end{itemize}

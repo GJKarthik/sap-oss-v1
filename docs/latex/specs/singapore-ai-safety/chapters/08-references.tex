@@ -1,0 +1,162 @@
+% =============================================================================
+% Chapter 8 --- References
+% =============================================================================
+\chapter{References}
+\label{ch:references}
+
+\section{Singapore Government sources}
+
+\subsection{Primary normative sources}
+
+\begin{enumerate}
+  \item IMDA. \textit{Model AI Governance Framework for Agentic AI}.
+        Singapore: Infocomm Media Development Authority, January 2026.
+        
+        \begin{itemize}
+          \item Pillar 1: Assess and Bound Risks Upfront
+          \item Pillar 2: Make Humans Meaningfully Accountable
+          \item Pillar 3: Implement Technical Controls and Processes
+          \item Pillar 4: Enable End-User Responsibility
+        \end{itemize}
+  
+  \item IMDA. \textit{Starter Kit for Testing LLM-Based Applications for Safety
+        and Reliability}. Singapore: Infocomm Media Development Authority,
+        January 2026.
+  
+  \item PDPC. \textit{Model AI Governance Framework, Second Edition}.
+        Singapore: Personal Data Protection Commission, January 2020.
+  
+  \item PDPC. \textit{Advisory Guidelines on Use of Personal Data in AI
+        Recommendation and Decision Systems}. Singapore: Personal Data
+        Protection Commission, April 2024.
+\end{enumerate}
+
+\subsection{Supplementary sources}
+
+\begin{enumerate}
+  \setcounter{enumi}{4}
+  \item IMDA. \textit{Project Moonshot, powered by AI Verify}.
+        Singapore: Infocomm Media Development Authority, May 2024.
+        URL: \url{https://aiverifyfoundation.sg/project-moonshot/}
+  
+  \item IMDA. \textit{Singapore's Approach to AI Governance}.
+        Singapore: Infocomm Media Development Authority. Ongoing.
+  
+  \item CSA. \textit{Guidelines and Companion Guide on Securing AI Systems}.
+        Singapore: Cyber Security Agency, October 2024.
+  
+  \item CSA. \textit{Public Consultation on Securing Agentic AI Systems}.
+        Singapore: Cyber Security Agency, October 2025. (Consultation-stage)
+\end{enumerate}
+
+\section{Open-source tools and frameworks}
+
+\begin{enumerate}
+  \item AI Verify Foundation. \textit{AI Verify}. Open-source AI governance
+        testing framework and target toolkit.
+        URL: \url{https://github.com/aiverify-foundation/aiverify}
+  
+  \item AI Verify Foundation. \textit{Project Moonshot}. Red-teaming and
+        benchmarking toolkit for LLM-based applications.
+        URL: \url{https://github.com/aiverify-foundation/moonshot}
+\end{enumerate}
+
+\section{Internal specifications}
+
+\begin{enumerate}
+  \item \textbf{Agentic AI Regulations Corpus}.
+        \filepath{docs/latex/specs/regulations/regulations-spec.tex}
+        
+        Comprehensive regulatory requirements derived from Singapore government
+        sources with implementation evidence tracking.
+  
+  \item \textbf{Agent Rule-Pack Architecture}.
+        \filepath{docs/latex/specs/clinerules-agents/}
+        
+        Specification for .clinerules rule packs governing agent development
+        and runtime monitoring.
+  
+  \item \textbf{Trial Balance HITL Specification}.
+        \filepath{docs/latex/specs/tb/}
+        
+        Human-in-the-loop workflow specification for Trial Balance review.
+  
+  \item \textbf{Arabic AP Processing Specification}.
+        \filepath{docs/latex/specs/arabic/}
+        
+        Accounts Payable OCR and processing specification.
+  
+  \item \textbf{Simula Training Specification}.
+        \filepath{docs/latex/specs/simula/}
+        
+        Training and deployment specification for Simula models.
+\end{enumerate}
+
+\section{JSON schemas}
+
+\begin{enumerate}
+  \item \filepath{docs/schema/regulations/agent-identity.schema.json} ---
+        Agent identity validation
+  
+  \item \filepath{docs/schema/regulations/request-identity.schema.json} ---
+        Request identity validation
+  
+  \item \filepath{docs/schema/regulations/audit-event.schema.json} ---
+        Audit event structure
+  
+  \item \filepath{docs/schema/regulations/requirement.schema.json} ---
+        Regulatory requirement structure
+  
+  \item \filepath{docs/schema/regulations/regulation.schema.json} ---
+        Source regulation metadata
+  
+  \item \filepath{docs/schema/regulations/conformance-tool.schema.json} ---
+        Conformance tool references
+  
+  \item \filepath{docs/schema/regulations/corpus.schema.json} ---
+        Full corpus structure
+\end{enumerate}
+
+\section{Source document locations}
+
+\begin{table}[htbp]
+\centering
+\footnotesize
+\caption{Source Document Repository Locations}
+\begin{tabularx}{\textwidth}{@{}l X@{}}
+\toprule
+\textbf{Document} & \textbf{Repository Path} \\
+\midrule
+MGF for Agentic AI & \filepath{docs/regulations/mgf-for-agentic-ai.pdf} \\
+AI Verify toolkit & \filepath{docs/regulations/aiverify-main/} \\
+Project Moonshot & \filepath{docs/regulations/moonshot-cicd-main/} \\
+2025 AI Agent Index & \filepath{docs/regulations/2025-AI-Agent-Index.pdf} \\
+Singapore AI Safety Framework & \filepath{docs/pdf/technical-reports/06-singapore-ai-safety-framework.pdf} \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\section{Version history}
+
+\begin{table}[htbp]
+\centering
+\caption{Specification Version History}
+\begin{tabularx}{\textwidth}{@{}l l l X@{}}
+\toprule
+\textbf{Version} & \textbf{Date} & \textbf{Author} & \textbf{Changes} \\
+\midrule
+1.0.0 & 2026-04-22 & SAP-OSS AI Governance Team & Initial specification \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\section{Document control}
+
+\begin{description}
+  \item[Document ID] SG-SAFETY-2026-v1.0
+  \item[Classification] Internal
+  \item[Review Cycle] Quarterly
+  \item[Next Review] 2026-07-22
+  \item[Owner] SAP-OSS AI Governance Team
+  \item[Approver] Controls Architecture Lead
+\end{description}

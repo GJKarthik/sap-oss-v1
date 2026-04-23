@@ -1,0 +1,140 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://sap-oss.github.io/schema/arabic/payment-instruction.schema.json",
+  "title": "Payment Instruction Record",
+  "description": "Payment instruction record emitted by the approval engine when a validated invoice and approval workflow reach a terminal state. See Chapter 2 \u00a7payment-instruction-schema of the Arabic AP specification.",
+  "type": "object",
+  "required": ["id", "metadata", "payer", "payee", "amount", "payment_method", "due_date", "status"],
+  "properties": {
+    "id": {
+      "type": "string",
+      "description": "Filename stem under structured/payment-instructions/"
+    },
+    "metadata": {
+      "type": "object",
+      "required": ["country", "status", "issue_date"],
+      "properties": {
+        "country": {
+          "type": "string",
+          "pattern": "^[A-Z]{2}$",
+          "description": "ISO 3166-1 alpha-2 country code"
+        },
+        "tax_authority": {
+          "type": ["string", "null"],
+          "description": "Relevant tax authority code, or null when not applicable"
+        },
+        "issue_date": {
+          "type": "string",
+          "format": "date",
+          "description": "Date the instruction was issued (ISO 8601)"
+        },
+        "due_date": {
+          "type": "string",
+          "format": "date",
+          "description": "Date payment is due (ISO 8601); mirrors top-level due_date"
+        },
+        "status": {
+          "type": "string",
+          "description": "Metadata-level status marker (e.g. VALID, PENDING)"
+        },
+        "language": {
+          "type": "string",
+          "description": "Primary language of the instruction (e.g. ar, en)"
+        }
+      },
+      "additionalProperties": true
+    },
+    "payer": {
+      "$ref": "#/definitions/party",
+      "description": "Party paying the funds"
+    },
+    "payee": {
+      "$ref": "#/definitions/party",
+      "description": "Vendor receiving the funds"
+    },
+    "amount": {
+      "type": "object",
+      "required": ["value", "currency"],
+      "properties": {
+        "value": {
+          "type": "number",
+          "description": "Monetary amount"
+        },
+        "currency": {
+          "type": "string",
+          "pattern": "^[A-Z]{3}$",
+          "description": "ISO 4217 currency code"
+        }
+      }
+    },
+    "payment_method": {
+      "type": "string",
+      "enum": ["bank_transfer", "check", "card", "cash", "other"],
+      "description": "Settlement channel used to transfer the funds"
+    },
+    "reference": {
+      "type": "object",
+      "properties": {
+        "invoice_id": {
+          "type": "string",
+          "description": "Identifier of the invoice being paid"
+        },
+        "description": {
+          "type": "string",
+          "description": "Free-form description of what the payment settles"
+        }
+      }
+    },
+    "approval_chain": {
+      "type": "array",
+      "description": "Links to approval-workflow records that authorised the payment",
+      "items": {
+        "type": "object",
+        "properties": {
+          "approver_id": {
+            "type": "string",
+            "description": "PSID or user identifier of the approver"
+          },
+          "role": {
+            "type": "string",
+            "description": "Role under which the approval was granted"
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time",
+            "description": "ISO 8601 timestamp of the approval"
+          }
+        }
+      }
+    },
+    "due_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Date payment is due (ISO 8601)"
+    },
+    "status": {
+      "type": "string",
+      "enum": ["draft", "approved", "emitted", "settled", "cancelled"],
+      "description": "Lifecycle state of the payment instruction"
+    }
+  },
+  "definitions": {
+    "party": {
+      "type": "object",
+      "required": ["name_ar"],
+      "properties": {
+        "name_ar": { "type": "string", "description": "Party name in Arabic" },
+        "name_en": { "type": "string", "description": "Party name in English (may be populated via translation)" },
+        "tax_id": { "type": "string", "description": "Tax identification number (VAT registration)" },
+        "commercial_registration": { "type": "string", "description": "Commercial registration number" },
+        "address_ar": { "type": "string", "description": "Address in Arabic" },
+        "address_en": { "type": "string", "description": "Address in English" },
+        "country": {
+          "type": "string",
+          "enum": ["SA", "EG", "BH", "QA"],
+          "description": "Country code"
+        }
+      }
+    }
+  }
+}

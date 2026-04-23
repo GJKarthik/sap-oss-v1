@@ -1,0 +1,20 @@
+legal_entity_code: HKG
+legal_entity_name: Hong Kong Entity
+currency: HKD
+materiality_thresholds:
+  balance_sheet_absolute: 100000000
+  profit_loss_absolute: 3000000
+  variance_percentage: 0.1
+review_config:
+  review_frequency: monthly
+  reviewer_role: senior_accountant
+  escalation_threshold_days: 5
+  auto_assign_enabled: true
+account_exclusions:
+- 9999*
+custom_variance_types:
+  regulatory_reserve:
+    threshold: 0.05
+    accounts:
+    - 2300*
+    - 2310*

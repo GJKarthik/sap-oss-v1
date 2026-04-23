@@ -1,0 +1,608 @@
+# =============================================================================
+# Spec-Code-Schema Traceability Mapping Registry
+# Path: docs/schema/spec-code-mapping.yaml
+# =============================================================================
+# This file defines the authoritative mapping between:
+# - LaTeX specifications (normative business/technical requirements)
+# - JSON/YAML schemas (data contracts)
+# - Implementation code (runtime behavior)
+#
+# The spec-drift auditor uses this registry to detect when changes to any
+# artifact may require updates to related artifacts.
+# =============================================================================
+
+$schema: https://sap-oss.github.io/schema/spec-code-mapping.schema.json
+version: "1.0.0"
+generated: "2026-04-21"
+description: "Master traceability mapping between specifications, schemas, and code"
+
+# -----------------------------------------------------------------------------
+# DOMAIN MAPPINGS
+# -----------------------------------------------------------------------------
+
+domains:
+  # ---------------------------------------------------------------------------
+  # SIMULA - Training Data Generation
+  # ---------------------------------------------------------------------------
+  simula:
+    spec_root: docs/latex/specs/simula
+    schema_root: docs/schema/simula
+    code_root: src/training
+    
+    artifacts:
+      # Main specification document
+      - id: simula-spec-main
+        type: specification
+        path: docs/latex/specs/simula/simula-training-spec.tex
+        description: "Main Simula training specification document"
+        
+      # Chapter-to-Schema-to-Code mappings
+      - id: simula-extraction
+        type: chapter
+        spec_path: docs/latex/specs/simula/chapters/04-extraction-pipeline.tex
+        related_schemas:
+          - docs/schema/simula/hana-schema-entry.schema.json
+        related_code:
+          - src/training/pipeline/hana_schema_extractor.py
+          - src/training/scripts/run_hana_pipeline.py
+        sync_rules:
+          - "Schema field changes require spec update"
+          - "New extraction stages require spec chapter update"
+        
+      - id: simula-taxonomy
+        type: chapter
+        spec_path: docs/latex/specs/simula/chapters/05-taxonomy-engine.tex
+        related_schemas:
+          - docs/schema/simula/taxonomy.schema.json
+        related_code:
+          - src/training/pipeline/simula_taxonomy_builder.py
+          - src/training/pipeline/simula_taxonomy_evaluator.py
+        sync_rules:
+          - "Taxonomy node structure changes require spec and schema update"
+          - "New taxonomy levels require spec documentation"
+        
+      - id: simula-generation
+        type: chapter
+        spec_path: docs/latex/specs/simula/chapters/06-generation-engine.tex
+        related_schemas:
+          - docs/schema/simula/training-example.schema.json
+          - docs/schema/simula/meta-prompt.schema.json
+        related_code:
+          - src/training/pipeline/simula_data_generator.py
+          - src/training/pipeline/simula_complexity_calibrator.py
+        sync_rules:
+          - "TrainingExample field changes require schema-first update"
+          - "Generation algorithm changes require spec documentation"
+        
+      - id: simula-evaluation
+        type: chapter
+        spec_path: docs/latex/specs/simula/chapters/08-evaluation-framework.tex
+        related_schemas:
+          - docs/schema/simula/training-example.schema.json
+        related_code:
+          - src/training/pipeline/simula_coverage_evaluator.py
+          - src/training/pipeline/simula_diversity_analyzer.py
+          - src/training/pipeline/simula_diversity_optimizer.py
+          - src/training/pipeline/simula_critic_validator.py
+        sync_rules:
+          - "Evaluation metric thresholds must match spec"
+          - "New evaluation dimensions require spec documentation"
+
+      - id: simula-config
+        type: chapter
+        spec_path: docs/latex/specs/simula/chapters/07-environment-cli.tex
+        related_schemas:
+          - docs/schema/simula/config.schema.json
+        related_code:
+          - src/training/pipeline/main.py
+          - src/training/Makefile
+        sync_rules:
+          - "CLI flag changes require spec documentation"
+          - "Config schema changes require spec update"
+
+      - id: simula-implementation
+        type: chapter
+        spec_path: docs/latex/specs/simula/chapters/12-implementation-instructions.tex
+        related_code:
+          - src/training/pipeline/
+          - src/training/scripts/
+        sync_rules:
+          - "Implementation phase changes require spec roadmap update"
+
+      - id: simula-tts-drift
+        type: chapter
+        spec_path: docs/latex/specs/simula/chapters/18-text-to-sql-drift.tex
+        related_schemas:
+          - docs/schema/simula/tts-drift-metrics.schema.json
+          - docs/schema/simula/tts-drift-alert.schema.json
+          - docs/schema/simula/tts-drift-baseline.schema.json
+          - docs/schema/simula/surprise-audit-trail.schema.json
+        related_code:
+          - src/training/pipeline/simula_tts_drift_evaluator.py
+          - src/training/pipeline/simula_tts_drift_monitor.py
+          - src/training/pipeline/simula_tts_drift_sampler.py
+        related_files:
+          - docs/hana-cloud/TTS_DRIFT_TABLES_DDL.sql
+        related_specs:
+          - docs/latex/specs/singapore-ai-safety/chapters/05-metrics.tex
+          - docs/latex/specs/clinerules-agents/chapters/04a-spec-drift-agent.tex
+        sync_rules:
+          - "TTS drift metric definitions require spec+schema+code update"
+          - "Threshold changes require spec documentation"
+          - "New drift types require HANA DDL update"
+          - "User sampling strategy changes require spec update"
+          - "Statistical metrics (W1D, PSI, KS) require scipy implementation"
+          - "SSG surprise metrics require Hull-White calibrator update"
+
+      - id: simula-financial-prompt-gen
+        type: chapter
+        spec_path: docs/latex/specs/simula/chapters/19-financial-prompt-generation.tex
+        related_schemas:
+          - docs/schema/simula/financial-persona-taxonomy.schema.json
+          - docs/schema/simula/financial-prompt-mix.schema.json
+        related_code:
+          - src/training/pipeline/simula_financial_prompt_generator.py
+          - src/training/pipeline/simula_financial_prompt_critic.py
+        related_specs:
+          - docs/latex/specs/simula/chapters/18-text-to-sql-drift.tex
+          - docs/latex/specs/singapore-ai-safety/chapters/05-metrics.tex
+        sync_rules:
+          - "Persona taxonomy changes require spec+schema update"
+          - "Complexity levels must align with TTS drift metrics"
+          - "PER-M01 to PER-M04 metrics require singapore-ai-safety update"
+          - "Validation rules must match persona expertise levels"
+          - "Human vs agent persona ratios require spec documentation"
+
+  # ---------------------------------------------------------------------------
+  # TRIAL BALANCE (TB)
+  # ---------------------------------------------------------------------------
+  tb:
+    spec_root: docs/latex/specs/tb
+    schema_root: docs/schema/tb
+    code_root: src/intelligence/ai-core-pal
+    
+    artifacts:
+      - id: tb-spec-main
+        type: specification
+        path: docs/latex/specs/tb/tb-review-spec.tex
+        description: "Main TB Review specification document"
+        
+      - id: tb-data-schema
+        type: chapter
+        spec_path: docs/latex/specs/tb/chapters/02-data-schema.tex
+        related_schemas:
+          - docs/schema/tb/tb-extract.schema.json
+          - docs/schema/tb/pl-extract.schema.json
+          - docs/schema/tb/variance-record.schema.json
+          - docs/schema/tb/commentary-draft.schema.json
+        sync_rules:
+          - "Extract schema changes require spec data model update"
+          - "Variance record fields require spec documentation"
+          
+      - id: tb-ai-pipeline
+        type: chapter
+        spec_path: docs/latex/specs/tb/chapters/03-ai-pipeline.tex
+        related_schemas:
+          - docs/schema/tb/commentary-draft.schema.json
+          - docs/schema/tb/decision-point.schema.json
+        sync_rules:
+          - "AI pipeline stage changes require spec update"
+          - "Commentary generation changes require schema update"
+          
+      - id: tb-workflow
+        type: chapter
+        spec_path: docs/latex/specs/tb/chapters/05-workflow.tex
+        related_schemas:
+          - docs/schema/tb/decision-point.schema.json
+          - docs/schema/tb/audit-trail-entry.schema.json
+        related_code:
+          - src/generativeUI/ui5-webcomponents-ngx-main/
+        sync_rules:
+          - "Workflow state changes require spec state machine update"
+          - "Decision point changes require schema update"
+
+      - id: tb-entity-params
+        type: chapter  
+        spec_path: docs/latex/specs/tb/chapters/04-controls-engine.tex
+        related_schemas:
+          - docs/schema/tb/entity-params.schema.json
+          - docs/schema/tb/entity-params/DEFAULT.yaml
+          - docs/schema/tb/entity-params/HKG.yaml
+          - docs/schema/tb/entity-params/USA.yaml
+        sync_rules:
+          - "Entity parameter changes require spec documentation"
+          - "Materiality threshold changes require spec update"
+
+  # ---------------------------------------------------------------------------
+  # TB-HITL (Human-in-the-Loop Traceability)
+  # ---------------------------------------------------------------------------
+  tb-hitl:
+    spec_root: docs/latex/specs/tb-hitl
+    schema_root: docs/schema/tb
+    code_root: src/intelligence
+    
+    artifacts:
+      - id: tb-hitl-spec-main
+        type: specification
+        path: docs/latex/specs/tb-hitl/tb-business-requirements-traceability.tex
+        description: "TB HITL traceability specification"
+        
+      - id: tb-hitl-requirements
+        type: chapter
+        spec_path: docs/latex/specs/tb-hitl/chapters/04-business-requirements.tex
+        related_schemas:
+          - docs/schema/tb/variance-record.schema.json
+          - docs/schema/tb/commentary-draft.schema.json
+        sync_rules:
+          - "Business requirement changes require traceability matrix update"
+          
+      - id: tb-hitl-schema-mapping
+        type: chapter
+        spec_path: docs/latex/specs/tb-hitl/chapters/06-schema-mapping.tex
+        related_schemas:
+          - docs/schema/tb/
+        sync_rules:
+          - "Schema changes require traceability documentation update"
+
+  # ---------------------------------------------------------------------------
+  # ARABIC AP Invoice Processing
+  # ---------------------------------------------------------------------------
+  arabic:
+    spec_root: docs/latex/specs/arabic
+    schema_root: docs/schema/arabic
+    code_root: src/intelligence/ocr
+    
+    artifacts:
+      - id: arabic-spec-main
+        type: specification
+        path: docs/latex/specs/arabic/arabic-ap-spec.tex
+        description: "Arabic AP Invoice Processing specification"
+        
+      - id: arabic-data-schema
+        type: chapter
+        spec_path: docs/latex/specs/arabic/chapters/02-data-schema.tex
+        related_schemas:
+          - docs/schema/arabic/invoice.schema.json
+          - docs/schema/arabic/vendor.schema.json
+          - docs/schema/arabic/payment-instruction.schema.json
+        sync_rules:
+          - "Invoice schema changes require spec data model update"
+          
+      - id: arabic-ocr-pipeline
+        type: chapter
+        spec_path: docs/latex/specs/arabic/chapters/03-ai-pipeline.tex
+        related_schemas:
+          - docs/schema/arabic/ocr-result.schema.json
+        related_code:
+          - src/intelligence/ocr/
+        sync_rules:
+          - "OCR pipeline changes require spec documentation"
+          
+      - id: arabic-vat
+        type: chapter
+        spec_path: docs/latex/specs/arabic/chapters/04-vat-engine.tex
+        related_schemas:
+          - docs/schema/arabic/vat-checklist.schema.json
+        sync_rules:
+          - "VAT rule changes require spec and schema update"
+
+  # ---------------------------------------------------------------------------
+  # REGULATIONS
+  # ---------------------------------------------------------------------------
+  regulations:
+    spec_root: docs/latex/specs/regulations
+    schema_root: docs/schema/regulations
+    code_root: src/intelligence/analytics
+    
+    artifacts:
+      - id: regulations-spec-main
+        type: specification
+        path: docs/latex/specs/regulations/regulations-spec.tex
+        description: "AI Governance and Regulations specification"
+        
+      - id: regulations-data-schema
+        type: chapter
+        spec_path: docs/latex/specs/regulations/chapters/02-data-schema.tex
+        related_schemas:
+          - docs/schema/regulations/regulation.schema.json
+          - docs/schema/regulations/requirement.schema.json
+          - docs/schema/regulations/corpus.schema.json
+        sync_rules:
+          - "Regulation schema changes require spec update"
+          
+      - id: regulations-conformance
+        type: chapter
+        spec_path: docs/latex/specs/regulations/chapters/06-conformance-tooling.tex
+        related_schemas:
+          - docs/schema/regulations/conformance-tool.schema.json
+        sync_rules:
+          - "Conformance tool changes require spec documentation"
+
+      - id: regulations-identity
+        type: chapter
+        spec_path: docs/latex/specs/regulations/chapters/10-identity-attribution.tex
+        related_schemas:
+          - docs/schema/regulations/agent-identity.schema.json
+          - docs/schema/regulations/request-identity.schema.json
+          - docs/schema/regulations/audit-event.schema.json
+        sync_rules:
+          - "Identity attribution changes require spec and schema update"
+
+  # ---------------------------------------------------------------------------
+  # CLINERULES AGENTS
+  # ---------------------------------------------------------------------------
+  clinerules-agents:
+    spec_root: docs/latex/specs/clinerules-agents
+    schema_root: null
+    code_root: null
+    
+    artifacts:
+      - id: clinerules-agents-spec-main
+        type: specification
+        path: docs/latex/specs/clinerules-agents/clinerules-agents-spec.tex
+        description: "Clinerules Agent Rule Pack specification"
+        related_files:
+          - .clinerules
+          - src/training/.clinerules
+          - src/training/.clinerules.runtime-monitor
+          - src/intelligence/.clinerules
+          - src/intelligence/.clinerules.runtime-monitor
+          - src/generativeUI/.clinerules
+        sync_rules:
+          - "New agent type requires spec chapter update"
+          - "Lifecycle state changes require spec documentation"
+
+# -----------------------------------------------------------------------------
+# SHARED/COMMON ARTIFACTS
+# -----------------------------------------------------------------------------
+
+common:
+  schema_root: docs/schema/common
+  
+  artifacts:
+    - id: common-enums
+      type: shared-enum
+      path: docs/schema/common/enums.yaml
+      consumers:
+        - docs/schema/tb/
+        - docs/schema/arabic/
+        - docs/schema/simula/
+        - docs/schema/regulations/
+      sync_rules:
+        - "Enum changes require RFC with 5-day review"
+        - "All consuming domains must approve enum changes"
+        - "One-release deprecation window for breaking changes"
+        
+    - id: common-base-types
+      type: shared-schema
+      path: docs/schema/common/base-types.schema.json
+      consumers:
+        - docs/schema/tb/
+        - docs/schema/arabic/
+        - docs/schema/simula/
+        - docs/schema/regulations/
+      sync_rules:
+        - "Base type changes require cross-domain review"
+
+    - id: common-vocabulary-registry
+      type: shared-schema
+      path: docs/schema/common/vocabulary-registry.schema.json
+      description: "Schema for vocabulary registry to prevent hallucinations"
+      consumers:
+        - docs/schema/common/synonyms.yaml
+      related_code:
+        - scripts/spec-drift/nl_readiness_assessor.py
+        - scripts/spec-drift/vocabulary_drift_monitor.py
+      sync_rules:
+        - "Vocabulary schema changes require all consumers to update"
+        - "New term types require spec documentation"
+
+    - id: common-synonyms
+      type: vocabulary-registry
+      path: docs/schema/common/synonyms.yaml
+      description: "Master vocabulary registry with synonyms and entity mappings"
+      consumers:
+        - docs/schema/tb/
+        - docs/schema/arabic/
+        - docs/schema/simula/
+        - docs/schema/regulations/
+      related_code:
+        - scripts/spec-drift/nl_readiness_assessor.py
+        - scripts/spec-drift/vocabulary_drift_monitor.py
+        - scripts/spec-drift/persona_classifier.py
+        - scripts/spec-drift/dspy_alignment_hooks.py
+        - scripts/spec-drift/audit.py
+      sync_rules:
+        - "New domain terms require synonym registry update"
+        - "Entity mappings (country codes, etc.) must be registered here"
+        - "Deprecated terms must be tracked for retraining triggers"
+        - "Locale variants require i18n review"
+        - "Persona-specific terms must be tagged for human vs agent"
+
+    - id: drift-ci-workflow
+      type: ci-workflow
+      path: .github/workflows/drift-audit.yml
+      description: "GitHub Actions workflow for drift audit CI/CD"
+      related_code:
+        - scripts/spec-drift/audit.py
+        - scripts/spec-drift/nl_readiness_assessor.py
+        - scripts/spec-drift/vocabulary_drift_monitor.py
+      sync_rules:
+        - "New drift scripts must be added to workflow"
+        - "Threshold changes require workflow update"
+
+    - id: persona-classifier
+      type: training-tool
+      path: scripts/spec-drift/persona_classifier.py
+      description: "Classifies prompts as human-suitable vs agent-suitable"
+      related_files:
+        - docs/schema/common/synonyms.yaml
+      sync_rules:
+        - "Technical indicator patterns require synonyms.yaml update"
+        - "Human-friendly term mappings require vocabulary update"
+
+    - id: dspy-alignment
+      type: training-tool
+      path: scripts/spec-drift/dspy_alignment_hooks.py
+      description: "DSPy integration hooks for hallucination control"
+      related_files:
+        - docs/schema/common/synonyms.yaml
+      sync_rules:
+        - "Hallucination risk patterns require documentation"
+        - "Entity mappings must sync with synonyms.yaml"
+
+    - id: drift-dashboard-ui
+      type: ui-component
+      path: src/generativeUI/drift-dashboard/drift-dashboard.component.ts
+      description: "SAP UI5 dashboard for drift monitoring"
+      related_code:
+        - scripts/spec-drift/audit.py
+        - scripts/spec-drift/nl_readiness_assessor.py
+        - scripts/spec-drift/vocabulary_drift_monitor.py
+      sync_rules:
+        - "Metric additions require dashboard component update"
+        - "API endpoint changes require component update"
+
+# -----------------------------------------------------------------------------
+# CROSS-SPEC DEPENDENCIES
+# -----------------------------------------------------------------------------
+
+cross_spec_dependencies:
+  - id: tb-arabic-shared-enums
+    source: docs/schema/common/enums.yaml
+    consumers:
+      - docs/schema/tb/
+      - docs/schema/arabic/
+    shared_enums:
+      - audit_action
+      - source_system
+      - decision_outcome
+      
+  - id: tb-bss-shared-types
+    source: docs/schema/common/enums.yaml
+    consumers:
+      - docs/schema/tb/
+    shared_enums:
+      - risk_status
+      - workflow_state_type
+      
+  - id: simula-regulations-integration
+    source: docs/schema/regulations/
+    consumers:
+      - docs/schema/simula/
+    description: "Simula may reference regulation compliance requirements"
+
+# -----------------------------------------------------------------------------
+# AUDIT CONFIGURATION
+# -----------------------------------------------------------------------------
+
+audit_config:
+  # Files to watch for changes that trigger spec-drift audit
+  watch_patterns:
+    specifications:
+      - "docs/latex/specs/**/*.tex"
+      - "docs/latex/specs/**/chapters/*.tex"
+    schemas:
+      - "docs/schema/**/*.schema.json"
+      - "docs/schema/**/*.yaml"
+    code:
+      - "src/training/pipeline/*.py"
+      - "src/training/scripts/*.py"
+      - "src/intelligence/**/*.py"
+      - "src/generativeUI/**/*.ts"
+      - "src/generativeUI/**/*.py"
+    clinerules:
+      - "**/.clinerules*"
+      
+  # Severity levels for drift detection
+  severity_levels:
+    critical:
+      - "Schema field removed without spec deprecation notice"
+      - "Implementation behavior contradicts spec requirement"
+      - "Breaking change without version bump"
+    high:
+      - "Schema field added without spec documentation"
+      - "New code feature without spec coverage"
+      - "Threshold change without spec update"
+    medium:
+      - "Spec update without implementation"
+      - "Documentation drift from current behavior"
+    low:
+      - "Comment/description inconsistency"
+      - "Example data outdated"
+      
+  # Actions required by severity
+  required_actions:
+    critical:
+      - "Block merge until resolved"
+      - "Require spec owner sign-off"
+      - "Update CHANGELOG.md"
+    high:
+      - "Request spec update in same PR"
+      - "Add TODO with tracking issue"
+    medium:
+      - "Create follow-up issue"
+      - "Add to tech debt backlog"
+    low:
+      - "Note in PR description"
+      - "Optional fix"
+
+# -----------------------------------------------------------------------------
+# VALIDATION RULES
+# -----------------------------------------------------------------------------
+
+validation_rules:
+  # Schema-first rule: schemas must exist before code references them
+  schema_first:
+    enabled: true
+    exceptions:
+      - "prototype/"
+      - "experiments/"
+      
+  # Spec-code sync: code changes to mapped files trigger spec review
+  spec_code_sync:
+    enabled: true
+    auto_label_pr: true
+    required_reviewers:
+      - "spec-owner"
+      
+  # Version consistency: schema versions must match spec versions
+  version_consistency:
+    enabled: true
+    version_files:
+      - docs/schema/registry.json
+      - docs/latex/specs/*/chapters/00-frontmatter.tex
+      
+  # Cross-domain impact: changes to shared artifacts require multi-domain review
+  cross_domain_impact:
+    enabled: true
+    shared_artifact_paths:
+      - docs/schema/common/
+      - docs/latex/specs/00-*.tex
+      - docs/latex/specs/fragment-*.tex
+
+# -----------------------------------------------------------------------------
+# METADATA
+# -----------------------------------------------------------------------------
+
+metadata:
+  maintainers:
+    - role: "spec-owner"
+      domains: ["all"]
+    - role: "schema-owner"
+      domains: ["all"]
+    - role: "domain-lead-simula"
+      domains: ["simula"]
+    - role: "domain-lead-tb"
+      domains: ["tb", "tb-hitl"]
+    - role: "domain-lead-arabic"
+      domains: ["arabic", "arabic-hitl"]
+    - role: "domain-lead-regulations"
+      domains: ["regulations"]
+      
+  audit_history:
+    retention_days: 365
+    storage_path: "docs/audit-logs/"
+    
+  last_full_audit: "2026-04-21"
+  next_scheduled_audit: "2026-04-28"
