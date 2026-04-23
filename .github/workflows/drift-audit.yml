@@ -1,0 +1,307 @@
+# =============================================================================
+# Drift Audit CI/CD Pipeline
+# =============================================================================
+# Automated drift detection for specifications, schemas, NL readiness, and
+# vocabulary alignment. Runs on PRs and scheduled nightly.
+#
+# Meeting requirement addressed: "Integrate audit-all-drift into CI/CD pipeline"
+# =============================================================================
+
+name: Drift Audit
+
+on:
+  pull_request:
+    branches: [main, develop]
+    paths:
+      - 'docs/schema/**'
+      - 'docs/latex/specs/**'
+      - 'src/**/*.py'
+      - 'scripts/spec-drift/**'
+      - '.clinerules*'
+  push:
+    branches: [main]
+  schedule:
+    # Run nightly at 2 AM UTC
+    - cron: '0 2 * * *'
+  workflow_dispatch:
+    inputs:
+      full_audit:
+        description: 'Run full audit (all domains)'
+        required: false
+        default: 'true'
+        type: boolean
+      save_metrics:
+        description: 'Save metrics to database'
+        required: false
+        default: 'true'
+        type: boolean
+
+env:
+  PYTHON_VERSION: '3.11'
+
+jobs:
+  # ===========================================================================
+  # Spec-Drift Audit
+  # ===========================================================================
+  spec-drift:
+    name: Spec-Schema-Code Drift
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2  # Need previous commit for diff
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: 'pip'
+      
+      - name: Install dependencies
+        run: |
+          pip install pyyaml jsonschema
+      
+      - name: Run spec-drift audit
+        id: spec_drift
+        run: |
+          python3 scripts/spec-drift/audit.py \
+            --mode full \
+            --output-format json \
+            --output-file drift-audit-results.json
+          
+          # Extract summary for PR comment
+          CRITICAL=$(jq '.summary.critical // 0' drift-audit-results.json)
+          HIGH=$(jq '.summary.high // 0' drift-audit-results.json)
+          MEDIUM=$(jq '.summary.medium // 0' drift-audit-results.json)
+          
+          echo "critical=$CRITICAL" >> $GITHUB_OUTPUT
+          echo "high=$HIGH" >> $GITHUB_OUTPUT
+          echo "medium=$MEDIUM" >> $GITHUB_OUTPUT
+          
+          # Fail if critical issues
+          if [ "$CRITICAL" -gt 0 ]; then
+            echo "::error::Found $CRITICAL critical drift issues"
+            exit 1
+          fi
+        continue-on-error: true
+      
+      - name: Upload spec-drift report
+        uses: actions/upload-artifact@v4
+        with:
+          name: spec-drift-report
+          path: drift-audit-results.json
+          retention-days: 30
+      
+      - name: Comment on PR (spec-drift)
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const critical = '${{ steps.spec_drift.outputs.critical }}';
+            const high = '${{ steps.spec_drift.outputs.high }}';
+            const medium = '${{ steps.spec_drift.outputs.medium }}';
+            
+            let status = '✅';
+            if (critical > 0) status = '❌';
+            else if (high > 0) status = '⚠️';
+            
+            const body = `## ${status} Spec-Drift Audit Results
+            
+            | Severity | Count |
+            |----------|-------|
+            | 🔴 Critical | ${critical} |
+            | 🟠 High | ${high} |
+            | 🟡 Medium | ${medium} |
+            
+            ${critical > 0 ? '**Action Required:** Fix critical drift issues before merge.' : ''}
+            ${high > 0 ? '**Note:** Consider addressing high-severity issues.' : ''}
+            
+            <details>
+            <summary>View full report</summary>
+            
+            See the uploaded artifact \`spec-drift-report\` for details.
+            </details>
+            `;
+            
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: body
+            });
+
+  # ===========================================================================
+  # NL Readiness Assessment
+  # ===========================================================================
+  nl-readiness:
+    name: NL Readiness Assessment
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: 'pip'
+      
+      - name: Install dependencies
+        run: |
+          pip install pyyaml jsonschema
+      
+      - name: Run NL readiness assessment
+        id: nl_readiness
+        run: |
+          python3 scripts/spec-drift/nl_readiness_assessor.py \
+            --full \
+            --output-format json \
+            --output-file nl-readiness-results.json
+          
+          # Extract summary
+          AVG_SCORE=$(jq '.average_score // 0' nl-readiness-results.json)
+          HUMAN_READY=$(jq '.human_ready_schemas // 0' nl-readiness-results.json)
+          TOTAL=$(jq '.total_schemas // 0' nl-readiness-results.json)
+          
+          echo "avg_score=$AVG_SCORE" >> $GITHUB_OUTPUT
+          echo "human_ready=$HUMAN_READY" >> $GITHUB_OUTPUT
+          echo "total=$TOTAL" >> $GITHUB_OUTPUT
+          
+          # Warn if average score below threshold
+          if [ "$AVG_SCORE" -lt 40 ]; then
+            echo "::warning::Average NL readiness score is low ($AVG_SCORE/100)"
+          fi
+        continue-on-error: true
+      
+      - name: Upload NL readiness report
+        uses: actions/upload-artifact@v4
+        with:
+          name: nl-readiness-report
+          path: nl-readiness-results.json
+          retention-days: 30
+      
+      - name: Comment on PR (NL readiness)
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const avgScore = '${{ steps.nl_readiness.outputs.avg_score }}';
+            const humanReady = '${{ steps.nl_readiness.outputs.human_ready }}';
+            const total = '${{ steps.nl_readiness.outputs.total }}';
+            
+            let status = '✅';
+            if (avgScore < 40) status = '❌';
+            else if (avgScore < 70) status = '⚠️';
+            
+            const body = `## ${status} NL Readiness Assessment
+            
+            | Metric | Value |
+            |--------|-------|
+            | Average Score | ${avgScore}/100 |
+            | Human-Ready Schemas | ${humanReady}/${total} |
+            
+            ${avgScore < 70 ? '**Note:** Some schemas may not be suitable for human-facing NL interfaces.' : ''}
+            
+            <details>
+            <summary>Thresholds</summary>
+            
+            - **Human-Ready:** ≥70/100
+            - **Agent-Ready:** ≥40/100
+            - **Needs Work:** <40/100
+            </details>
+            `;
+            
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: body
+            });
+
+  # ===========================================================================
+  # Vocabulary Drift Detection
+  # ===========================================================================
+  vocabulary-drift:
+    name: Vocabulary Drift Detection
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: 'pip'
+      
+      - name: Install dependencies
+        run: |
+          pip install pyyaml jsonschema
+      
+      - name: Run vocabulary drift check
+        id: vocab_drift
+        run: |
+          # Run with sample queries to validate vocabulary registry
+          python3 scripts/spec-drift/vocabulary_drift_monitor.py \
+            --queries "show me trial balance" "what is the variance" "India sales" "Hong Kong revenue" \
+            --output-format json \
+            --output-file vocab-drift-results.json \
+            ${{ inputs.save_metrics == 'true' && '--save-metrics' || '' }}
+          
+          # Extract summary
+          STATUS=$(jq -r '.overall_status // "unknown"' vocab-drift-results.json)
+          OOV_RATE=$(jq '.metrics[] | select(.type == "oov_rate") | .value // 0' vocab-drift-results.json)
+          
+          echo "status=$STATUS" >> $GITHUB_OUTPUT
+          echo "oov_rate=$OOV_RATE" >> $GITHUB_OUTPUT
+          
+          # Fail if critical
+          if [ "$STATUS" = "critical" ]; then
+            echo "::error::Vocabulary drift is critical"
+            exit 1
+          fi
+        continue-on-error: true
+      
+      - name: Upload vocabulary drift report
+        uses: actions/upload-artifact@v4
+        with:
+          name: vocab-drift-report
+          path: vocab-drift-results.json
+          retention-days: 30
+
+  # ===========================================================================
+  # Combined Summary
+  # ===========================================================================
+  summary:
+    name: Drift Audit Summary
+    needs: [spec-drift, nl-readiness, vocabulary-drift]
+    runs-on: ubuntu-latest
+    if: always()
+    
+    steps:
+      - name: Download all reports
+        uses: actions/download-artifact@v4
+        with:
+          path: reports
+      
+      - name: Generate combined summary
+        run: |
+          echo "## Drift Audit Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Check | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|-------|--------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Spec-Drift | ${{ needs.spec-drift.result == 'success' && '✅ Pass' || '❌ Fail' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| NL Readiness | ${{ needs.nl-readiness.result == 'success' && '✅ Pass' || '⚠️ Warning' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Vocabulary Drift | ${{ needs.vocabulary-drift.result == 'success' && '✅ Pass' || '⚠️ Warning' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Download artifacts for detailed reports." >> $GITHUB_STEP_SUMMARY
+      
+      - name: Fail if critical issues
+        if: needs.spec-drift.result == 'failure'
+        run: |
+          echo "::error::Critical drift issues detected. See spec-drift job for details."
+          exit 1

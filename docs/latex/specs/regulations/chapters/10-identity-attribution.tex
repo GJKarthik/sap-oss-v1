@@ -1,7 +1,7 @@
 \chapter{Per-Request Identity Attribution Specification}\label{ch:identity}
 
 This chapter specifies the per-request identity attribution system, addressing
-the MAS MGF requirement REG-MGF-2.1.2-002 that ``each agent action must be
+the IMDA MGF requirement REG-MGF-2.1.2-002 that ``each agent action must be
 traceable to the requesting identity and approval chain.''
 
 \section{Overview}
@@ -283,7 +283,7 @@ pre-action reservation and staging side effects.
 
 \begin{table}[htbp]
 \centering
-\caption{MAS MGF requirement mapping.}
+\caption{IMDA MGF requirement mapping.}
 \label{tab:mgf-mapping}
 \footnotesize
 \begin{tabularx}{\linewidth}{@{}l l X@{}}
@@ -345,14 +345,14 @@ R3 & R2         & M & REG-AUDIT-003   & 7-year retention + legal-hold API: reten
 R4 & R3         & M & REG-INTG-TB-001 & TB dashboard integration: every dashboard decision \emph{and} AI commentary draft emits \texttt{reserve}/\texttt{complete}; 100\,\% coverage in \cref{ch:testing}. \\
 R5 & R4         & S & REG-INTG-AP-001 & Arabic AP integration: OCR, field extraction, VAT rule evaluation each emit audit events; PII hashed. \\
 R6 & R5         & S & REG-INTG-SIM-001 & Simula batch integration: training-data runs logged at batch granularity; per-example logging enabled under \texttt{AUDIT\_VERBOSE=1}. \\
-R7 & R4         & M & GAIC-REV        & v1.0 compliance gate: quarterly GFAIC review confirms MAS MGF~2.1.2-002 compliance; traceability matrix \cref{tab:trace} flips from \texttt{partial} to \texttt{implemented} on this row. \\
+R7 & R4         & M & GAIC-REV        & v1.0 compliance gate: quarterly GFAIC review confirms IMDA MGF~2.1.2-002 compliance; traceability matrix \cref{tab:trace} flips from \texttt{partial} to \texttt{implemented} on this row. \\
 \bottomrule
 \end{tabularx}
 \end{table}
 
 \noindent
 Until each pipeline's integration is verified, the governance status
-for that pipeline's MAS MGF~2.1.2-002 compliance is \texttt{partial}
+for that pipeline's IMDA MGF~2.1.2-002 compliance is \texttt{partial}
 (see the traceability matrix in \cref{ch:refs}). Integration tickets
 REG-INTG-TB-001 (R4) is a Must for the Regulations project and a Must
 for TB; REG-INTG-AP-001 (R5) is a Should for Regulations and a Must

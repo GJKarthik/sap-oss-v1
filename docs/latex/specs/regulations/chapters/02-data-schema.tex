@@ -5,7 +5,7 @@
 \label{ch:schema}
 
 The structured layer uses four Draft-07 JSON Schemas and a central
-\corpus{structured/enums.yaml} for controlled vocabulary.
+\path{docs/schema/common/enums.yaml} for controlled vocabulary.
 
 \section{Schema inventory}
 
@@ -22,7 +22,7 @@ The structured layer uses four Draft-07 JSON Schemas and a central
 \tool{corpus-index.schema.json}      & The top-level index that lists every item in the corpus, typed as regulation, requirement, conformance\_tool, or rag\_artifact. \\
 \bottomrule
 \end{tabularx}
-\caption{Schemas under \corpus{structured/schema/}.}
+\caption{Schemas under \path{docs/schema/regulations/}.}
 \label{tab:schemas}
 \end{table}
 
@@ -56,7 +56,7 @@ implementation and verification arrays (excerpt).},label={lst:req-example}]
 {
   "requirementId": "REG-MGF-2.1.2-001",
   "source": {
-    "regulationId": "mas-mgf-agentic-ai-v1",
+    "regulationId": "imda-mgf-agentic-ai-v1",
     "section": "2.1.2",
     "page": 11,
     "quote": "Bound risks through design by defining agents' limits ..."
@@ -92,7 +92,7 @@ requirement records can reference them by stable identifiers. Every
 vocabulary that requirement records can cite.
 
 \begin{lstlisting}[language=jsonx,caption={Excerpt of
-\corpus{structured/conformance-tools/aiverify.json}.}]
+\path{docs/regulations/machine-readable/specification-addendum.yaml} (\texttt{conformance-tools.aiverify}).}]
 {
   "toolId": "aiverify",
   "vendoredPath": "docs/regulations/aiverify-main",
@@ -111,7 +111,7 @@ vocabulary that requirement records can cite.
 
 \section{Enum vocabularies}
 
-\corpus{structured/enums.yaml} centralises the controlled vocabularies
+\path{docs/schema/common/enums.yaml} centralises the controlled vocabularies
 that recur across schemas. The authoritative values live in the schemas
 themselves; \texttt{enums.yaml} is the human index.
 

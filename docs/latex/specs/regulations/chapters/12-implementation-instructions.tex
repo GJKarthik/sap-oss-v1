@@ -67,7 +67,7 @@ in~\ref{tab:enums}, the capability-monitoring metrics record
 (chapter~\ref{ch:monitoring}), and the identity and audit-event
 schemas in chapter~\ref{ch:identity}. These schemas live under
 \texttt{docs/latex/specs/regulations/} as normative text and under
-\texttt{structured/schema/} as the JSON Schema artefacts consumed at
+\texttt{docs/schema/regulations/} as the JSON Schema artefacts consumed at
 runtime. Registration in the unified registry is additive: each
 schema is listed in
 \texttt{src/intelligence/ai-core-pal/data\_products/registry.yaml}
@@ -99,7 +99,7 @@ not merged.
     \texttt{gov.conformance.run}, \texttt{gov.conformance.report},
     \texttt{gov.monitor.query}, \texttt{gov.audit.query},
     \texttt{gov.identity.attest}. All other MCP tools are denied by
-    default per MAS MGF pillar~1.
+    default per IMDA MGF pillar~1.
 \end{itemize}
 
 \section{Agent Rule-Pack Binding}
@@ -118,12 +118,12 @@ where the work belongs. None of them contains code; each task binds
 to the regulations chapters that define the required behaviour.
 
 \subsection*{Task R1 --- MGF four-pillar runtime checks}
-\textbf{Intent.} Realise the four MAS MGF pillars defined in
+\textbf{Intent.} Realise the four IMDA MGF pillars defined in
 chapter~\ref{ch:mgf} as runtime checks that run on every inbound MCP
 call in every non-regulations domain.
 
 \begin{adrbox}{Why Pillars over Flat Rules?}
-We adopted the MAS MGF Pillar structure to ensure that governance is not just a 'checklist' but a runtime operational model that scales as new domains (e.g., ESG, Supply Chain) are onboarded.
+We adopted the IMDA MGF Pillar structure to ensure that governance is not just a 'checklist' but a runtime operational model that scales as new domains (e.g., ESG, Supply Chain) are onboarded.
 \end{adrbox}
 
 \textbf{In-scope.} Pillar~1 (assess and bound) via allow-list
@@ -260,7 +260,7 @@ and as a subject of the obligations (like every other domain, its
 own MCP calls pass through the governance gate).
 
 \begin{itemize}
-  \item \textbf{MAS MGF four pillars} (chapter~\ref{ch:mgf}). The
+  \item \textbf{IMDA MGF four pillars} (chapter~\ref{ch:mgf}). The
     regulations service authors the pillar definitions; it also
     executes them against its own MCP tools. Pillar~1 enforcement
     applies the allow-list in \S\ref{sec:agent-persona},
@@ -284,10 +284,10 @@ own MCP calls pass through the governance gate).
 \subsection{With Arabic AP}
 Regulations wraps Arabic at runtime. Every Arabic MCP call is
 brokered through the regulations governance gate, which applies
-pillars~1--4 of MAS MGF, attaches the identity envelope, and routes
+pillars~1--4 of IMDA MGF, attaches the identity envelope, and routes
 emergent-capability metrics to the monitoring store. Arabic exports
 the invoice record, VAT compliance checklist, and payment
-instruction schemas under \texttt{structured/schema/} and registers
+instruction schemas under \texttt{docs/schema/regulations/} and registers
 its MCP tools with the gateway; the governance gate consumes those
 registrations but adds no Arabic-specific code paths. Conformance
 tests defined here execute against the Arabic service as part of
@@ -296,17 +296,17 @@ the platform CI gate.
 \subsection{With Trial Balance}
 Regulations wraps TB at runtime. Every TB MCP call is brokered
 through the regulations governance gate, which applies pillars~1--4
-of MAS MGF, attaches the identity envelope, and routes
+of IMDA MGF, attaches the identity envelope, and routes
 emergent-capability metrics to the monitoring store. TB exports the
 control record, decision-point record, workflow record, and its own
-\texttt{requirement.schema.json} under \texttt{structured/schema/}.
+\texttt{requirement.schema.json} under \texttt{docs/schema/regulations/}.
 Regulations' \texttt{requirement.schema.json} is a distinct URI
 from TB's; no schema merge takes place.
 
 \subsection{With Regulations}
 Regulations exports the requirement record, conformance-tool record,
 enum vocabularies, capability-monitoring metrics record, and the
-identity and audit-event schemas under \texttt{structured/schema/};
+identity and audit-event schemas under \texttt{docs/schema/regulations/};
 registers the MCP tools enumerated in \S\ref{sec:agent-persona};
 and applies the four governance hooks in
 \S\ref{sec:agent-governance} to every call it serves --- including
@@ -377,7 +377,7 @@ platform satisfies the following invariants:
 Within-spec references:
 chapter~\ref{ch:overview} (overview),
 chapter~\ref{ch:schema} (data schema),
-chapter~\ref{ch:mgf} (MAS MGF framework),
+chapter~\ref{ch:mgf} (IMDA MGF framework),
 chapter~\ref{ch:agent-index} (AI Agent Index),
 chapter~\ref{ch:empirical} (Ju \& Aral empirical evidence),
 chapter~\ref{ch:tooling} (conformance tooling),

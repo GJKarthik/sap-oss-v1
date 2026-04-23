@@ -288,3 +288,227 @@ SER & Higher better & $= 1.00$ (critical) & Exact \\
 \bottomrule
 \end{tabular}
 \end{table}
+
+\section{Domain-Specific Metrics: Text-to-SQL}
+\label{sec:tts-metrics-extension}
+
+For Text-to-SQL deployments, an additional 12 metrics extend the core safety
+framework to address drift between HANA schemas, prompts, and generated SQL.
+These metrics are fully specified in Chapter~18 of the Simula specification.
+
+\subsection{TTS Metric Summary}
+
+\begin{table}[htbp]
+\centering
+\footnotesize
+\caption{Text-to-SQL Drift Metrics (Extension)}
+\label{tab:tts-metrics-summary}
+\begin{tabularx}{\textwidth}{@{}l l X l@{}}
+\toprule
+\textbf{ID} & \textbf{Name} & \textbf{Definition} & \textbf{Direction} \\
+\midrule
+TTS-M01 & Schema Coverage Rate & Fraction of HANA columns in training & Higher \\
+TTS-M02 & Schema Staleness Score & Age-weighted unsynced schema changes & Lower \\
+TTS-M03 & Column Type Mismatch Rate & Type-incompatible SQL operations & Lower \\
+TTS-M04 & Foreign Key Consistency & JOINs following valid FKs & Higher \\
+TTS-M05 & Semantic Alignment Score & Prompt-SQL embedding similarity & Higher \\
+TTS-M06 & Intent Preservation Rate & Correctly answered prompts & Higher \\
+TTS-M07 & Terminology Drift Score & Vocabulary divergence (JSD) & Lower \\
+TTS-M08 & Ambiguity Resolution Rate & Disambiguated ambiguous prompts & Higher \\
+TTS-M09 & Execution Success Rate & SQL executing without error & Higher \\
+TTS-M10 & Result Fidelity Score & Expected vs actual result similarity & Higher \\
+TTS-M11 & Complexity Distribution Drift & KL divergence train vs prod & Lower \\
+TTS-M12 & Taxonomy Coverage Drift & Change in taxonomy coverage & Lower \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\subsection{TTS-EVAL Composite Score}
+
+The TTS Evaluation Score follows the same weighted composite pattern as EVAL:
+
+\begin{equation}
+\boxed{
+\begin{aligned}
+TTS\_EVAL = 100 \times \Big(
+  &0.15 \cdot SCR +
+  0.10 \cdot (1 - SSS_{\text{norm}}) +
+  0.10 \cdot FKCR \\
+  &+ 0.15 \cdot SAS +
+  0.10 \cdot IPR +
+  0.15 \cdot ESR \\
+  &+ 0.10 \cdot RFS +
+  0.05 \cdot ARR
+\Big) \\
+- 100 \times \Big(
+  &0.05 \cdot CTMR +
+  0.03 \cdot TDS +
+  0.02 \cdot CDD
+\Big)
+\end{aligned}
+}
+\end{equation}
+
+\subsection{TTS Metric Thresholds}
+
+\begin{table}[htbp]
+\centering
+\caption{TTS Metric Thresholds for Production Gate}
+\label{tab:tts-thresholds}
+\begin{tabular}{l l l}
+\toprule
+\textbf{Metric} & \textbf{Direction} & \textbf{Threshold} \\
+\midrule
+TTS-M01 (SCR) & Higher better & $\geq 0.85$ \\
+TTS-M02 (SSS) & Lower better & $\leq 7.0$ days \\
+TTS-M03 (CTMR) & Lower better & $\leq 0.02$ \\
+TTS-M04 (FKCR) & Higher better & $\geq 0.95$ \\
+TTS-M05 (SAS) & Higher better & $\geq 0.80$ \\
+TTS-M06 (IPR) & Higher better & $\geq 0.90$ \\
+TTS-M07 (TDS) & Lower better & $\leq 0.15$ \\
+TTS-M08 (ARR) & Higher better & $\geq 0.75$ \\
+TTS-M09 (ESR) & Higher better & $\geq 0.95$ \\
+TTS-M10 (RFS) & Higher better & $\geq 0.85$ \\
+TTS-M11 (CDD) & Lower better & $\leq 0.10$ \\
+TTS-M12 (TCD) & Lower better & $\leq 0.05$ \\
+\midrule
+TTS-EVAL & Higher better & $\geq 70$ (production) \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Relationship to Core Safety Metrics}
+
+The TTS metrics complement, not replace, the core 12 safety metrics:
+
+\begin{itemize}
+  \item \textbf{M-02 (Tool Call Accuracy)} maps to \textbf{TTS-M09 (ESR)} for SQL execution
+  \item \textbf{M-04 (Audit Trace Completeness)} is satisfied by TTS drift telemetry tables
+  \item \textbf{M-07 (Hallucination Rate)} maps to \textbf{TTS-M06 (IPR)} for intent preservation
+\end{itemize}
+
+For complete TTS drift metric definitions, formulas, and implementation details,
+see \filepath{docs/latex/specs/simula/chapters/18-text-to-sql-drift.tex}.
+
+\section{Persona-Aware Safety Metrics (PER-M01 to PER-M04)}
+\label{sec:persona-safety-metrics}
+
+For AI systems serving diverse user populations and agent workers with varying
+levels of domain expertise, the following persona-aware metrics ensure fair
+and appropriate treatment across all communicator types.
+
+\subsection{Metric Definitions}
+
+\begin{table}[htbp]
+\centering
+\footnotesize
+\caption{Persona-Aware Safety Metrics (4 Metrics)}
+\label{tab:persona-metrics}
+\begin{tabularx}{\textwidth}{@{}l l X l@{}}
+\toprule
+\textbf{ID} & \textbf{Name} & \textbf{Definition} & \textbf{Safety Link} \\
+\midrule
+\metricid{PER-M01} & Persona Coverage Rate & Fraction of personas with adequate training data & S-08 (Data Quality) \\
+\metricid{PER-M02} & Expertise Consistency & Fraction of prompts matching persona expertise & S-01 (Accuracy) \\
+\metricid{PER-M03} & Cross-Persona Fairness & Maximum deviation from uniform persona coverage & S-04 (Fairness) \\
+\metricid{PER-M04} & Per-Persona Drift Score & SSG Z-score computed per persona & S-02 (Robustness) \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\subsection{PER-M01: Persona Coverage Rate}
+
+\begin{equation}
+\boxed{
+PER\_M01 = \frac{|\{p : N_p \geq N_{\min}\}|}{|P|}
+}
+\end{equation}
+
+\begin{description}
+  \item[Variables] $P$ = set of all defined personas; $N_p$ = training samples for persona $p$;
+        $N_{\min}$ = minimum samples (default 100)
+  \item[Direction] Higher is better
+  \item[Threshold] $PER\_M01 \geq 0.95$ required
+  \item[Safety Link] S-08 (Data Quality) --- ensures training data represents all user types
+\end{description}
+
+\subsection{PER-M02: Expertise Consistency Rate}
+
+\begin{equation}
+\boxed{
+PER\_M02 = \frac{N_{\text{prompts matching persona complexity/terminology}}}{N_{\text{total}}}
+}
+\end{equation}
+
+\begin{description}
+  \item[Definition] A prompt ``matches'' if its complexity and terminology precision
+        fall within the expected range for its persona
+  \item[Direction] Higher is better
+  \item[Threshold] $PER\_M02 \geq 0.90$ required
+  \item[Safety Link] S-01 (Accuracy) --- system accurately reflects user expertise
+\end{description}
+
+\subsection{PER-M03: Cross-Persona Fairness}
+
+\begin{equation}
+\boxed{
+PER\_M03 = \max_{i \in P} |p_i - \bar{p}|
+\quad \text{where} \quad
+\bar{p} = \frac{1}{|P|}
+}
+\end{equation}
+
+\begin{description}
+  \item[Definition] Maximum deviation from uniform persona distribution
+  \item[Direction] Lower is better
+  \item[Threshold] $PER\_M03 \leq 0.10$ required (no persona overrepresented by $>10\%$)
+  \item[Safety Link] S-04 (Fairness) --- no persona is disadvantaged
+\end{description}
+
+\subsection{PER-M04: Per-Persona Drift Score}
+
+\begin{equation}
+\boxed{
+PER\_M04^{(p)} = \frac{|x_t^{(p)} - \hat{x}_t^{(p)}|}{\sigma_t^{(p)}}
+}
+\end{equation}
+
+\begin{description}
+  \item[Observable] Prompt embedding distance from persona $p$'s training centroid
+  \item[Direction] Lower is better
+  \item[Threshold] $PER\_M04^{(p)} < 2.0$ for each persona (95\% confidence)
+  \item[Safety Link] S-02 (Robustness) --- system remains stable across persona drift
+\end{description}
+
+\subsection{Persona Metric Thresholds}
+
+\begin{table}[htbp]
+\centering
+\caption{Persona Metric Thresholds by Population Type}
+\label{tab:persona-thresholds}
+\begin{tabular}{l l l l}
+\toprule
+\textbf{Metric} & \textbf{Human Threshold} & \textbf{Agent Threshold} & \textbf{Rationale} \\
+\midrule
+PER-M01 & $\geq 0.95$ & $\geq 0.95$ & Equal coverage required \\
+PER-M02 & $\geq 0.85$ & $\geq 0.95$ & Agents must be more consistent \\
+PER-M03 & $\leq 0.10$ & $\leq 0.10$ & Fairness for all \\
+PER-M04 & $Z < 2.5$ & $Z < 2.0$ & Agents have stricter drift tolerance \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Relationship to Core Safety Metrics}
+
+The persona metrics extend the core safety framework:
+
+\begin{itemize}
+  \item \textbf{S-01 (Accuracy)} is decomposed by persona via \textbf{PER-M02}
+  \item \textbf{S-02 (Robustness)} is monitored per-persona via \textbf{PER-M04}
+  \item \textbf{S-04 (Fairness)} is quantified via \textbf{PER-M03}
+  \item \textbf{S-06 (Explainability)} requires persona classification rationale in audit trails
+  \item \textbf{S-08 (Data Quality)} is ensured via \textbf{PER-M01}
+\end{itemize}
+
+For complete persona taxonomy and generation pipeline details,
+see \filepath{docs/latex/specs/simula/chapters/19-financial-prompt-generation.tex}.

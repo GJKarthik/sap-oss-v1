@@ -991,7 +991,7 @@ internal audit, and external assessors can read one PDF instead of
 navigating three directory trees.
 \end{enumerate}
 
-\paragraph{In scope.} The Monetary Authority of Singapore (MAS) / AI Verify
+\paragraph{In scope.} The Infocomm Media Development Authority (IMDA) / AI Verify
 Foundation \emph{Model AI Governance Framework for Agentic AI} v1.0 (22 Jan
 2026); the multi-institution \emph{2025 AI Agent Index}; the Ju \& Aral field
 experiment \emph{Collaborating with AI Agents} (arXiv 2503.18238v3, Feb 2026);
@@ -1059,7 +1059,7 @@ table.
 \section{Three source classes}
 
 \begin{description}
-\item[Framework --- MAS MGF for Agentic AI.] A 29-page recommended
+\item[Framework --- IMDA MGF for Agentic AI.] A 29-page recommended
 framework organised into four pillars: assess and bound risks upfront;
 make humans meaningfully accountable; implement technical controls and
 processes; enable end-user responsibility. It is the highest-normativity
@@ -1341,9 +1341,9 @@ Status & implemented, partial, gap, planned, not\_applicable \\
 \end{table}
 \clearpage
 % =============================================================================
-% Chapter 3 --- MAS MGF for Agentic AI: four pillars
+% Chapter 3 --- IMDA MGF for Agentic AI: four pillars
 % =============================================================================
-\chapter{MAS Model AI Governance Framework for Agentic AI}
+\chapter{IMDA Model AI Governance Framework for Agentic AI}
 \label{ch:mgf}
 
 \section{Source document}
@@ -1376,7 +1376,7 @@ arr/.style={-Latex,thick,draw=reggrey!60}
 \node[pillar] (p4) at (11.1,0) {\textbf{4. End-user}\\ \textbf{responsibility}};
 \draw[arr] (p1) -- (p2); \draw[arr] (p2) -- (p3); \draw[arr] (p3) -- (p4);
 \end{tikzpicture}
-\caption{The four pillars of the MAS MGF for Agentic AI.}
+\caption{The four pillars of the IMDA MGF for Agentic AI.}
 \label{fig:mgf-pillars}
 \end{figure}
 
@@ -2192,7 +2192,7 @@ CI runs \texttt{--registry-check} on every pull request touching
 \chapter{Capability Monitoring Specification}\label{ch:monitoring}
 
 This chapter specifies the emergent capability monitoring system, addressing the
-MAS MGF requirement (Section 2.3.3) that ``monitoring for emergent capabilities
+IMDA MGF requirement (Section 2.3.3) that ``monitoring for emergent capabilities
 must be implemented with defined detection triggers.''
 
 \section{Overview}
@@ -2435,7 +2435,7 @@ attribute in its envelope and an audit event referencing the rung
 and the ladder-transition decision. Downstream consumers (review
 dashboard, AP workflow) render a visible ``fallback'' badge so
 reviewers know the response did not come from the primary model.
-This preserves the MAS MGF~2.1.2-002 attribution guarantee across
+This preserves the IMDA MGF~2.1.2-002 attribution guarantee across
 all rungs: attribution is to the \emph{model actually used}, not
 to the model the request was routed to.
 
@@ -2497,7 +2497,7 @@ Incident reports & 7 years & Document management \\
 
 \subsection{Regulatory reporting}
 
-For MAS MGF compliance, generate quarterly reports containing:
+For IMDA MGF compliance, generate quarterly reports containing:
 
 \begin{enumerate}
 \item Summary of monitoring coverage (metrics, triggers, alerts)
@@ -2553,7 +2553,7 @@ Fixtures are located in \texttt{tests/fixtures/regulations/}.
 \subsection{Regulation fixtures}
 
 \begin{itemize}
-\item Complete MAS MGF corpus (20 requirements)
+\item Complete IMDA MGF corpus (20 requirements)
 \item Ju \& Aral paper requirements (5 requirements)
 \item AI Verify requirements (10 requirements)
 \item Edge case: Empty corpus
@@ -2575,7 +2575,7 @@ Fixtures are located in \texttt{tests/fixtures/regulations/}.
 \begin{tabularx}{\linewidth}{@{}l l X@{}}
 \toprule
 \textbf{ID} & \textbf{Priority} & \textbf{Description} \\ \midrule
-REG-PAR-001 & P1 & Parse requirement from MAS MGF \\
+REG-PAR-001 & P1 & Parse requirement from IMDA MGF \\
 REG-PAR-002 & P1 & Parse requirement from academic paper \\
 REG-PAR-003 & P1 & Extract obligation level (must/should/may) \\
 REG-PAR-004 & P2 & Handle missing optional fields \\
@@ -2699,7 +2699,7 @@ python scripts/generate_compliance_report.py
 
 \section{Quarterly audit tests}\label{sec:quarterly-audit}
 
-For MAS MGF compliance, run extended tests quarterly:
+For IMDA MGF compliance, run extended tests quarterly:
 
 \begin{enumerate}
 \item Execute the \emph{applicable} AIVerify plugin subset
@@ -2739,7 +2739,7 @@ Performance -- accuracy & Yes & Generic accuracy/benchmark against golden corpus
 Performance -- confusion matrix & No & No multi-class classifier. \\
 Hallucination / groundedness & Yes & Core test for RAG-backed commentary. \\
 PII leakage & Yes & Critical for Arabic AP (invoices) and TB (entity data). \\
-Toxicity / safety & Yes & Required by MAS MGF regardless of domain; low expected firing rate but must be part of the audit. \\
+Toxicity / safety & Yes & Required by IMDA MGF regardless of domain; low expected firing rate but must be part of the audit. \\
 \bottomrule
 \end{tabularx}
 \end{table}
@@ -2800,7 +2800,7 @@ Tests pass when:
 \chapter{Per-Request Identity Attribution Specification}\label{ch:identity}
 
 This chapter specifies the per-request identity attribution system, addressing
-the MAS MGF requirement REG-MGF-2.1.2-002 that ``each agent action must be
+the IMDA MGF requirement REG-MGF-2.1.2-002 that ``each agent action must be
 traceable to the requesting identity and approval chain.''
 
 \section{Overview}
@@ -3082,7 +3082,7 @@ pre-action reservation and staging side effects.
 
 \begin{table}[htbp]
 \centering
-\caption{MAS MGF requirement mapping.}
+\caption{IMDA MGF requirement mapping.}
 \label{tab:mgf-mapping}
 \footnotesize
 \begin{tabularx}{\linewidth}{@{}l l X@{}}
@@ -3144,14 +3144,14 @@ R3 & R2         & M & REG-AUDIT-003   & 7-year retention + legal-hold API: reten
 R4 & R3         & M & REG-INTG-TB-001 & TB dashboard integration: every dashboard decision \emph{and} AI commentary draft emits \texttt{reserve}/\texttt{complete}; 100\,\% coverage in \cref{ch:testing}. \\
 R5 & R4         & S & REG-INTG-AP-001 & Arabic AP integration: OCR, field extraction, VAT rule evaluation each emit audit events; PII hashed. \\
 R6 & R5         & S & REG-INTG-SIM-001 & Simula batch integration: training-data runs logged at batch granularity; per-example logging enabled under \texttt{AUDIT\_VERBOSE=1}. \\
-R7 & R4         & M & GAIC-REV        & v1.0 compliance gate: quarterly GFAIC review confirms MAS MGF~2.1.2-002 compliance; traceability matrix \cref{tab:trace} flips from \texttt{partial} to \texttt{implemented} on this row. \\
+R7 & R4         & M & GAIC-REV        & v1.0 compliance gate: quarterly GFAIC review confirms IMDA MGF~2.1.2-002 compliance; traceability matrix \cref{tab:trace} flips from \texttt{partial} to \texttt{implemented} on this row. \\
 \bottomrule
 \end{tabularx}
 \end{table}
 
 \noindent
 Until each pipeline's integration is verified, the governance status
-for that pipeline's MAS MGF~2.1.2-002 compliance is \texttt{partial}
+for that pipeline's IMDA MGF~2.1.2-002 compliance is \texttt{partial}
 (see the traceability matrix in \cref{ch:refs}). Integration tickets
 REG-INTG-TB-001 (R4) is a Must for the Regulations project and a Must
 for TB; REG-INTG-AP-001 (R5) is a Should for Regulations and a Must
@@ -3290,10 +3290,10 @@ M07 & M06       & M & REG-BC-REFRESH     & Business-case refresh and compliance 
 S01 & M06       & S & REG-INTG-AP-001    & Arabic AP integration: reserve/complete on AP actions; REG-MGF-2.1.2-002 becomes \textit{compliant} once AP live. \\
 S02 & S01       & S & REG-INTG-SIM-001   & Simula integration: reserve/complete on Simula corpus-generation actions. \\
 S03 & M06       & S & REG-MGF-V11        & MGF v1.1 pillar updates ingested and mapped to agent index. \\
-C01 & S03 + \cref{sec:reg-v2-trigger} trigger & C & REG-V2-EXPLORE & v2.0 multi-regulator correlation scoped (beyond MAS MGF). \\
+C01 & S03 + \cref{sec:reg-v2-trigger} trigger & C & REG-V2-EXPLORE & v2.0 multi-regulator correlation scoped (beyond IMDA MGF). \\
 C02 & M06       & C & REG-TUNE           & Quarterly conformance-tooling retraining from accept/edit telemetry. \\
 W01 & ---       & W & REG-V1-REALTIME    & Real-time cross-project audit dashboards are \emph{not} in v1.0 scope. \\
-W02 & ---       & W & REG-V1-MULTIREG    & Multi-regulator correlation is \emph{not} in v1.0 scope; single-regulator (MAS MGF) only. \\
+W02 & ---       & W & REG-V1-MULTIREG    & Multi-regulator correlation is \emph{not} in v1.0 scope; single-regulator (IMDA MGF) only. \\
 \bottomrule
 \end{tabularx}
 \end{table}
@@ -3347,7 +3347,7 @@ notified within 24 hours. The conditions are evaluated continuously
 Audit-coverage gap (missed \texttt{reserve/complete} pair) detected in production & continuous & \textbf{Halt GA onboarding for all consumers}; incident-review before next integration. \\
 Circuit breaker tripped with no successful graceful-degradation fallback for three consecutive cycles & per cycle & \textbf{Halt upstream LLM traffic}; fail over to cached/heuristic path; remediate before resuming. \\
 Identity-attribution reconciliation fails (principal of record cannot be resolved) for $>$\,0.01\,\% of actions & per cycle & \textbf{Pause affected consumer}; block further reserves until remediated. \\
-Any MAS MGF finding attributable to the Regulations platform (audit, identity, monitoring) & continuous & \textbf{Halt rollout}; remediate before next wave. \\
+Any IMDA MGF finding attributable to the Regulations platform (audit, identity, monitoring) & continuous & \textbf{Halt rollout}; remediate before next wave. \\
 Any consumer project declares red on a Regulations-supplied component & continuous & \textbf{Pause downstream Should}; re-plan at next steering. \\
 \bottomrule
 \end{tabularx}
@@ -3388,7 +3388,7 @@ following are observed after two consecutive quarters of full rollout
 under v1.0:
 
 \begin{itemize}
-\item a second regulator framework (beyond MAS MGF) is formally
+\item a second regulator framework (beyond IMDA MGF) is formally
 adopted as in-scope by the AI Governance Working Group;
 \item MGF v1.1 pillars (S03) are fully mapped and at \textit{compliant}
 status;
@@ -3484,7 +3484,7 @@ The platform mandates a three-tier inheritance hierarchy for agent behavior. Imp
 \subsection{Inheritance Hierarchy}
 \begin{enumerate}
 \item \textbf{Repository-level (\texttt{/.clinerules}):} The baseline for all engineering and documentation standards.
-\item \textbf{Intelligence-level (\texttt{/src/intelligence/.clinerules}):} The regulatory envelope (MAS MGF) that wraps all domains.
+\item \textbf{Intelligence-level (\texttt{/src/intelligence/.clinerules}):} The regulatory envelope (IMDA MGF) that wraps all domains.
 \item \textbf{Domain-level (\texttt{/src/<domain>/.clinerules}):} Domain-specific constraints (e.g., Arabic character precision).
 \end{enumerate}
 
@@ -3567,7 +3567,7 @@ This sequence applies to \textbf{all} platform service calls.
 \draw[->, >=latex] (9,5) -- node[above] {5. Log Evidence (Pillar 2)} (6,5);
 \draw[<-, >=latex] (0,6) -- node[above] {6. Response + Audit ID} (3,6);
 
-\node[draw, fill=yellow!10, text width=2.5cm, align=center] at (4.5,0.2) {MAS MGF Gate};
+\node[draw, fill=yellow!10, text width=2.5cm, align=center] at (4.5,0.2) {IMDA MGF Gate};
 \end{tikzpicture}
 \caption{Standard platform handshake for governed tool execution. Audit schemas are detailed in \cref{reg:ch:identity}.}
 \end{figure}
@@ -3639,7 +3639,7 @@ Implementation runs in three waves across the entire platform.
 \subsection*{Wave 1 --- Foundations}
 \begin{itemize}
 \item \textbf{Simula:} Implement HANA schema extraction pipeline (MCP discovery). See \cref{sim:chap:extraction}.
-\item \textbf{Regulations:} Implement MAS MGF Pillar 1 logic (Tool allow-list). See \cref{reg:ch:mgf}.
+\item \textbf{Regulations:} Implement IMDA MGF Pillar 1 logic (Tool allow-list). See \cref{reg:ch:mgf}.
 \item \textbf{Arabic:} Implement Invoice Intake \& OCR Gateway. See \cref{ar:ch:ai}.
 \item \textbf{Trial Balance:} Implement identity-attribution wiring. See \cref{reg:ch:identity}.
 \end{itemize}
@@ -3660,7 +3660,7 @@ Implementation runs in three waves across the entire platform.
 \item \textbf{Regulations:} Wire Emergent-Capability monitoring. See \cref{reg:ch:monitoring}.
 \end{itemize}
 
-\section{Governance Obligations (MAS MGF)}
+\section{Governance Obligations (IMDA MGF)}
 The regulations domain wraps all service calls at runtime. Agents must implement the following hooks in every domain:
 \begin{itemize}
 \item \textbf{Pillar 1:} Tool allow-list enforcement (deny-by-default).
@@ -3749,7 +3749,7 @@ entitlement set includes \texttt{compliance-officer}.
 \texttt{gov.conformance.run}, \texttt{gov.conformance.report},
 \texttt{gov.monitor.query}, \texttt{gov.audit.query},
 \texttt{gov.identity.attest}. All other MCP tools are denied by
-default per MAS MGF pillar~1.
+default per IMDA MGF pillar~1.
 \end{itemize}
 
 \section{Agent Rule-Pack Binding}
@@ -3768,12 +3768,12 @@ where the work belongs. None of them contains code; each task binds
 to the regulations chapters that define the required behaviour.
 
 \subsection*{Task R1 --- MGF four-pillar runtime checks}
-\textbf{Intent.} Realise the four MAS MGF pillars defined in
+\textbf{Intent.} Realise the four IMDA MGF pillars defined in
 chapter~\ref{ch:mgf} as runtime checks that run on every inbound MCP
 call in every non-regulations domain.
 
 \begin{adrbox}{Why Pillars over Flat Rules?}
-We adopted the MAS MGF Pillar structure to ensure that governance is not just a 'checklist' but a runtime operational model that scales as new domains (e.g., ESG, Supply Chain) are onboarded.
+We adopted the IMDA MGF Pillar structure to ensure that governance is not just a 'checklist' but a runtime operational model that scales as new domains (e.g., ESG, Supply Chain) are onboarded.
 \end{adrbox}
 
 \textbf{In-scope.} Pillar~1 (assess and bound) via allow-list
@@ -3910,7 +3910,7 @@ and as a subject of the obligations (like every other domain, its
 own MCP calls pass through the governance gate).
 
 \begin{itemize}
-\item \textbf{MAS MGF four pillars} (chapter~\ref{ch:mgf}). The
+\item \textbf{IMDA MGF four pillars} (chapter~\ref{ch:mgf}). The
 regulations service authors the pillar definitions; it also
 executes them against its own MCP tools. Pillar~1 enforcement
 applies the allow-list in \S\ref{sec:agent-persona},
@@ -3934,7 +3934,7 @@ included in every conformance run.
 \subsection{With Arabic AP}
 Regulations wraps Arabic at runtime. Every Arabic MCP call is
 brokered through the regulations governance gate, which applies
-pillars~1--4 of MAS MGF, attaches the identity envelope, and routes
+pillars~1--4 of IMDA MGF, attaches the identity envelope, and routes
 emergent-capability metrics to the monitoring store. Arabic exports
 the invoice record, VAT compliance checklist, and payment
 instruction schemas under \texttt{structured/schema/} and registers
@@ -3946,7 +3946,7 @@ the platform CI gate.
 \subsection{With Trial Balance}
 Regulations wraps TB at runtime. Every TB MCP call is brokered
 through the regulations governance gate, which applies pillars~1--4
-of MAS MGF, attaches the identity envelope, and routes
+of IMDA MGF, attaches the identity envelope, and routes
 emergent-capability metrics to the monitoring store. TB exports the
 control record, decision-point record, workflow record, and its own
 \texttt{requirement.schema.json} under \texttt{structured/schema/}.
@@ -4027,7 +4027,7 @@ regulations runtime wrapper without exception.
 Within-spec references:
 chapter~\ref{ch:overview} (overview),
 chapter~\ref{ch:schema} (data schema),
-chapter~\ref{ch:mgf} (MAS MGF framework),
+chapter~\ref{ch:mgf} (IMDA MGF framework),
 chapter~\ref{ch:agent-index} (AI Agent Index),
 chapter~\ref{ch:empirical} (Ju \& Aral empirical evidence),
 chapter~\ref{ch:tooling} (conformance tooling),
@@ -4130,7 +4130,7 @@ critical/.style={->, >=latex, very thick, sapamber}
 \textbf{TB-W2}  & SIM-W1 (Extraction) & \texttt{SIM-EXTRACT-01} & Anomaly detection requires HANA schema metadata. \\
 \rowcolor{sapmidnight!5}
 \textbf{REG-W2} & SIM-W1 (Registry) & \texttt{SIM-REGISTRY-01} & Governance monitoring relies on the schema registry. \\
-\textbf{ARA-W2} & REG-W2 (Pillar 1) & \texttt{REG-MGF-P1} & VAT release is an HITL gate governed by MAS Pillar 1. \\
+\textbf{ARA-W2} & REG-W2 (Pillar 1) & \texttt{REG-MGF-P1} & VAT release is an HITL gate governed by IMDA MGF Pillar 1. \\
 \rowcolor{sapmidnight!5}
 \textbf{TB-W3}  & ARA-W2 (Posted Invoices) & \texttt{ARA-AP-POST} & Review dashboard depends on posted AP data from Arabic domain. \\
 \bottomrule

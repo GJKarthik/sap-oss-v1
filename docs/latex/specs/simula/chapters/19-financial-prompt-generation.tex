@@ -1,0 +1,836 @@
+% =============================================================================
+% CHAPTER 19: FINANCIAL DOMAIN MULTI-PERSONA PROMPT GENERATION
+% =============================================================================
+
+\chapter{Financial Domain Multi-Persona Prompt Generation}
+\label{chap:financial-prompt-gen}
+
+\section{Purpose and Scope}
+
+This chapter defines a generation pipeline for creating synthetic training prompts
+in the \textbf{financial domain language}. The pipeline generates diverse, high-quality
+natural language prompts that reflect how different \textbf{human populations} and
+\textbf{AI agent co-workers} communicate about financial concepts.
+
+\begin{importantbox}
+\textbf{Key Distinction:} This chapter generates \textit{prompts and queries} about
+financial statements, not the financial data itself. The focus is on the \textbf{language
+and communication patterns} of financial professionals and AI agents with varying
+levels of domain expertise.
+\end{importantbox}
+
+\subsection{Integration Points}
+
+This chapter integrates with:
+\begin{itemize}
+  \item \textbf{Chapter~\ref{chap:tts-drift}} --- TTS Drift Detection Framework
+        (per-persona drift monitoring)
+  \item \textbf{Chapter~5 of singapore-ai-safety} --- AI Safety Metrics (fairness,
+        explainability, data quality by persona)
+  \item \textbf{Chapter~4a of clinerules-agents} --- Agent Spec-Drift Auditing
+        (schema expert vs generalist agent drift)
+\end{itemize}
+
+\subsection{Core Design Principles}
+
+Following Simula's reasoning-first methodology:
+
+\begin{enumerate}
+  \item \textbf{Persona as first-class axis} --- Generation varies by communicator type
+  \item \textbf{Expertise-aware templates} --- Schema experts use precise terms; novices are vague
+  \item \textbf{Dual-reviewer validation} --- Prompts validated against persona-appropriate standards
+  \item \textbf{Controlled diversity} --- All persona $\times$ concept $\times$ intent combinations covered
+  \item \textbf{Drift-monitorable} --- Baseline distributions enable per-persona drift detection
+\end{enumerate}
+
+\section{Persona Taxonomy}
+\label{sec:persona-taxonomy}
+
+\subsection{Persona Classification Axes}
+
+Each communicator is classified along two orthogonal axes:
+
+\begin{table}[htbp]
+\centering
+\caption{Persona Expertise Axes}
+\label{tab:persona-axes}
+\begin{tabular}{l l l}
+\toprule
+\textbf{Axis} & \textbf{Definition} & \textbf{Levels} \\
+\midrule
+Schema Knowledge & Understanding of database structure, tables, columns & None, Low, Medium, High, Expert \\
+Process Knowledge & Understanding of business goals, workflows, outcomes & None, Low, Medium, High, Expert \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Human User Personas}
+
+\begin{table}[htbp]
+\centering
+\footnotesize
+\caption{Human User Persona Definitions}
+\label{tab:human-personas}
+\begin{tabularx}{\textwidth}{@{}l c c X l@{}}
+\toprule
+\textbf{Persona} & \textbf{Schema} & \textbf{Process} & \textbf{Communication Style} & \textbf{Code} \\
+\midrule
+Business Executive & Low & High & High-level, outcome-focused, time-sensitive & HU-EXEC \\
+Financial Analyst & Medium & High & Analytical, comparative, ratio-oriented & HU-ANALYST \\
+Accountant & High & High & Precise, standards-compliant, audit-ready & HU-ACCT \\
+New Hire & Low & Low & Exploratory, uncertain, needs guidance & HU-NEW \\
+Operations Manager & Low & Medium & Process-focused, operational metrics & HU-OPS \\
+External Auditor & High & Medium & Compliance-focused, evidence-seeking & HU-AUDIT \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\subsection{AI Agent Worker Personas}
+
+\begin{table}[htbp]
+\centering
+\footnotesize
+\caption{AI Agent Worker Persona Definitions}
+\label{tab:agent-personas}
+\begin{tabularx}{\textwidth}{@{}l c c X l@{}}
+\toprule
+\textbf{Persona} & \textbf{Schema} & \textbf{Process} & \textbf{Communication Style} & \textbf{Code} \\
+\midrule
+Schema Expert Agent & Expert & Medium & Precise column refs, SQL-like structure & AG-SCHEMA \\
+Process Orchestrator & Medium & Expert & Workflow-oriented, task sequencing & AG-ORCH \\
+Generalist Helper & Low & High & Natural language, may use synonyms & AG-GEN \\
+Data Validation Agent & Expert & Low & Assertion-style, boolean outcomes & AG-VAL \\
+Report Generator & Medium & Medium & Template-driven, structured output & AG-REPORT \\
+Anomaly Detector & High & Medium & Statistical, threshold-based queries & AG-ANOM \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\subsection{Persona Communication Patterns}
+
+\begin{lstlisting}[language=jsonx,caption={Example prompts by persona}]
+# HU-EXEC (Business Executive) - Low schema, High process
+"What's our revenue growth this quarter compared to last year?"
+"Are we on track to hit the margin target?"
+
+# HU-ANALYST (Financial Analyst) - Medium schema, High process  
+"Show gross margin by segment with YoY comparison"
+"What's the EBITDA trend over the last 4 quarters?"
+
+# HU-ACCT (Accountant) - High schema, High process
+"Verify that total assets equals liabilities plus equity for FY2025"
+"Reconcile operating income with EBITDA adjustments"
+
+# AG-SCHEMA (Schema Expert Agent) - Expert schema, Medium process
+"SELECT SUM(revenue) FROM income_statement WHERE fiscal_year = 2025 
+ AND segment_code = 'NAM' GROUP BY quarter"
+
+# AG-GEN (Generalist Helper) - Low schema, High process
+"Can you get me the sales numbers for this year?"
+"What do our financials look like?"
+
+# HU-NEW (New Hire) - Low schema, Low process
+"Where do I find the revenue data?"
+"What's a balance sheet?"
+\end{lstlisting}
+
+\section{Financial Domain Taxonomy}
+\label{sec:financial-taxonomy}
+
+\subsection{Hierarchical Concept Structure}
+
+\begin{lstlisting}[language=jsonx,caption={Financial domain taxonomy (JSON)}]
+{
+  "version": "1.0",
+  "root": "FinancialDomain",
+  "nodes": {
+    "StatementType": {
+      "children": ["IncomeStatement", "BalanceSheet", "CashFlowStatement"]
+    },
+    "IncomeStatement": {
+      "children": ["Revenue", "COGS", "GrossProfit", "OperatingExpenses", 
+                   "OperatingIncome", "InterestExpense", "TaxExpense", "NetIncome"],
+      "line_items": {
+        "Revenue": {"aliases": ["sales", "top line", "turnover"]},
+        "COGS": {"aliases": ["cost of sales", "cost of goods"]},
+        "GrossProfit": {"aliases": ["gross margin"]},
+        "NetIncome": {"aliases": ["bottom line", "profit", "earnings"]}
+      }
+    },
+    "BalanceSheet": {
+      "children": ["Assets", "Liabilities", "Equity"],
+      "constraints": ["Assets = Liabilities + Equity"]
+    },
+    "QueryIntent": {
+      "children": ["Retrieval", "Comparison", "Validation", "Aggregation", 
+                   "Exploration", "Forecasting"]
+    },
+    "Scenario": {
+      "children": ["RoutineReview", "AdhocQuestion", "AuditRequest", 
+                   "BoardMeeting", "RegulatoryFiling"]
+    }
+  }
+}
+\end{lstlisting}
+
+\subsection{Alias Mapping for Terminology Tolerance}
+
+Schema experts use canonical terms; others may use aliases:
+
+\begin{table}[htbp]
+\centering
+\footnotesize
+\caption{Financial Term Aliases by Persona Expertise}
+\label{tab:term-aliases}
+\begin{tabularx}{\textwidth}{@{}l l l l@{}}
+\toprule
+\textbf{Canonical Term} & \textbf{Expert (HU-ACCT)} & \textbf{Analyst (HU-ANALYST)} & \textbf{Novice (HU-NEW)} \\
+\midrule
+Revenue & Revenue & Revenue, Sales & Sales, Money coming in \\
+COGS & Cost of Goods Sold & COGS, Cost of Sales & Costs, What we spend \\
+Gross Profit & Gross Profit & Gross Margin & Profit \\
+EBITDA & EBITDA & EBITDA & Earnings, Profit \\
+Accounts Receivable & A/R, Receivables & Receivables & Money owed to us \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\section{Multi-Persona Prompt Generation Pipeline}
+
+\subsection{Stage 1: Mix Generation}
+
+A \textbf{mix} is a concrete combination of:
+\begin{itemize}
+  \item Persona (from Tables~\ref{tab:human-personas} and~\ref{tab:agent-personas})
+  \item Financial concept (from Section~\ref{sec:financial-taxonomy})
+  \item Query intent (Retrieval, Comparison, Validation, etc.)
+  \item Scenario (Routine, Adhoc, Audit, etc.)
+\end{itemize}
+
+\begin{lstlisting}[language=jsonx,caption={Example mix}]
+{
+  "mix_id": "mix-001",
+  "persona": {
+    "code": "HU-ANALYST",
+    "schema_knowledge": "medium",
+    "process_knowledge": "high"
+  },
+  "financial_concept": "GrossProfit",
+  "query_intent": "Comparison",
+  "scenario": "RoutineReview",
+  "accounting_standard": "US-GAAP"
+}
+\end{lstlisting}
+
+\subsection{Stage 2: Persona-Aware Meta-Prompt Templates}
+
+Each persona has a distinct template style:
+
+\begin{lstlisting}[language=jsonx,caption={Meta-prompt templates by persona}]
+TEMPLATES = {
+    "HU-EXEC": """
+        Generate a brief, outcome-focused question about {concept}.
+        The executive wants to know status or trend, not details.
+        Use business language, not technical terms.
+        Max 15 words.
+    """,
+    
+    "HU-ANALYST": """
+        Generate an analytical query about {concept}.
+        Include comparison dimension (YoY, segment, budget vs actual).
+        May use financial ratios. Medium technical depth.
+        20-40 words.
+    """,
+    
+    "HU-ACCT": """
+        Generate a precise accounting query about {concept}.
+        Use correct line item names per {standard}.
+        May reference specific accounts or reconciliation.
+        Include validation or audit perspective.
+    """,
+    
+    "AG-SCHEMA": """
+        Generate a structured query about {concept}.
+        Use explicit column names and table references.
+        May include SQL-like syntax or precise filters.
+        Highly technical, unambiguous.
+    """,
+    
+    "AG-GEN": """
+        Generate a natural language query about {concept}.
+        The agent knows the goal but may not know exact schema terms.
+        May use synonyms or vague language.
+        Conversational tone.
+    """,
+    
+    "HU-NEW": """
+        Generate an exploratory question about {concept}.
+        The user is learning and may ask basic questions.
+        Uncertain phrasing, may need guidance.
+        Simple vocabulary.
+    """
+}
+\end{lstlisting}
+
+\subsection{Stage 3: Complexification by Expertise}
+
+Complexity is \textbf{calibrated to persona expertise}:
+
+\begin{table}[htbp]
+\centering
+\caption{Complexity Levels by Persona}
+\label{tab:complexity-persona}
+\begin{tabular}{l c c c c c}
+\toprule
+\textbf{Persona} & \textbf{c=1} & \textbf{c=2} & \textbf{c=3} & \textbf{c=4} & \textbf{c=5} \\
+\midrule
+HU-EXEC & \checkmark & \checkmark & -- & -- & -- \\
+HU-ANALYST & -- & \checkmark & \checkmark & \checkmark & -- \\
+HU-ACCT & -- & -- & \checkmark & \checkmark & \checkmark \\
+AG-SCHEMA & -- & -- & \checkmark & \checkmark & \checkmark \\
+AG-GEN & \checkmark & \checkmark & \checkmark & -- & -- \\
+HU-NEW & \checkmark & \checkmark & -- & -- & -- \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Complexity definitions for financial prompts:}
+
+\begin{table}[htbp]
+\centering
+\footnotesize
+\caption{Complexity Level Definitions}
+\label{tab:complexity-levels}
+\begin{tabularx}{\textwidth}{@{}c l X@{}}
+\toprule
+\textbf{Level} & \textbf{Name} & \textbf{Characteristics} \\
+\midrule
+1 & Basic & Single concept, no aggregation, top-level only \\
+2 & Standard & Single concept with filter or time range \\
+3 & Detailed & Multi-concept, segment breakdown, ratios \\
+4 & Complex & Multi-period comparison, nested aggregation, reconciliation \\
+5 & Expert & Multi-statement analysis, adjustments, audit-level detail \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\subsection{Stage 4: Dual-Reviewer Validation}
+
+Validation criteria are \textbf{persona-dependent}:
+
+\begin{table}[htbp]
+\centering
+\footnotesize
+\caption{Validation Rules by Persona Type}
+\label{tab:validation-persona}
+\begin{tabularx}{\textwidth}{@{}l c c c c X@{}}
+\toprule
+\textbf{Check} & \textbf{HU-EXEC} & \textbf{HU-ANALYST} & \textbf{HU-ACCT} & \textbf{AG-SCHEMA} & \textbf{Rationale} \\
+\midrule
+Uses canonical terms & Soft & Medium & Strict & Strict & Experts should be precise \\
+Schema refs valid & N/A & Soft & Strict & Strict & Schema knowledge varies \\
+Ambiguity allowed & Yes & Some & No & No & Novices expected to be vague \\
+Complexity appropriate & Low & Med-High & High & High & Match expertise level \\
+Grammar correct & Soft & Medium & Strict & N/A & Agents may be terse \\
+Intent clear & Medium & Strict & Strict & Strict & All should be answerable \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\begin{lstlisting}[language=jsonx,caption={Critic prompt for persona-aware validation}]
+def validate_prompt(prompt: str, mix: dict) -> ValidationResult:
+    """
+    Validate a generated prompt against persona-appropriate criteria.
+    """
+    persona = mix["persona"]["code"]
+    schema_level = mix["persona"]["schema_knowledge"]
+    
+    # Retrieve persona-specific rules
+    rules = VALIDATION_RULES[persona]
+    
+    violations = []
+    
+    # Check terminology precision
+    if schema_level in ["high", "expert"]:
+        if uses_vague_terms(prompt):
+            violations.append("terminology_too_vague_for_expert")
+    
+    # Check complexity appropriateness
+    actual_complexity = estimate_complexity(prompt)
+    expected_range = COMPLEXITY_RANGES[persona]
+    if actual_complexity not in expected_range:
+        violations.append(f"complexity_mismatch: {actual_complexity} not in {expected_range}")
+    
+    # Check ambiguity
+    if not rules["ambiguity_allowed"] and is_ambiguous(prompt):
+        violations.append("ambiguity_not_allowed_for_persona")
+    
+    # Check intent clarity
+    if not has_clear_intent(prompt):
+        violations.append("intent_unclear")
+    
+    return ValidationResult(
+        passed=len(violations) == 0,
+        violations=violations,
+        persona=persona,
+        prompt=prompt,
+    )
+\end{lstlisting}
+
+\section{Persona-Aware Metrics}
+\label{sec:persona-metrics}
+
+\subsection{New Metrics (PER-M01 to PER-M04)}
+
+\begin{table}[htbp]
+\centering
+\footnotesize
+\caption{Persona-Aware Generation Metrics}
+\label{tab:persona-metrics}
+\begin{tabularx}{\textwidth}{@{}l l X l l@{}}
+\toprule
+\textbf{ID} & \textbf{Name} & \textbf{Formula} & \textbf{Threshold} & \textbf{Direction} \\
+\midrule
+\metricid{PER-M01} & Persona Coverage Rate & $\frac{|\text{personas with} \geq N \text{ prompts}|}{|\text{all personas}|}$ & $\geq 95\%$ & Higher better \\
+\metricid{PER-M02} & Expertise Consistency & $\frac{|\text{prompts matching persona expertise}|}{|\text{total prompts}|}$ & $\geq 90\%$ & Higher better \\
+\metricid{PER-M03} & Cross-Persona Fairness & $\max_i |p_i - \bar{p}|$ where $p_i$ = proportion for persona $i$ & $\leq 10\%$ & Lower better \\
+\metricid{PER-M04} & Per-Persona Drift Score & $Z_t^{\text{persona}_i}$ (SSG Z-score per persona) & $Z < 2.0$ & Lower better \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\subsubsection{PER-M01: Persona Coverage Rate}
+
+\begin{equation}
+\boxed{
+PCR = \frac{|\{p : N_p \geq N_{\min}\}|}{|P|}
+}
+\end{equation}
+
+\begin{description}
+  \item[Variables] $P$ = set of all defined personas; $N_p$ = number of prompts for persona $p$;
+        $N_{\min}$ = minimum prompts per persona (default 100)
+  \item[Threshold] $PCR \geq 0.95$ required
+\end{description}
+
+\subsubsection{PER-M02: Expertise Consistency Rate}
+
+\begin{equation}
+\boxed{
+ECR = \frac{N_{\text{prompts matching expected complexity/terminology}}}{N_{\text{total}}}
+}
+\end{equation}
+
+\begin{description}
+  \item[Definition] A prompt ``matches'' if its complexity and terminology precision
+        fall within the expected range for its persona
+  \item[Threshold] $ECR \geq 0.90$ required
+\end{description}
+
+\subsubsection{PER-M03: Cross-Persona Fairness}
+
+\begin{equation}
+\boxed{
+CPF = \max_{i \in P} |p_i - \bar{p}|
+\quad \text{where} \quad
+\bar{p} = \frac{1}{|P|}
+}
+\end{equation}
+
+\begin{description}
+  \item[Definition] Maximum deviation from uniform persona distribution
+  \item[Threshold] $CPF \leq 0.10$ required (no persona overrepresented by $>10\%$)
+\end{description}
+
+\subsubsection{PER-M04: Per-Persona Drift Score}
+
+Extends the SSG framework (Section~\ref{sec:ssg-framework}) to compute a separate
+Z-score for each persona:
+
+\begin{equation}
+\boxed{
+Z_t^{(p)} = \frac{|x_t^{(p)} - \hat{x}_t^{(p)}|}{\sigma_t^{(p)}}
+}
+\end{equation}
+
+\begin{description}
+  \item[Observable $x_t^{(p)}$] Prompt embedding distance from persona $p$'s training centroid
+  \item[Threshold] $Z_t^{(p)} < 2.0$ for each persona (95\% confidence)
+  \item[Action] If any persona exceeds threshold, emit persona-specific drift alert
+\end{description}
+
+\section{Integration with TTS Drift Framework}
+\label{sec:tts-integration}
+
+\subsection{Extended User Population Sampling}
+
+The sampling strategy from Chapter~\ref{chap:tts-drift} is extended with persona weights:
+
+\begin{table}[htbp]
+\centering
+\footnotesize
+\caption{Extended Sampling Strategy by Persona}
+\label{tab:extended-sampling}
+\begin{tabularx}{\textwidth}{@{}l l l l X@{}}
+\toprule
+\textbf{Persona Code} & \textbf{Type} & \textbf{Sample Rate} & \textbf{Frequency} & \textbf{Focus Metrics} \\
+\midrule
+HU-EXEC & Human & 100\% & Real-time & PER-M02, TTS-M09 \\
+HU-ANALYST & Human & 50\% & Hourly & TTS-M05, TTS-M07, PER-M02 \\
+HU-ACCT & Human & 20\% & Hourly & TTS-M03, TTS-M04, PER-M02 \\
+HU-NEW & Human & 100\% & Real-time & TTS-M08 (ARR), PER-M02 \\
+AG-SCHEMA & Agent & 100\% & Real-time & TTS-M01, TTS-M17, PER-M04 \\
+AG-ORCH & Agent & 50\% & Batch & TTS-M18, PER-M04 \\
+AG-GEN & Agent & 20\% & Batch & TTS-M07, TTS-M18, PER-M04 \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\subsection{Persona-Attributed Drift Alerts}
+
+Drift alerts from Chapter~\ref{chap:tts-drift} are extended with persona attribution:
+
+\begin{lstlisting}[language=jsonx,caption={Extended drift alert with persona}]
+@dataclass
+class PersonaDriftAlert(DriftAlert):
+    """Drift alert with persona attribution."""
+    
+    # Inherited fields
+    alert_id: str
+    severity: str
+    drift_type: str
+    metric_code: str
+    current_value: float
+    threshold: float
+    
+    # Persona extension
+    persona_code: str
+    persona_type: str  # "human" or "agent"
+    schema_knowledge: str
+    process_knowledge: str
+    
+    # Cross-persona context
+    other_personas_affected: list[str]
+    is_persona_specific: bool  # True if only this persona drifted
+    
+    def to_audit_trail(self) -> dict:
+        return {
+            **super().to_dict(),
+            "persona": {
+                "code": self.persona_code,
+                "type": self.persona_type,
+                "schema_knowledge": self.schema_knowledge,
+                "process_knowledge": self.process_knowledge,
+            },
+            "cross_persona": {
+                "other_affected": self.other_personas_affected,
+                "persona_specific": self.is_persona_specific,
+            },
+        }
+\end{lstlisting}
+
+\section{Integration with AI Safety Framework}
+\label{sec:ai-safety-integration}
+
+\subsection{Mapping to Singapore AI Safety Metrics}
+
+\begin{table}[htbp]
+\centering
+\footnotesize
+\caption{Persona Metrics Mapped to AI Safety Framework}
+\label{tab:ai-safety-mapping}
+\begin{tabularx}{\textwidth}{@{}l l X@{}}
+\toprule
+\textbf{AI Safety Metric} & \textbf{Persona Metric} & \textbf{Application} \\
+\midrule
+S-01 (Accuracy) & PER-M02 & Prompts accurately reflect persona expertise level \\
+S-02 (Robustness) & PER-M04 & Stable performance across persona drift scenarios \\
+S-04 (Fairness) & PER-M03 & Equal coverage and quality across personas \\
+S-06 (Explainability) & Audit trail & Persona classification rationale is logged \\
+S-08 (Data Quality) & PER-M01, M02 & Training data covers all personas appropriately \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\subsection{Safety Thresholds by Persona Type}
+
+Human and agent personas have different safety tolerances:
+
+\begin{table}[htbp]
+\centering
+\caption{Safety Thresholds by Persona Type}
+\label{tab:safety-thresholds}
+\begin{tabular}{l c c l}
+\toprule
+\textbf{Metric} & \textbf{Human Threshold} & \textbf{Agent Threshold} & \textbf{Rationale} \\
+\midrule
+Ambiguity tolerance & Higher & Lower & Humans naturally vague \\
+Schema precision & Variable & Strict & Agents should be precise \\
+Drift sensitivity & Medium & High & Agent drift more concerning \\
+Complexity bounds & Wide & Narrow & Human tasks vary more \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{Orchestration Pipeline}
+\label{sec:orchestration}
+
+\subsection{Configuration File}
+
+\begin{lstlisting}[language=yaml,caption={financial\_prompt\_config.yaml}]
+# Financial Domain Prompt Generation Configuration
+domain: "Financial professional and agent communication"
+taxonomy_version: "1.0"
+output_dir: "./generated_prompts"
+
+personas:
+  humans:
+    - code: HU-EXEC
+      schema_knowledge: low
+      process_knowledge: high
+      target_count: 1000
+    - code: HU-ANALYST
+      schema_knowledge: medium
+      process_knowledge: high
+      target_count: 2000
+    - code: HU-ACCT
+      schema_knowledge: high
+      process_knowledge: high
+      target_count: 1500
+    - code: HU-NEW
+      schema_knowledge: low
+      process_knowledge: low
+      target_count: 500
+  agents:
+    - code: AG-SCHEMA
+      schema_knowledge: expert
+      process_knowledge: medium
+      target_count: 1500
+    - code: AG-ORCH
+      schema_knowledge: medium
+      process_knowledge: expert
+      target_count: 1000
+    - code: AG-GEN
+      schema_knowledge: low
+      process_knowledge: high
+      target_count: 1000
+
+global_diversity:
+  min_coverage: 0.95
+  sampling_strategy: "stratified"
+
+local_diversity:
+  prompts_per_mix: 5
+  diversity_threshold: 0.85
+
+complexification:
+  enabled: true
+  persona_aware: true
+
+quality_control:
+  critic_model: "gpt-4"
+  persona_validation: true
+  acceptance_rules:
+    critical_failures: ["intent_unclear", "persona_mismatch"]
+    warn_on_complexity_violation: true
+
+metrics:
+  per_m01_threshold: 0.95
+  per_m02_threshold: 0.90
+  per_m03_threshold: 0.10
+  per_m04_z_threshold: 2.0
+\end{lstlisting}
+
+\subsection{Pipeline Implementation}
+
+\begin{lstlisting}[language=jsonx,caption={simula\_financial\_prompt\_generator.py}]
+from dataclasses import dataclass, field
+from typing import List, Dict, Optional
+import itertools
+
+@dataclass
+class Persona:
+    """A communicator persona with expertise levels."""
+    code: str
+    type: str  # "human" or "agent"
+    schema_knowledge: str
+    process_knowledge: str
+    target_count: int
+    complexity_range: tuple[int, int]
+
+@dataclass
+class PromptMix:
+    """A combination of factors for prompt generation."""
+    mix_id: str
+    persona: Persona
+    financial_concept: str
+    query_intent: str
+    scenario: str
+    accounting_standard: str = "US-GAAP"
+
+@dataclass
+class GeneratedPrompt:
+    """A generated prompt with metadata."""
+    prompt_id: str
+    text: str
+    mix: PromptMix
+    complexity_level: int
+    template_used: str
+    validation_result: Optional[dict] = None
+
+class FinancialPromptGenerator:
+    """Generate diverse prompts for financial domain communication."""
+    
+    def __init__(self, config_path: str):
+        self.config = load_yaml(config_path)
+        self.taxonomy = self._load_taxonomy()
+        self.personas = self._load_personas()
+        self.teacher = LLMClient(model="gpt-4")
+        self.critic = LLMClient(model="gpt-4")
+        self.embedder = SentenceTransformer("all-MiniLM-L6-v2")
+    
+    def run(self) -> List[GeneratedPrompt]:
+        """Execute the full generation pipeline."""
+        
+        # Stage 1: Generate all mixes
+        mixes = self._generate_mixes()
+        print(f"Generated {len(mixes)} mixes")
+        
+        # Stage 2: Generate prompts per mix
+        all_prompts = []
+        for mix in mixes:
+            prompts = self._generate_prompts_for_mix(mix)
+            all_prompts.extend(prompts)
+        print(f"Generated {len(all_prompts)} raw prompts")
+        
+        # Stage 3: Apply persona-aware complexification
+        complexified = []
+        for prompt in all_prompts:
+            levels = self._get_complexity_levels(prompt.mix.persona)
+            for level in levels:
+                cp = self._complexify(prompt, level)
+                complexified.append(cp)
+        print(f"Complexified to {len(complexified)} prompts")
+        
+        # Stage 4: Validate with persona-aware critic
+        validated = []
+        for prompt in complexified:
+            result = self._validate(prompt)
+            if result.passed:
+                prompt.validation_result = result.to_dict()
+                validated.append(prompt)
+        print(f"Validated {len(validated)} prompts")
+        
+        # Compute metrics
+        metrics = self._compute_metrics(validated)
+        self._save_artifacts(validated, metrics)
+        
+        return validated
+    
+    def _generate_mixes(self) -> List[PromptMix]:
+        """Generate Cartesian product of personas x concepts x intents."""
+        concepts = self.taxonomy["IncomeStatement"]["children"] + \
+                   self.taxonomy["BalanceSheet"]["children"]
+        intents = self.taxonomy["QueryIntent"]["children"]
+        scenarios = self.taxonomy["Scenario"]["children"]
+        
+        mixes = []
+        for persona in self.personas:
+            for concept, intent, scenario in itertools.product(concepts, intents, scenarios):
+                mix = PromptMix(
+                    mix_id=f"mix-{len(mixes):05d}",
+                    persona=persona,
+                    financial_concept=concept,
+                    query_intent=intent,
+                    scenario=scenario,
+                )
+                mixes.append(mix)
+        
+        return mixes
+    
+    def _generate_prompts_for_mix(self, mix: PromptMix) -> List[GeneratedPrompt]:
+        """Generate diverse prompts for a single mix."""
+        template = TEMPLATES[mix.persona.code]
+        base_prompt = template.format(
+            concept=mix.financial_concept,
+            intent=mix.query_intent,
+            scenario=mix.scenario,
+            standard=mix.accounting_standard,
+        )
+        
+        # Generate multiple diverse versions
+        n = self.config["local_diversity"]["prompts_per_mix"]
+        prompts = []
+        for i in range(n):
+            response = self.teacher.complete(
+                f"Generate a unique example for: {base_prompt}"
+            )
+            prompts.append(GeneratedPrompt(
+                prompt_id=f"{mix.mix_id}-{i:02d}",
+                text=response,
+                mix=mix,
+                complexity_level=2,  # Default, will be adjusted
+                template_used=mix.persona.code,
+            ))
+        
+        # Deduplicate by embedding similarity
+        return self._deduplicate(prompts)
+    
+    def _validate(self, prompt: GeneratedPrompt) -> ValidationResult:
+        """Validate prompt against persona-appropriate criteria."""
+        return validate_prompt(prompt.text, prompt.mix.__dict__)
+    
+    def _compute_metrics(self, prompts: List[GeneratedPrompt]) -> dict:
+        """Compute PER-M01 to PER-M04."""
+        # PER-M01: Persona Coverage Rate
+        counts = {}
+        for p in prompts:
+            counts[p.mix.persona.code] = counts.get(p.mix.persona.code, 0) + 1
+        per_m01 = sum(1 for c in counts.values() if c >= 100) / len(self.personas)
+        
+        # PER-M02: Expertise Consistency
+        consistent = sum(1 for p in prompts if self._is_consistent(p))
+        per_m02 = consistent / len(prompts) if prompts else 0
+        
+        # PER-M03: Cross-Persona Fairness
+        proportions = [counts.get(p.code, 0) / len(prompts) for p in self.personas]
+        mean_prop = 1 / len(self.personas)
+        per_m03 = max(abs(p - mean_prop) for p in proportions)
+        
+        return {
+            "PER-M01": per_m01,
+            "PER-M02": per_m02,
+            "PER-M03": per_m03,
+            "PER-M04": {},  # Computed during drift monitoring
+        }
+\end{lstlisting}
+
+\section{Implementation Checklist}
+
+\begin{itemize}
+  \item[\texttt{[x]}] Define persona taxonomy (human + agent)
+  \item[\texttt{[x]}] Define financial domain taxonomy (concepts, intents, scenarios)
+  \item[\texttt{[x]}] Create persona-aware prompt templates
+  \item[\texttt{[x]}] Define PER-M01 to PER-M04 metrics
+  \item[\texttt{[x]}] Specify validation rules by persona
+  \item[\texttt{[x]}] Define integration with TTS drift framework
+  \item[\texttt{[x]}] Define integration with AI Safety framework
+  \item[\texttt{[ ]}] Implement \texttt{simula\_financial\_prompt\_generator.py}
+  \item[\texttt{[ ]}] Implement \texttt{simula\_financial\_prompt\_critic.py}
+  \item[\texttt{[ ]}] Create JSON schemas for artifacts
+  \item[\texttt{[ ]}] Create HANA DDL for persona telemetry
+  \item[\texttt{[ ]}] Integrate with CI/CD pipeline
+\end{itemize}
+
+\section{Cross-References}
+
+\begin{itemize}
+  \item \textbf{TTS Drift Metrics (Chapter~\ref{chap:tts-drift})} --- TTS-M05 (SAS),
+        TTS-M07 (TDS), TTS-M08 (ARR), TTS-M18 (PSS) apply to generated prompts
+  \item \textbf{SSG Framework (Section~\ref{sec:ssg-framework})} --- Per-persona
+        Hull-White calibration for PER-M04
+  \item \textbf{AI Safety Metrics (Chapter~5 of singapore-ai-safety)} --- S-01, S-02,
+        S-04, S-06, S-08 mapped to persona metrics
+  \item \textbf{Spec-Drift Auditing (Chapter~4a of clinerules-agents)} --- DRIFT-009,
+        DRIFT-010 for agent persona drift
+\end{itemize}

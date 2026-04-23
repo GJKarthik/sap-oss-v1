@@ -1,0 +1,256 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://sap-oss.github.io/schema/simula/tts-drift-alert.schema.json",
+  "title": "TTS Drift Alert",
+  "description": "Schema for Text-to-SQL drift detection alerts (Chapter 18)",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "alert_id",
+    "severity",
+    "drift_type",
+    "metric_code",
+    "current_value",
+    "threshold",
+    "timestamp"
+  ],
+  "properties": {
+    "alert_id": {
+      "type": "string",
+      "description": "Unique alert identifier",
+      "pattern": "^tts-alert-[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$"
+    },
+    "severity": {
+      "type": "string",
+      "enum": ["LOW", "MEDIUM", "HIGH", "CRITICAL"],
+      "description": "Alert severity level"
+    },
+    "drift_type": {
+      "type": "string",
+      "enum": [
+        "TTS-DRIFT-001",
+        "TTS-DRIFT-002",
+        "TTS-DRIFT-003",
+        "TTS-DRIFT-004",
+        "TTS-DRIFT-005",
+        "TTS-DRIFT-006"
+      ],
+      "description": "Type of drift detected per Table 18.1"
+    },
+    "drift_type_name": {
+      "type": "string",
+      "enum": [
+        "Schema Drift",
+        "Coverage Drift",
+        "Semantic Drift",
+        "Terminology Drift",
+        "Complexity Drift",
+        "Execution Drift"
+      ],
+      "description": "Human-readable drift type name"
+    },
+    "metric_code": {
+      "type": "string",
+      "enum": [
+        "TTS-M01",
+        "TTS-M02",
+        "TTS-M03",
+        "TTS-M04",
+        "TTS-M05",
+        "TTS-M06",
+        "TTS-M07",
+        "TTS-M08",
+        "TTS-M09",
+        "TTS-M10",
+        "TTS-M11",
+        "TTS-M12"
+      ],
+      "description": "Metric that triggered the alert"
+    },
+    "metric_name": {
+      "type": "string",
+      "description": "Human-readable metric name (e.g., 'Schema Coverage Rate')"
+    },
+    "current_value": {
+      "type": "number",
+      "description": "Current metric value that triggered the alert"
+    },
+    "threshold": {
+      "type": "number",
+      "description": "Threshold that was violated"
+    },
+    "baseline_value": {
+      "type": "number",
+      "description": "Baseline value for comparison"
+    },
+    "delta": {
+      "type": "number",
+      "description": "Absolute change from baseline"
+    },
+    "delta_percent": {
+      "type": "number",
+      "description": "Percentage change from baseline"
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Alert timestamp"
+    },
+    "user_segment": {
+      "type": "string",
+      "enum": ["power_user", "regular_user", "occasional_user", "new_user", "all"],
+      "description": "User population segment where drift was detected"
+    },
+    "sample_queries": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/sample_query"
+      },
+      "maxItems": 10,
+      "description": "Sample queries that contributed to the drift"
+    },
+    "recommended_action": {
+      "type": "string",
+      "description": "Recommended remediation action"
+    },
+    "action_timeline": {
+      "type": "string",
+      "description": "Expected timeline for action (e.g., 'Immediate', '4 hours', '1 week')"
+    },
+    "tts_eval_impact": {
+      "type": "number",
+      "description": "Estimated impact on TTS-EVAL composite score"
+    },
+    "related_schema_changes": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/schema_change"
+      },
+      "description": "Schema changes that may have caused the drift"
+    },
+    "acknowledged": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether alert has been acknowledged"
+    },
+    "acknowledged_by": {
+      "type": "string",
+      "description": "User who acknowledged the alert"
+    },
+    "acknowledged_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Timestamp of acknowledgment"
+    },
+    "resolved": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether alert has been resolved"
+    },
+    "resolved_by": {
+      "type": "string",
+      "description": "User who resolved the alert"
+    },
+    "resolved_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Timestamp of resolution"
+    },
+    "resolution_notes": {
+      "type": "string",
+      "description": "Notes on how the alert was resolved"
+    },
+    "tracking_issue": {
+      "type": "string",
+      "format": "uri",
+      "description": "Link to tracking issue (e.g., GitHub issue URL)"
+    },
+    "metadata": {
+      "$ref": "https://sap-oss.github.io/schema/common/base-types.schema.json#/definitions/Metadata",
+      "description": "Record metadata"
+    }
+  },
+  "definitions": {
+    "sample_query": {
+      "type": "object",
+      "description": "Sample query that contributed to drift",
+      "properties": {
+        "query_id": {
+          "type": "string",
+          "description": "Unique query identifier"
+        },
+        "prompt": {
+          "type": "string",
+          "description": "Natural language prompt"
+        },
+        "generated_sql": {
+          "type": "string",
+          "description": "Generated SQL query"
+        },
+        "execution_success": {
+          "type": "boolean",
+          "description": "Whether SQL executed successfully"
+        },
+        "error_message": {
+          "type": "string",
+          "description": "Error message if execution failed"
+        },
+        "user_id": {
+          "type": "string",
+          "description": "User who submitted the query"
+        },
+        "timestamp": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Query timestamp"
+        }
+      },
+      "required": ["prompt", "generated_sql"]
+    },
+    "schema_change": {
+      "type": "object",
+      "description": "Schema change that may have caused drift",
+      "properties": {
+        "change_id": {
+          "type": "string",
+          "description": "Unique change identifier"
+        },
+        "change_type": {
+          "type": "string",
+          "enum": ["column_added", "column_dropped", "column_renamed", "type_changed", "table_added", "table_dropped"],
+          "description": "Type of schema change"
+        },
+        "schema_name": {
+          "type": "string",
+          "description": "Affected schema name"
+        },
+        "table_name": {
+          "type": "string",
+          "description": "Affected table name"
+        },
+        "column_name": {
+          "type": "string",
+          "description": "Affected column name (if applicable)"
+        },
+        "old_value": {
+          "type": "string",
+          "description": "Previous value (e.g., old column name or type)"
+        },
+        "new_value": {
+          "type": "string",
+          "description": "New value"
+        },
+        "changed_at": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Timestamp of schema change"
+        },
+        "days_since_change": {
+          "type": "integer",
+          "description": "Days since the schema change occurred"
+        }
+      },
+      "required": ["change_type", "table_name", "changed_at"]
+    }
+  }
+}

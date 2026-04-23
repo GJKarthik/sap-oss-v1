@@ -30,7 +30,7 @@ Fixtures are located in \texttt{tests/fixtures/regulations/}.
 \subsection{Regulation fixtures}
 
 \begin{itemize}
-  \item Complete MAS MGF corpus (20 requirements)
+  \item Complete IMDA MGF corpus (20 requirements)
   \item Ju \& Aral paper requirements (5 requirements)
   \item AI Verify requirements (10 requirements)
   \item Edge case: Empty corpus
@@ -52,7 +52,7 @@ Fixtures are located in \texttt{tests/fixtures/regulations/}.
 \begin{tabularx}{\linewidth}{@{}l l X@{}}
 \toprule
 \textbf{ID} & \textbf{Priority} & \textbf{Description} \\ \midrule
-REG-PAR-001 & P1 & Parse requirement from MAS MGF \\
+REG-PAR-001 & P1 & Parse requirement from IMDA MGF \\
 REG-PAR-002 & P1 & Parse requirement from academic paper \\
 REG-PAR-003 & P1 & Extract obligation level (must/should/may) \\
 REG-PAR-004 & P2 & Handle missing optional fields \\
@@ -176,7 +176,7 @@ regulations-tests:
 
 \section{Quarterly audit tests}\label{sec:quarterly-audit}
 
-For MAS MGF compliance, run extended tests quarterly:
+For IMDA MGF compliance, run extended tests quarterly:
 
 \begin{enumerate}
   \item Execute the \emph{applicable} AIVerify plugin subset
@@ -216,7 +216,7 @@ Performance -- accuracy & Yes & Generic accuracy/benchmark against golden corpus
 Performance -- confusion matrix & No & No multi-class classifier. \\
 Hallucination / groundedness & Yes & Core test for RAG-backed commentary. \\
 PII leakage & Yes & Critical for Arabic AP (invoices) and TB (entity data). \\
-Toxicity / safety & Yes & Required by MAS MGF regardless of domain; low expected firing rate but must be part of the audit. \\
+Toxicity / safety & Yes & Required by IMDA MGF regardless of domain; low expected firing rate but must be part of the audit. \\
 \bottomrule
 \end{tabularx}
 \end{table}

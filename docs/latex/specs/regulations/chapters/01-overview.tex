@@ -37,7 +37,7 @@ Three concrete failure modes motivated the corpus:
 \section{Three source classes}
 
 \begin{description}
-  \item[Framework --- MAS MGF for Agentic AI.] A 29-page recommended
+  \item[Framework --- IMDA MGF for Agentic AI.] A 29-page recommended
     framework organised into four pillars: assess and bound risks upfront;
     make humans meaningfully accountable; implement technical controls and
     processes; enable end-user responsibility. It is the highest-normativity
@@ -85,8 +85,8 @@ Three concrete failure modes motivated the corpus:
 \node[dir] (src)      {\textbf{source/}\\ PDFs (untouched)};
 \node[gen,right=of src] (text) {\textbf{extracted-text/}\\ page-by-page TXT};
 \node[gen,right=of text] (rag) {\textbf{rag/}\\ chunks + embeddings};
-\node[struct,below=of text] (struct) {\textbf{structured/}\\ JSON records + schemas \\ + \tool{validate.py}};
-\node[outp,below=of struct] (spec) {\textbf{spec/}\\ this PDF (LaTeX)};
+\node[struct,below=of text] (struct) {\textbf{docs/schema/}\\ JSON records + schemas \\ + \tool{validate.py}};
+\node[outp,below=of struct] (spec) {\textbf{docs/latex/specs/}\\ this PDF (XeLaTeX)};
 
 \draw[arr] (src) -- (text) node[midway,above,font=\tiny] {pdftotext};
 \draw[arr] (text) -- (rag)  node[midway,above,font=\tiny] {chunker};
@@ -104,13 +104,14 @@ Three concrete failure modes motivated the corpus:
 \toprule
 \textbf{Directory} & \textbf{Purpose} \\
 \midrule
-\corpus{source/}          & Binary source documents. Never edited; hashed in \corpus{structured/corpus.json}. \\
-\corpus{extracted-text/}  & Derived, regeneratable page-by-page plain text. \\
-\corpus{rag/}             & RAG chunks + deterministic embedding records (re-upsertable into Qdrant via \corpus{rag/scripts/upsert\_qdrant.py}). \\
-\corpus{structured/}      & JSON Schemas, regulation records, requirement records, conformance-tool records, the corpus index, and the validator. \\
-\corpus{spec/}            & This human-readable PDF (LaTeX + tectonic). \\
-\corpus{aiverify-main/}   & Vendored AI Verify 2.0 monorepo (Apache-2.0). \\
-\corpus{moonshot-cicd-main/} & Vendored Moonshot 1.1.0 monorepo (Apache-2.0). \\
+\path{docs/regulations/} (source PDFs)    & Binary source documents. Never edited; content hashes tracked in \path{docs/schema/registry.json}. \\
+\path{docs/regulations/machine-readable/} & Per-source extracted text, RAG chunks, and embedding records (re-upsertable into Qdrant via \path{machine-readable/scripts/upsert\_qdrant.py}). \\
+\path{docs/regulations/machine-readable/specification-addendum.yaml} & Requirement records (20 requirements) with \texttt{implementation[]} and \texttt{verification[]} pointers. \\
+\path{docs/schema/regulations/}           & JSON Schemas (Draft-07): regulation, requirement, conformance-tool, corpus. \\
+\path{docs/schema/registry.json}, \path{docs/schema/validate.py} & Master schema index + unified offline validator. \\
+\path{docs/latex/specs/regulations/}      & This human-readable PDF (XeLaTeX). \\
+\path{docs/regulations/aiverify-main/}    & Vendored AI Verify 2.0 monorepo (Apache-2.0). \\
+\path{docs/regulations/moonshot-cicd-main/} & Vendored Moonshot 1.1.0 monorepo (Apache-2.0). \\
 \bottomrule
 \end{tabularx}
 \caption{Top-level directory layout.}
@@ -150,21 +151,22 @@ cross-references, down to the code or test actually implementing it.
 \draw[arr] (reg) -- (req);
 \draw[arr] (req) -- (code);
 \end{tikzpicture}}
-\caption{End-to-end traceability chain verified by \corpus{structured/validate.py}.}
+\caption{End-to-end traceability chain verified by \path{docs/schema/validate.py}.}
 \label{fig:traceability}
 \end{figure}
 
 \section{What the validator enforces}
 
 \begin{enumerate}
-  \item \textbf{Schema conformance.} Every record under the three
-        \corpus{structured/} sub-directories
-        (\texttt{regulations/}, \texttt{requirements/},
-        \texttt{conformance-tools/}) validates against its Draft-07 JSON
+  \item \textbf{Schema conformance.} Every record under
+        \path{docs/schema/regulations/}
+        (\texttt{regulation.schema.json}, \texttt{requirement.schema.json},
+        \texttt{conformance-tool.schema.json},
+        \texttt{corpus.schema.json}) validates against its Draft-07 JSON
         Schema using an offline \texttt{referencing} registry.
   \item \textbf{Corpus integrity.} Every entry in
-        \corpus{structured/corpus.json} resolves to a file on disk, and
-        every record on disk is listed in the index.
+        \path{docs/schema/registry.json} resolves to a schema or record on
+        disk, and every record on disk is listed in the registry.
   \item \textbf{Implementation link existence.} For each
         \texttt{implementation[].path}, the validator resolves the path
         against the repository root and fails if it is missing (unless the

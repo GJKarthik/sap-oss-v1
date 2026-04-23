@@ -741,3 +741,139 @@ clinerules-help:
 	@echo "CI/CD:"
 	@echo "  make clinerules-ci                  Run all validation checks"
 	@echo ""
+
+
+# ════════════════════════════════════════════════════════════════════════════
+# NL READINESS & VOCABULARY DRIFT ASSESSMENT
+# ════════════════════════════════════════════════════════════════════════════
+# New drift detection tools addressing meeting requirements:
+#   - NL readiness assessment for schemas (human vs agent suitability)
+#   - Vocabulary drift detection (training vs production divergence)
+#   - Synonym/entity mapping validation (hallucination prevention)
+# ════════════════════════════════════════════════════════════════════════════
+
+NL_READINESS_SCRIPT := scripts/spec-drift/nl_readiness_assessor.py
+VOCAB_DRIFT_SCRIPT := scripts/spec-drift/vocabulary_drift_monitor.py
+SYNONYMS_REGISTRY := docs/schema/common/synonyms.yaml
+
+.PHONY: audit-nl-readiness audit-nl-readiness-domain audit-nl-readiness-json \
+        audit-vocabulary-drift audit-vocabulary-trends audit-all-drift audit-quick
+
+# ── NL Readiness Assessment ──────────────────────────────────────────────────
+
+# Full NL readiness assessment across all domains
+audit-nl-readiness:
+	@echo "=== NL Readiness Assessment ==="
+	python3 $(NL_READINESS_SCRIPT) --full --output-format console
+
+# Assess specific domain
+audit-nl-readiness-domain:
+	@if [ -z "$(DOMAIN)" ]; then echo "Usage: make audit-nl-readiness-domain DOMAIN=simula"; exit 1; fi
+	python3 $(NL_READINESS_SCRIPT) --domain $(DOMAIN) --output-format console
+
+# JSON output for CI/CD integration
+audit-nl-readiness-json:
+	@mkdir -p $(AUDIT_LOG_DIR)
+	python3 $(NL_READINESS_SCRIPT) --full --output-format json \
+	  --output-file $(AUDIT_LOG_DIR)/nl-readiness-$$(date +%Y%m%d%H%M%S).json
+	@echo "Report saved to $(AUDIT_LOG_DIR)/"
+
+# ── Vocabulary Drift Detection ───────────────────────────────────────────────
+
+# Quick vocabulary drift check against registry
+audit-vocabulary-drift:
+	@echo "=== Vocabulary Drift Check ==="
+	python3 $(VOCAB_DRIFT_SCRIPT) --queries "show me trial balance" "what is the variance" --output-format console
+
+# Vocabulary drift with file input
+audit-vocabulary-drift-file:
+	@if [ -z "$(FILE)" ]; then echo "Usage: make audit-vocabulary-drift-file FILE=queries.jsonl"; exit 1; fi
+	python3 $(VOCAB_DRIFT_SCRIPT) --production-log $(FILE) --output-format console --save-metrics
+
+# Historical drift trends
+audit-vocabulary-trends:
+	python3 $(VOCAB_DRIFT_SCRIPT) --trends --days 30 --output-format console
+
+# JSON output for CI/CD
+audit-vocabulary-drift-json:
+	@mkdir -p $(AUDIT_LOG_DIR)
+	python3 $(VOCAB_DRIFT_SCRIPT) --queries "trial balance" "variance" "commentary" \
+	  --output-format json --output-file $(AUDIT_LOG_DIR)/vocab-drift-$$(date +%Y%m%d%H%M%S).json
+
+# ── Combined Drift Audits ────────────────────────────────────────────────────
+
+# Run all drift audits
+audit-all-drift: audit-spec-drift audit-nl-readiness
+	@echo "=== All Drift Audits Complete ==="
+
+# Quick pre-commit check
+audit-quick:
+	@echo "=== Quick Drift Check ==="
+	@git diff --name-only HEAD~1 2>/dev/null | head -20 | xargs python3 $(SPEC_DRIFT_SCRIPT) --mode pre-commit --changed-files 2>/dev/null || echo "No recent changes to audit"
+
+# ── Persona Classification ───────────────────────────────────────────────────
+
+PERSONA_CLASSIFIER := scripts/spec-drift/persona_classifier.py
+
+# Classify prompts in training file
+audit-persona-classify:
+	@if [ -z "$(FILE)" ]; then echo "Usage: make audit-persona-classify FILE=train.jsonl"; exit 1; fi
+	python3 $(PERSONA_CLASSIFIER) --input $(FILE) --output-format console
+
+# Split training file into human/agent versions
+audit-persona-split:
+	@if [ -z "$(FILE)" ]; then echo "Usage: make audit-persona-split FILE=train.jsonl"; exit 1; fi
+	@mkdir -p split_training
+	python3 $(PERSONA_CLASSIFIER) --input $(FILE) --split --output-dir split_training
+	@echo "Output: split_training/"
+
+# Assess single prompt
+audit-persona-assess:
+	@if [ -z "$(PROMPT)" ]; then echo "Usage: make audit-persona-assess PROMPT='Show me BUKRS 1000'"; exit 1; fi
+	python3 $(PERSONA_CLASSIFIER) --assess "$(PROMPT)"
+
+# ── DSPy Alignment Hooks ─────────────────────────────────────────────────────
+
+DSPY_HOOKS := scripts/spec-drift/dspy_alignment_hooks.py
+
+# Check hallucination risk for prompt
+audit-hallucination-risk:
+	@if [ -z "$(PROMPT)" ]; then echo "Usage: make audit-hallucination-risk PROMPT='What is India revenue'"; exit 1; fi
+	python3 $(DSPY_HOOKS) --risk "$(PROMPT)"
+
+# Generate alignment report for file
+audit-alignment-report:
+	@if [ -z "$(FILE)" ]; then echo "Usage: make audit-alignment-report FILE=prompts.jsonl"; exit 1; fi
+	python3 $(DSPY_HOOKS) --report $(FILE) --output-format console
+
+# ── Help ─────────────────────────────────────────────────────────────────────
+
+audit-help:
+	@echo ""
+	@echo "Drift Detection & NL Readiness Commands:"
+	@echo "────────────────────────────────────────────────────────────────────"
+	@echo ""
+	@echo "NL Readiness Assessment:"
+	@echo "  make audit-nl-readiness             Full NL readiness assessment"
+	@echo "  make audit-nl-readiness-domain DOMAIN=simula  Assess specific domain"
+	@echo "  make audit-nl-readiness-json        JSON output for CI/CD"
+	@echo ""
+	@echo "Vocabulary Drift Detection:"
+	@echo "  make audit-vocabulary-drift         Quick drift check"
+	@echo "  make audit-vocabulary-drift-file FILE=...  Analyze query file"
+	@echo "  make audit-vocabulary-trends        Show 30-day drift trends"
+	@echo "  make audit-vocabulary-drift-json    JSON output for CI/CD"
+	@echo ""
+	@echo "Persona Classification (Human vs Agent):"
+	@echo "  make audit-persona-classify FILE=...     Classify prompts in file"
+	@echo "  make audit-persona-split FILE=...        Split into human/agent files"
+	@echo "  make audit-persona-assess PROMPT='...'   Assess single prompt"
+	@echo ""
+	@echo "Hallucination Risk & DSPy Alignment:"
+	@echo "  make audit-hallucination-risk PROMPT=... Check hallucination risk"
+	@echo "  make audit-alignment-report FILE=...     Generate alignment report"
+	@echo ""
+	@echo "Combined:"
+	@echo "  make audit-all-drift                Run all drift audits"
+	@echo "  make audit-quick                    Quick pre-commit check"
+	@echo ""

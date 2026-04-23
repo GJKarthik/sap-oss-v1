@@ -119,10 +119,10 @@ M07 & M06       & M & REG-BC-REFRESH     & Business-case refresh and compliance 
 S01 & M06       & S & REG-INTG-AP-001    & Arabic AP integration: reserve/complete on AP actions; REG-MGF-2.1.2-002 becomes \textit{compliant} once AP live. \\
 S02 & S01       & S & REG-INTG-SIM-001   & Simula integration: reserve/complete on Simula corpus-generation actions. \\
 S03 & M06       & S & REG-MGF-V11        & MGF v1.1 pillar updates ingested and mapped to agent index. \\
-C01 & S03 + \cref{sec:reg-v2-trigger} trigger & C & REG-V2-EXPLORE & v2.0 multi-regulator correlation scoped (beyond MAS MGF). \\
+C01 & S03 + \cref{sec:reg-v2-trigger} trigger & C & REG-V2-EXPLORE & v2.0 multi-regulator correlation scoped (beyond IMDA MGF). \\
 C02 & M06       & C & REG-TUNE           & Quarterly conformance-tooling retraining from accept/edit telemetry. \\
 W01 & ---       & W & REG-V1-REALTIME    & Real-time cross-project audit dashboards are \emph{not} in v1.0 scope. \\
-W02 & ---       & W & REG-V1-MULTIREG    & Multi-regulator correlation is \emph{not} in v1.0 scope; single-regulator (MAS MGF) only. \\
+W02 & ---       & W & REG-V1-MULTIREG    & Multi-regulator correlation is \emph{not} in v1.0 scope; single-regulator (IMDA MGF) only. \\
 \bottomrule
 \end{tabularx}
 \end{table}
@@ -176,7 +176,7 @@ notified within 24 hours. The conditions are evaluated continuously
 Audit-coverage gap (missed \texttt{reserve/complete} pair) detected in production & continuous & \textbf{Halt GA onboarding for all consumers}; incident-review before next integration. \\
 Circuit breaker tripped with no successful graceful-degradation fallback for three consecutive cycles & per cycle & \textbf{Halt upstream LLM traffic}; fail over to cached/heuristic path; remediate before resuming. \\
 Identity-attribution reconciliation fails (principal of record cannot be resolved) for $>$\,0.01\,\% of actions & per cycle & \textbf{Pause affected consumer}; block further reserves until remediated. \\
-Any MAS MGF finding attributable to the Regulations platform (audit, identity, monitoring) & continuous & \textbf{Halt rollout}; remediate before next wave. \\
+Any IMDA MGF finding attributable to the Regulations platform (audit, identity, monitoring) & continuous & \textbf{Halt rollout}; remediate before next wave. \\
 Any consumer project declares red on a Regulations-supplied component & continuous & \textbf{Pause downstream Should}; re-plan at next steering. \\
 \bottomrule
 \end{tabularx}
@@ -217,7 +217,7 @@ following are observed after two consecutive quarters of full rollout
 under v1.0:
 
 \begin{itemize}
-  \item a second regulator framework (beyond MAS MGF) is formally
+  \item a second regulator framework (beyond IMDA MGF) is formally
         adopted as in-scope by the AI Governance Working Group;
   \item MGF v1.1 pillars (S03) are fully mapped and at \textit{compliant}
         status;

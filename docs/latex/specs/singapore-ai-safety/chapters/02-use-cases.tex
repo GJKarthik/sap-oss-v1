@@ -127,5 +127,9 @@ Before implementation, each use case must be registered with:
   \item \textbf{Ticket reference} --- tracking ticket for governance approval
 \end{enumerate}
 
-Registration is tracked in the use-case registry at
-\filepath{docs/schema/regulations/use-case-registry.yaml}.
+Registration is tracked in the use-case section of the regulations
+requirement corpus at
+\filepath{docs/regulations/machine-readable/specification-addendum.yaml}
+(key \texttt{use\_cases}), validated against the schemas under
+\filepath{docs/schema/regulations/} via
+\filepath{docs/schema/validate.py}.

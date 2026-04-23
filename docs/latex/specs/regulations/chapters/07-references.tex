@@ -31,41 +31,60 @@
 \toprule
 \textbf{Path (relative to repo root)} & \textbf{Role} \\
 \midrule
-\path{docs/regulations/structured/schema/}                  & JSON schemas (Draft-07). \\
-\path{docs/regulations/structured/enums.yaml}               & Controlled vocabularies. \\
-\path{docs/regulations/structured/regulations/}             & Regulation records (3 files). \\
-\path{docs/regulations/structured/requirements/}            & Requirement collections (6 files, 20 requirements). \\
-\path{docs/regulations/structured/conformance-tools/}       & Conformance-tool records (2 files). \\
-\path{docs/regulations/structured/corpus.json}              & Top-level index. \\
-\path{docs/regulations/structured/validate.py}              & Offline validator. \\
+\path{docs/schema/regulations/}                       & JSON Schemas (Draft-07) for regulation, requirement, conformance-tool, and corpus records. \\
+\path{docs/schema/common/enums.yaml}                  & Controlled vocabularies shared across the four domain specs. \\
+\path{docs/schema/registry.json}                      & Master schema index (all domains). \\
+\path{docs/schema/validate.py}                        & Unified offline validator (registry check + per-document check). \\
+\path{docs/regulations/machine-readable/}             & Per-source extracted text and RAG artefacts (see \cref{tab:machine-readable-inventory}). \\
+\path{docs/regulations/machine-readable/specification-addendum.yaml} & Requirement records (20 requirements across MGF, Agent Index, Ju \& Aral). \\
 \bottomrule
 \end{tabularx}
-\caption{Structured layer inventory.}
+\caption{Structured layer inventory (unified-schema layout, April 2026).}
 \label{tab:struct-inventory}
+\end{table}
+
+\begin{table}[h]
+\centering
+\small
+\begin{tabularx}{\textwidth}{p{6.6cm}X}
+\toprule
+\textbf{Path} & \textbf{Role} \\
+\midrule
+\path{mgf-for-agentic-ai.txt}            & Extracted text of the IMDA MGF PDF. \\
+\path{2025-AI-Agent-Index.txt}           & Extracted text of the 2025 AI Agent Index. \\
+\path{2503.18238v3.txt}                  & Extracted text of the Ju \& Aral pre-print. \\
+\path{rag_chunks.jsonl}                  & Deterministic chunks ready for embedding. \\
+\path{rag_embedding_records.jsonl}       & Embedding records (re-upsertable into Qdrant). \\
+\path{rag_manifest.json}                 & Manifest of chunk / embedding counts + hashes. \\
+\path{scripts/}                          & Re-chunk and re-upsert scripts. \\
+\bottomrule
+\end{tabularx}
+\caption{Contents of \texttt{docs/regulations/machine-readable/}.}
+\label{tab:machine-readable-inventory}
 \end{table}
 
 \section{Corpus index excerpt}
 
-\begin{lstlisting}[language=jsonx,caption={Excerpt of \texttt{docs/regulations/structured/corpus.json}.}]
+\begin{lstlisting}[language=jsonx,caption={Excerpt of \texttt{docs/schema/registry.json} (regulations domain).}]
 {
   "schema_version": "1.0",
   "generated": "2026-04-18",
-  "items": [
-    { "id": "reg-mas-mgf-agentic-ai-v1",
-      "type": "regulation",
-      "jurisdiction": "SG",
-      "sha256": "b84c8c94...aeef7b",
-      "source_path": "docs/regulations/source/mgf-for-agentic-ai.pdf",
-      "structured_path": "docs/regulations/structured/regulations/mas-mgf-agentic-ai-v1.json" },
-    { "id": "tool-aiverify",
-      "type": "conformance_tool",
-      "jurisdiction": "SG",
-      "structured_path": "docs/regulations/structured/conformance-tools/aiverify.json" },
-    { "id": "req-mgf-pillar-1",
-      "type": "requirement",
-      "structured_path": "docs/regulations/structured/requirements/mgf-pillar-1-bound-risks.json" }
-    // ... eleven more items
-  ]
+  "domains": {
+    "regulations": {
+      "status": "stable",
+      "schemas": [
+        { "id": "regulation",
+          "path": "docs/schema/regulations/regulation.schema.json" },
+        { "id": "requirement",
+          "path": "docs/schema/regulations/requirement.schema.json" },
+        { "id": "conformance-tool",
+          "path": "docs/schema/regulations/conformance-tool.schema.json" },
+        { "id": "corpus",
+          "path": "docs/schema/regulations/corpus.schema.json" }
+      ],
+      "records": "docs/regulations/machine-readable/specification-addendum.yaml"
+    }
+  }
 }
 \end{lstlisting}
 
@@ -135,17 +154,22 @@ REG-JU-ARAL-5-001 & n/a           & (creative use cases only)                   
 
 \begin{lstlisting}[language=bash,caption={Commands to re-run validation
 and rebuild the PDF.}]
-# Offline validation (schema + corpus + implementation + verification).
-python3 docs/regulations/structured/validate.py
+# Offline registry + schema validation (all domains).
+python3 docs/schema/validate.py --registry-check
+
+# Per-document validation for the regulations domain.
+python3 docs/schema/validate.py --domain regulations \
+    --schema requirement.schema.json \
+    --file docs/regulations/machine-readable/specification-addendum.yaml
 
 # Re-chunk + re-embed (needs OPENAI_API_KEY + QDRANT_URL).
-python3 docs/regulations/rag/scripts/prepare_embedding_records.py
-python3 docs/regulations/rag/scripts/upsert_qdrant.py \
-    --input docs/regulations/rag/rag_embedding_records.jsonl \
+python3 docs/regulations/machine-readable/scripts/prepare_embedding_records.py
+python3 docs/regulations/machine-readable/scripts/upsert_qdrant.py \
+    --input docs/regulations/machine-readable/rag_embedding_records.jsonl \
     --collection regulations_rag
 
-# Rebuild this PDF (tectonic).
-cd docs/regulations/spec && make
+# Rebuild this PDF (XeLaTeX).
+cd docs/latex/specs/regulations && latexmk -xelatex regulations-spec-apple.tex
 \end{lstlisting}
 
 \section{Further resources}

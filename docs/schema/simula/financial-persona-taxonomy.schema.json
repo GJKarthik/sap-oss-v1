@@ -1,0 +1,135 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://sap-oss.github.io/schemas/simula/financial-persona-taxonomy.schema.json",
+  "title": "Financial Domain Persona Taxonomy",
+  "description": "Schema for defining human user and AI agent personas for financial domain prompt generation",
+  "type": "object",
+  "required": ["version", "personas"],
+  "additionalProperties": false,
+  "properties": {
+    "version": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+(\\.\\d+)?$",
+      "description": "Semantic version of the persona taxonomy"
+    },
+    "personas": {
+      "type": "object",
+      "required": ["humans", "agents"],
+      "additionalProperties": false,
+      "properties": {
+        "humans": {
+          "type": "array",
+          "description": "Human user personas",
+          "items": { "$ref": "#/$defs/persona" },
+          "minItems": 1
+        },
+        "agents": {
+          "type": "array",
+          "description": "AI agent worker personas",
+          "items": { "$ref": "#/$defs/persona" },
+          "minItems": 1
+        }
+      }
+    },
+    "expertise_levels": {
+      "type": "object",
+      "description": "Definitions of expertise levels",
+      "additionalProperties": false,
+      "properties": {
+        "schema_knowledge": {
+          "$ref": "#/$defs/expertise_level_definitions"
+        },
+        "process_knowledge": {
+          "$ref": "#/$defs/expertise_level_definitions"
+        }
+      }
+    },
+    "complexity_mapping": {
+      "type": "object",
+      "description": "Mapping of personas to allowed complexity levels",
+      "additionalProperties": {
+        "type": "array",
+        "items": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 5
+        }
+      }
+    }
+  },
+  "$defs": {
+    "persona": {
+      "type": "object",
+      "required": ["code", "name", "schema_knowledge", "process_knowledge", "communication_style"],
+      "additionalProperties": false,
+      "properties": {
+        "code": {
+          "type": "string",
+          "pattern": "^(HU|AG)-[A-Z]+$",
+          "description": "Unique persona code (HU- for human, AG- for agent)"
+        },
+        "name": {
+          "type": "string",
+          "description": "Human-readable persona name"
+        },
+        "schema_knowledge": {
+          "$ref": "#/$defs/expertise_level"
+        },
+        "process_knowledge": {
+          "$ref": "#/$defs/expertise_level"
+        },
+        "communication_style": {
+          "type": "string",
+          "description": "Description of how this persona communicates"
+        },
+        "target_count": {
+          "type": "integer",
+          "minimum": 100,
+          "description": "Target number of prompts to generate for this persona"
+        },
+        "complexity_range": {
+          "type": "object",
+          "required": ["min", "max"],
+          "properties": {
+            "min": { "type": "integer", "minimum": 1, "maximum": 5 },
+            "max": { "type": "integer", "minimum": 1, "maximum": 5 }
+          }
+        },
+        "terminology_precision": {
+          "type": "string",
+          "enum": ["strict", "medium", "soft", "none"],
+          "description": "Required terminology precision for validation"
+        },
+        "ambiguity_allowed": {
+          "type": "boolean",
+          "description": "Whether ambiguous prompts are acceptable for this persona"
+        },
+        "example_prompts": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Example prompts typical of this persona"
+        },
+        "aliases_allowed": {
+          "type": "boolean",
+          "description": "Whether this persona may use non-canonical term aliases"
+        }
+      }
+    },
+    "expertise_level": {
+      "type": "string",
+      "enum": ["none", "low", "medium", "high", "expert"],
+      "description": "Level of expertise/knowledge"
+    },
+    "expertise_level_definitions": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "none": { "type": "string", "description": "Definition of 'none' level" },
+        "low": { "type": "string", "description": "Definition of 'low' level" },
+        "medium": { "type": "string", "description": "Definition of 'medium' level" },
+        "high": { "type": "string", "description": "Definition of 'high' level" },
+        "expert": { "type": "string", "description": "Definition of 'expert' level" }
+      }
+    }
+  }
+}

@@ -1,0 +1,792 @@
+report_id: DRIFT-AUDIT-FULL-20260423124059
+trigger: full
+commit_sha: ea61e7406d5b059d73a91b683c98867707ad6f11
+branch: main
+timestamp: '2026-04-23T12:40:59.884384'
+changed_files: []
+findings:
+- id: DRIFT-001-SCHEMA-001
+  type: DRIFT_001
+  type_description: Schema-Spec Drift
+  severity: MEDIUM
+  source_file: docs/schema/simula/hana-schema-entry.schema.json
+  message: Schema has 20 fields not documented in spec
+  related_artifacts:
+  - path: docs/latex/specs/simula/chapters/04-extraction-pipeline.tex
+    type: specification
+    status: possibly_stale
+    domain: simula
+  evidence:
+    schema_only_fields:
+    - base_tables
+    - default_value
+    - definition_sql
+    - extraction_duration_ms
+    - extraction_metadata
+    - foreign_keys
+    - hana_types_mapping
+    - hana_version
+    - is_primary_key
+    - mcp_server
+    - metadata
+    - nullable
+    - primary_key
+    - references_columns
+    - references_table
+    - row_count_estimate
+    - schema_id
+    - schema_name
+    - sql_type
+    - views
+    schema_field_count: 26
+    spec_field_count: 8
+  remediation: 'Document these fields in docs/latex/specs/simula/chapters/04-extraction-pipeline.tex:
+    base_tables, default_value, definition_sql, extraction_duration_ms, extraction_metadata,
+    foreign_keys, hana_types_mapping, hana_version, is_primary_key, mcp_server'
+  blocking: false
+- id: DRIFT-001-SPEC-002
+  type: DRIFT_001
+  type_description: Schema-Spec Drift
+  severity: LOW
+  source_file: docs/latex/specs/simula/chapters/04-extraction-pipeline.tex
+  message: Spec mentions 3 fields not in schema (may be removed or renamed)
+  related_artifacts:
+  - path: docs/schema/simula/hana-schema-entry.schema.json
+    type: schema
+    status: possibly_stale
+    domain: simula
+  evidence:
+    spec_only_fields:
+    - else
+    - schema
+    - schemas
+  remediation: 'Verify these fields are still valid or update spec: else, schema,
+    schemas'
+  blocking: false
+- id: DRIFT-001-SCHEMA-001
+  type: DRIFT_001
+  type_description: Schema-Spec Drift
+  severity: MEDIUM
+  source_file: docs/schema/simula/taxonomy.schema.json
+  message: Schema has 35 fields not documented in spec
+  related_artifacts:
+  - path: docs/latex/specs/simula/chapters/05-taxonomy-engine.tex
+    type: specification
+    status: possibly_stale
+    domain: simula
+  evidence:
+    schema_only_fields:
+    - avg_branching_factor
+    - best_of_n
+    - children
+    - completeness
+    - coverage_ratio
+    - domain
+    - evaluated_at
+    - examples
+    - expert_taxonomy_path
+    - factor_count
+    - generated_at
+    - generation_metadata
+    - leaf_count
+    - level
+    - level_distribution
+    - max_depth
+    - metadata
+    - method
+    - model
+    - node_id
+    schema_field_count: 37
+    spec_field_count: 6
+  remediation: 'Document these fields in docs/latex/specs/simula/chapters/05-taxonomy-engine.tex:
+    avg_branching_factor, best_of_n, children, completeness, coverage_ratio, domain,
+    evaluated_at, examples, expert_taxonomy_path, factor_count'
+  blocking: false
+- id: DRIFT-001-SPEC-002
+  type: DRIFT_001
+  type_description: Schema-Spec Drift
+  severity: LOW
+  source_file: docs/latex/specs/simula/chapters/05-taxonomy-engine.tex
+  message: Spec mentions 4 fields not in schema (may be removed or renamed)
+  related_artifacts:
+  - path: docs/schema/simula/taxonomy.schema.json
+    type: schema
+    status: possibly_stale
+    domain: simula
+  evidence:
+    spec_only_fields:
+    - factors
+    - n
+    - prompt
+    - temperature
+  remediation: 'Verify these fields are still valid or update spec: factors, n, prompt,
+    temperature'
+  blocking: false
+- id: DRIFT-001-SCHEMA-001
+  type: DRIFT_001
+  type_description: Schema-Spec Drift
+  severity: MEDIUM
+  source_file: docs/schema/simula/training-example.schema.json
+  message: Schema has 38 fields not documented in spec
+  related_artifacts:
+  - path: docs/latex/specs/simula/chapters/06-generation-engine.tex
+    type: specification
+    status: possibly_stale
+    domain: simula
+  evidence:
+    schema_only_fields:
+    - adaptive_threshold_applied
+    - aggregate_count
+    - batch_id
+    - complexity_level
+    - confidence
+    - correct_query_answer
+    - correct_query_response
+    - critic_evaluation
+    - critic_passed
+    - cte_count
+    - elo_rating
+    - embedding_vector
+    - evaluated_at
+    - generated_at
+    - generation_metadata
+    - incorrect_query_answer
+    - incorrect_query_response
+    - is_complexified
+    - is_valid
+    - join_count
+    schema_field_count: 43
+    spec_field_count: 9
+  remediation: 'Document these fields in docs/latex/specs/simula/chapters/06-generation-engine.tex:
+    adaptive_threshold_applied, aggregate_count, batch_id, complexity_level, confidence,
+    correct_query_answer, correct_query_response, critic_evaluation, critic_passed,
+    cte_count'
+  blocking: false
+- id: DRIFT-001-SPEC-002
+  type: DRIFT_001
+  type_description: Schema-Spec Drift
+  severity: LOW
+  source_file: docs/latex/specs/simula/chapters/06-generation-engine.tex
+  message: Spec mentions 4 fields not in schema (may be removed or renamed)
+  related_artifacts:
+  - path: docs/schema/simula/training-example.schema.json
+    type: schema
+    status: possibly_stale
+    domain: simula
+  evidence:
+    spec_only_fields:
+    - else
+    - estimator
+    - max_tokens
+    - schema
+  remediation: 'Verify these fields are still valid or update spec: else, estimator,
+    max_tokens, schema'
+  blocking: false
+- id: DRIFT-001-SCHEMA-001
+  type: DRIFT_001
+  type_description: Schema-Spec Drift
+  severity: MEDIUM
+  source_file: docs/schema/simula/meta-prompt.schema.json
+  message: Schema has 15 fields not documented in spec
+  related_artifacts:
+  - path: docs/latex/specs/simula/chapters/06-generation-engine.tex
+    type: specification
+    status: possibly_stale
+    domain: simula
+  evidence:
+    schema_only_fields:
+    - examples_generated
+    - generated_at
+    - generation_metadata
+    - meta_prompt_id
+    - metadata
+    - mix
+    - model
+    - node_name
+    - node_path
+    - prompt_text
+    - sampling_strategy
+    - schema_context
+    - seed
+    - taxonomy_id
+    - temperature
+    schema_field_count: 15
+    spec_field_count: 9
+  remediation: 'Document these fields in docs/latex/specs/simula/chapters/06-generation-engine.tex:
+    examples_generated, generated_at, generation_metadata, meta_prompt_id, metadata,
+    mix, model, node_name, node_path, prompt_text'
+  blocking: false
+- id: DRIFT-001-SPEC-002
+  type: DRIFT_001
+  type_description: Schema-Spec Drift
+  severity: LOW
+  source_file: docs/latex/specs/simula/chapters/06-generation-engine.tex
+  message: Spec mentions 8 fields not in schema (may be removed or renamed)
+  related_artifacts:
+  - path: docs/schema/simula/meta-prompt.schema.json
+    type: schema
+    status: possibly_stale
+    domain: simula
+  evidence:
+    spec_only_fields:
+    - complexity_score
+    - else
+    - estimator
+    - max_tokens
+    - question
+    - schema
+    - sql
+    - taxonomy_path
+  remediation: 'Verify these fields are still valid or update spec: complexity_score,
+    else, estimator, max_tokens, question, schema, sql, taxonomy_path'
+  blocking: false
+- id: DRIFT-001-SCHEMA-001
+  type: DRIFT_001
+  type_description: Schema-Spec Drift
+  severity: MEDIUM
+  source_file: docs/schema/simula/training-example.schema.json
+  message: Schema has 42 fields not documented in spec
+  related_artifacts:
+  - path: docs/latex/specs/simula/chapters/08-evaluation-framework.tex
+    type: specification
+    status: possibly_stale
+    domain: simula
+  evidence:
+    schema_only_fields:
+    - adaptive_threshold_applied
+    - aggregate_count
+    - batch_id
+    - complexity_level
+    - complexity_score
+    - confidence
+    - correct_query_answer
+    - correct_query_response
+    - critic_evaluation
+    - critic_passed
+    - cte_count
+    - elo_rating
+    - embedding_vector
+    - evaluated_at
+    - generated_at
+    - generation_metadata
+    - incorrect_query_answer
+    - incorrect_query_response
+    - is_complexified
+    - is_valid
+    schema_field_count: 43
+    spec_field_count: 1
+  remediation: 'Document these fields in docs/latex/specs/simula/chapters/08-evaluation-framework.tex:
+    adaptive_threshold_applied, aggregate_count, batch_id, complexity_level, complexity_score,
+    confidence, correct_query_answer, correct_query_response, critic_evaluation, critic_passed'
+  blocking: false
+- id: DRIFT-001-SCHEMA-001
+  type: DRIFT_001
+  type_description: Schema-Spec Drift
+  severity: MEDIUM
+  source_file: docs/schema/simula/config.schema.json
+  message: Schema has 69 fields not documented in spec
+  related_artifacts:
+  - path: docs/latex/specs/simula/chapters/07-environment-cli.tex
+    type: specification
+    status: possibly_stale
+    domain: simula
+  evidence:
+    schema_only_fields:
+    - adaptive
+    - artifact
+    - base_threshold
+    - base_url
+    - batch_size
+    - best_of_n
+    - checksum_sha256
+    - circuit_breaker_reset_seconds
+    - circuit_breaker_threshold
+    - complexity
+    - complexity_ratio
+    - coverage
+    - coverage_gap_filling
+    - critic_threshold
+    - critic_validation
+    - directory
+    - diversity
+    - diversity_optimizer
+    - elo_k_factor
+    - embedding_model
+    schema_field_count: 69
+    spec_field_count: 1
+  remediation: 'Document these fields in docs/latex/specs/simula/chapters/07-environment-cli.tex:
+    adaptive, artifact, base_threshold, base_url, batch_size, best_of_n, checksum_sha256,
+    circuit_breaker_reset_seconds, circuit_breaker_threshold, complexity'
+  blocking: false
+- id: DRIFT-001-SCHEMA-001
+  type: DRIFT_001
+  type_description: Schema-Spec Drift
+  severity: MEDIUM
+  source_file: docs/schema/simula/tts-drift-metrics.schema.json
+  message: Schema has 36 fields not documented in spec
+  related_artifacts:
+  - path: docs/latex/specs/simula/chapters/18-text-to-sql-drift.tex
+    type: specification
+    status: possibly_stale
+    domain: simula
+  evidence:
+    schema_only_fields:
+    - baseline_id
+    - bin_contributions
+    - bin_index
+    - bin_label
+    - confidence_bound
+    - contribution
+    - drift_alerts
+    - drift_level
+    - evaluation_context
+    - feature_name
+    - generation_quality_metrics
+    - kss
+    - metadata
+    - null_hypothesis
+    - num_bins
+    - p_proportion
+    - p_value_threshold
+    - passed
+    - psi
+    - q_proportion
+    schema_field_count: 62
+    spec_field_count: 148
+  remediation: 'Document these fields in docs/latex/specs/simula/chapters/18-text-to-sql-drift.tex:
+    baseline_id, bin_contributions, bin_index, bin_label, confidence_bound, contribution,
+    drift_alerts, drift_level, evaluation_context, feature_name'
+  blocking: false
+- id: DRIFT-001-SPEC-002
+  type: DRIFT_001
+  type_description: Schema-Spec Drift
+  severity: LOW
+  source_file: docs/latex/specs/simula/chapters/18-text-to-sql-drift.tex
+  message: Spec mentions 120 fields not in schema (may be removed or renamed)
+  related_artifacts:
+  - path: docs/schema/simula/tts-drift-metrics.schema.json
+    type: schema
+    status: possibly_stale
+    domain: simula
+  evidence:
+    spec_only_fields:
+    - action
+    - actual_fpr
+    - alert_callback
+    - alert_id
+    - ambiguity_type
+    - ambiguous_span
+    - audit_id
+    - baseline
+    - bootstrap_iterations
+    - bootstrap_mean
+    - bootstrap_percentiles
+    - bootstrap_std
+    - calibrator_version
+    - chosen_threshold
+    - classifier_model
+    - classifier_threshold
+    - column_drop_rate
+    - column_rename_rate
+    - complexity_band
+    - complexity_shift
+  remediation: 'Verify these fields are still valid or update spec: action, actual_fpr,
+    alert_callback, alert_id, ambiguity_type, ambiguous_span, audit_id, baseline,
+    bootstrap_iterations, bootstrap_mean'
+  blocking: false
+- id: DRIFT-001-SCHEMA-001
+  type: DRIFT_001
+  type_description: Schema-Spec Drift
+  severity: MEDIUM
+  source_file: docs/schema/simula/tts-drift-alert.schema.json
+  message: Schema has 27 fields not documented in spec
+  related_artifacts:
+  - path: docs/latex/specs/simula/chapters/18-text-to-sql-drift.tex
+    type: specification
+    status: possibly_stale
+    domain: simula
+  evidence:
+    schema_only_fields:
+    - acknowledged
+    - acknowledged_at
+    - acknowledged_by
+    - action_timeline
+    - change_id
+    - change_type
+    - changed_at
+    - column_name
+    - days_since_change
+    - delta_percent
+    - drift_type_name
+    - error_message
+    - execution_success
+    - metadata
+    - new_value
+    - old_value
+    - query_id
+    - recommended_action
+    - related_schema_changes
+    - resolution_notes
+    schema_field_count: 42
+    spec_field_count: 148
+  remediation: 'Document these fields in docs/latex/specs/simula/chapters/18-text-to-sql-drift.tex:
+    acknowledged, acknowledged_at, acknowledged_by, action_timeline, change_id, change_type,
+    changed_at, column_name, days_since_change, delta_percent'
+  blocking: false
+- id: DRIFT-001-SPEC-002
+  type: DRIFT_001
+  type_description: Schema-Spec Drift
+  severity: LOW
+  source_file: docs/latex/specs/simula/chapters/18-text-to-sql-drift.tex
+  message: Spec mentions 130 fields not in schema (may be removed or renamed)
+  related_artifacts:
+  - path: docs/schema/simula/tts-drift-alert.schema.json
+    type: schema
+    status: possibly_stale
+    domain: simula
+  evidence:
+    spec_only_fields:
+    - action
+    - actual_fpr
+    - alert_callback
+    - ambiguity_type
+    - ambiguous_span
+    - arr
+    - audit_id
+    - baseline
+    - bootstrap_iterations
+    - bootstrap_mean
+    - bootstrap_percentiles
+    - bootstrap_std
+    - calibrator_version
+    - cdd
+    - chosen_threshold
+    - classifier_model
+    - classifier_threshold
+    - column_drop_rate
+    - column_rename_rate
+    - complexity_band
+  remediation: 'Verify these fields are still valid or update spec: action, actual_fpr,
+    alert_callback, ambiguity_type, ambiguous_span, arr, audit_id, baseline, bootstrap_iterations,
+    bootstrap_mean'
+  blocking: false
+- id: DRIFT-001-SCHEMA-001
+  type: DRIFT_001
+  type_description: Schema-Spec Drift
+  severity: MEDIUM
+  source_file: docs/schema/simula/tts-drift-baseline.schema.json
+  message: Schema has 72 fields not documented in spec
+  related_artifacts:
+  - path: docs/latex/specs/simula/chapters/18-text-to-sql-drift.tex
+    type: specification
+    status: possibly_stale
+    domain: simula
+  evidence:
+    schema_only_fields:
+    - approval_status
+    - approved_at
+    - approved_by
+    - arr_threshold
+    - avg_question_length
+    - avg_sql_length
+    - baseline_id
+    - baseline_version
+    - cdd_threshold
+    - column
+    - column_count
+    - column_hash
+    - complexity_distribution
+    - coverage_by_factor
+    - covered_nodes
+    - created_at
+    - created_by
+    - critic_pass_rate
+    - ctmr_threshold
+    - easy
+    schema_field_count: 86
+    spec_field_count: 148
+  remediation: 'Document these fields in docs/latex/specs/simula/chapters/18-text-to-sql-drift.tex:
+    approval_status, approved_at, approved_by, arr_threshold, avg_question_length,
+    avg_sql_length, baseline_id, baseline_version, cdd_threshold, column'
+  blocking: false
+- id: DRIFT-001-SPEC-002
+  type: DRIFT_001
+  type_description: Schema-Spec Drift
+  severity: LOW
+  source_file: docs/latex/specs/simula/chapters/18-text-to-sql-drift.tex
+  message: Spec mentions 132 fields not in schema (may be removed or renamed)
+  related_artifacts:
+  - path: docs/schema/simula/tts-drift-baseline.schema.json
+    type: schema
+    status: possibly_stale
+    domain: simula
+  evidence:
+    spec_only_fields:
+    - action
+    - actual_fpr
+    - alert_callback
+    - alert_id
+    - ambiguity_type
+    - ambiguous_span
+    - audit_id
+    - baseline
+    - baseline_value
+    - bootstrap_iterations
+    - bootstrap_mean
+    - bootstrap_percentiles
+    - bootstrap_std
+    - calibrator_version
+    - cdd
+    - chosen_threshold
+    - classifier_model
+    - classifier_threshold
+    - column_drop_rate
+    - column_rename_rate
+  remediation: 'Verify these fields are still valid or update spec: action, actual_fpr,
+    alert_callback, alert_id, ambiguity_type, ambiguous_span, audit_id, baseline,
+    baseline_value, bootstrap_iterations'
+  blocking: false
+- id: DRIFT-001-SCHEMA-001
+  type: DRIFT_001
+  type_description: Schema-Spec Drift
+  severity: MEDIUM
+  source_file: docs/schema/simula/surprise-audit-trail.schema.json
+  message: Schema has 23 fields not documented in spec
+  related_artifacts:
+  - path: docs/latex/specs/simula/chapters/18-text-to-sql-drift.tex
+    type: specification
+    status: possibly_stale
+    domain: simula
+  evidence:
+    schema_only_fields:
+    - action_type
+    - calibrator_state
+    - commit_hash
+    - compliance
+    - context
+    - covariance_estimate
+    - immutable
+    - last_calibration_timestamp
+    - last_prediction
+    - linear_drift_rate
+    - long_run_mean
+    - long_run_mean_schedule
+    - metadata
+    - mitigation_details
+    - prompt_snippet
+    - retention_days
+    - rollback_available
+    - session_id
+    - source_file
+    - sql_snippet
+    schema_field_count: 43
+    spec_field_count: 148
+  remediation: 'Document these fields in docs/latex/specs/simula/chapters/18-text-to-sql-drift.tex:
+    action_type, calibrator_state, commit_hash, compliance, context, covariance_estimate,
+    immutable, last_calibration_timestamp, last_prediction, linear_drift_rate'
+  blocking: false
+- id: DRIFT-001-SPEC-002
+  type: DRIFT_001
+  type_description: Schema-Spec Drift
+  severity: LOW
+  source_file: docs/latex/specs/simula/chapters/18-text-to-sql-drift.tex
+  message: Spec mentions 125 fields not in schema (may be removed or renamed)
+  related_artifacts:
+  - path: docs/schema/simula/surprise-audit-trail.schema.json
+    type: schema
+    status: possibly_stale
+    domain: simula
+  evidence:
+    spec_only_fields:
+    - action
+    - actual_fpr
+    - alert_callback
+    - alert_id
+    - ambiguity_type
+    - ambiguous_span
+    - arr
+    - baseline
+    - baseline_value
+    - bootstrap_iterations
+    - bootstrap_mean
+    - bootstrap_percentiles
+    - bootstrap_std
+    - cdd
+    - chosen_threshold
+    - classifier_model
+    - classifier_threshold
+    - column_drop_rate
+    - column_rename_rate
+    - complexity_band
+  remediation: 'Verify these fields are still valid or update spec: action, actual_fpr,
+    alert_callback, alert_id, ambiguity_type, ambiguous_span, arr, baseline, baseline_value,
+    bootstrap_iterations'
+  blocking: false
+- id: DRIFT-006-001
+  type: DRIFT_006
+  type_description: Threshold Drift
+  severity: HIGH
+  source_file: src/training/pipeline/simula_tts_drift_evaluator.py
+  message: 'Threshold ''threshold'' differs: code=0.1, spec=70.0'
+  related_artifacts:
+  - path: docs/latex/specs/simula/chapters/18-text-to-sql-drift.tex
+    type: specification
+    status: drift_detected
+    domain: simula
+  evidence:
+    code_value: 0.1
+    code_line: 204
+    code_context: '"w1d": {"threshold": 0.10, "direction": "lower_better"},'
+    spec_value: 70.0
+    spec_line: 1023
+    spec_context: echo "TTS-EVAL score $TTS_EVAL below threshold 70"
+  remediation: Align threshold in code (src/training/pipeline/simula_tts_drift_evaluator.py:204)
+    with spec value 70.0
+  blocking: true
+- id: DRIFT-001-SCHEMA-001
+  type: DRIFT_001
+  type_description: Schema-Spec Drift
+  severity: MEDIUM
+  source_file: docs/schema/simula/financial-persona-taxonomy.schema.json
+  message: Schema has 14 fields not documented in spec
+  related_artifacts:
+  - path: docs/latex/specs/simula/chapters/19-financial-prompt-generation.tex
+    type: specification
+    status: possibly_stale
+    domain: simula
+  evidence:
+    schema_only_fields:
+    - aliases_allowed
+    - ambiguity_allowed
+    - communication_style
+    - complexity_mapping
+    - example_prompts
+    - expert
+    - expertise_levels
+    - high
+    - low
+    - max
+    - medium
+    - min
+    - none
+    - terminology_precision
+    schema_field_count: 24
+    spec_field_count: 64
+  remediation: 'Document these fields in docs/latex/specs/simula/chapters/19-financial-prompt-generation.tex:
+    aliases_allowed, ambiguity_allowed, communication_style, complexity_mapping, example_prompts,
+    expert, expertise_levels, high, low, max'
+  blocking: false
+- id: DRIFT-001-SPEC-002
+  type: DRIFT_001
+  type_description: Schema-Spec Drift
+  severity: LOW
+  source_file: docs/latex/specs/simula/chapters/19-financial-prompt-generation.tex
+  message: Spec mentions 54 fields not in schema (may be removed or renamed)
+  related_artifacts:
+  - path: docs/schema/simula/financial-persona-taxonomy.schema.json
+    type: schema
+    status: possibly_stale
+    domain: simula
+  evidence:
+    spec_only_fields:
+    - acceptance_rules
+    - accounting_standard
+    - alert_id
+    - aliases
+    - children
+    - complexification
+    - complexity_level
+    - constraints
+    - critic_model
+    - critical_failures
+    - cross_persona
+    - current_value
+    - diversity_threshold
+    - domain
+    - drift_type
+    - enabled
+    - financial_concept
+    - global_diversity
+    - is_persona_specific
+    - line_items
+  remediation: 'Verify these fields are still valid or update spec: acceptance_rules,
+    accounting_standard, alert_id, aliases, children, complexification, complexity_level,
+    constraints, critic_model, critical_failures'
+  blocking: false
+- id: DRIFT-001-SCHEMA-001
+  type: DRIFT_001
+  type_description: Schema-Spec Drift
+  severity: MEDIUM
+  source_file: docs/schema/simula/financial-prompt-mix.schema.json
+  message: Schema has 14 fields not documented in spec
+  related_artifacts:
+  - path: docs/latex/specs/simula/chapters/19-financial-prompt-generation.tex
+    type: specification
+    status: possibly_stale
+    domain: simula
+  evidence:
+    schema_only_fields:
+    - comparison_type
+    - complexity_match
+    - critic_confidence
+    - embedding_distance
+    - generated_at
+    - generated_prompts
+    - intent_clear
+    - passed
+    - period_type
+    - periods
+    - terminology_match
+    - time_context
+    - violations
+    - warnings
+    schema_field_count: 29
+    spec_field_count: 64
+  remediation: 'Document these fields in docs/latex/specs/simula/chapters/19-financial-prompt-generation.tex:
+    comparison_type, complexity_match, critic_confidence, embedding_distance, generated_at,
+    generated_prompts, intent_clear, passed, period_type, periods'
+  blocking: false
+- id: DRIFT-001-SPEC-002
+  type: DRIFT_001
+  type_description: Schema-Spec Drift
+  severity: LOW
+  source_file: docs/latex/specs/simula/chapters/19-financial-prompt-generation.tex
+  message: Spec mentions 49 fields not in schema (may be removed or renamed)
+  related_artifacts:
+  - path: docs/schema/simula/financial-prompt-mix.schema.json
+    type: schema
+    status: possibly_stale
+    domain: simula
+  evidence:
+    spec_only_fields:
+    - acceptance_rules
+    - agents
+    - alert_id
+    - aliases
+    - children
+    - complexification
+    - complexity_range
+    - constraints
+    - critic_model
+    - critical_failures
+    - cross_persona
+    - current_value
+    - diversity_threshold
+    - domain
+    - drift_type
+    - enabled
+    - global_diversity
+    - humans
+    - is_persona_specific
+    - line_items
+  remediation: 'Verify these fields are still valid or update spec: acceptance_rules,
+    agents, alert_id, aliases, children, complexification, complexity_range, constraints,
+    critic_model, critical_failures'
+  blocking: false
+summary:
+  critical_count: 0
+  high_count: 1
+  medium_count: 12
+  low_count: 10
+  total_findings: 23
+  blocking: true

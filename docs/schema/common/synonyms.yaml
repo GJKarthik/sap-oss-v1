@@ -1,0 +1,454 @@
+# =============================================================================
+# Vocabulary Registry - Synonyms and Entity Mappings
+# Path: docs/schema/common/synonyms.yaml
+# =============================================================================
+# This file contains canonical vocabulary terms, synonyms, and entity mappings
+# to prevent hallucinations and enable vocabulary drift detection.
+#
+# Meeting requirement addressed: "Explicit training on mappings (e.g., 'India' → 'IN') 
+# is needed to avoid hallucinations"
+# =============================================================================
+
+$schema: https://sap-oss.github.io/schema/common/vocabulary-registry.schema.json
+version: "1.0.0"
+generated: "2026-04-23"
+description: "Master vocabulary registry for SAP-OSS training and inference"
+
+# -----------------------------------------------------------------------------
+# DOMAIN-SPECIFIC VOCABULARY
+# -----------------------------------------------------------------------------
+
+domains:
+  # ---------------------------------------------------------------------------
+  # SIMULA - Training Data Generation
+  # ---------------------------------------------------------------------------
+  simula:
+    description: "Vocabulary for Simula training data generation pipeline"
+    
+    canonical_terms:
+      - canonical: "training example"
+        variations: ["training sample", "training instance", "example", "sample"]
+        context: "machine_learning"
+        training_forms: ["training example", "example"]
+        human_friendly: "Training Example"
+        agent_friendly: "training_example"
+        
+      - canonical: "taxonomy"
+        variations: ["category tree", "classification hierarchy", "category system"]
+        context: "data_organization"
+        training_forms: ["taxonomy"]
+        
+      - canonical: "complexity level"
+        variations: ["difficulty", "complexity", "level"]
+        context: "training_calibration"
+        training_forms: ["complexity level", "complexity"]
+        
+      - canonical: "text-to-SQL"
+        variations: ["TTS", "natural language to SQL", "NL2SQL", "text to query"]
+        context: "query_generation"
+        training_forms: ["text-to-SQL", "TTS"]
+        deprecated_forms: ["txt2sql"]
+
+    technical_terms:
+      - technical_name: "HANA_SCHEMA_ENTRY"
+        human_name: "Database Schema Entry"
+        description: "A single entry representing a database table or view schema"
+        source_system: "HANA"
+        synonyms: ["schema entry", "table definition", "schema record"]
+        nl_ready: true
+        
+      - technical_name: "META_PROMPT"
+        human_name: "Meta Prompt Template"
+        description: "A template used to generate training prompts"
+        source_system: "Simula"
+        synonyms: ["prompt template", "generation template"]
+        nl_ready: true
+        
+      - technical_name: "TAXONOMY_NODE"
+        human_name: "Taxonomy Category"
+        description: "A node in the question taxonomy hierarchy"
+        source_system: "Simula"
+        synonyms: ["category", "taxonomy entry", "classification node"]
+        nl_ready: true
+
+  # ---------------------------------------------------------------------------
+  # TRIAL BALANCE (TB)
+  # ---------------------------------------------------------------------------
+  tb:
+    description: "Vocabulary for Trial Balance review and commentary generation"
+    
+    canonical_terms:
+      - canonical: "trial balance"
+        variations: ["TB", "balance sheet trial", "ledger balance", "account balance summary"]
+        context: "financial"
+        training_forms: ["trial balance", "TB"]
+        human_friendly: "Trial Balance"
+        agent_friendly: "trial_balance"
+        
+      - canonical: "variance"
+        variations: ["difference", "delta", "change", "movement", "fluctuation"]
+        context: "financial_analysis"
+        training_forms: ["variance", "difference"]
+        
+      - canonical: "commentary"
+        variations: ["explanation", "analysis", "narrative", "notes", "write-up"]
+        context: "reporting"
+        training_forms: ["commentary", "explanation"]
+        
+      - canonical: "materiality threshold"
+        variations: ["materiality", "threshold", "significance level", "material amount"]
+        context: "audit"
+        training_forms: ["materiality threshold", "materiality"]
+        
+      - canonical: "period-over-period"
+        variations: ["PoP", "POP", "period comparison", "YoY", "MoM", "QoQ"]
+        context: "time_comparison"
+        training_forms: ["period-over-period", "PoP"]
+
+    technical_terms:
+      - technical_name: "BUKRS"
+        human_name: "Company Code"
+        description: "SAP company code identifying a legal entity"
+        source_system: "SAP"
+        synonyms: ["company", "entity code", "legal entity"]
+        nl_ready: false
+        nl_readiness_issues: ["Abbreviation not intuitive", "Needs human-friendly alias in prompts"]
+        
+      - technical_name: "WAERS"
+        human_name: "Currency"
+        description: "Currency code for transactions"
+        source_system: "SAP"
+        synonyms: ["currency code", "monetary unit"]
+        nl_ready: false
+        nl_readiness_issues: ["Technical SAP name", "Use 'Currency' in NL interfaces"]
+        
+      - technical_name: "HKONT"
+        human_name: "GL Account"
+        description: "General Ledger account number"
+        source_system: "SAP"
+        synonyms: ["account number", "GL account", "ledger account", "account"]
+        nl_ready: false
+        nl_readiness_issues: ["SAP-specific abbreviation"]
+        
+      - technical_name: "GJAHR"
+        human_name: "Fiscal Year"
+        description: "Fiscal year for accounting"
+        source_system: "SAP"
+        synonyms: ["fiscal year", "accounting year", "FY"]
+        nl_ready: false
+        nl_readiness_issues: ["SAP-specific name"]
+        
+      - technical_name: "MONAT"
+        human_name: "Period"
+        description: "Accounting period (month)"
+        source_system: "SAP"
+        synonyms: ["period", "month", "accounting period"]
+        nl_ready: false
+        nl_readiness_issues: ["German abbreviation for 'month'"]
+
+    entity_mappings:
+      # Legal Entities
+      - entity_type: "legal_entity"
+        name: "Hong Kong"
+        code: "HKG"
+        variations: ["HK", "Hong Kong SAR", "HKSAR"]
+        locale_names:
+          zh-HK: "香港"
+          zh-CN: "香港"
+          
+      - entity_type: "legal_entity"
+        name: "United States"
+        code: "USA"
+        variations: ["US", "United States of America", "America"]
+        
+      - entity_type: "legal_entity"
+        name: "Singapore"
+        code: "SGP"
+        variations: ["SG", "Republic of Singapore"]
+        locale_names:
+          zh-CN: "新加坡"
+          ms: "Singapura"
+
+  # ---------------------------------------------------------------------------
+  # ARABIC AP Invoice Processing
+  # ---------------------------------------------------------------------------
+  arabic:
+    description: "Vocabulary for Arabic Accounts Payable invoice processing"
+    
+    canonical_terms:
+      - canonical: "invoice"
+        variations: ["bill", "receipt", "فاتورة", "invoice document"]
+        context: "accounts_payable"
+        training_forms: ["invoice", "فاتورة"]
+        human_friendly: "Invoice"
+        
+      - canonical: "vendor"
+        variations: ["supplier", "مورد", "seller"]
+        context: "accounts_payable"
+        training_forms: ["vendor", "supplier"]
+        
+      - canonical: "VAT"
+        variations: ["value added tax", "ضريبة القيمة المضافة", "sales tax", "tax"]
+        context: "taxation"
+        training_forms: ["VAT", "value added tax"]
+        
+      - canonical: "payment instruction"
+        variations: ["payment order", "remittance", "payment request"]
+        context: "payment_processing"
+        training_forms: ["payment instruction"]
+
+    technical_terms:
+      - technical_name: "OCR_RESULT"
+        human_name: "OCR Extraction Result"
+        description: "Result of optical character recognition on invoice"
+        source_system: "Custom"
+        synonyms: ["extraction result", "scan result", "recognized text"]
+        nl_ready: true
+
+  # ---------------------------------------------------------------------------
+  # REGULATIONS
+  # ---------------------------------------------------------------------------
+  regulations:
+    description: "Vocabulary for AI governance and regulatory compliance"
+    
+    canonical_terms:
+      - canonical: "conformance"
+        variations: ["compliance", "adherence", "conformity"]
+        context: "regulatory"
+        training_forms: ["conformance", "compliance"]
+        
+      - canonical: "regulation"
+        variations: ["rule", "requirement", "guideline", "standard"]
+        context: "regulatory"
+        training_forms: ["regulation", "requirement"]
+        
+      - canonical: "audit trail"
+        variations: ["audit log", "activity log", "event log", "trace"]
+        context: "audit"
+        training_forms: ["audit trail", "audit log"]
+
+# -----------------------------------------------------------------------------
+# GLOBAL SYNONYMS (Cross-Domain)
+# -----------------------------------------------------------------------------
+
+global_synonyms:
+  # Financial Terms
+  - canonical: "Trial Balance"
+    synonyms: ["TB", "balance sheet trial", "ledger summary"]
+    type: "financial_term"
+    
+  - canonical: "Profit & Loss"
+    synonyms: ["P&L", "PL", "income statement", "profit and loss"]
+    type: "financial_term"
+    
+  - canonical: "General Ledger"
+    synonyms: ["GL", "ledger", "main ledger"]
+    type: "financial_term"
+    
+  - canonical: "Accounts Payable"
+    synonyms: ["AP", "payables", "vendor payments"]
+    type: "financial_term"
+    
+  - canonical: "Accounts Receivable"
+    synonyms: ["AR", "receivables", "customer payments"]
+    type: "financial_term"
+    
+  # Process Terms
+  - canonical: "review"
+    synonyms: ["check", "examine", "analyze", "assess"]
+    type: "process_term"
+    
+  - canonical: "approve"
+    synonyms: ["sign off", "authorize", "confirm", "accept"]
+    type: "process_term"
+    
+  - canonical: "reject"
+    synonyms: ["decline", "deny", "refuse"]
+    type: "process_term"
+    
+  # Technical Terms
+  - canonical: "schema"
+    synonyms: ["data model", "structure", "format"]
+    type: "technical_term"
+    
+  - canonical: "query"
+    synonyms: ["question", "request", "search"]
+    type: "technical_term"
+    bidirectional: false
+    context_required: "database context for 'query'"
+
+# -----------------------------------------------------------------------------
+# ABBREVIATIONS
+# -----------------------------------------------------------------------------
+
+abbreviations:
+  # SAP System
+  - abbreviation: "BUKRS"
+    expansion: "Company Code"
+    domain: "tb"
+    source_system: "SAP"
+    
+  - abbreviation: "WAERS"
+    expansion: "Currency"
+    domain: "tb"
+    source_system: "SAP"
+    
+  - abbreviation: "HKONT"
+    expansion: "GL Account Number"
+    domain: "tb"
+    source_system: "SAP"
+    
+  - abbreviation: "GJAHR"
+    expansion: "Fiscal Year"
+    domain: "tb"
+    source_system: "SAP"
+    
+  - abbreviation: "MONAT"
+    expansion: "Period/Month"
+    domain: "tb"
+    source_system: "SAP"
+    
+  - abbreviation: "KUNNR"
+    expansion: "Customer Number"
+    domain: "arabic"
+    source_system: "SAP"
+    
+  - abbreviation: "LIFNR"
+    expansion: "Vendor Number"
+    domain: "arabic"
+    source_system: "SAP"
+
+  # Financial
+  - abbreviation: "TB"
+    expansion: "Trial Balance"
+    domain: "tb"
+    ambiguous: false
+    
+  - abbreviation: "PL"
+    expansion: "Profit & Loss"
+    domain: "tb"
+    ambiguous: true
+    disambiguation:
+      - expansion: "Profit & Loss"
+        context: "financial reporting"
+      - expansion: "Programming Language"
+        context: "software development"
+        
+  - abbreviation: "GL"
+    expansion: "General Ledger"
+    domain: "tb"
+    
+  - abbreviation: "AP"
+    expansion: "Accounts Payable"
+    domain: "arabic"
+    
+  - abbreviation: "AR"
+    expansion: "Accounts Receivable"
+    domain: "tb"
+    
+  - abbreviation: "VAT"
+    expansion: "Value Added Tax"
+    domain: "arabic"
+    
+  - abbreviation: "GST"
+    expansion: "Goods and Services Tax"
+    domain: "tb"
+
+  # Technical
+  - abbreviation: "TTS"
+    expansion: "Text-to-SQL"
+    domain: "simula"
+    
+  - abbreviation: "NL"
+    expansion: "Natural Language"
+    domain: "simula"
+    
+  - abbreviation: "LLM"
+    expansion: "Large Language Model"
+    domain: "simula"
+    
+  - abbreviation: "OCR"
+    expansion: "Optical Character Recognition"
+    domain: "arabic"
+
+  # Time Periods
+  - abbreviation: "YoY"
+    expansion: "Year over Year"
+    domain: "tb"
+    
+  - abbreviation: "MoM"
+    expansion: "Month over Month"
+    domain: "tb"
+    
+  - abbreviation: "QoQ"
+    expansion: "Quarter over Quarter"
+    domain: "tb"
+    
+  - abbreviation: "PoP"
+    expansion: "Period over Period"
+    domain: "tb"
+
+# -----------------------------------------------------------------------------
+# LOCALE VARIANTS
+# -----------------------------------------------------------------------------
+
+locale_variants:
+  en-SG:
+    locale: "en-SG"
+    terms:
+      - canonical: "GST"
+        variations: ["goods and services tax", "consumption tax"]
+        context: "taxation"
+        training_forms: ["GST"]
+    overrides:
+      - global_canonical: "VAT"
+        local_preferred: "GST"
+        
+  ar-SA:
+    locale: "ar-SA"
+    terms:
+      - canonical: "ضريبة القيمة المضافة"
+        variations: ["VAT", "value added tax"]
+        context: "taxation"
+        training_forms: ["ضريبة القيمة المضافة", "VAT"]
+        human_friendly: "ضريبة القيمة المضافة"
+        
+      - canonical: "فاتورة"
+        variations: ["invoice", "bill"]
+        context: "accounts_payable"
+        training_forms: ["فاتورة", "invoice"]
+
+  zh-CN:
+    locale: "zh-CN"
+    terms:
+      - canonical: "试算平衡表"
+        variations: ["Trial Balance", "TB", "余额试算"]
+        context: "financial"
+        training_forms: ["试算平衡表", "Trial Balance"]
+        
+      - canonical: "总账"
+        variations: ["General Ledger", "GL", "总分类账"]
+        context: "financial"
+        training_forms: ["总账", "General Ledger"]
+
+# -----------------------------------------------------------------------------
+# METADATA
+# -----------------------------------------------------------------------------
+
+metadata:
+  maintainer: "spec-owner"
+  last_reviewed: "2026-04-23"
+  review_frequency: "monthly"
+  
+  # Drift detection thresholds
+  drift_thresholds:
+    vocabulary_divergence_warning: 0.20  # 20% divergence triggers warning
+    vocabulary_divergence_alert: 0.30    # 30% divergence triggers alert
+    oov_rate_warning: 0.10               # 10% out-of-vocabulary rate triggers warning
+    oov_rate_alert: 0.20                 # 20% OOV rate triggers alert
+    
+  # Retraining triggers
+  retraining_triggers:
+    new_terms_threshold: 50              # Retrain when 50+ new terms detected
+    deprecated_terms_usage: 100          # Retrain when deprecated term used 100+ times
+    locale_coverage_gap: 0.30            # Retrain when locale coverage < 70%

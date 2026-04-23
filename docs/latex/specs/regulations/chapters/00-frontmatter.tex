@@ -12,14 +12,14 @@ three goals are:
 \begin{enumerate}
   \item \textbf{Make the regulations machine-readable.} Every source document
         in \corpus{source/} is accompanied by structured JSON records under
-        \corpus{structured/} that capture sections, normative requirements,
+        \path{docs/regulations/machine-readable/} that capture sections, normative requirements,
         and observational claims.
   \item \textbf{Bind each requirement to evidence in the repository.} The
         requirement schema carries an \texttt{implementation[]} array of file
         paths, configuration fields, and documentation anchors, plus a
         \texttt{verification[]} array pointing to AI Verify plugins, Moonshot
         benchmark IDs, or repository tests. A local validator
-        (\corpus{structured/validate.py}) fails when any of these paths no
+        (\path{docs/schema/validate.py}) fails when any of these paths no
         longer resolve.
   \item \textbf{Give reviewers a single printable reference.} This document
         cross-links the corpus records, the two vendored conformance
@@ -28,7 +28,7 @@ three goals are:
         navigating three directory trees.
 \end{enumerate}
 
-\paragraph{In scope.} The Monetary Authority of Singapore (MAS) / AI Verify
+\paragraph{In scope.} The Infocomm Media Development Authority (IMDA) / AI Verify
 Foundation \emph{Model AI Governance Framework for Agentic AI} v1.0 (22 Jan
 2026); the multi-institution \emph{2025 AI Agent Index}; the Ju \& Aral field
 experiment \emph{Collaborating with AI Agents} (arXiv 2503.18238v3, Feb 2026);
@@ -53,7 +53,7 @@ spec chapters.
 
 \vspace{1em}
 \noindent\textcolor{reggrey}{\small This is a living document. Re-running
-\tool{python3 docs/regulations/structured/validate.py} checks schema
+\tool{python3 docs/schema/validate.py --registry-check} checks schema
 conformance and verifies that every code path, plugin, and test id
 referenced from the requirement records still exists.}
 \clearpage

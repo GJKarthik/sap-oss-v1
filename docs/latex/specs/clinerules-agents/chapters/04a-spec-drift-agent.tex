@@ -88,9 +88,40 @@ DRIFT-005 & CRITICAL/HIGH & Cross-Domain Drift: Shared enum changed without upda
 DRIFT-006 & HIGH/MEDIUM & Threshold Drift: Code uses different threshold than spec \\
 DRIFT-007 & CRITICAL/HIGH & State Machine Drift: Workflow states differ between code and spec \\
 DRIFT-008 & CRITICAL/HIGH & API Contract Drift: API differs from spec documentation \\
+DRIFT-009 & CRITICAL/HIGH & Text-to-SQL Schema Drift: HANA schema changed without training data update \\
+DRIFT-010 & HIGH/MEDIUM & Text-to-SQL Semantic Drift: Prompt intent no longer aligns with SQL output \\
 \bottomrule
 \end{tabularx}
 \end{table}
+
+\subsection{Text-to-SQL Drift Types (DRIFT-009, DRIFT-010)}
+
+Text-to-SQL pipelines require specialized drift detection due to the three-way
+relationship between HANA schemas, natural language prompts, and generated SQL.
+See Chapter~18 of the Simula specification for complete details.
+
+\begin{description}
+  \item[DRIFT-009: Text-to-SQL Schema Drift] Triggered when HANA Cloud schema
+    changes (column additions, removals, type changes) are not reflected in
+    training data within the staleness threshold (default: 7 days). This drift
+    type maps to TTS-DRIFT-001 in the Simula specification.
+    
+  \item[DRIFT-010: Text-to-SQL Semantic Drift] Triggered when the semantic
+    alignment between user prompts and generated SQL degrades below threshold
+    (SAS $< 0.80$). This includes terminology drift where user vocabulary
+    diverges from schema terminology. Maps to TTS-DRIFT-003 and TTS-DRIFT-004.
+\end{description}
+
+The TTS drift detection framework includes 12 metrics (TTS-M01 to TTS-M12) and
+a composite TTS-EVAL score. For full metric definitions, thresholds, and
+calculation formulas, see:
+
+\begin{itemize}
+  \item \filepath{docs/latex/specs/simula/chapters/18-text-to-sql-drift.tex}
+  \item \filepath{docs/schema/simula/tts-drift-metrics.schema.json}
+  \item \filepath{docs/schema/simula/tts-drift-alert.schema.json}
+  \item \filepath{docs/hana-cloud/TTS\_DRIFT\_TABLES\_DDL.sql}
+\end{itemize}
 
 \section{Enforcement mechanisms}
 \label{sec:enforcement}

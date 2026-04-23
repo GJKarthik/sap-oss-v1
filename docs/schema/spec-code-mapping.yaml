@@ -109,6 +109,50 @@ domains:
         sync_rules:
           - "Implementation phase changes require spec roadmap update"
 
+      - id: simula-tts-drift
+        type: chapter
+        spec_path: docs/latex/specs/simula/chapters/18-text-to-sql-drift.tex
+        related_schemas:
+          - docs/schema/simula/tts-drift-metrics.schema.json
+          - docs/schema/simula/tts-drift-alert.schema.json
+          - docs/schema/simula/tts-drift-baseline.schema.json
+          - docs/schema/simula/surprise-audit-trail.schema.json
+        related_code:
+          - src/training/pipeline/simula_tts_drift_evaluator.py
+          - src/training/pipeline/simula_tts_drift_monitor.py
+          - src/training/pipeline/simula_tts_drift_sampler.py
+        related_files:
+          - docs/hana-cloud/TTS_DRIFT_TABLES_DDL.sql
+        related_specs:
+          - docs/latex/specs/singapore-ai-safety/chapters/05-metrics.tex
+          - docs/latex/specs/clinerules-agents/chapters/04a-spec-drift-agent.tex
+        sync_rules:
+          - "TTS drift metric definitions require spec+schema+code update"
+          - "Threshold changes require spec documentation"
+          - "New drift types require HANA DDL update"
+          - "User sampling strategy changes require spec update"
+          - "Statistical metrics (W1D, PSI, KS) require scipy implementation"
+          - "SSG surprise metrics require Hull-White calibrator update"
+
+      - id: simula-financial-prompt-gen
+        type: chapter
+        spec_path: docs/latex/specs/simula/chapters/19-financial-prompt-generation.tex
+        related_schemas:
+          - docs/schema/simula/financial-persona-taxonomy.schema.json
+          - docs/schema/simula/financial-prompt-mix.schema.json
+        related_code:
+          - src/training/pipeline/simula_financial_prompt_generator.py
+          - src/training/pipeline/simula_financial_prompt_critic.py
+        related_specs:
+          - docs/latex/specs/simula/chapters/18-text-to-sql-drift.tex
+          - docs/latex/specs/singapore-ai-safety/chapters/05-metrics.tex
+        sync_rules:
+          - "Persona taxonomy changes require spec+schema update"
+          - "Complexity levels must align with TTS drift metrics"
+          - "PER-M01 to PER-M04 metrics require singapore-ai-safety update"
+          - "Validation rules must match persona expertise levels"
+          - "Human vs agent persona ratios require spec documentation"
+
   # ---------------------------------------------------------------------------
   # TRIAL BALANCE (TB)
   # ---------------------------------------------------------------------------
@@ -339,6 +383,85 @@ common:
         - docs/schema/regulations/
       sync_rules:
         - "Base type changes require cross-domain review"
+
+    - id: common-vocabulary-registry
+      type: shared-schema
+      path: docs/schema/common/vocabulary-registry.schema.json
+      description: "Schema for vocabulary registry to prevent hallucinations"
+      consumers:
+        - docs/schema/common/synonyms.yaml
+      related_code:
+        - scripts/spec-drift/nl_readiness_assessor.py
+        - scripts/spec-drift/vocabulary_drift_monitor.py
+      sync_rules:
+        - "Vocabulary schema changes require all consumers to update"
+        - "New term types require spec documentation"
+
+    - id: common-synonyms
+      type: vocabulary-registry
+      path: docs/schema/common/synonyms.yaml
+      description: "Master vocabulary registry with synonyms and entity mappings"
+      consumers:
+        - docs/schema/tb/
+        - docs/schema/arabic/
+        - docs/schema/simula/
+        - docs/schema/regulations/
+      related_code:
+        - scripts/spec-drift/nl_readiness_assessor.py
+        - scripts/spec-drift/vocabulary_drift_monitor.py
+        - scripts/spec-drift/persona_classifier.py
+        - scripts/spec-drift/dspy_alignment_hooks.py
+        - scripts/spec-drift/audit.py
+      sync_rules:
+        - "New domain terms require synonym registry update"
+        - "Entity mappings (country codes, etc.) must be registered here"
+        - "Deprecated terms must be tracked for retraining triggers"
+        - "Locale variants require i18n review"
+        - "Persona-specific terms must be tagged for human vs agent"
+
+    - id: drift-ci-workflow
+      type: ci-workflow
+      path: .github/workflows/drift-audit.yml
+      description: "GitHub Actions workflow for drift audit CI/CD"
+      related_code:
+        - scripts/spec-drift/audit.py
+        - scripts/spec-drift/nl_readiness_assessor.py
+        - scripts/spec-drift/vocabulary_drift_monitor.py
+      sync_rules:
+        - "New drift scripts must be added to workflow"
+        - "Threshold changes require workflow update"
+
+    - id: persona-classifier
+      type: training-tool
+      path: scripts/spec-drift/persona_classifier.py
+      description: "Classifies prompts as human-suitable vs agent-suitable"
+      related_files:
+        - docs/schema/common/synonyms.yaml
+      sync_rules:
+        - "Technical indicator patterns require synonyms.yaml update"
+        - "Human-friendly term mappings require vocabulary update"
+
+    - id: dspy-alignment
+      type: training-tool
+      path: scripts/spec-drift/dspy_alignment_hooks.py
+      description: "DSPy integration hooks for hallucination control"
+      related_files:
+        - docs/schema/common/synonyms.yaml
+      sync_rules:
+        - "Hallucination risk patterns require documentation"
+        - "Entity mappings must sync with synonyms.yaml"
+
+    - id: drift-dashboard-ui
+      type: ui-component
+      path: src/generativeUI/drift-dashboard/drift-dashboard.component.ts
+      description: "SAP UI5 dashboard for drift monitoring"
+      related_code:
+        - scripts/spec-drift/audit.py
+        - scripts/spec-drift/nl_readiness_assessor.py
+        - scripts/spec-drift/vocabulary_drift_monitor.py
+      sync_rules:
+        - "Metric additions require dashboard component update"
+        - "API endpoint changes require component update"
 
 # -----------------------------------------------------------------------------
 # CROSS-SPEC DEPENDENCIES
